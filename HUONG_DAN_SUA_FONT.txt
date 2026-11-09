@@ -1,0 +1,11 @@
+SỬA FONT NUMIQUEST v0.3.1
+
+1. Giải nén ZIP.
+2. GitHub repository numiquest → Add file → Upload files.
+3. Chỉ kéo index.html và style.css trong gói này vào ngoài cùng repository.
+4. Commit changes. Không xóa app.js, ui.js hoặc thư mục assets.
+5. Chờ Actions xanh, mở link cũ, Ctrl+F5. Không xóa dữ liệu trình duyệt.
+
+Font đã được nhúng trực tiếp vào style.css, đủ 5 độ đậm và dấu tiếng Việt.
+Bản sửa chỉ thay cách tải font và khai báo font; không đổi luật chơi hoặc nơi lưu tiến độ.
+Gói này dành cho web đã cập nhật NumiQuest v0.3.
