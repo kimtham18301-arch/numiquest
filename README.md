@@ -1,4 +1,4 @@
-# NumiQuest v0.6 — Mảnh ghép Việt Nam + kết nối tài khoản
+# NumiQuest v0.6.1 — Mảnh ghép Việt Nam + kết nối tài khoản
 
 ## Đã làm
 
@@ -32,7 +32,7 @@ geo-data.js chứa ảnh nhúng và được tải khi mở Hộ chiếu/Khám p
 
 ## Tính năng luyện giữ nguyên
 
-Chọn nhiều loại số, phép tính, chữ số 1–6, số câu và giây/câu. Sai chuyển câu ngay; đúng đợi 3 giây. Câu mới không giữ màu lựa chọn trước. Chỉ câu sai vào game hoa–chậu, số chậu tự theo câu sai, tối đa 6 cặp mỗi bảng. Đấu máy vẫn dùng nhãn rõ ràng. Phòng thi đấu người thật và bảng hạng online vẫn khóa.
+Chọn nhiều loại số, phép tính, chữ số 1–6, số câu và giây/câu. Đúng hoặc sai đều chuyển câu ngay, không đợi. Câu mới không giữ màu lựa chọn trước. Chỉ câu sai vào game hoa–chậu, số chậu tự theo câu sai, tối đa 6 cặp mỗi bảng. Đấu máy vẫn dùng nhãn rõ ràng. Phòng thi đấu người thật và bảng hạng online vẫn khóa.
 
 Tiến độ tiếp tục dùng key numiquest-v1. Đổi trình duyệt, thiết bị hoặc tên miền chưa tự mang theo dữ liệu nếu chưa bật cloud: dùng sao lưu JSON hoặc đăng nhập sau khi đã kết nối. Không xóa dữ liệu trình duyệt để cập nhật giao diện.
 
@@ -50,3 +50,5 @@ Tiến độ tiếp tục dùng key numiquest-v1. Đổi trình duyệt, thiết
 - 34 tỉnh/thành: https://baochinhphu.vn/bang-danh-muc-va-ma-so-cua-34-tinh-thanh-moi-3321-don-vi-hanh-chinh-cap-xa-moi-102250704153652947.htm
 - Hình dáng bản đồ: Natural Earth, public domain, https://www.naturalearthdata.com/about/terms-of-use/
 - Tên/ảnh địa danh: Wikipedia/Wikimedia Commons; từng nguồn và giấy phép xem GEOGRAPHY-CREDITS.md.
+
+Cập nhật v0.6.1: bỏ chờ 3 giây ở phần tự luyện. Chọn đúng/sai đều chuyển câu ngay; câu cuối mở tổng kết. Câu sai vẫn lưu vào vườn hoa. Giữ đồng hồ thời gian trả lời từng câu và quy tắc hết giờ hiện tại.

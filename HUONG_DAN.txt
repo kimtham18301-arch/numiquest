@@ -1,4 +1,4 @@
-NUMIQUEST v0.6 — VIỆT NAM + TÀI KHOẢN
+NUMIQUEST v0.6.1 — VIỆT NAM + TÀI KHOẢN
 
 1. Giải nén ZIP và mở thư mục NumiQuest.
 2. GitHub → Add file → Upload files.
@@ -16,3 +16,5 @@ Mỗi mảnh mở một địa phương có ảnh và vị trí. Hoàng Sa, Trư
 ĐĂNG NHẬP CHƯA BẬT THẬT:
 Cần tạo Supabase của bạn rồi kết nối. Xem DANG_NHAP.md và cloud-setup.sql.
 Khi chưa kết nối, web vẫn lưu trên máy. Không gửi mật khẩu hoặc secret key cho người khác.
+
+Cập nhật v0.6.1: bỏ chờ 3 giây ở phần tự luyện. Chọn đúng/sai đều chuyển câu ngay; câu cuối mở tổng kết. Câu sai vẫn lưu vào vườn hoa. Giữ đồng hồ thời gian trả lời từng câu và quy tắc hết giờ hiện tại.
