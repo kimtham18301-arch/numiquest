@@ -1,10 +1,17 @@
-BƯỚC 1: Giải nén file ZIP bằng chuột phải → Extract All / Giải nén tất cả.
-BƯỚC 2: Mở thư mục đã giải nén. Phải thấy index.html, style.css, app.js.
-BƯỚC 3: Trên GitHub repo numiquest → Add file → Upload files.
-BƯỚC 4: Kéo tất cả file bên trong vào GitHub. Không tải nguyên ZIP, không đặt index.html trong thư mục con.
-BƯỚC 5: Bấm Commit changes. Nếu hỏi, chọn commit trực tiếp vào main.
-BƯỚC 6: Settings → Pages → Deploy from a branch → main → /(root) → Save.
-BƯỚC 7: Chờ GitHub cung cấp link web. Gửi ảnh nếu bạn chưa thấy.
+CẬP NHẬT NUMIQUEST ZOO v0.2
 
-Đây là bản chơi thử v0.1, chưa phải toàn bộ sản phẩm đã bàn.
-Xem README.md để biết rõ tính năng đã có, phần còn thiếu và cách sao lưu.
+1. Trong web cũ: Tiến bộ → Xuất sao lưu để giữ bản dự phòng.
+2. Tải ZIP mới và giải nén.
+3. Mở thư mục NumiQuest. Phải thấy index.html, style.css, app.js và thư mục assets.
+4. GitHub repo numiquest → Add file → Upload files.
+5. Kéo TẤT CẢ file và thư mục assets BÊN TRONG thư mục NumiQuest vào GitHub.
+   Không tải nguyên ZIP. Không kéo nguyên thư mục NumiQuest bao ngoài.
+   index.html nằm ngoài cùng, hình ở assets/zoo.svg.
+6. Commit changes. GitHub thay file cũ trùng tên; giữ nguyên cấu hình Pages.
+7. Chờ Actions xanh, mở link web cũ. Trên máy tính nhấn Ctrl+F5 nếu còn giao diện cũ.
+
+Không cần tạo repo, bật lại Pages, mua tên miền hay cài thư viện.
+Dữ liệu cũ giữ nguyên trên cùng trình duyệt và cùng địa chỉ web.
+Không xóa dữ liệu trình duyệt để cập nhật.
+
+Bản này cập nhật UX/UI sở thú; địa lí vẫn có 10 nước minh họa, chưa có toàn bộ quốc gia và bản đồ đường biên thật.
