@@ -1,15 +1,11 @@
-NUMIQUEST v0.4 — GÓI ĐẦY ĐỦ
+SỬA 3 HÌNH KHÔNG HIỂN THỊ — v0.4.1
 
-1. Tải ZIP và chọn Extract All / Giải nén tất cả.
-2. Mở thư mục NumiQuest bên trong.
-3. GitHub → Add file → Upload files.
-4. Kéo TOÀN BỘ file bên trong và thư mục assets vào GitHub.
-   Cần có index.html, style.css, app.js, ui.js và assets ở ngoài cùng.
-   Không kéo thư mục NumiQuest bao ngoài. Không tải nguyên file ZIP.
-5. Commit changes. Không cần xóa file cũ hay bật lại Pages.
-6. Chờ Actions xanh. Mở link web cũ, Ctrl+F5 để tải mới.
+1. Giải nén ZIP này.
+2. GitHub repository numiquest → Add file → Upload files.
+3. Tải index.html và app.js trong gói này lên ngoài cùng repository.
+4. Commit changes, chờ Actions xanh.
+5. Mở web cũ và Ctrl+F5. Điện thoại: tải lại trang.
 
-Đã gộp sửa font, tự chuyển câu sau 3 giây, game ôn sai hoa/chậu và trang chủ khu vui chơi cho trẻ.
-Giữ nguyên tiến độ trên cùng trình duyệt và địa chỉ web. Nên xuất sao lưu trong Thành tích trước khi cập nhật. Không xóa dữ liệu trình duyệt.
-
-Phần địa lí hiện vẫn có 10 nước minh họa, chưa có toàn bộ quốc gia hay bản đồ lãnh thổ thật. Thi đấu online vẫn khóa.
+Ba hình đã nhúng trực tiếp trong app.js, không cần tải thư mục assets để hiển thị chúng.
+Giữ nguyên style.css, ui.js và các file khác. Không xóa dữ liệu trình duyệt.
+Bản sửa dành cho web NumiQuest v0.4 hiện tại. Giữ nguyên tiến độ và luật chơi.
