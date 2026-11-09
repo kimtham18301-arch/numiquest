@@ -1,20 +1,28 @@
-NUMIQUEST v0.6.1 — VIỆT NAM + TÀI KHOẢN
+NUMIQUEST v0.7 — NÔNG TRẠI NUMI
 
-1. Giải nén ZIP và mở thư mục NumiQuest.
+CẬP NHẬT WEB ĐANG CÓ:
+1. Giải nén ZIP, mở thư mục NumiQuest.
 2. GitHub → Add file → Upload files.
-3. Kéo TẤT CẢ file bên trong vào GitHub, không kéo thư mục NumiQuest bao ngoài.
-4. Commit changes; chờ Actions xanh; mở link cũ và Ctrl+F5.
+3. Kéo TẤT CẢ file bên trong lên, không kéo thư mục NumiQuest bao ngoài.
+4. Commit changes. Chờ Actions xanh, mở link cũ rồi Ctrl+F5.
 
-ĐẶC BIỆT PHẢI TẢI:
-index.html, style.css, app.js, ui.js, discovery.js, geo-data.js, cloud.js, cloud-config.js.
-Không cần thư mục assets mới; các hình/font đã nhúng.
-Không xóa dữ liệu trình duyệt. Tiến độ/mảnh cũ được giữ.
+PHẢI CÓ 10 FILE CHẠY:
+index.html, style.css, app.js, ui.js, discovery.js, geo-data.js,
+challenge.js, farm.js, cloud.js, cloud-config.js.
+Hai file mới là challenge.js và farm.js. Hình ảnh và font đã nhúng.
+Nếu bạn đã điền kết nối tài khoản thật, GIỮ cloud-config.js của bạn.
+Không cần xóa file cũ trước và KHÔNG xóa dữ liệu trình duyệt.
 
-Bản đồ mở Việt Nam 34 tỉnh/thành; các nước khác khóa.
-Mỗi mảnh mở một địa phương có ảnh và vị trí. Hoàng Sa, Trường Sa có ký hiệu riêng.
+THỬ NHANH:
+- Chạm nền để thỏ đi đến; chạm vườn để làm toán kiếm đồ ăn.
+- Mỗi câu đúng: 1 đồ ăn + 1 sao. Ôn đúng câu sai: 1 bó cỏ.
+- Cho ăn để thú lớn lên và tăng tình bạn. Sao dùng mua trang trí.
+- Bấm bút chì cạnh tên để đặt tên thỏ và tên em trên bằng khen.
+- Qua 3 level Chinh phục mới nhận 1 mảnh + bằng khen lưu ảnh.
+- Mỗi level cần đúng ít nhất 80% và ôn hết câu sai.
+- Phân số xếp tử/mẫu, câu trả lời xong chuyển câu ngay.
+- Các mảnh cũ giữ nguyên. Ngoài Việt Nam, các nước khác vẫn khóa.
 
-ĐĂNG NHẬP CHƯA BẬT THẬT:
-Cần tạo Supabase của bạn rồi kết nối. Xem DANG_NHAP.md và cloud-setup.sql.
-Khi chưa kết nối, web vẫn lưu trên máy. Không gửi mật khẩu hoặc secret key cho người khác.
-
-Cập nhật v0.6.1: bỏ chờ 3 giây ở phần tự luyện. Chọn đúng/sai đều chuyển câu ngay; câu cuối mở tổng kết. Câu sai vẫn lưu vào vườn hoa. Giữ đồng hồ thời gian trả lời từng câu và quy tắc hết giờ hiện tại.
+ĐĂNG NHẬP:
+Chưa có kết nối thật trong ZIP. Xem DANG_NHAP.md nếu muốn bật đồng bộ.
+Không cần tài khoản để chơi và lưu trên thiết bị hiện tại.
