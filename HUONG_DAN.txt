@@ -1,17 +1,19 @@
-CẬP NHẬT NUMIQUEST ZOO v0.2
+NUMIQUEST v0.3 — FONT MỚI + GAME GHÉP HOA / CHẬU
 
-1. Trong web cũ: Tiến bộ → Xuất sao lưu để giữ bản dự phòng.
-2. Tải ZIP mới và giải nén.
-3. Mở thư mục NumiQuest. Phải thấy index.html, style.css, app.js và thư mục assets.
-4. GitHub repo numiquest → Add file → Upload files.
-5. Kéo TẤT CẢ file và thư mục assets BÊN TRONG thư mục NumiQuest vào GitHub.
+1. Xuất sao lưu tiến độ từ web cũ nếu cần bản dự phòng.
+2. Giải nén ZIP, mở thư mục NumiQuest.
+3. GitHub → Add file → Upload files.
+4. Kéo tất cả FILE BÊN TRONG và THƯ MỤC assets vào GitHub.
+   Cần có index.html, style.css, app.js, ui.js và assets ở ngoài cùng.
+   Thư mục assets chứa font Nunito và hình sở thú: phải tải cả thư mục.
    Không tải nguyên ZIP. Không kéo nguyên thư mục NumiQuest bao ngoài.
-   index.html nằm ngoài cùng, hình ở assets/zoo.svg.
-6. Commit changes. GitHub thay file cũ trùng tên; giữ nguyên cấu hình Pages.
-7. Chờ Actions xanh, mở link web cũ. Trên máy tính nhấn Ctrl+F5 nếu còn giao diện cũ.
+5. Commit changes. Giữ nguyên Settings → Pages.
+6. Chờ Actions xanh. Mở link web cũ, Ctrl+F5 để tải bản mới.
+   Không cần xóa file cũ. Không xóa dữ liệu trình duyệt.
 
-Không cần tạo repo, bật lại Pages, mua tên miền hay cài thư viện.
-Dữ liệu cũ giữ nguyên trên cùng trình duyệt và cùng địa chỉ web.
-Không xóa dữ liệu trình duyệt để cập nhật.
-
-Bản này cập nhật UX/UI sở thú; địa lí vẫn có 10 nước minh họa, chưa có toàn bộ quốc gia và bản đồ đường biên thật.
+GAME CHỈ XUẤT HIỆN KHI CÓ CÂU SAI.
+Thử làm sai 1–2 câu → Ôn câu sai bằng game.
+Kéo hoa có đáp án sang chậu phép tính, hoặc kéo ngược lại.
+Trên điện thoại có thể chạm một thẻ rồi chạm thẻ bên kia.
+Đúng: hoa nở. Sai: mất 1 mạng. Hết 3 mạng: xem hướng dẫn và tiếp tục.
+Làm đúng hết ở phần luyện: nhận thưởng, không mở game.
