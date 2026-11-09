@@ -1,19 +1,15 @@
-NUMIQUEST v0.3 — FONT MỚI + GAME GHÉP HOA / CHẬU
+NUMIQUEST v0.4 — GÓI ĐẦY ĐỦ
 
-1. Xuất sao lưu tiến độ từ web cũ nếu cần bản dự phòng.
-2. Giải nén ZIP, mở thư mục NumiQuest.
+1. Tải ZIP và chọn Extract All / Giải nén tất cả.
+2. Mở thư mục NumiQuest bên trong.
 3. GitHub → Add file → Upload files.
-4. Kéo tất cả FILE BÊN TRONG và THƯ MỤC assets vào GitHub.
+4. Kéo TOÀN BỘ file bên trong và thư mục assets vào GitHub.
    Cần có index.html, style.css, app.js, ui.js và assets ở ngoài cùng.
-   Thư mục assets chứa font Nunito và hình sở thú: phải tải cả thư mục.
-   Không tải nguyên ZIP. Không kéo nguyên thư mục NumiQuest bao ngoài.
-5. Commit changes. Giữ nguyên Settings → Pages.
-6. Chờ Actions xanh. Mở link web cũ, Ctrl+F5 để tải bản mới.
-   Không cần xóa file cũ. Không xóa dữ liệu trình duyệt.
+   Không kéo thư mục NumiQuest bao ngoài. Không tải nguyên file ZIP.
+5. Commit changes. Không cần xóa file cũ hay bật lại Pages.
+6. Chờ Actions xanh. Mở link web cũ, Ctrl+F5 để tải mới.
 
-GAME CHỈ XUẤT HIỆN KHI CÓ CÂU SAI.
-Thử làm sai 1–2 câu → Ôn câu sai bằng game.
-Kéo hoa có đáp án sang chậu phép tính, hoặc kéo ngược lại.
-Trên điện thoại có thể chạm một thẻ rồi chạm thẻ bên kia.
-Đúng: hoa nở. Sai: mất 1 mạng. Hết 3 mạng: xem hướng dẫn và tiếp tục.
-Làm đúng hết ở phần luyện: nhận thưởng, không mở game.
+Đã gộp sửa font, tự chuyển câu sau 3 giây, game ôn sai hoa/chậu và trang chủ khu vui chơi cho trẻ.
+Giữ nguyên tiến độ trên cùng trình duyệt và địa chỉ web. Nên xuất sao lưu trong Thành tích trước khi cập nhật. Không xóa dữ liệu trình duyệt.
+
+Phần địa lí hiện vẫn có 10 nước minh họa, chưa có toàn bộ quốc gia hay bản đồ lãnh thổ thật. Thi đấu online vẫn khóa.

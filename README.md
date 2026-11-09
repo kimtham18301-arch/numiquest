@@ -1,11 +1,11 @@
-# NumiQuest v0.3 — Vườn hoa đáp án
+# NumiQuest v0.4 — Khu vui chơi tính nhẩm
 
 Web luyện tính nhẩm tiếng Việt / tiếng Anh, chạy trên GitHub Pages, không cần backend, API key hoặc dịch vụ trả phí.
 
 ## Cập nhật lên GitHub
 
 1. Trong web đang dùng, vào Tiến bộ → Xuất sao lưu để có bản dự phòng.
-2. Giải nén NumiQuest-Garden-v0.3.zip, mở thư mục NumiQuest bên trong.
+2. Giải nén NumiQuest-Playground-v0.4.zip, mở thư mục NumiQuest bên trong.
 3. GitHub repository → Add file → Upload files.
 4. Kéo các file index.html, style.css, app.js, ui.js, README.md, HUONG_DAN.txt và toàn bộ thư mục assets vào.
 5. Không tải nguyên ZIP và không kéo thư mục NumiQuest bao ngoài. index.html phải nằm ngay ngoài cùng của repository.
@@ -71,3 +71,22 @@ Giọng đọc tùy thiết bị; không có service worker nên chưa bảo đ�
 - Trang thống kê, hộ chiếu và chuyển ngôn ngữ.
 - Tất cả đường dẫn file, font có đủ chữ tiếng Việt, giấy phép font và SVG hợp lệ.
 - Chưa có kiểm thử trực quan và cảm ứng trên thiết bị thật trong môi trường này. Cần chơi thử trên điện thoại sau khi tải lên GitHub.
+
+
+## Gói đầy đủ v0.4
+
+Gói này đã gộp bản sửa font v0.3.1, tự chuyển câu v0.3.2 và giao diện thân thiện với trẻ. Không phải cài từng bản vá.
+
+- Trang chủ là khu vui chơi: nhà học Leo, đường đua Finn, thế giới khám phá; các nơi đều là nút có thể chạm/bấm và dùng bàn phím.
+- Hình minh họa lớn, nhân vật đồng hành có lời chào ngắn; chọn nhân vật được lưu lại.
+- Không đưa bảng thống kê lên màn hình chính. Thành tích, lịch sử và sao lưu ở mục riêng.
+- Trang chủ có lối vào vườn hoa chỉ khi còn câu sai.
+- Nunito đầy đủ tiếng Việt đã nhúng trực tiếp trong style.css, không phụ thuộc đường dẫn font riêng. Giấy phép vẫn kèm assets/OFL-Nunito.txt.
+- Chọn đáp án ở phần tự luyện: hiện đúng/sai 3 giây rồi tự chuyển câu; câu cuối tự tổng kết. Không có nút Câu tiếp.
+- Rời trang hủy lần chuyển câu đang chờ; không ghi nhận hai lần một đáp án.
+- Giữ game ghép hoa–chậu chỉ ôn câu sai; không thêm câu mới lấp bảng.
+- Bump các đường dẫn CSS/JS sang v0.4 để tải lại bản cập nhật.
+
+Kiểm tra hồi quy v0.4 qua DOM giả lập: trang chủ mới và các nút, chọn nhân vật, tự chuyển câu sau 3 giây và tổng kết, chỉ câu sai vào vườn hoa, hoa nở/lưu tiến độ, mất mạng/hướng dẫn, hộ chiếu, thống kê, ngôn ngữ. Kiểm tra 6.000 câu toán và các font/SVG/file liên kết. Chưa xác minh trực quan hay cảm ứng trên điện thoại thật; cần chơi thử sau khi đưa lên Pages.
+
+Các giới hạn phạm vi về địa lí, hệ thống level và online nêu trên vẫn áp dụng. Gói này không tuyên bố hoàn thiện toàn bộ sản phẩm theo ý tưởng ban đầu.
