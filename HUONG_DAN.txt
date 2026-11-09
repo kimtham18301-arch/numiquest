@@ -1,11 +1,18 @@
-SỬA 3 HÌNH KHÔNG HIỂN THỊ — v0.4.1
+NUMIQUEST v0.6 — VIỆT NAM + TÀI KHOẢN
 
-1. Giải nén ZIP này.
-2. GitHub repository numiquest → Add file → Upload files.
-3. Tải index.html và app.js trong gói này lên ngoài cùng repository.
-4. Commit changes, chờ Actions xanh.
-5. Mở web cũ và Ctrl+F5. Điện thoại: tải lại trang.
+1. Giải nén ZIP và mở thư mục NumiQuest.
+2. GitHub → Add file → Upload files.
+3. Kéo TẤT CẢ file bên trong vào GitHub, không kéo thư mục NumiQuest bao ngoài.
+4. Commit changes; chờ Actions xanh; mở link cũ và Ctrl+F5.
 
-Ba hình đã nhúng trực tiếp trong app.js, không cần tải thư mục assets để hiển thị chúng.
-Giữ nguyên style.css, ui.js và các file khác. Không xóa dữ liệu trình duyệt.
-Bản sửa dành cho web NumiQuest v0.4 hiện tại. Giữ nguyên tiến độ và luật chơi.
+ĐẶC BIỆT PHẢI TẢI:
+index.html, style.css, app.js, ui.js, discovery.js, geo-data.js, cloud.js, cloud-config.js.
+Không cần thư mục assets mới; các hình/font đã nhúng.
+Không xóa dữ liệu trình duyệt. Tiến độ/mảnh cũ được giữ.
+
+Bản đồ mở Việt Nam 34 tỉnh/thành; các nước khác khóa.
+Mỗi mảnh mở một địa phương có ảnh và vị trí. Hoàng Sa, Trường Sa có ký hiệu riêng.
+
+ĐĂNG NHẬP CHƯA BẬT THẬT:
+Cần tạo Supabase của bạn rồi kết nối. Xem DANG_NHAP.md và cloud-setup.sql.
+Khi chưa kết nối, web vẫn lưu trên máy. Không gửi mật khẩu hoặc secret key cho người khác.
