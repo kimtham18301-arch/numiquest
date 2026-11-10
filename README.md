@@ -1,4 +1,4 @@
-# NumiQuest v0.9.1 — bản chạy thử
+# NumiQuick v0.9.2 — bản chạy thử
 
 Ứng dụng web luyện tính nhẩm cho học sinh tiểu học và THCS. Giao diện tiếng Việt/Anh, ưu tiên màn hình điện thoại. Chơi cùng bạn thỏ Numi, tích trân châu và mở huy hiệu.
 
@@ -22,12 +22,12 @@
 ## Chạy thử trên máy tính
 
 1. Giải nén ZIP.
-2. Mở thư mục `NumiQuest`.
+2. Mở thư mục `NumiQuick`.
 3. Mở `index.html` bằng trình duyệt hiện đại.
 
 ## Đưa lên GitHub Pages để thử trên điện thoại
 
-1. Tải toàn bộ file trong thư mục `NumiQuest` lên thư mục gốc kho GitHub hiện tại. Giữ đúng tên file và không chỉ tải riêng `index.html`.
+1. Tải toàn bộ file trong thư mục `NumiQuick` lên thư mục gốc kho GitHub hiện tại. Giữ đúng tên file và không chỉ tải riêng `index.html`.
 2. Bấm **Commit changes**.
 3. Chờ tab **Actions** báo triển khai thành công.
 4. Mở link GitHub Pages trên điện thoại. Nếu chưa thấy bản mới, tải lại trang hoặc mở cửa sổ ẩn danh.
@@ -59,6 +59,6 @@ Bản này có cây nổi ở góc màn hình. Mỗi trình duyệt/thiết bị
 4. Chọn **Triển khai → Lần triển khai mới → Ứng dụng web**. Chạy ứng dụng với tư cách tài khoản của bạn; quyền truy cập chọn **Bất kỳ ai** để khách GitHub Pages gửi mã thiết bị ẩn danh. Google có thể yêu cầu bạn xác nhận quyền lần đầu.
 5. Triển khai, sao chép URL kết thúc bằng `/exec`.
 6. Mở `visitor-tree-config.js`, dán URL vào `endpoint`, ví dụ `endpoint: 'https://script.google.com/macros/s/.../exec'`.
-7. Tải toàn bộ thư mục `NumiQuest` lên GitHub Pages và commit. Mở trang bằng một lần tải mới; cây sẽ cập nhật số thiết bị sau khi Google Sheet nhận lượt đầu.
+7. Tải toàn bộ thư mục `NumiQuick` lên GitHub Pages và commit. Mở trang bằng một lần tải mới; cây sẽ cập nhật số thiết bị sau khi Google Sheet nhận lượt đầu.
 
 Chỉ bật quyền truy cập công khai cho sheet Apps Script nếu bạn chấp nhận bộ đếm công khai. Script chỉ cho xem tổng số (không trả danh sách thiết bị), giới hạn tối đa 100 thiết bị, và mã thiết bị được băm trước khi ghi. Không dùng sheet này để lưu tài khoản hoặc thông tin định danh.

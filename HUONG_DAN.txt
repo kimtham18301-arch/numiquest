@@ -2,11 +2,11 @@ NUMIQUEST v0.9.1 — HƯỚNG DẪN CHẠY THỬ
 
 THỬ TRÊN MÁY TÍNH
 1. Giải nén ZIP.
-2. Mở thư mục NumiQuest.
+2. Mở thư mục NumiQuick.
 3. Mở index.html bằng trình duyệt.
 
 THỬ TRÊN ĐIỆN THOẠI QUA GITHUB PAGES
-1. Tải toàn bộ file trong thư mục NumiQuest lên thư mục gốc kho GitHub.
+1. Tải toàn bộ file trong thư mục NumiQuick lên thư mục gốc kho GitHub.
 2. Bấm Commit changes.
 3. Chờ GitHub Actions triển khai xong.
 4. Mở link GitHub Pages trên điện thoại rồi tải lại trang.
