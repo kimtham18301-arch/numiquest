@@ -1,4 +1,4 @@
-NUMIQUEST v0.8.3 — HƯỚNG DẪN CHẠY THỬ
+NUMIQUEST v0.8.5 — HƯỚNG DẪN CHẠY THỬ
 
 THỬ TRÊN MÁY TÍNH
 1. Giải nén ZIP.
@@ -11,16 +11,22 @@ THỬ TRÊN ĐIỆN THOẠI QUA GITHUB PAGES
 3. Chờ GitHub Actions triển khai xong.
 4. Mở link GitHub Pages trên điện thoại rồi tải lại trang.
 
+GIAO DIỆN
+- Trang chủ không còn nông trại hay phần cho thỏ ăn.
+- Chọn tông màu ở đầu trang chủ: kẹo ngọt, đại dương, nắng vui hoặc tím mộng mơ.
+- Câu sai khi ôn sẽ đổi số liệu, vẫn giữ cùng dạng toán.
+- Số tự nhiên không sinh số âm; số âm chỉ xuất hiện khi được chọn.
+
 CÁCH CHƠI
 - Chọn phép tính, loại số, chữ số, số câu và thời gian.
 - Mỗi câu đúng trong tự luyện nhận 1 viên trân châu.
 - Size S: 30 viên. Size M: 50 viên. Size L: 70 viên.
 - Cứ 3 level thử thách đạt yêu cầu nhận 1 huy hiệu.
-- Câu sai được lưu để ghép hoa với chậu. Có thể ôn trước khi mở level tiếp theo.
+- Câu sai được lưu để ghép hoa với chậu. Khi ôn, số liệu được đổi nhưng vẫn cùng dạng toán. Có thể ôn trước khi mở level tiếp theo.
 - Khi rời lượt đang làm, chọn tạm nghỉ 1, 3 hoặc 5 giờ để quay lại câu đang dở, hoặc bỏ riêng lượt đó.
 - Tiến độ lưu trên trình duyệt này. Muốn đổi thiết bị, xuất bản sao lưu trong Nhật ký học.
 
 TÀI KHOẢN
-Đăng ký, xác minh email và đồng bộ nhiều thiết bị đang chờ cấu hình Supabase. Không nhập mật khẩu vào sheet. Thống kê tổng thiết bị và cây 100 lá cũng cần backend; bản chạy thử chưa thu thập danh sách người dùng.
+Nút đăng nhập mở đúng màn hình tài khoản. Đăng nhập/đồng bộ thật đang chờ backend. Luồng đã chốt: số điện thoại là tên đăng nhập, mật khẩu riêng, email khôi phục. Không nhập mật khẩu vào sheet. Thống kê tổng thiết bị và cây 100 lá cũng cần backend; bản chạy thử chưa thu thập danh sách người dùng.
 
 Giữ index.html và các file JavaScript/CSS cùng thư mục gốc khi tải lên GitHub Pages.

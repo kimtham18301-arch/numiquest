@@ -1,9 +1,13 @@
-# NumiQuest v0.8.3 — bản chạy thử
+# NumiQuest v0.8.5 — bản chạy thử
 
 Ứng dụng web luyện tính nhẩm cho học sinh tiểu học và THCS. Giao diện tiếng Việt/Anh, ưu tiên màn hình điện thoại. Chơi cùng bạn thỏ Numi, tích trân châu và mở huy hiệu.
 
 ## Có trong bản này
 
+- Trang chủ gọn, không còn nông trại hoặc cơ chế cho thỏ ăn. Numi là bạn học minh họa; mỗi câu đúng góp một viên trân châu.
+- Chọn một trong bốn tông màu: kẹo ngọt, đại dương, nắng vui hoặc tím mộng mơ.
+- Trò ôn câu sai dùng hoa màu tươi; câu làm lại được đổi số liệu nhưng giữ cùng dạng toán.
+- Có nút giải thích loại số đã chọn. Số tự nhiên chỉ ra số không âm; số âm chỉ xuất hiện khi được chọn riêng.
 - Tự chọn phép tính, loại số, chữ số, số câu và thời gian mỗi câu.
 - Luyện số tự nhiên, số âm, số thập phân, phân số và phép chia có dư.
 - Chế độ tính thuận tiện để nhóm phép tính thành số tròn.
@@ -32,13 +36,13 @@
 
 ## Tài khoản và thống kê người dùng
 
-Bản chạy thử lưu cục bộ, không cần đăng nhập. Tạo tài khoản email, xác minh email và đồng bộ nhiều thiết bị chỉ hoạt động sau khi chủ web cấu hình dự án Supabase trong `cloud-config.js` theo `DANG_NHAP.md`. File hiện không chứa khóa kết nối.
+Nút đăng nhập giờ mở đúng màn hình tài khoản, không tự quay về trang chủ. Bản thử vẫn lưu cục bộ; đăng nhập/đăng ký thật chưa hoạt động vì chưa cấu hình backend. Luồng tài khoản đã chốt: số điện thoại làm tên đăng nhập, mật khẩu riêng, email để khôi phục. Cần triển khai backend và cấu hình xác thực trước khi thu thập thông tin hoặc đồng bộ tiến độ. Không lưu mật khẩu vào Google Sheet.
 
 Bản này chưa gửi danh sách người dùng hay số thiết bị về một sheet. GitHub Pages chỉ lưu dữ liệu trong trình duyệt; muốn đếm tổng người dùng trên nhiều máy cần bật backend trước. Nếu bật thống kê, nên lưu mã thiết bị ẩn danh và mốc truy cập, không đưa mật khẩu vào sheet. Mỗi mã thiết bị không đồng nghĩa chắc chắn với một người.
 
 ## Ghi chú bản chạy thử
 
-- Không có bản đồ, địa danh hay bộ sưu tập quốc gia trong luồng học.
+- Không có bản đồ, địa danh, bộ sưu tập quốc gia hoặc màn hình nông trại trong luồng học.
 - Lộ trình chinh phục hiện là bản thử; số câu, thời gian và ngưỡng qua level được cấu hình sẵn.
 - Chế độ biểu thức nâng cao đang hỗ trợ số tự nhiên và cộng nhiều phân số. Bài tính thuận tiện dùng số tự nhiên.
 - Chưa bật đấu trực tuyến hoặc bảng xếp hạng người thật.
