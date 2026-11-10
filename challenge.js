@@ -1,5 +1,5 @@
 'use strict';
-// Three mastered levels unlock one discovery piece. Progress is part of the existing backup.
+// Three mastered levels unlock one badge. Progress is part of the existing backup.
 function challengeProgress(){
   if(!state.challenge||!Number.isSafeInteger(state.challenge.completed)||state.challenge.completed<0)
     state.challenge={completed:0,pending:null,best:{}};
@@ -24,13 +24,13 @@ function challengeSpec(index=challengeProgress().completed){
     count:step===2?15:10,seconds:Math.max(8,r[5]-step*4-Math.min(tier,6)),type:r[2][0]};
 }
 function challengeStatus(reward=false){const p=challengeProgress();return reward?
-  t('Qua đủ 3 level! Em nhận 1 mảnh Việt Nam và một bằng khen.','Three levels cleared! You earned a Vietnam piece and a certificate.'):
-  `${p.completed%3}/3 ${t('level đã qua cho mảnh tiếp theo.','levels cleared toward the next piece.')}`}
+  t('Qua đủ 3 level! Em nhận một huy hiệu mới.','Three levels cleared! You earned a new badge.'):
+  `${p.completed%3}/3 ${t('level đã qua để nhận huy hiệu tiếp theo.','levels cleared toward the next badge.')}`}
 function completeChallenge(index){
   const p=challengeProgress();if(index!==p.completed)return null;
   p.completed++;p.pending=null;
   const reward=p.completed%3===0;
-  if(reward){award(1);p.lastAward={completed:p.completed,piece:state.pieces.VN||1,date:new Date().toISOString()}}
+  if(reward){state.badges=(Number.isSafeInteger(state.badges)?state.badges:0)+1;p.lastAward={completed:p.completed,badge:state.badges,date:new Date().toISOString()}}
   save();return {reward,index,completed:p.completed};
 }
 function challenge(){

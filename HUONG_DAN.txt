@@ -1,28 +1,26 @@
-NUMIQUEST v0.7 — NÔNG TRẠI NUMI
+NUMIQUEST v0.8.3 — HƯỚNG DẪN CHẠY THỬ
 
-CẬP NHẬT WEB ĐANG CÓ:
-1. Giải nén ZIP, mở thư mục NumiQuest.
-2. GitHub → Add file → Upload files.
-3. Kéo TẤT CẢ file bên trong lên, không kéo thư mục NumiQuest bao ngoài.
-4. Commit changes. Chờ Actions xanh, mở link cũ rồi Ctrl+F5.
+THỬ TRÊN MÁY TÍNH
+1. Giải nén ZIP.
+2. Mở thư mục NumiQuest.
+3. Mở index.html bằng trình duyệt.
 
-PHẢI CÓ 10 FILE CHẠY:
-index.html, style.css, app.js, ui.js, discovery.js, geo-data.js,
-challenge.js, farm.js, cloud.js, cloud-config.js.
-Hai file mới là challenge.js và farm.js. Hình ảnh và font đã nhúng.
-Nếu bạn đã điền kết nối tài khoản thật, GIỮ cloud-config.js của bạn.
-Không cần xóa file cũ trước và KHÔNG xóa dữ liệu trình duyệt.
+THỬ TRÊN ĐIỆN THOẠI QUA GITHUB PAGES
+1. Tải toàn bộ file trong thư mục NumiQuest lên thư mục gốc kho GitHub.
+2. Bấm Commit changes.
+3. Chờ GitHub Actions triển khai xong.
+4. Mở link GitHub Pages trên điện thoại rồi tải lại trang.
 
-THỬ NHANH:
-- Chạm nền để thỏ đi đến; chạm vườn để làm toán kiếm đồ ăn.
-- Mỗi câu đúng: 1 đồ ăn + 1 sao. Ôn đúng câu sai: 1 bó cỏ.
-- Cho ăn để thú lớn lên và tăng tình bạn. Sao dùng mua trang trí.
-- Bấm bút chì cạnh tên để đặt tên thỏ và tên em trên bằng khen.
-- Qua 3 level Chinh phục mới nhận 1 mảnh + bằng khen lưu ảnh.
-- Mỗi level cần đúng ít nhất 80% và ôn hết câu sai.
-- Phân số xếp tử/mẫu, câu trả lời xong chuyển câu ngay.
-- Các mảnh cũ giữ nguyên. Ngoài Việt Nam, các nước khác vẫn khóa.
+CÁCH CHƠI
+- Chọn phép tính, loại số, chữ số, số câu và thời gian.
+- Mỗi câu đúng trong tự luyện nhận 1 viên trân châu.
+- Size S: 30 viên. Size M: 50 viên. Size L: 70 viên.
+- Cứ 3 level thử thách đạt yêu cầu nhận 1 huy hiệu.
+- Câu sai được lưu để ghép hoa với chậu. Có thể ôn trước khi mở level tiếp theo.
+- Khi rời lượt đang làm, chọn tạm nghỉ 1, 3 hoặc 5 giờ để quay lại câu đang dở, hoặc bỏ riêng lượt đó.
+- Tiến độ lưu trên trình duyệt này. Muốn đổi thiết bị, xuất bản sao lưu trong Nhật ký học.
 
-ĐĂNG NHẬP:
-Chưa có kết nối thật trong ZIP. Xem DANG_NHAP.md nếu muốn bật đồng bộ.
-Không cần tài khoản để chơi và lưu trên thiết bị hiện tại.
+TÀI KHOẢN
+Đăng ký, xác minh email và đồng bộ nhiều thiết bị đang chờ cấu hình Supabase. Không nhập mật khẩu vào sheet. Thống kê tổng thiết bị và cây 100 lá cũng cần backend; bản chạy thử chưa thu thập danh sách người dùng.
+
+Giữ index.html và các file JavaScript/CSS cùng thư mục gốc khi tải lên GitHub Pages.
