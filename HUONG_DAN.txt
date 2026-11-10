@@ -1,4 +1,4 @@
-NUMIQUEST v0.8.7 — HƯỚNG DẪN CHẠY THỬ
+NUMIQUEST v0.9.1 — HƯỚNG DẪN CHẠY THỬ
 
 THỬ TRÊN MÁY TÍNH
 1. Giải nén ZIP.
@@ -31,3 +31,17 @@ TÀI KHOẢN
 Nút đăng nhập mở đúng màn hình tài khoản. Đăng nhập/đồng bộ thật đang chờ backend. Luồng đã chốt: số điện thoại là tên đăng nhập, mật khẩu riêng, email khôi phục. Không nhập mật khẩu vào sheet. Thống kê tổng thiết bị và cây 100 lá cũng cần backend; bản chạy thử chưa thu thập danh sách người dùng.
 
 Giữ index.html và các file JavaScript/CSS cùng thư mục gốc khi tải lên GitHub Pages.
+
+CÂY 100 LÁ / GOOGLE SHEET (TÙY CHỌN)
+- Cây hiện ở góc màn hình. Khi chưa kết nối, cây ghi “Cây đang chờ kết nối”; không hiển thị số ước đoán.
+- Mỗi trình duyệt/thiết bị có một mã ngẫu nhiên; hệ thống đếm tối đa 100 thiết bị. Đây là số thiết bị, không khẳng định chính xác số người.
+- Tạo Google Sheet, mở Tiện ích mở rộng > Apps Script, dán file visitor-counter.gs.
+- Điền ID Google Sheet vào SHEET_ID trong Apps Script; lưu.
+- Triển khai > Lần triển khai mới > Ứng dụng web. Chọn chạy với tư cách bạn và cho phép Bất kỳ ai truy cập. Sao chép URL /exec.
+- Dán URL vào endpoint trong visitor-tree-config.js, tải toàn bộ thư mục lên GitHub rồi Commit changes.
+- Sheet chỉ lưu mã thiết bị đã băm, ngày giờ lần đầu/lần gần nhất và số lần vào. Không ghi tên, điện thoại hoặc mật khẩu.
+
+THÀNH TÍCH VÀ CÂU SAI
+- Biểu đồ đường hiển thị tỷ lệ đúng trong 7 ngày gần nhất.
+- Khi rời phần ôn câu sai, chọn Làm tiếp câu sai hoặc Thoát và xóa câu sai còn lại. Lịch sử và phần thưởng đã nhận vẫn được giữ.
+- Nút chọn số chữ số 1–6 có màu tương phản rõ; số đang chọn được tô nền đậm.

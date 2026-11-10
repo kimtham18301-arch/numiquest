@@ -1,4 +1,4 @@
-# NumiQuest v0.8.7 — bản chạy thử
+# NumiQuest v0.9.1 — bản chạy thử
 
 Ứng dụng web luyện tính nhẩm cho học sinh tiểu học và THCS. Giao diện tiếng Việt/Anh, ưu tiên màn hình điện thoại. Chơi cùng bạn thỏ Numi, tích trân châu và mở huy hiệu.
 
@@ -16,8 +16,8 @@
 - Câu sai được ôn bằng trò ghép hoa với chậu. Đúng một lần là hoàn thành câu ôn.
 - Mỗi câu đúng trong tự luyện nhận một viên trân châu. Size S cần 30 viên, M cần 50 viên, L cần 70 viên. Hoàn thành ly nhận huy hiệu.
 - Cứ 3 level thử thách đạt yêu cầu sẽ nhận huy hiệu. Câu sai cần ôn trước khi mở tiếp level.
-- Có thể tạm nghỉ một lượt luyện trong 1, 3 hoặc 5 giờ rồi quay lại câu đang làm; cũng có thể bỏ riêng lượt đang dở.
-- Kết quả, tiến độ, câu sai và huy hiệu lưu trên trình duyệt hiện tại. Có xuất/nhập bản sao lưu.
+- Có thể tạm nghỉ một lượt luyện trong 1, 3 hoặc 5 giờ rồi quay lại câu đang làm; cũng có thể bỏ riêng lượt đang dở. Khi rời phần ôn câu sai, bé chọn làm tiếp hoặc xóa các câu sai còn lại; lịch sử và phần thưởng vẫn được giữ.
+- Kết quả, tiến độ, câu sai và huy hiệu lưu trên trình duyệt hiện tại. Có xuất/nhập bản sao lưu. Mục Thành tích có biểu đồ đường tỷ lệ đúng theo 7 ngày gần nhất.
 
 ## Chạy thử trên máy tính
 
@@ -46,3 +46,19 @@ Bản này chưa gửi danh sách người dùng hay số thiết bị về mộ
 - Lộ trình chinh phục hiện là bản thử; số câu, thời gian và ngưỡng qua level được cấu hình sẵn.
 - Chế độ biểu thức nâng cao đang hỗ trợ số tự nhiên và cộng nhiều phân số. Bài tính thuận tiện dùng số tự nhiên.
 - Chưa bật đấu trực tuyến hoặc bảng xếp hạng người thật.
+
+## Cây 100 lá: đếm thiết bị ghé thăm
+
+Bản này có cây nổi ở góc màn hình. Mỗi trình duyệt/thiết bị được cấp một mã ngẫu nhiên và tối đa 100 mã được tính thành lá. Cây chưa hiện con số khi chưa kết nối, tránh hiển thị lượt đếm giả. Mã được lưu trên thiết bị; sheet chỉ lưu mã băm, thời điểm ghé thăm và số lần mở trang, không thu tên, số điện thoại hay mật khẩu. Một thiết bị không nhất thiết tương ứng với một người.
+
+Để bộ đếm dùng chung giữa các máy và ghi Google Sheet (miễn phí trong giới hạn dịch vụ Google):
+
+1. Tạo một Google Sheet mới. Sao chép phần ID trong địa chỉ nằm giữa `/d/` và `/edit`.
+2. Mở **Tiện ích mở rộng → Apps Script**. Dán nội dung `visitor-counter.gs` vào trình soạn thảo.
+3. Thay `PASTE_YOUR_GOOGLE_SHEET_ID_HERE` bằng ID sheet, rồi lưu.
+4. Chọn **Triển khai → Lần triển khai mới → Ứng dụng web**. Chạy ứng dụng với tư cách tài khoản của bạn; quyền truy cập chọn **Bất kỳ ai** để khách GitHub Pages gửi mã thiết bị ẩn danh. Google có thể yêu cầu bạn xác nhận quyền lần đầu.
+5. Triển khai, sao chép URL kết thúc bằng `/exec`.
+6. Mở `visitor-tree-config.js`, dán URL vào `endpoint`, ví dụ `endpoint: 'https://script.google.com/macros/s/.../exec'`.
+7. Tải toàn bộ thư mục `NumiQuest` lên GitHub Pages và commit. Mở trang bằng một lần tải mới; cây sẽ cập nhật số thiết bị sau khi Google Sheet nhận lượt đầu.
+
+Chỉ bật quyền truy cập công khai cho sheet Apps Script nếu bạn chấp nhận bộ đếm công khai. Script chỉ cho xem tổng số (không trả danh sách thiết bị), giới hạn tối đa 100 thiết bị, và mã thiết bị được băm trước khi ghi. Không dùng sheet này để lưu tài khoản hoặc thông tin định danh.
