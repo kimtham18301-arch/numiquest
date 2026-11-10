@@ -1,4 +1,4 @@
-NUMIQUEST v0.8.6 — HƯỚNG DẪN CHẠY THỬ
+NUMIQUEST v0.8.7 — HƯỚNG DẪN CHẠY THỬ
 
 THỬ TRÊN MÁY TÍNH
 1. Giải nén ZIP.
@@ -12,6 +12,7 @@ THỬ TRÊN ĐIỆN THOẠI QUA GITHUB PAGES
 4. Mở link GitHub Pages trên điện thoại rồi tải lại trang.
 
 GIAO DIỆN
+- Nút Luyện ngay mở thẳng màn câu hỏi.
 - Trang chủ không còn nông trại hay phần cho thỏ ăn.
 - Chọn tông màu ở đầu trang chủ: kẹo ngọt, đại dương, nắng vui hoặc tím mộng mơ.
 - Câu sai khi ôn sẽ đổi số liệu, vẫn giữ cùng dạng toán. Có thể kéo để ghép; nếu kéo khó, chạm phép tính rồi chạm hoa đáp án.
