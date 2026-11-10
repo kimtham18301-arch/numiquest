@@ -1,4 +1,4 @@
-# NumiQuest v0.8.5 — bản chạy thử
+# NumiQuest v0.8.6 — bản chạy thử
 
 Ứng dụng web luyện tính nhẩm cho học sinh tiểu học và THCS. Giao diện tiếng Việt/Anh, ưu tiên màn hình điện thoại. Chơi cùng bạn thỏ Numi, tích trân châu và mở huy hiệu.
 
@@ -6,8 +6,8 @@
 
 - Trang chủ gọn, không còn nông trại hoặc cơ chế cho thỏ ăn. Numi là bạn học minh họa; mỗi câu đúng góp một viên trân châu.
 - Chọn một trong bốn tông màu: kẹo ngọt, đại dương, nắng vui hoặc tím mộng mơ.
-- Trò ôn câu sai dùng hoa màu tươi; câu làm lại được đổi số liệu nhưng giữ cùng dạng toán.
-- Có nút giải thích loại số đã chọn. Số tự nhiên chỉ ra số không âm; số âm chỉ xuất hiện khi được chọn riêng.
+- Trò ôn câu sai dùng hoa màu tươi; câu làm lại được đổi số liệu nhưng giữ cùng dạng toán. Có thể kéo để ghép hoặc chạm lần lượt vào phép tính và hoa đáp án.
+- Số tự nhiên chỉ ra số không âm; số âm chỉ xuất hiện khi được chọn riêng.
 - Tự chọn phép tính, loại số, chữ số, số câu và thời gian mỗi câu.
 - Luyện số tự nhiên, số âm, số thập phân, phân số và phép chia có dư.
 - Chế độ tính thuận tiện để nhóm phép tính thành số tròn.

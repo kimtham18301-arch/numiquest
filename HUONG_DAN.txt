@@ -1,4 +1,4 @@
-NUMIQUEST v0.8.5 — HƯỚNG DẪN CHẠY THỬ
+NUMIQUEST v0.8.6 — HƯỚNG DẪN CHẠY THỬ
 
 THỬ TRÊN MÁY TÍNH
 1. Giải nén ZIP.
@@ -14,7 +14,7 @@ THỬ TRÊN ĐIỆN THOẠI QUA GITHUB PAGES
 GIAO DIỆN
 - Trang chủ không còn nông trại hay phần cho thỏ ăn.
 - Chọn tông màu ở đầu trang chủ: kẹo ngọt, đại dương, nắng vui hoặc tím mộng mơ.
-- Câu sai khi ôn sẽ đổi số liệu, vẫn giữ cùng dạng toán.
+- Câu sai khi ôn sẽ đổi số liệu, vẫn giữ cùng dạng toán. Có thể kéo để ghép; nếu kéo khó, chạm phép tính rồi chạm hoa đáp án.
 - Số tự nhiên không sinh số âm; số âm chỉ xuất hiện khi được chọn.
 
 CÁCH CHƠI
