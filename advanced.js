@@ -18,7 +18,7 @@ function customGenerate(c=config){
   if(selectedType!=='natural')return plainGenerate(c);
   if(c.questionStyle==='convenient'){
     const factor=ri(2,9),pair=pick([[1,9],[2,8],[3,7],[4,6]]),a=pair[0],b=pair[1];
-    const answer=factor*10, q=`${factor} × ${a} + ${factor} × ${b}`;
+    const answer=factor*10, q=`${factor} × (${a} + ${b})`;
     const naive=factor*a+factor+b;
     return {id:crypto.randomUUID(),q,answer:String(answer),options:generatedOptions(answer,[naive,factor*(a+b-1),factor*(a+b+1)]),skill:'natural:convenient',config:{...c,type:'natural'},explanation:`${factor} × ${a} + ${factor} × ${b} = ${factor} × (${a} + ${b}) = ${factor} × 10 = ${answer}`};
   }
@@ -26,7 +26,7 @@ function customGenerate(c=config){
     const ops=(c.ops||['+','-','*']).filter(op=>['+','-','*','/'].includes(op));
     const values=Array.from({length:terms},rand), chosen=Array.from({length:terms-1},()=>pick(ops.length?ops:['+','-','*']));
     // For division, choose divisible values so young learners see exact answers.
-    for(let i=0;i<chosen.length;i++)if(chosen[i]==='/')values[i+1]=Math.max(1,Math.floor(values[i]/Math.max(1,values[i+1])));
+    for(let i=0;i<chosen.length;i++)if(chosen[i]==='/'){const maxDiv=Math.min(hi,Math.floor(values[i]/2));const divisors=[];for(let d=2;d<=maxDiv;d++)if(values[i]%d===0)divisors.push(d);if(divisors.length)values[i+1]=pick(divisors);else{const alternatives=ops.filter(x=>x!=='/');if(alternatives.length)chosen[i]=pick(alternatives);else{values[i]=Math.max(4,values[i]);values[i+1]=2;chosen[i]='/'}}}
     const glyph={'*':'×','/':'÷','+':'+','-':'−'};
     let raw=String(values[0]);for(let i=0;i<chosen.length;i++)raw+=` ${glyph[chosen[i]]} ${values[i+1]}`;
     let readable=raw;
@@ -51,7 +51,7 @@ setup=function(){
   field.innerHTML=`<legend><span>4</span>${t('Kiểu bài nâng cao','Challenge style')}</legend><div class="formgrid"><label>${t('Dạng luyện','Practice mode')}<select name="questionStyle"><option value="normal">${t('Tính từng phép tính','One calculation at a time')}</option><option value="convenient">${t('Tính thuận tiện · gộp số tròn','Regroup to make round numbers')}</option><option value="expression">${t('Biểu thức nhiều phép tính','Multi-operation expressions')}</option></select></label><label>${t('Số phép tính','Number of operations')}<select name="termCount">${[2,3,4,5,6].map(n=>`<option value="${n}">${n}</option>`).join('')}</select></label></div><p class="settings-hint small">${t('App tự thêm ngoặc khi cần để biểu thức dễ đọc. Bé chỉ cần tự tính.','The app adds brackets when useful to make expressions clear. Just work them out.')}</p>`;
   form.insertBefore(field,form.querySelector('.session-size'));
   const oldSubmit=form.onsubmit;
-  form.onsubmit=e=>{e.preventDefault();const f=new FormData(form),ops=f.getAll('op'),types=f.getAll('type'),digits=f.getAll('digits').map(Number),style=f.get('questionStyle');if(!ops.length||!types.length||!digits.length){toast(t('Chọn ít nhất một phép tính, loại số và số chữ số nhé.','Choose at least one operation, number type and digit length.'));return}if(style==='convenient'&&types.some(x=>x!=='natural')){toast(t('Bài tính thuận tiện hiện dùng số tự nhiên. Hãy chọn riêng “Số tự nhiên” nhé.','Convenient regrouping currently uses whole numbers. Select only “Whole numbers.”'));return}if(style==='expression'&&types.some(x=>!['natural','fraction'].includes(x))){toast(t('Biểu thức nhiều số hiện dùng số tự nhiên hoặc phân số. Hãy bỏ chọn loại số khác nhé.','Multi-term expressions currently use whole numbers or fractions. Uncheck other number types.'));return}config={...defaults,ops,types,digits,count:+f.get('count'),seconds:+f.get('seconds'),questionStyle:style,termCount:+f.get('termCount')};startQuiz()};
+  form.onsubmit=e=>{e.preventDefault();const f=new FormData(form),ops=f.getAll('op'),types=f.getAll('type'),digits=f.getAll('digits').map(Number),style=f.get('questionStyle');if(!ops.length||!types.length||!digits.length){toast(t('Chọn ít nhất một phép tính, loại số và số chữ số nhé.','Choose at least one operation, number type and digit length.'));return}if(style==='convenient'&&types.some(x=>x!=='natural')){toast(t('Bài tính thuận tiện hiện dùng số tự nhiên. Hãy chọn riêng “Số tự nhiên” nhé.','Convenient regrouping currently uses whole numbers. Select only “Whole numbers.”'));return}if(style==='expression'&&types.some(x=>!['natural','fraction'].includes(x))){toast(t('Biểu thức nhiều số hiện dùng số tự nhiên hoặc phân số. Hãy bỏ chọn loại số khác nhé.','Multi-operation expressions currently use whole numbers or fractions. Uncheck other number types.'));return}config={...defaults,ops,types,digits,count:+f.get('count'),seconds:+f.get('seconds'),questionStyle:style,termCount:+f.get('termCount')};startQuiz()};
   const style=form.elements.questionStyle,terms=form.elements.termCount;
   style.value=config.questionStyle||'normal';terms.value=config.termCount||3;
   style.onchange=()=>{terms.disabled=style.value==='normal'};style.onchange();

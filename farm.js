@@ -90,4 +90,4 @@ showQuiz=function(){showQuizBeforeFarm();if(view!=='quiz'||!session||session.don
 const setupBeforeFarm=setup;
 setup=function(){setupBeforeFarm()};
 $('#modal').addEventListener('close',()=>{if(view==='home')home()});
-farmState();document.title='NumiQuick · Luyện tính nhẩm';$('.brand-mark').innerHTML=animal('bunny');$('.brand-word').innerHTML=`Numi<span>Quest</span><small data-vi="Tính nhẩm · Nuôi bạn lớn" data-en="Solve · Feed · Grow"></small>`;if(view==='home')home();
+farmState();document.title='NumiQuick · Luyện tính nhẩm';$('.brand-mark').innerHTML=animal('bunny');$('.brand-word').innerHTML=`Numi<span>Quick</span><small data-vi="Tính nhẩm · Nuôi bạn lớn" data-en="Solve · Feed · Grow"></small>`;if(view==='home')home();
