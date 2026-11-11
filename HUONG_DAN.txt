@@ -1,47 +1,29 @@
-NUMIQUEST v0.9.1 — HƯỚNG DẪN CHẠY THỬ
+NUMIQUICK 1.0.1 — HƯỚNG DẪN CÀI ĐẶT VÀ DÙNG THỬ
 
-THỬ TRÊN MÁY TÍNH
+CHẠY TRÊN MÁY TÍNH
 1. Giải nén ZIP.
 2. Mở thư mục NumiQuick.
 3. Mở index.html bằng trình duyệt.
 
-THỬ TRÊN ĐIỆN THOẠI QUA GITHUB PAGES
-1. Tải toàn bộ file trong thư mục NumiQuick lên thư mục gốc kho GitHub.
-2. Bấm Commit changes.
-3. Chờ GitHub Actions triển khai xong.
-4. Mở link GitHub Pages trên điện thoại rồi tải lại trang.
+CẬP NHẬT GITHUB PAGES ĐỂ GỬI LINK CHO BÉ DÙNG
+1. Vào repository GitHub của NumiQuick.
+2. Tải toàn bộ file và thư mục trong NumiQuick lên thư mục gốc repository; giữ nguyên thư mục assets. Nhớ tải og-image.png.
+3. Bấm Commit changes và chờ GitHub Pages triển khai xong.
+4. Mở link GitHub Pages trên điện thoại.
 
-GIAO DIỆN
-- Nút Luyện ngay mở thẳng màn câu hỏi.
-- Trang chủ không còn nông trại hay phần cho thỏ ăn.
-- Chọn tông màu ở đầu trang chủ: kẹo ngọt, đại dương, nắng vui hoặc tím mộng mơ.
-- Câu sai khi ôn sẽ đổi số liệu, vẫn giữ cùng dạng toán. Có thể kéo để ghép; nếu kéo khó, chạm phép tính rồi chạm hoa đáp án.
-- Số tự nhiên không sinh số âm; số âm chỉ xuất hiện khi được chọn.
+ĐỔI TÊN / AVATAR
+- Ở trang chủ, chạm vào khung hình bạn đồng hành để nhập tên và chọn thỏ, gấu trúc, cáo hoặc sư tử.
+- Tên và ảnh được đồng bộ trên trang chủ, chọn bài, mục tiêu và các màn chơi trong cùng trình duyệt/thiết bị.
 
-CÁCH CHƠI
-- Chọn phép tính, loại số, chữ số, số câu và thời gian.
-- Mỗi câu đúng trong tự luyện nhận 1 viên trân châu.
-- Size S: 30 viên. Size M: 50 viên. Size L: 70 viên.
-- Cứ 3 level thử thách đạt yêu cầu nhận 1 huy hiệu.
-- Câu sai được lưu để ghép hoa với chậu. Khi ôn, số liệu được đổi nhưng vẫn cùng dạng toán. Có thể ôn trước khi mở level tiếp theo.
-- Khi rời lượt đang làm, chọn tạm nghỉ 1, 3 hoặc 5 giờ để quay lại câu đang dở, hoặc bỏ riêng lượt đó.
-- Tiến độ lưu trên trình duyệt này. Muốn đổi thiết bị, xuất bản sao lưu trong Nhật ký học.
+LUYỆN TẬP VÀ ÔN CÂU SAI
+- Chọn phép tính, loại số đã học, số chữ số, số câu và thời gian.
+- Số tự nhiên không ra kết quả âm; phép chia tránh chia cho 1.
+- Mỗi câu đúng nhận 1 viên trân châu. Size S: 30 câu đúng; M: 50; L: 70.
+- Câu sai khó có lời giải ngắn rồi tự qua câu mới.
+- Vào Luyện tập để ôn; chạm một chậu rồi chạm hoa đáp án. Có nút xóa câu sai cũ để bắt đầu bài mới.
+- Nếu cần đổi thiết bị, xuất sao lưu trong Thành tích.
 
-TÀI KHOẢN
-Nút đăng nhập mở đúng màn hình tài khoản. Đăng nhập/đồng bộ thật đang chờ backend. Luồng đã chốt: số điện thoại là tên đăng nhập, mật khẩu riêng, email khôi phục. Không nhập mật khẩu vào sheet. Thống kê tổng thiết bị và cây 100 lá cũng cần backend; bản chạy thử chưa thu thập danh sách người dùng.
-
-Giữ index.html và các file JavaScript/CSS cùng thư mục gốc khi tải lên GitHub Pages.
-
-CÂY 100 LÁ / GOOGLE SHEET (TÙY CHỌN)
-- Cây hiện ở góc màn hình. Khi chưa kết nối, cây ghi “Cây đang chờ kết nối”; không hiển thị số ước đoán.
-- Mỗi trình duyệt/thiết bị có một mã ngẫu nhiên; hệ thống đếm tối đa 100 thiết bị. Đây là số thiết bị, không khẳng định chính xác số người.
-- Tạo Google Sheet, mở Tiện ích mở rộng > Apps Script, dán file visitor-counter.gs.
-- Điền ID Google Sheet vào SHEET_ID trong Apps Script; lưu.
-- Triển khai > Lần triển khai mới > Ứng dụng web. Chọn chạy với tư cách bạn và cho phép Bất kỳ ai truy cập. Sao chép URL /exec.
-- Dán URL vào endpoint trong visitor-tree-config.js, tải toàn bộ thư mục lên GitHub rồi Commit changes.
-- Sheet chỉ lưu mã thiết bị đã băm, ngày giờ lần đầu/lần gần nhất và số lần vào. Không ghi tên, điện thoại hoặc mật khẩu.
-
-THÀNH TÍCH VÀ CÂU SAI
-- Biểu đồ đường hiển thị tỷ lệ đúng trong 7 ngày gần nhất.
-- Khi rời phần ôn câu sai, chọn Làm tiếp câu sai hoặc Thoát và xóa câu sai còn lại. Lịch sử và phần thưởng đã nhận vẫn được giữ.
-- Nút chọn số chữ số 1–6 có màu tương phản rõ; số đang chọn được tô nền đậm.
+ẢNH XEM TRƯỚC KHI CHIA SẺ LINK
+- `index.html` khai báo tiêu đề, mô tả và ảnh `og-image.png` cho NumiQuick.
+- Khi cập nhật GitHub Pages, cần tải cả index.html và og-image.png. Ứng dụng chat có thể giữ ảnh cũ trong bộ nhớ đệm một thời gian.
+- Tài khoản đồng bộ và cây đếm người dùng cần backend/Apps Script; bản này lưu tiến độ cục bộ trên thiết bị.
