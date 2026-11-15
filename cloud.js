@@ -328,7 +328,7 @@ function renderProfile(){
   ];
 
   const isAdmin=u.role==='admin'||u.username==='admin';
-  $('#app').innerHTML=`<section class="profile-view narrow">
+  $('#app').innerHTML=`<section class="profile-view">
     ${isAdmin ? `<div class="card admin-shortcut-card">
       <div class="admin-shortcut-content">
         <div class="admin-shield-icon">🛡️</div>
@@ -339,169 +339,176 @@ function renderProfile(){
       </div>
       <button type="button" class="primary wide" onclick="nav('admin')">🛡️ ${t('Mở Trung tâm Quản trị →','Open Admin Dashboard →')}</button>
     </div>` : ''}
-    <div class="card profile-header-card">
-      <div class="profile-avatar-wrap">
-        <div class="profile-avatar">${animal(u.avatar||buddy())}</div>
-      </div>
-      <span class="eyebrow">NUMIQUICK · ${t('HỒ SƠ HỌC SINH','STUDENT PROFILE')}</span>
-      <h1 class="profile-name">
-        <span id="profileNameText">${esc(u.name)}</span>
-        <button type="button" class="profile-edit-name-btn" id="editNameBtn" title="${t('Đổi tên hiển thị','Change display name')}">✏️</button>
-      </h1>
-      <p class="profile-username">@${esc(u.username)} · <span class="profile-joined">${t('Thành viên NumiQuick','NumiQuick Learner')}</span></p>
 
-      <div class="profile-field-group">
-        <label class="profile-field-label">🎓 ${t('Lớp học của em:','Current Grade Level:')}</label>
-        <div class="profile-grade-chips">
-          ${[1,2,3,4,5,6,7,8,9].map(g=>`<button type="button" class="profile-grade-chip ${curGrade===g?'active':''}" data-set-grade="${g}">${NUMI_GRADES[g]?NUMI_GRADES[g].icon:'🌱'} ${lang==='vi'?NUMI_GRADES[g].name:NUMI_GRADES[g].enName}</button>`).join('')}
-        </div>
-      </div>
+    <div class="profile-bento-grid">
+      <div class="profile-bento-col-left">
+        <div class="card profile-header-card">
+          <div class="profile-avatar-wrap">
+            <div class="profile-avatar">${animal(u.avatar||buddy())}</div>
+          </div>
+          <span class="eyebrow">NUMIQUICK · ${t('HỒ SƠ HỌC SINH','STUDENT PROFILE')}</span>
+          <h1 class="profile-name">
+            <span id="profileNameText">${esc(u.name)}</span>
+            <button type="button" class="profile-edit-name-btn" id="editNameBtn" title="${t('Đổi tên hiển thị','Change display name')}">✏️</button>
+          </h1>
+          <p class="profile-username">@${esc(u.username)} · <span class="profile-joined">${t('Thành viên NumiQuick','NumiQuick Learner')}</span></p>
 
-      <div class="profile-field-group">
-        <label class="profile-field-label">🐾 ${t('Bạn thú đồng hành:','Choose Study Buddy:')}</label>
-        <div class="profile-buddy-chips">
-          ${[['bunny','Thỏ Mimi 🐰'],['panda','Gấu Baobao 🐼'],['fox','Cáo Kiki 🦊'],['lion','Sư tử Leo 🦁']].map(([av,lbl])=>`<button type="button" class="profile-buddy-chip ${(u.avatar||'bunny')===av?'active':''}" data-set-avatar="${av}"><div class="buddy-chip-icon">${animal(av)}</div><span>${lbl}</span></button>`).join('')}
-        </div>
-      </div>
-    </div>
+          <div class="profile-field-group">
+            <label class="profile-field-label">🎓 ${t('Lớp học của em:','Current Grade Level:')}</label>
+            <div class="profile-grade-chips">
+              ${[1,2,3,4,5,6,7,8,9].map(g=>`<button type="button" class="profile-grade-chip ${curGrade===g?'active':''}" data-set-grade="${g}">${NUMI_GRADES[g]?NUMI_GRADES[g].icon:'🌱'} ${lang==='vi'?NUMI_GRADES[g].name:NUMI_GRADES[g].enName}</button>`).join('')}
+            </div>
+          </div>
 
-    <div class="profile-stats-grid">
-      <div class="profile-stat-box card">
-        <span class="stat-icon">🏅</span>
-        <div class="stat-info"><small>${t('Cấp độ','Level')}</small><strong>${level()}</strong></div>
-      </div>
-      <div class="profile-stat-box card">
-        <span class="stat-icon">⭐</span>
-        <div class="stat-info"><small>${t('Điểm XP','XP Score')}</small><strong>${state.xp}</strong></div>
-      </div>
-      <div class="profile-stat-box card">
-        <span class="stat-icon">🔥</span>
-        <div class="stat-info"><small>${t('Chuỗi ngày 🔥','Daily Streak')}</small><strong>${streak.count} ${t('ngày','days')}</strong></div>
-      </div>
-      <div class="profile-stat-box card">
-        <span class="stat-icon">🧋</span>
-        <div class="stat-info"><small>${t('Trân châu','Pearls')}</small><strong>${tea.pearls} ${t('viên','pearls')}</strong></div>
-      </div>
-    </div>
-
-    <div class="card profile-tea-card">
-      <div class="tea-card-header">
-        <span class="tea-cup-icon">${typeof teaIcon==='function'?teaIcon(tea.size):'🧋'}</span>
-        <div>
-          <h3>${t('Mục tiêu Trà Sữa Trân Châu','Milk Tea Boba Goal')} · Size ${tea.size}</h3>
-          <p class="muted">${t('Mỗi câu đúng tích lũy 1 viên trân châu cho ly trà sữa ngọt ngào!','Every correct answer adds 1 chewy boba pearl!')}</p>
-        </div>
-      </div>
-      <div class="tea-progress-wrap">
-        <div class="tea-progress-label">
-          <span><b>${Math.min(goal,tea.pearls)}</b> / ${goal} ${t('viên trân châu','pearls')}</span>
-          <span>${Math.round((Math.min(goal,tea.pearls)/goal)*100)}%</span>
-        </div>
-        <progress class="tea-progress-bar" max="${goal}" value="${Math.min(goal,tea.pearls)}"></progress>
-      </div>
-      <button class="primary wide" onclick="nav('atlas')">🧋 ${t('Vào quán trà sữa & Nhận thưởng','View Milk Tea Shop & Level Up')} →</button>
-    </div>
-
-    <div class="card profile-perf-card">
-      <h3>📈 ${t('Hiệu suất tính nhẩm','Mental Math Performance')}</h3>
-      <div class="perf-stats-row">
-        <div class="perf-col"><span class="perf-val">${totalSessions}</span><small>${t('Lượt luyện','Sessions')}</small></div>
-        <div class="perf-col"><span class="perf-val">${totalCorrect}/${totalAnswered}</span><small>${t('Câu đúng','Correct')}</small></div>
-        <div class="perf-col"><span class="perf-val">${accuracy}%</span><small>${t('Chính xác','Accuracy')}</small></div>
-        <div class="perf-col"><span class="perf-val">${avgSpeed}s</span><small>${t('Tốc độ/câu','Speed/Q')}</small></div>
-      </div>
-      <button class="wide" onclick="nav('stats')" style="margin-top:14px">🏅 ${t('Xem nhật ký tiến bộ chi tiết 7 ngày','View 7-day progress journal')} →</button>
-    </div>
-
-    <div class="card profile-badges-card">
-      <div class="badges-header">
-        <h3>🎖️ ${t('Bộ sưu tập Huy hiệu & Danh hiệu','Badges & Milestone Honors')}</h3>
-        <span class="badges-count">${badgesList.filter(b=>b.unlocked).length}/${badgesList.length} ${t('đã đạt','unlocked')}</span>
-      </div>
-      <div class="badges-grid">
-        ${badgesList.map(b=>`<div class="badge-item ${b.unlocked?'unlocked':'locked'}"><div class="badge-icon-wrap">${b.icon}</div><div class="badge-details"><b>${lang==='vi'?b.titleVi:b.titleEn}</b><p>${lang==='vi'?b.descVi:b.descEn}</p><span class="badge-tag ${b.unlocked?'tag-unlocked':'tag-locked'}">${b.unlocked?'🌟 '+t('Đã mở khóa','Unlocked'):'🔒 '+t('Chưa mở','Locked')}</span></div></div>`).join('')}
-      </div>
-    </div>
-
-    <div class="card profile-password-card">
-      <div class="profile-pwd-header">
-        <h3>🔑 ${t('Mật khẩu & Mã PIN của em','My Password & PIN')}</h3>
-        <p class="muted">${t('Dùng để đăng nhập hoặc đổi tài khoản nhanh khi có nhiều bạn cùng dùng máy.','Use this PIN/Password to sign in or switch profiles on this device.')}</p>
-      </div>
-
-      <div class="current-pwd-box">
-        <div class="current-pwd-label-row">
-          <span class="current-pwd-label">🔒 ${t('Mật khẩu hiện tại:','Current Password:')}</span>
-          <span class="current-pwd-hint">${t('(Bấm 👁️ để ẩn hoặc xem)','(Click 👁️ to hide or show)')}</span>
-        </div>
-        <div class="current-pwd-field">
-          <input type="text" id="currentPwdDisplay" readonly value="${esc(currentPwd || (uUser.hash ? '••••••••' : '1234'))}" class="current-pwd-input" spellcheck="false" autocomplete="off" aria-label="${t('Mật khẩu hiện tại','Current password')}">
-          <div class="current-pwd-btns">
-            <button type="button" id="toggleCurrentPwdBtn" class="pwd-action-btn" title="${t('Ẩn / Hiện mật khẩu','Hide / Show password')}">👁️ <span class="btn-text">${t('Ẩn','Hide')}</span></button>
-            <button type="button" id="copyCurrentPwdBtn" class="pwd-action-btn" title="${t('Sao chép mật khẩu','Copy password')}">📋 <span class="btn-text">${t('Chép','Copy')}</span></button>
+          <div class="profile-field-group">
+            <label class="profile-field-label">🐾 ${t('Bạn thú đồng hành:','Choose Study Buddy:')}</label>
+            <div class="profile-buddy-chips">
+              ${[['bunny','Thỏ Mimi 🐰'],['panda','Gấu Baobao 🐼'],['fox','Cáo Kiki 🦊'],['lion','Sư tử Leo 🦁']].map(([av,lbl])=>`<button type="button" class="profile-buddy-chip ${(u.avatar||'bunny')===av?'active':''}" data-set-avatar="${av}"><div class="buddy-chip-icon">${animal(av)}</div><span>${lbl}</span></button>`).join('')}
+            </div>
           </div>
         </div>
-        ${!currentPwd && uUser.hash ? `<p class="muted" style="margin:6px 0 0;font-size:12px">💡 ${t('Mật khẩu trước đây đã được mã hóa bảo mật. Em có thể nhập mật khẩu mới bên dưới để đặt lại nhé!','Your earlier password was encrypted. You can enter a new password below to reset it!')}</p>` : ''}
-      </div>
 
-      <div class="change-pwd-divider"></div>
+        <div class="card profile-password-card">
+          <div class="profile-pwd-header">
+            <h3>🔑 ${t('Mật khẩu & Mã PIN của em','My Password & PIN')}</h3>
+            <p class="muted">${t('Dùng để đăng nhập hoặc đổi tài khoản nhanh khi có nhiều bạn cùng dùng máy.','Use this PIN/Password to sign in or switch profiles on this device.')}</p>
+          </div>
 
-      <div class="change-pwd-box">
-        <h4 style="margin:0 0 10px;font-size:14px;color:#284632;font-weight:800">
-          🔄 ${t('Đổi mã PIN / Mật khẩu mới','Change PIN / New password')}
-        </h4>
-        <form id="changePinForm" class="profile-pin-form">
-          <div class="profile-pwd-fields-grid">
-            <label>${t('Mật khẩu mới (tối thiểu 4 số/ký tự)','New password (min 4 characters)')}
-              <div class="pwd-input-wrap">
-                <input type="password" id="newPinInput" minlength="4" required placeholder="${t('Ví dụ: 1234 hoặc bông hoa','e.g. 1234 or flower')}">
-                <button type="button" class="pwd-eye-btn" data-toggle-eye="newPinInput" title="${t('Hiện/ẩn mật khẩu','Toggle visibility')}">👁️</button>
+          <div class="current-pwd-box">
+            <div class="current-pwd-label-row">
+              <span class="current-pwd-label">🔒 ${t('Mật khẩu hiện tại:','Current Password:')}</span>
+              <span class="current-pwd-hint">${t('(Bấm 👁️ để ẩn hoặc xem)','(Click 👁️ to hide or show)')}</span>
+            </div>
+            <div class="current-pwd-field">
+              <input type="text" id="currentPwdDisplay" readonly value="${esc(currentPwd || (uUser.hash ? '••••••••' : '1234'))}" class="current-pwd-input" spellcheck="false" autocomplete="off" aria-label="${t('Mật khẩu hiện tại','Current password')}">
+              <div class="current-pwd-btns">
+                <button type="button" id="toggleCurrentPwdBtn" class="pwd-action-btn" title="${t('Ẩn / Hiện mật khẩu','Hide / Show password')}">👁️ <span class="btn-text">${t('Ẩn','Hide')}</span></button>
+                <button type="button" id="copyCurrentPwdBtn" class="pwd-action-btn" title="${t('Sao chép mật khẩu','Copy password')}">📋 <span class="btn-text">${t('Chép','Copy')}</span></button>
               </div>
-            </label>
-            <label>${t('Nhập lại mật khẩu mới','Confirm new password')}
-              <div class="pwd-input-wrap">
-                <input type="password" id="confirmPinInput" minlength="4" required placeholder="${t('Nhập lại mật khẩu mới','Confirm new password')}">
-                <button type="button" class="pwd-eye-btn" data-toggle-eye="confirmPinInput" title="${t('Hiện/ẩn mật khẩu','Toggle visibility')}">👁️</button>
+            </div>
+            ${!currentPwd && uUser.hash ? `<p class="muted" style="margin:6px 0 0;font-size:12px">💡 ${t('Mật khẩu trước đây đã được mã hóa bảo mật. Em có thể nhập mật khẩu mới bên dưới để đặt lại nhé!','Your earlier password was encrypted. You can enter a new password below to reset it!')}</p>` : ''}
+          </div>
+
+          <div class="change-pwd-divider"></div>
+
+          <div class="change-pwd-box">
+            <h4 style="margin:0 0 10px;font-size:14px;color:#284632;font-weight:800">
+              🔄 ${t('Đổi mã PIN / Mật khẩu mới','Change PIN / New password')}
+            </h4>
+            <form id="changePinForm" class="profile-pin-form">
+              <div class="profile-pwd-fields-grid">
+                <label>${t('Mật khẩu mới (tối thiểu 4 số/ký tự)','New password (min 4 characters)')}
+                  <div class="pwd-input-wrap">
+                    <input type="password" id="newPinInput" minlength="4" required placeholder="${t('Ví dụ: 1234 hoặc bông hoa','e.g. 1234 or flower')}">
+                    <button type="button" class="pwd-eye-btn" data-toggle-eye="newPinInput" title="${t('Hiện/ẩn mật khẩu','Toggle visibility')}">👁️</button>
+                  </div>
+                </label>
+                <label>${t('Nhập lại mật khẩu mới','Confirm new password')}
+                  <div class="pwd-input-wrap">
+                    <input type="password" id="confirmPinInput" minlength="4" required placeholder="${t('Nhập lại mật khẩu mới','Confirm new password')}">
+                    <button type="button" class="pwd-eye-btn" data-toggle-eye="confirmPinInput" title="${t('Hiện/ẩn mật khẩu','Toggle visibility')}">👁️</button>
+                  </div>
+                </label>
               </div>
-            </label>
-          </div>
-          <p id="pinMessage" class="danger" role="status" style="margin:8px 0;font-weight:700"></p>
-          <button type="submit" class="primary" id="saveNewPwdBtn" style="margin-top:8px">💾 ${t('Lưu mật khẩu mới','Save new password')}</button>
-        </form>
-      </div>
-    </div>
-
-    <div class="card profile-settings-card">
-      <h3>⚙️ ${t('Tùy chỉnh giao diện & Âm thanh','Display & Sound Settings')}</h3>
-      <div class="profile-quick-prefs">
-        <div class="pref-row">
-          <span>🎨 ${t('Giao diện màu sắc:','Color Theme:')}</span>
-          <div class="pref-theme-chips">
-            ${Object.keys(typeof NUMI_THEMES!=='undefined'?NUMI_THEMES:{}).map(k=>`<button type="button" class="theme-chip ${document.body.dataset.theme===k?'active':''}" data-theme-pick="${k}">${NUMI_THEMES[k].name}</button>`).join('')}
+              <p id="pinMessage" class="danger" role="status" style="margin:8px 0;font-weight:700"></p>
+              <button type="submit" class="primary" id="saveNewPwdBtn" style="margin-top:8px">💾 ${t('Lưu mật khẩu mới','Save new password')}</button>
+            </form>
           </div>
         </div>
-        <div class="pref-row">
-          <span>🔊 ${t('Âm thanh vui nhộn:','Sound effects:')}</span>
-          <button type="button" id="profileSoundToggle" class="profile-btn-pill">
-            ${soundEnabled?'🔊 '+t('Bật','On'):'🔈 '+t('Tắt','Off')}
-          </button>
+
+        <div class="card profile-settings-card">
+          <h3>⚙️ ${t('Tùy chỉnh giao diện & Âm thanh','Display & Sound Settings')}</h3>
+          <div class="profile-quick-prefs">
+            <div class="pref-row">
+              <span>🎨 ${t('Giao diện màu sắc:','Color Theme:')}</span>
+              <div class="pref-theme-chips">
+                ${Object.keys(typeof NUMI_THEMES!=='undefined'?NUMI_THEMES:{}).map(k=>`<button type="button" class="theme-chip ${document.body.dataset.theme===k?'active':''}" data-theme-pick="${k}">${NUMI_THEMES[k].name}</button>`).join('')}
+              </div>
+            </div>
+            <div class="pref-row">
+              <span>🔊 ${t('Âm thanh vui nhộn:','Sound effects:')}</span>
+              <button type="button" id="profileSoundToggle" class="profile-btn-pill">
+                ${soundEnabled?'🔊 '+t('Bật','On'):'🔈 '+t('Tắt','Off')}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        ${otherUsers.length?`<div class="card profile-family-card">
+          <h3>👨‍👩‍👧 ${t('Chuyển sang tài khoản bé khác trong nhà','Switch to another child profile')}</h3>
+          <p class="muted">${t('Mỗi bé có bảng điểm, cấp độ và chuỗi ngày riêng biệt.','Each child has their own progress, level, and daily streak.')}</p>
+          <div class="family-chips">
+            ${otherUsers.map(uOther=>`<button type="button" class="family-chip" data-switch-user="${esc(uOther.username)}"><span class="family-chip-avatar">${animal(uOther.avatar||'bunny')}</span><span class="family-chip-name">${esc(uOther.name)} (${uOther.grade?(lang==='vi'?'Lớp '+uOther.grade:'Grade '+uOther.grade):'Lớp 1'})</span></button>`).join('')}
+          </div>
+        </div>`:''}
+
+        <div class="profile-bottom-actions card profile-actions-card">
+          <button class="primary wide" onclick="nav('setup')">⚡ ${t('Vào luyện tập ngay','Start practicing now')} →</button>
+          <button class="wide" onclick="renderWorksheet()" style="margin-top:8px">📄 ${t('In phiếu bài tập (PDF)','Print worksheet (PDF)')}</button>
+          <button class="wide" onclick="openAccount('signup')" style="margin-top:8px">➕ ${t('Tạo thêm tài khoản bé khác','Add another child profile')}</button>
+          <button id="profileSignOutBtn" class="danger wide" style="margin-top:14px">🚪 ${t('Đăng xuất tài khoản','Sign out')}</button>
         </div>
       </div>
-    </div>
 
-    ${otherUsers.length?`<div class="card profile-family-card">
-      <h3>👨‍👩‍👧 ${t('Chuyển sang tài khoản bé khác trong nhà','Switch to another child profile')}</h3>
-      <p class="muted">${t('Mỗi bé có bảng điểm, cấp độ và chuỗi ngày riêng biệt.','Each child has their own progress, level, and daily streak.')}</p>
-      <div class="family-chips">
-        ${otherUsers.map(uOther=>`<button type="button" class="family-chip" data-switch-user="${esc(uOther.username)}"><span class="family-chip-avatar">${animal(uOther.avatar||'bunny')}</span><span class="family-chip-name">${esc(uOther.name)} (${uOther.grade?(lang==='vi'?'Lớp '+uOther.grade:'Grade '+uOther.grade):'Lớp 1'})</span></button>`).join('')}
+      <div class="profile-bento-col-right">
+        <div class="profile-stats-grid">
+          <div class="profile-stat-box card">
+            <span class="stat-icon">🏅</span>
+            <div class="stat-info"><small>${t('Cấp độ','Level')}</small><strong>${level()}</strong></div>
+          </div>
+          <div class="profile-stat-box card">
+            <span class="stat-icon">⭐</span>
+            <div class="stat-info"><small>${t('Điểm XP','XP Score')}</small><strong>${state.xp}</strong></div>
+          </div>
+          <div class="profile-stat-box card">
+            <span class="stat-icon">🔥</span>
+            <div class="stat-info"><small>${t('Chuỗi ngày 🔥','Daily Streak')}</small><strong>${streak.count} ${t('ngày','days')}</strong></div>
+          </div>
+          <div class="profile-stat-box card">
+            <span class="stat-icon">🧋</span>
+            <div class="stat-info"><small>${t('Trân châu','Pearls')}</small><strong>${tea.pearls} ${t('viên','pearls')}</strong></div>
+          </div>
+        </div>
+
+        <div class="card profile-tea-card">
+          <div class="tea-card-header">
+            <span class="tea-cup-icon">${typeof teaIcon==='function'?teaIcon(tea.size):'🧋'}</span>
+            <div>
+              <h3>${t('Mục tiêu Trà Sữa Trân Châu','Milk Tea Boba Goal')} · Size ${tea.size}</h3>
+              <p class="muted">${t('Mỗi câu đúng tích lũy 1 viên trân châu cho ly trà sữa ngọt ngào!','Every correct answer adds 1 chewy boba pearl!')}</p>
+            </div>
+          </div>
+          <div class="tea-progress-wrap">
+            <div class="tea-progress-label">
+              <span><b>${Math.min(goal,tea.pearls)}</b> / ${goal} ${t('viên trân châu','pearls')}</span>
+              <span>${Math.round((Math.min(goal,tea.pearls)/goal)*100)}%</span>
+            </div>
+            <progress class="tea-progress-bar" max="${goal}" value="${Math.min(goal,tea.pearls)}"></progress>
+          </div>
+          <button class="primary wide" onclick="nav('atlas')">🧋 ${t('Vào quán trà sữa & Nhận thưởng','View Milk Tea Shop & Level Up')} →</button>
+        </div>
+
+        <div class="card profile-perf-card">
+          <h3>📈 ${t('Hiệu suất tính nhẩm','Mental Math Performance')}</h3>
+          <div class="perf-stats-row">
+            <div class="perf-col"><span class="perf-val">${totalSessions}</span><small>${t('Lượt luyện','Sessions')}</small></div>
+            <div class="perf-col"><span class="perf-val">${totalCorrect}/${totalAnswered}</span><small>${t('Câu đúng','Correct')}</small></div>
+            <div class="perf-col"><span class="perf-val">${accuracy}%</span><small>${t('Chính xác','Accuracy')}</small></div>
+            <div class="perf-col"><span class="perf-val">${avgSpeed}s</span><small>${t('Tốc độ/câu','Speed/Q')}</small></div>
+          </div>
+          <button class="wide" onclick="nav('stats')" style="margin-top:14px">🏅 ${t('Xem nhật ký tiến bộ chi tiết 7 ngày','View 7-day progress journal')} →</button>
+        </div>
+
+        <div class="card profile-badges-card">
+          <div class="badges-header">
+            <h3>🎖️ ${t('Bộ sưu tập Huy hiệu & Danh hiệu','Badges & Milestone Honors')}</h3>
+            <span class="badges-count">${badgesList.filter(b=>b.unlocked).length}/${badgesList.length} ${t('đã đạt','unlocked')}</span>
+          </div>
+          <div class="badges-grid">
+            ${badgesList.map(b=>`<div class="badge-item ${b.unlocked?'unlocked':'locked'}"><div class="badge-icon-wrap">${b.icon}</div><div class="badge-details"><b>${lang==='vi'?b.titleVi:b.titleEn}</b><p>${lang==='vi'?b.descVi:b.descEn}</p><span class="badge-tag ${b.unlocked?'tag-unlocked':'tag-locked'}">${b.unlocked?'🌟 '+t('Đã mở khóa','Unlocked'):'🔒 '+t('Chưa mở','Locked')}</span></div></div>`).join('')}
+          </div>
+        </div>
       </div>
-    </div>`:''}
-
-    <div class="profile-bottom-actions">
-      <button class="primary wide" onclick="nav('setup')">⚡ ${t('Vào luyện tập ngay','Start practicing now')} →</button>
-      <button class="wide" onclick="renderWorksheet()" style="margin-top:8px">📄 ${t('In phiếu bài tập (PDF)','Print worksheet (PDF)')}</button>
-      <button class="wide" onclick="openAccount('signup')" style="margin-top:8px">➕ ${t('Tạo thêm tài khoản bé khác','Add another child profile')}</button>
-      <button id="profileSignOutBtn" class="danger wide" style="margin-top:14px">🚪 ${t('Đăng xuất tài khoản','Sign out')}</button>
     </div>
   </section>`;
 

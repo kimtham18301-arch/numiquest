@@ -26,6 +26,9 @@ function translate(){
   if(moreBtn)moreBtn.classList.toggle('active',isMoreView);
   const sheetLangLabel=$('#sheetLangLabel');
   if(sheetLangLabel)sheetLangLabel.textContent=lang==='vi'?'Tiếng Việt 🇻🇳':'English 🇬🇧';
+  if(typeof document!=='undefined'&&document.body){
+    applyDarkMode(document.body.classList.contains('dark-mode'));
+  }
 }
 function toast(msg){$('#toast')?.remove();const d=document.createElement('div');d.id='toast';d.textContent=msg;document.body.append(d);setTimeout(()=>d.remove(),3500)}
 function modal(html,cb){$('#modalBody').innerHTML=html;afterModal=cb;$('#modal').showModal()}
@@ -35,6 +38,54 @@ function cancelQuizAdvance(){clearTimeout(quizAdvanceTimer);clearInterval(quizCo
 function stop(){cancelQuizAdvance();clearInterval(tick);tick=null;cancelAnimationFrame(raf);raf=null}
 function nav(v){if(session&&!session.done&&['quiz','game','garden','battle'].includes(view)&&v!==view){if(!confirm(t('Rời lượt hiện tại? Câu sai đã lưu vẫn được giữ.','Leave this session? Saved mistakes will remain.')))return}stop();session=null;view=v;if(typeof window!=='undefined')window.view=v;if(typeof global!=='undefined')global.view=v;({home,setup,atlas,stats,battleSetup,guide:()=>renderGuide(),profile:()=>renderProfile(),account:()=>renderProfile(),challenge:()=>challenge(),admin:()=>typeof renderAdmin==='function'?renderAdmin():renderProfile()}[v]||home)();translate();window.scrollTo(0,0)}
 $$('[data-view]').forEach(b=>b.onclick=()=>nav(b.dataset.view));$('.brand').onclick=e=>{e.preventDefault();nav('home')};$('#lang').onclick=()=>{if(session&&!session.done){toast(t('Hãy hoàn thành lượt trước khi đổi ngôn ngữ.','Finish the session before switching languages.'));return}lang=lang==='vi'?'en':'vi';save();nav(view)};
+function applyDarkMode(enabled){
+  if(typeof document==='undefined'||!document.body)return;
+  document.body.classList.toggle('dark-mode',!!enabled);
+  const themeBtn=$('#themeModeBtn');
+  if(themeBtn){
+    themeBtn.textContent=enabled?'☀️':'🌙';
+    themeBtn.setAttribute('aria-pressed',String(!!enabled));
+    themeBtn.title=enabled?(lang==='vi'?'Chuyển sang giao diện Sáng':'Switch to Light mode'):(lang==='vi'?'Chuyển sang giao diện Tối':'Switch to Dark mode');
+  }
+  const sheetIcon=$('#sheetDarkIcon');
+  if(sheetIcon)sheetIcon.textContent=enabled?'☀️':'🌙';
+  const sheetLabel=$('#sheetDarkLabel');
+  if(sheetLabel){
+    sheetLabel.textContent=enabled?(lang==='vi'?'Đang bật · Chạm để tắt':'Active · Tap to turn off'):(lang==='vi'?'Bảo vệ mắt ban đêm':'Eye comfort mode');
+  }
+  const metaTheme=document.querySelector('meta[name="theme-color"]');
+  if(metaTheme){
+    metaTheme.setAttribute('content',enabled?'#18261f':'#34765c');
+  }
+}
+function toggleDarkMode(){
+  if(typeof document==='undefined'||!document.body)return;
+  const isDark=document.body.classList.contains('dark-mode');
+  const next=!isDark;
+  try{localStorage.setItem('numi-dark-mode',next?'1':'0');}catch(_){}
+  applyDarkMode(next);
+}
+function initDarkMode(){
+  if(typeof window==='undefined'||typeof document==='undefined')return;
+  let isDark=false;
+  try{
+    const saved=localStorage.getItem('numi-dark-mode');
+    if(saved!==null){
+      isDark=saved==='1';
+    }else if(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches){
+      isDark=true;
+    }
+  }catch(_){}
+  applyDarkMode(isDark);
+  const themeBtn=$('#themeModeBtn');
+  if(themeBtn)themeBtn.onclick=()=>toggleDarkMode();
+  const sheetDarkBtn=$('#sheetDarkModeBtn');
+  if(sheetDarkBtn){
+    sheetDarkBtn.onclick=()=>{
+      toggleDarkMode();
+    };
+  }
+}
 function initMoreSheet(){
   const moreBtn=$('#navMoreBtn');
   const sheet=$('#moreSheet');
@@ -79,12 +130,18 @@ function initMoreSheet(){
       $('#lang')?.click();
     };
   }
+  initDarkMode();
 }
 if(typeof window!=='undefined'){
+  initDarkMode();
   if(document.readyState==='loading'){
-    window.addEventListener('DOMContentLoaded',initMoreSheet);
+    window.addEventListener('DOMContentLoaded',()=>{
+      initMoreSheet();
+      initDarkMode();
+    });
   }else{
     initMoreSheet();
+    initDarkMode();
   }
 }
 const totalPieces=()=>Object.values(state.pieces).reduce((a,b)=>a+b,0);const level=()=>1+Math.floor(state.xp/100);const avg=arr=>arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:0;
@@ -573,6 +630,15 @@ function setup(){
   const gradeInfo = NUMI_GRADES[curGrade];
   const chosenTypes = config.types || [config.type || 'natural'];
   const chosenDigits = config.digits || [1];
+  let activeLevel = curGrade === 'custom' ? 'custom' : (curGrade >= 6 ? 'secondary' : 'primary');
+
+  function renderGradeButtons(lvl, current){
+    if(lvl === 'custom'){
+      return `<div class="grade-custom-banner"><span>⚙️</span><div><b>${t('Chế độ Tùy chỉnh tự do','Free Custom Mode')}</b><p>${t('Tự do kết hợp phép tính (+, −, ×, ÷), loại số và số chữ số ở các mục 1–5 bên dưới.','Freely combine operations (+, −, ×, ÷), number types and digits in sections 1–5 below.')}</p></div></div>`;
+    }
+    const grades = lvl === 'secondary' ? [6,7,8,9] : [1,2,3,4,5];
+    return grades.map(g=>`<button type="button" class="grade-tab ${current===g?'active':''}" data-grade="${g}">${NUMI_GRADES[g]?NUMI_GRADES[g].icon:'🌱'} ${lang==='vi'?NUMI_GRADES[g].name:NUMI_GRADES[g].enName}</button>`).join('');
+  }
 
   $('#app').innerHTML=`<div class="narrow">
     <div class="guide-bubble">${animal(buddy())}<div><b>${t('Mình chọn bài rồi cùng học nhé!','Pick your questions and let’s learn!')}</b><p>${t('Chọn nhanh theo Lớp học hoặc tùy ý điều chỉnh bên dưới.','Quickly select by Grade or customize freely below.')}</p></div></div>
@@ -582,9 +648,13 @@ function setup(){
         <span class="grade-title">🎓 ${t('Lớp học theo chuẩn GDPT 2018:','Grade level (Curriculum Grades 1–9):')}</span>
         <span class="grade-badge" id="gradeActiveBadge">${gradeInfo ? (lang==='vi'?gradeInfo.name:gradeInfo.enName) : t('Tùy chỉnh','Custom')}</span>
       </div>
-      <div class="grade-tabs">
-        ${[1,2,3,4,5,6,7,8,9].map(g=>`<button type="button" class="grade-tab ${curGrade===g?'active':''}" data-grade="${g}">${NUMI_GRADES[g]?NUMI_GRADES[g].icon:'🌱'} ${lang==='vi'?NUMI_GRADES[g].name:NUMI_GRADES[g].enName}</button>`).join('')}
-        <button type="button" class="grade-tab ${curGrade==='custom'?'active':''}" data-grade="custom">⚙️ ${t('Tùy chỉnh','Custom')}</button>
+      <div class="level-seg-control" role="tablist" aria-label="${t('Bậc học','Education level')}">
+        <button type="button" class="level-seg-btn ${activeLevel==='primary'?'active':''}" data-level="primary" role="tab" aria-selected="${activeLevel==='primary'}">🌱 ${t('Tiểu học (Lớp 1–5)','Primary (Grades 1–5)')}</button>
+        <button type="button" class="level-seg-btn ${activeLevel==='secondary'?'active':''}" data-level="secondary" role="tab" aria-selected="${activeLevel==='secondary'}">⚡ ${t('THCS (Lớp 6–9)','Secondary (Grades 6–9)')}</button>
+        <button type="button" class="level-seg-btn ${activeLevel==='custom'?'active':''}" data-level="custom" role="tab" aria-selected="${activeLevel==='custom'}">⚙️ ${t('Tùy chỉnh','Custom')}</button>
+      </div>
+      <div class="grade-subgrid" id="gradeSubgrid">
+        ${renderGradeButtons(activeLevel, curGrade)}
       </div>
       <p class="grade-desc" id="gradeDesc">${gradeInfo ? (lang==='vi'?gradeInfo.descVi:gradeInfo.descEn) : t('Tùy ý kết hợp các phép tính, loại số và số chữ số.','Freely combine operations, number types and digits.')}</p>
     </div>
@@ -672,10 +742,24 @@ function setup(){
     }
   }
 
+  function bindGradeEvents(){
+    $$('.grade-tab').forEach(b=>b.onclick=()=>applyGrade(b.dataset.grade));
+  }
+  function updateLevelSegButtons(lvl){
+    $$('.level-seg-btn').forEach(b=>{
+      const isAct=b.dataset.level===lvl;
+      b.classList.toggle('active',isAct);
+      b.setAttribute('aria-selected',String(isAct));
+    });
+  }
+
   function applyGrade(gradeKey){
     if(gradeKey==='custom'||!NUMI_GRADES[gradeKey]){
       config.grade='custom';
-      $$('.grade-tab').forEach(b=>b.classList.toggle('active',b.dataset.grade==='custom'));
+      activeLevel='custom';
+      updateLevelSegButtons('custom');
+      const subgrid=$('#gradeSubgrid');
+      if(subgrid)subgrid.innerHTML=renderGradeButtons('custom','custom');
       $('#gradeActiveBadge').textContent=t('Tùy chỉnh','Custom');
       $('#gradeDesc').textContent=t('Tùy ý kết hợp các phép tính, loại số và số chữ số.','Freely combine operations, number types and digits.');
       refresh();
@@ -683,7 +767,13 @@ function setup(){
     }
     const g=NUMI_GRADES[gradeKey];
     config.grade=g.id;
-    $$('.grade-tab').forEach(b=>b.classList.toggle('active',+b.dataset.grade===g.id));
+    activeLevel=g.id>=6?'secondary':'primary';
+    updateLevelSegButtons(activeLevel);
+    const subgrid=$('#gradeSubgrid');
+    if(subgrid){
+      subgrid.innerHTML=renderGradeButtons(activeLevel,g.id);
+      bindGradeEvents();
+    }
     $('#gradeActiveBadge').textContent=lang==='vi'?g.name:g.enName;
     $('#gradeDesc').textContent=lang==='vi'?g.descVi:g.descEn;
     $$('[name=op]').forEach(cb=>{cb.checked=g.ops.includes(cb.value)});
@@ -695,7 +785,22 @@ function setup(){
     refresh();
   }
 
-  $$('.grade-tab').forEach(b=>b.onclick=()=>applyGrade(b.dataset.grade));
+  $$('.level-seg-btn').forEach(btn=>{
+    btn.onclick=()=>{
+      const lvl=btn.dataset.level;
+      if(lvl==='custom'){
+        applyGrade('custom');
+      }else if(lvl==='secondary'){
+        const nextG = (config.grade>=6 && config.grade<=9) ? config.grade : 6;
+        applyGrade(nextG);
+      }else{
+        const nextG = (config.grade>=1 && config.grade<=5) ? config.grade : 1;
+        applyGrade(nextG);
+      }
+    };
+  });
+  bindGradeEvents();
+
   form.oninput=()=>{
     const f=new FormData(form),currentOps=f.getAll('op'),currentTypes=f.getAll('type'),currentDigits=f.getAll('digits').map(Number);
     const g=NUMI_GRADES[config.grade];
@@ -705,7 +810,10 @@ function setup(){
       const digitsMatch=g.digits.length===currentDigits.length&&g.digits.every(d=>currentDigits.includes(d));
       if(!opsMatch||!typesMatch||!digitsMatch){
         config.grade='custom';
-        $$('.grade-tab').forEach(b=>b.classList.toggle('active',b.dataset.grade==='custom'));
+        activeLevel='custom';
+        updateLevelSegButtons('custom');
+        const subgrid=$('#gradeSubgrid');
+        if(subgrid)subgrid.innerHTML=renderGradeButtons('custom','custom');
         $('#gradeActiveBadge').textContent=t('Tùy chỉnh','Custom');
         $('#gradeDesc').textContent=t('Tùy ý kết hợp các phép tính, loại số và số chữ số.','Freely combine operations, number types and digits.');
       }

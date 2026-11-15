@@ -170,6 +170,15 @@ body.not-logged-in .brand{pointer-events:none}
 .grade-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px}
 .grade-title{font-size:15px;font-weight:800;color:var(--text,#284632)}
 .grade-badge{background:#e7f3dc;color:#2b5633;padding:4px 12px;border-radius:999px;font-size:13px;font-weight:800;border:1px solid #c2dfae}
+.level-seg-control{display:flex;background:#edf4e8;padding:4px;border-radius:14px;gap:4px;margin-bottom:12px;border:1px solid #d8e8cf;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.level-seg-btn{flex:1 0 auto;min-height:38px;padding:8px 12px;border-radius:10px;font-size:13px;font-weight:800;border:none;background:transparent;color:#4b6b54;cursor:pointer;transition:all .15s ease;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.level-seg-btn:hover:not(.active){background:rgba(255,255,255,0.6);color:#274833}
+.level-seg-btn.active{background:#ffffff;color:#1e5234;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
+.grade-subgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:6px 0 10px}
+.grade-custom-banner{display:flex;align-items:center;gap:12px;background:#f4f9ef;border:1.5px dashed #b7d8a6;border-radius:14px;padding:12px 16px}
+.grade-custom-banner span{font-size:24px}
+.grade-custom-banner b{display:block;font-size:14px;color:#254a30;margin-bottom:2px}
+.grade-custom-banner p{margin:0;font-size:12px;color:#55755e;line-height:1.4}
 .grade-tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch}
 .grade-tabs::-webkit-scrollbar{height:4px}
 .grade-tabs::-webkit-scrollbar-thumb{background:#c2dfae;border-radius:4px}
@@ -201,9 +210,17 @@ body.not-logged-in .brand{pointer-events:none}
 .guide-tip{background:#fff9e6;border:1px solid #fae29f;border-radius:10px;padding:10px 12px;margin-top:12px;font-size:13px;color:#7d5806;line-height:1.5}
 .guide-footer-actions{display:flex;flex-direction:column;align-items:center}
 
-/* Personal Profile Page (Trang Hồ Sơ Cá Nhân) */
-.profile-view{padding-bottom:50px}
-.profile-header-card{text-align:center;padding:26px 20px 22px;border-radius:22px;background:var(--card-bg,#fff);border:2px solid #e2ebd8;box-shadow:0 6px 20px rgba(52,118,92,0.06);margin-bottom:18px}
+/* Personal Profile Page (Trang Hồ Sơ Cá Nhân & Bento Grid Desktop) */
+.profile-view{max-width:1140px;margin:0 auto;padding:0 16px 50px}
+.profile-bento-grid{display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start}
+.profile-bento-col-left{display:flex;flex-direction:column;gap:18px}
+.profile-bento-col-right{display:flex;flex-direction:column;gap:18px}
+.profile-actions-card{padding:18px 20px;border-radius:20px;background:var(--card-bg,#fff);border:1.5px solid #e5ede0}
+@media (max-width:899px){
+  .profile-view{max-width:640px}
+  .profile-bento-grid{display:flex;flex-direction:column;gap:16px}
+}
+.profile-header-card{text-align:center;padding:26px 20px 22px;border-radius:22px;background:var(--card-bg,#fff);border:2px solid #e2ebd8;box-shadow:0 6px 20px rgba(52,118,92,0.06);margin-bottom:0}
 .profile-avatar-wrap{display:inline-flex;align-items:center;justify-content:center;width:96px;height:96px;background:linear-gradient(135deg,#eaf5e3,#d7edd0);border:3px solid #b7dfab;border-radius:50%;margin-bottom:12px;box-shadow:0 4px 14px rgba(52,118,92,0.12)}
 .profile-avatar .animal{width:76px;height:76px}
 .profile-name{display:inline-flex;align-items:center;gap:8px;justify-content:center;font-size:24px;font-weight:900;margin:6px 0 2px;color:var(--text,#284632)}
@@ -213,8 +230,8 @@ body.not-logged-in .brand{pointer-events:none}
 .profile-joined{color:#34765c;font-weight:700}
 .profile-field-group{margin-top:14px;text-align:left}
 .profile-field-label{display:block;font-size:13px;font-weight:800;color:#3b5e39;margin-bottom:8px}
-.profile-grade-chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
-.profile-grade-chip{flex:1 0 auto;padding:8px 12px;border-radius:10px;border:1.5px solid #d4e5cb;background:#f5f8f3;color:#3b5e39;font-weight:700;font-size:13px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.profile-grade-chips{display:flex;gap:6px;flex-wrap:wrap}
+.profile-grade-chip{padding:7px 11px;border-radius:10px;border:1.5px solid #d4e5cb;background:#f5f8f3;color:#3b5e39;font-weight:700;font-size:13px;cursor:pointer;transition:all .15s;white-space:nowrap}
 .profile-grade-chip:hover{background:#eaf5e3}
 .profile-grade-chip.active{background:#34765c;color:#fff;border-color:#2b5633;box-shadow:0 3px 10px rgba(52,118,92,0.22)}
 .profile-buddy-chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
@@ -1594,4 +1611,500 @@ body.not-logged-in .brand{pointer-events:none}
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+/* Bento Grid Spacing Helpers */
+.profile-bento-col-left .card,
+.profile-bento-col-right .card,
+.profile-bento-col-right .profile-stats-grid {
+  margin-bottom: 0;
+}
+
+/* ========================================================
+   FULL DARK MODE THEME SYSTEM (GIAO DIỆN TỐI TOÀN DIỆN)
+   ======================================================== */
+body.dark-mode {
+  --cream: #121c17;
+  --ink: #e3ede6;
+  --muted: #95ab9c;
+  --line: #24382c;
+  --mint: #1a2c22;
+  --peach: #26241e;
+  --lilac: #1e2a22;
+  --butter: #29261f;
+  --yellow: #f0c371;
+  --card-bg: #18261f;
+  --text: #e6f3eb;
+  background-color: #121c17;
+  color: #e3ede6;
+}
+
+/* Header & Navigation in Dark Mode */
+body.dark-mode header {
+  background: #15221b;
+  border-bottom-color: #24382c;
+}
+body.dark-mode .brand {
+  color: #7ee0a4;
+}
+body.dark-mode nav button {
+  color: #9cb1a3;
+}
+body.dark-mode nav button.active {
+  background: #22382c;
+  color: #7ee0a4;
+}
+body.dark-mode #lang,
+body.dark-mode .sound-toggle,
+body.dark-mode #themeModeBtn {
+  color: #e6f3eb;
+  border-color: #2b4737;
+  background: transparent;
+}
+body.dark-mode #lang:hover,
+body.dark-mode .sound-toggle:hover,
+body.dark-mode #themeModeBtn:hover {
+  background: #1f3528;
+  border-color: #3b5e48;
+}
+
+/* General Cards, Containers & Surfaces */
+body.dark-mode .card,
+body.dark-mode .lesson-settings,
+body.dark-mode .grade-picker-box,
+body.dark-mode .worksheet-paper,
+body.dark-mode .quiz-finish-card,
+body.dark-mode .guide-hero,
+body.dark-mode .guide-card,
+body.dark-mode .account-card,
+body.dark-mode .admin-header-card,
+body.dark-mode .admin-filter-card,
+body.dark-mode .admin-student-card,
+body.dark-mode .admin-table-card,
+body.dark-mode .profile-actions-card {
+  background: #18261f;
+  border-color: #284434;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  color: #e3ede6;
+}
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode .grade-title,
+body.dark-mode .finish-title,
+body.dark-mode .profile-name,
+body.dark-mode .worksheet-brand h2 {
+  color: #e6f3eb;
+}
+body.dark-mode p,
+body.dark-mode .muted,
+body.dark-mode .settings-hint,
+body.dark-mode .finish-message,
+body.dark-mode .worksheet-brand p {
+  color: #9ab0a1;
+}
+body.dark-mode .eyebrow {
+  color: #78a287;
+}
+body.dark-mode fieldset {
+  border-color: #263e30;
+}
+body.dark-mode fieldset legend {
+  color: #e6f3eb;
+}
+body.dark-mode fieldset legend span {
+  background: #223b2c;
+  color: #7ee0a4;
+}
+
+/* Forms, Inputs & Controls */
+body.dark-mode input[type="text"],
+body.dark-mode input[type="password"],
+body.dark-mode input[type="number"],
+body.dark-mode input[type="email"],
+body.dark-mode select {
+  background: #111a14;
+  color: #e6f3eb;
+  border-color: #2a4736;
+}
+body.dark-mode input:focus,
+body.dark-mode select:focus {
+  border-color: #4da378;
+  outline-color: #4da378;
+}
+body.dark-mode button {
+  background: #1d2e24;
+  color: #e6f3eb;
+  border-color: #2f4d3c;
+}
+body.dark-mode button:hover:not(:disabled) {
+  background: #253c2f;
+  border-color: #3d634d;
+}
+body.dark-mode .primary,
+body.dark-mode button.primary {
+  background: #34765c;
+  color: #ffffff;
+  border-color: #2a604b;
+}
+body.dark-mode .primary:hover:not(:disabled),
+body.dark-mode button.primary:hover:not(:disabled) {
+  background: #3d8b6c;
+  border-color: #3d8b6c;
+}
+body.dark-mode .operation-picks label span,
+body.dark-mode .type-picks label span,
+body.dark-mode .digit-picks label span,
+body.dark-mode .chip-row button,
+body.dark-mode .grade-signup-picks span {
+  background: #16241c;
+  border-color: #284232;
+  color: #cde0d4;
+}
+body.dark-mode .operation-picks input:checked + span,
+body.dark-mode .type-picks input:checked + span,
+body.dark-mode .digit-picks input:checked + span,
+body.dark-mode .chip-row button.chosen,
+body.dark-mode .grade-signup-picks input:checked + span {
+  background: #2b5c44;
+  color: #ffffff;
+  border-color: #3d8060;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+body.dark-mode #randomDigits {
+  background: #1a2a20;
+  color: #9ab0a1;
+  border-color: #284232;
+}
+body.dark-mode #randomDigits.chosen {
+  background: #2b5c44;
+  color: #fff;
+  border-color: #3d8060;
+}
+body.dark-mode .lesson-summary {
+  background: #14221a;
+  border-color: #263e30;
+  color: #8be0a7;
+}
+
+/* Level Segmented Control & Grade Subgrid in Dark Mode */
+body.dark-mode .level-seg-control {
+  background: #131e17;
+  border-color: #263e30;
+}
+body.dark-mode .level-seg-btn {
+  color: #92a798;
+}
+body.dark-mode .level-seg-btn:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.05);
+  color: #d1e2d7;
+}
+body.dark-mode .level-seg-btn.active {
+  background: #243a2c;
+  color: #7ee0a4;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+body.dark-mode .grade-badge {
+  background: #1b3325;
+  color: #8be0a7;
+  border-color: #2d553e;
+}
+body.dark-mode .grade-tab {
+  background: #16241c;
+  border-color: #284232;
+  color: #c0d4c7;
+}
+body.dark-mode .grade-tab:hover {
+  background: #1d3025;
+  border-color: #3c654d;
+}
+body.dark-mode .grade-tab.active {
+  background: linear-gradient(135deg, #34765c, #24523b);
+  color: #ffffff;
+  border-color: #4da378;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+body.dark-mode .grade-custom-banner {
+  background: #14221a;
+  border-color: #2b4937;
+}
+body.dark-mode .grade-custom-banner b {
+  color: #e6f3eb;
+}
+body.dark-mode .grade-custom-banner p {
+  color: #9bb0a2;
+}
+
+/* Quiz Practice, Stepper & Numpad in Dark Mode */
+body.dark-mode .quiz-card {
+  background: #18261f;
+  border-color: #294435;
+}
+body.dark-mode .question {
+  color: #e6f3eb;
+}
+body.dark-mode .answer {
+  background: #16241c;
+  border-color: #284232;
+  color: #e3ede6;
+}
+body.dark-mode .answer:hover:not(:disabled) {
+  background: #1d3225;
+  border-color: #3d684f;
+}
+body.dark-mode .answer.is-correct {
+  background: #183e2a !important;
+  border-color: #2ecc71 !important;
+  color: #7ee0a4 !important;
+}
+body.dark-mode .answer.is-wrong {
+  background: #3e1b1b !important;
+  border-color: #e74c3c !important;
+  color: #ff9b9b !important;
+}
+body.dark-mode .stepper-dot.is-pending {
+  background: #1e3025;
+  border-color: #2b4635;
+  color: #64806e;
+}
+body.dark-mode .stepper-dot.is-current {
+  border-color: #7ee0a4;
+  box-shadow: 0 0 0 3px rgba(126, 224, 164, 0.25);
+  color: #7ee0a4;
+}
+body.dark-mode .stepper-dot.is-correct {
+  background: #1f5035;
+  border-color: #2ecc71;
+  color: #fff;
+}
+body.dark-mode .stepper-dot.is-wrong {
+  background: #501f1f;
+  border-color: #e74c3c;
+  color: #fff;
+}
+body.dark-mode .numpad-display {
+  background: #121c16;
+  border-color: #294435;
+  color: #e6f3eb;
+}
+body.dark-mode .numpad-current-val {
+  color: #7ee0a4;
+}
+body.dark-mode .np-btn {
+  background: #18271e;
+  border-color: #294435;
+  box-shadow: 0 2px 0 #111b15;
+  color: #e6f3eb;
+}
+body.dark-mode .np-btn:active:not(:disabled) {
+  background: #1f3428;
+  box-shadow: none;
+}
+body.dark-mode .np-btn.np-act {
+  background: #142019;
+  color: #8ea394;
+}
+body.dark-mode .np-btn.np-symbol {
+  background: #1a2f22;
+  color: #7ee0a4;
+}
+
+/* Profile Bento Grid in Dark Mode */
+body.dark-mode .profile-header-card,
+body.dark-mode .profile-stat-box,
+body.dark-mode .profile-tea-card,
+body.dark-mode .profile-perf-card,
+body.dark-mode .profile-badges-card,
+body.dark-mode .profile-password-card,
+body.dark-mode .profile-settings-card,
+body.dark-mode .profile-family-card {
+  background: #18261f;
+  border-color: #284434;
+}
+body.dark-mode .profile-avatar-wrap {
+  background: linear-gradient(135deg, #1b3024, #15241b);
+  border-color: #2b553e;
+}
+body.dark-mode .profile-grade-chip {
+  background: #15231b;
+  border-color: #284232;
+  color: #c0d4c7;
+}
+body.dark-mode .profile-grade-chip.active {
+  background: #34765c;
+  border-color: #4da378;
+  color: #fff;
+}
+body.dark-mode .profile-buddy-chip {
+  background: #15231b;
+  border-color: #284232;
+  color: #c0d4c7;
+}
+body.dark-mode .profile-buddy-chip.active {
+  background: #1e3528;
+  border-color: #4da378;
+}
+body.dark-mode .profile-stat-box .stat-info strong {
+  color: #e6f3eb;
+}
+body.dark-mode .perf-col {
+  background: #142119;
+  border-color: #263e30;
+}
+body.dark-mode .perf-val {
+  color: #7ee0a4;
+}
+body.dark-mode .badge-item {
+  background: #142119;
+  border-color: #263e30;
+}
+body.dark-mode .badge-item.unlocked {
+  background: #21281c;
+  border-color: #635520;
+}
+body.dark-mode .badge-details b {
+  color: #e6f3eb;
+}
+body.dark-mode .badge-details p {
+  color: #9ab0a1;
+}
+body.dark-mode .current-pwd-box {
+  background: #131e17;
+  border-color: #284232;
+}
+body.dark-mode .current-pwd-label {
+  color: #8be0a7;
+}
+body.dark-mode .current-pwd-input {
+  background: #0d1510;
+  border-color: #284232;
+  color: #7ee0a4;
+}
+body.dark-mode .pwd-action-btn {
+  background: #1a2a20;
+  border-color: #2c4a37;
+  color: #e6f3eb;
+}
+body.dark-mode .pwd-action-btn:hover {
+  background: #223a2c;
+  border-color: #3f6e52;
+}
+body.dark-mode .family-chip {
+  background: #16241c;
+  border-color: #284232;
+  color: #c0d4c7;
+}
+body.dark-mode .theme-chip {
+  background: #16241c;
+  border-color: #284232;
+  color: #c0d4c7;
+}
+body.dark-mode .profile-btn-pill {
+  background: #16241c;
+  border-color: #284232;
+  color: #c0d4c7;
+}
+
+/* Finish Screen in Dark Mode */
+body.dark-mode .finish-stat-box {
+  background: #131e17;
+  border-color: #263e30;
+}
+body.dark-mode .finish-stat-box small {
+  color: #789982;
+}
+body.dark-mode .finish-stat-box strong {
+  color: #e6f3eb;
+}
+body.dark-mode .finish-xp-pill {
+  background: #1b3325;
+  border-color: #2d553e;
+  color: #7ee0a4;
+}
+
+/* Sticky CTA & Bottom Navigation in Dark Mode */
+body.dark-mode .setup-sticky-cta {
+  background: rgba(21, 34, 27, 0.96);
+  border-top-color: #294435;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.45);
+}
+body.dark-mode .sticky-grade-pill {
+  background: #1d3326;
+  border-color: #2d553e;
+  color: #7ee0a4;
+}
+body.dark-mode .sticky-sub-text {
+  color: #92a798;
+}
+body.dark-mode .bottom-nav {
+  background: rgba(21, 34, 27, 0.96);
+  border-top-color: #284232;
+}
+body.dark-mode .bnav-btn {
+  color: #8da495;
+}
+body.dark-mode .bnav-btn.active {
+  color: #7ee0a4;
+}
+body.dark-mode .more-sheet {
+  background: #18261f;
+  border-color: #284434;
+}
+body.dark-mode .sheet-header h3 {
+  color: #e6f3eb;
+}
+body.dark-mode .sheet-item {
+  background: #14221a;
+  border-color: #263e30;
+}
+body.dark-mode .sheet-item:hover {
+  background: #1d3225;
+  border-color: #3b634b;
+}
+body.dark-mode .sheet-item .sheet-text b {
+  color: #e6f3eb;
+}
+body.dark-mode .sheet-item .sheet-text small {
+  color: #92a798;
+}
+body.dark-mode dialog {
+  background: #18261f;
+  border-color: #2b4937;
+  color: #e6f3eb;
+}
+
+/* Admin Dashboard in Dark Mode */
+body.dark-mode .admin-stat-card {
+  background: #18261f;
+  border-color: #284434;
+}
+body.dark-mode .admin-stat-card strong {
+  color: #e6f3eb;
+}
+body.dark-mode .admin-table th {
+  background: #131f18;
+  color: #9ab0a1;
+  border-bottom-color: #284434;
+}
+body.dark-mode .admin-table td {
+  border-bottom-color: #22382c;
+  color: #e6f3eb;
+}
+body.dark-mode .admin-table tr:hover td {
+  background: #1a2d21;
+}
+body.dark-mode .admin-grade-chip {
+  background: #16241c;
+  border-color: #284232;
+  color: #c0d4c7;
+}
+body.dark-mode .admin-grade-chip.active {
+  background: #34765c;
+  border-color: #4da378;
+  color: #fff;
+}
+body.dark-mode footer {
+  color: #789382;
+  border-top-color: #22382c;
 }
