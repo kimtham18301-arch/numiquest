@@ -508,6 +508,15 @@ function adminDeleteStudent(username) {
   delete users[username];
   saveLocalUsers(users);
   try { localStorage.removeItem('numi-user-state-' + username); } catch {}
+  if (typeof currentAuthUser === 'function' && currentAuthUser()?.username === username) {
+    const adminUser = users['admin'];
+    if (adminUser) {
+      localStorage.setItem('numi-current-user-v1', JSON.stringify({
+        id: 'admin', username: 'admin', name: adminUser.name, avatar: adminUser.avatar || 'lion', grade: adminUser.grade || 5, role: 'admin', type: 'local'
+      }));
+      cloudBadge();
+    }
+  }
   toast(t('Đã xóa tài khoản học sinh ' + user.name, 'Deleted student ' + user.name));
   renderAdmin();
 }
@@ -690,7 +699,7 @@ function adminViewDetailModal(username) {
             </thead>
             <tbody>
               ${history.slice(-15).reverse().map(h => `<tr>
-                <td>${new Date(h.date).toLocaleDateString(currentLang()==='vi'?'vi-VN':'en-US',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</td>
+                <td>${new Date(h.date).toLocaleString(currentLang()==='vi'?'vi-VN':'en-US',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</td>
                 <td>${h.mode==='bot'?t('Đấu máy 🤖','Bot match'):h.mode==='challenge'?t('Thử thách 🏅','Challenge'):t('Tự luyện ⚡','Practice')}</td>
                 <td><b>${h.correct}</b>/${h.total} (${Math.round((h.correct/h.total)*100)}%)</td>
                 <td>${h.time ? h.time.toFixed(1) + 's' : '-'}</td>

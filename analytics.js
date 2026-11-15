@@ -74,6 +74,11 @@
     .daily-line{fill:none;stroke:var(--green);stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
     .daily-point{fill:var(--green);stroke:#fff;stroke-width:2.5}
     .daily-chart-empty{margin:0;padding:10px 8px 16px;color:var(--muted);font-size:15px;line-height:1.5;text-align:center}
+    body.dark-mode .daily-day-label{fill:#c6ded0}
+    body.dark-mode .daily-y-label{fill:#a4c2b0}
+    body.dark-mode .daily-grid{stroke:#2d4234}
+    body.dark-mode .daily-point{stroke:#1a2b20}
+    body.dark-mode .daily-chart-card>p{color:#b0c7b8}
     #app .metrics small{font-size:13px;line-height:1.45;color:#405846}
     #app .garden-column-label{font-size:15px}
     #app .garden-count,#app .garden-instruction,#app .garden-footer{font-size:15px;line-height:1.55}

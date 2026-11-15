@@ -27,11 +27,12 @@ const answerBeforeFarm=answerQuiz;
 answerQuiz=function(ans,id){
   if(view!=='quiz'||!session||session.done||session.answered)return;
   const s=session,q=s.questions[s.index];if(!q||(id&&id!==q.id))return;
-  if(ans===q.answer){const food=s.farmFood||farmState().mission;s.farmFood=food;s.farmEarned=(s.farmEarned||0)+1;farmEarn(food)}
+  const norm=str=>String(str||'').trim().replace(/\s+/g,'').replace('.',',').toLowerCase();
+  if(ans!==null&&norm(ans)===norm(q.answer)){const food=s.farmFood||farmState().mission;s.farmFood=food;s.farmEarned=(s.farmEarned||0)+1;farmEarn(food)}
   answerBeforeFarm(ans,id);
 };
 const quizBeforeFarm=startQuiz;
-startQuiz=function(){quizBeforeFarm();session.farmFood=farmState().mission};
+startQuiz=function(){quizBeforeFarm();if(session)session.farmFood=farmState().mission};
 const matchBeforeFarm=gardenMatch;
 gardenMatch=function(potId,flowerId){
   const q=garden?.questions.find(q=>q.id===potId),flower=garden?.answers.find(a=>a.id===flowerId);
@@ -39,7 +40,7 @@ gardenMatch=function(potId,flowerId){
   matchBeforeFarm(potId,flowerId);if(willEarn)farmEarn('hay',true);
 };
 const battleResolveBeforeFarm=resolveBattle;
-resolveBattle=function(){const s=session,q=s?.questions[s.index];if(view!=='battle'||!s||s.done||!q||s.resolvedId===q.id)return;if(s.chosen===q.answer)farmEarn('carrot');battleResolveBeforeFarm()};
+resolveBattle=function(){const s=session,q=s?.questions[s.index];if(view!=='battle'||!s||s.done||!q||s.resolvedId===q.id)return;const norm=str=>String(str||'').trim().replace(/\s+/g,'').replace('.',',').toLowerCase();if(s.chosen!==null&&norm(s.chosen)===norm(q.answer))farmEarn('carrot');battleResolveBeforeFarm()};
 function farmScene(){return `<svg class="farm-scenery" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true"><rect width="1000" height="620" rx="34" fill="#dcecc1"/><path d="M0 0H1000V170Q800 110 600 150T0 130Z" fill="#eaf3d9"/><path d="M0 50Q190-25 360 85T710 60T1000 64V0H0Z" fill="#c8dfb3"/><path d="M102 530Q180 440 318 437T512 361T810 399" fill="none" stroke="#f7e5b7" stroke-width="58" stroke-linecap="round"/><path d="M500 585Q515 440 512 361T521 177" fill="none" stroke="#f7e5b7" stroke-width="53" stroke-linecap="round"/><path d="M0 580Q230 520 412 594T1000 564V620H0Z" fill="#b5d29f"/><ellipse cx="816" cy="496" rx="122" ry="53" fill="#9ac6bf"/><ellipse cx="813" cy="490" rx="96" ry="34" fill="#b5dcd1"/><path d="M753 486h50m-10 17h51" stroke="#e3f0d9" stroke-width="4" stroke-linecap="round"/><g fill="#91b57c"><circle cx="72" cy="101" r="57"/><circle cx="130" cy="68" r="50"/><circle cx="925" cy="78" r="65"/><circle cx="976" cy="120" r="50"/></g><g stroke="#9d815e" stroke-width="8"><path d="M62 182V102m875 92V106"/></g><g fill="#f0bc8c"><circle cx="57" cy="95" r="10"/><circle cx="100" cy="77" r="9"/><circle cx="926" cy="66" r="10"/></g><g transform="translate(425 60)"><path d="M0 95h163v110H0Z" fill="#f3d5a6"/><path d="m-16 95 99-74 99 74Z" fill="#d89770"/><path d="m-5 92 88-63 88 63" fill="none" stroke="#edbb8e" stroke-width="9" stroke-linecap="round"/><path d="M52 205v-65q31-24 61 0v65" fill="#8fa782"/><rect x="15" y="122" width="24" height="32" rx="5" fill="#fff2c5"/><rect x="127" y="122" width="24" height="32" rx="5" fill="#fff2c5"/><circle cx="104" cy="172" r="4" fill="#f7dfa2"/></g><g transform="translate(100 255)"><rect width="220" height="120" rx="25" fill="#b58b60"/><path d="M24 25h172M24 60h172M24 96h172" stroke="#d4ad78" stroke-width="5" stroke-linecap="round"/>${[0,1,2].map(i=>[0,1,2,3].map(j=>`<g transform="translate(${36+j*48} ${22+i*35})"><path d="M-5 0 0 17 7 0" fill="#eda362"/><path d="M0 0q-16-18-9-17Q0-15 0 0q0-23 7-20 5 4-7 20" fill="#63975f"/></g>`).join('')).join('')}</g><g transform="translate(690 252)"><rect width="205" height="125" rx="25" fill="#b58b60"/>${[0,1,2].map(i=>[0,1,2,3].map(j=>`<g fill="#8fba72" stroke="#65965f" stroke-width="2" transform="translate(${29+j*48} ${24+i*39})"><circle cx="0" cy="3" r="15"/><path d="m-9 4 9 9 9-9M0 13v-18" fill="none"/></g>`).join('')).join('')}</g><g transform="translate(126 448)"><rect width="122" height="70" rx="12" fill="#e5be74"/><path d="M30 0v70m64-70v70" stroke="#a98e58" stroke-width="8"/><path d="M0 22h122M0 48h122" stroke="#f2d58f" stroke-width="3"/></g><g fill="#fff6d4">${[[54,434],[340,210],[660,520],[960,350],[377,548],[600,240]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="6"/>`).join('')}</g><g stroke="#fff4d4" stroke-width="10" stroke-linecap="round"><path d="M335 150v62m40-70v62m-55-38h70m230-15v62m40-70v62m-55-38h70"/></g></svg>`}
 function farmSetMessage(message){const el=$('#farmMessage');if(el)el.textContent=message}
 function farmWalkTo(x,y,callback){

@@ -2108,3 +2108,90 @@ body.dark-mode footer {
   color: #789382;
   border-top-color: #22382c;
 }
+body.dark-mode .garden-board {
+  background: #17241c;
+  border-color: #273d2f;
+}
+body.dark-mode .garden-toolbar {
+  background: #1c2b21;
+  border-color: #273d2f;
+}
+body.dark-mode .garden-count {
+  color: #a4beae;
+}
+body.dark-mode .garden-count b {
+  color: #5edb92;
+}
+body.dark-mode .garden-instruction {
+  color: #a4beae;
+}
+body.dark-mode .garden-item {
+  background: #1c2b21;
+  border-color: #2f4938;
+  color: #e4efe7;
+  box-shadow: 0 3px 0 #101913;
+}
+body.dark-mode .garden-item:hover:not(:disabled) {
+  background: #23362a;
+  border-color: #4b785c;
+}
+body.dark-mode .garden-item.selected {
+  border-color: #5edb92;
+  background: #253a2d;
+  box-shadow: 0 0 0 3px #366046;
+}
+body.dark-mode .garden-item.timed {
+  border-color: #5edb92;
+  box-shadow: 0 0 0 3px #275239;
+}
+body.dark-mode .pot-equation {
+  color: #e4efe7;
+}
+body.dark-mode .pot-equation small {
+  color: #9cb9a6;
+}
+body.dark-mode .flower-answer {
+  color: #e4efe7;
+}
+body.dark-mode .pot-item.matched {
+  background: #203527;
+  border-color: #386047;
+}
+body.dark-mode .flower-item.used {
+  background: #152019;
+  border-color: #213327;
+  opacity: .3;
+}
+body.dark-mode .garden-finish {
+  background: #1c2b21;
+}
+body.dark-mode .tea-goals {
+  color: #e4efe7;
+}
+body.dark-mode .tea-progress-card {
+  background: #1c2b21;
+  border-color: #284434;
+}
+body.dark-mode .tea-size-option {
+  background: #16241c;
+  border-color: #284434;
+  color: #e4efe7;
+}
+body.dark-mode .tea-size-option.selected {
+  border-color: #ed7280;
+  background: #2e1d22;
+}
+body.dark-mode .tea-size-title {
+  color: #a4beae;
+}
+body.dark-mode .tea-gift-note {
+  background: #1a2a1f;
+  border-color: #273f30;
+}
+body.dark-mode .tea-gift-note p {
+  color: #a4beae;
+}
+body.dark-mode .challenge-rules {
+  background: #1c2b21;
+  border-color: #284434;
+}
