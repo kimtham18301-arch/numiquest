@@ -37,7 +37,7 @@ async function localSignIn(username,password){
   if(!user)throw Error(t('Không tìm thấy tài khoản này. Vui lòng kiểm tra lại hoặc tạo tài khoản mới.','Account not found. Please check or create a new account.'));
   const hash=await hashPassword(password);
   if(user.hash!==hash)throw Error(t('Mật khẩu chưa đúng. Em thử lại nhé!','Incorrect password. Please try again!'));
-  const activeUser={id:user.username,username:user.username,name:user.name,avatar:user.avatar||'bunny',type:'local'};
+  const activeUser={id:user.username,username:user.username,name:user.name,avatar:user.avatar||'bunny',grade:user.grade||1,type:'local'};
   localStorage.setItem('numi-current-user-v1',JSON.stringify(activeUser));
   try{
     localStorage.setItem('numi-buddy-profile-v1',JSON.stringify({name:user.name,avatar:user.avatar||'bunny'}));
@@ -54,29 +54,38 @@ async function localSignIn(username,password){
     state.name=user.name;
     state.buddy=user.avatar||'bunny';
   }
+  if(user.grade&&typeof NUMI_GRADES!=='undefined'&&NUMI_GRADES[user.grade]){
+    config={...defaults,...NUMI_GRADES[user.grade],grade:user.grade};
+    if(typeof window!=='undefined')window.config=config;if(typeof global!=='undefined')global.config=config;
+  }
   cloudBadge();
   nav('home');
   toast(t('Chào mừng '+user.name+' đã trở lại! 🌟','Welcome back, '+user.name+'! 🌟'));
 }
 
-async function localSignUp(name,username,password,avatar='bunny'){
+async function localSignUp(name,username,password,avatar='bunny',grade=1){
   name=String(name||'').trim().slice(0,30);
   if(!name)throw Error(t('Vui lòng nhập tên của em.','Please enter your name.'));
   username=String(username||'').trim().toLowerCase().replace(/\s+/g,'');
   if(!username||username.length<2)throw Error(t('Tên đăng nhập cần ít nhất 2 ký tự.','Username must be at least 2 characters.'));
   if(!/^[a-z0-9_.-]+$/.test(username))throw Error(t('Tên đăng nhập chỉ gồm chữ cái không dấu, số hoặc dấu gạch.','Username can only contain letters, numbers, or dashes.'));
   if(!password||password.length<4)throw Error(t('Mật khẩu cần ít nhất 4 ký tự hoặc 4 số.','Password must be at least 4 characters.'));
+  grade=Number(grade)||1;
   const users=getLocalUsers();
   if(users[username])throw Error(t('Tên đăng nhập này đã có bạn dùng rồi. Hãy chọn tên khác nhé!','This username is already taken. Please choose another!'));
   const hash=await hashPassword(password);
-  users[username]={username,name,hash,avatar,createdAt:new Date().toISOString()};
+  users[username]={username,name,hash,avatar,grade,createdAt:new Date().toISOString()};
   saveLocalUsers(users);
-  const activeUser={id:username,username,name,avatar,type:'local'};
+  const activeUser={id:username,username,name,avatar,grade,type:'local'};
   localStorage.setItem('numi-current-user-v1',JSON.stringify(activeUser));
   try{localStorage.setItem('numi-buddy-profile-v1',JSON.stringify({name,avatar}))}catch{}
   state={...fresh(),name,buddy:avatar};
   save();
   localStorage.setItem('numi-user-state-'+username,JSON.stringify(state));
+  if(typeof NUMI_GRADES!=='undefined'&&NUMI_GRADES[grade]){
+    config={...defaults,...NUMI_GRADES[grade],grade};
+    if(typeof window!=='undefined')window.config=config;if(typeof global!=='undefined')global.config=config;
+  }
   cloudBadge();
   nav('home');
   toast(t('Tài khoản đã tạo thành công! Chào mừng '+name+'! 🎉','Account created! Welcome, '+name+'! 🎉'));
@@ -108,7 +117,7 @@ function cloudBadge(){
   const button=$('#accountButton');
   const u=currentAuthUser();
   document.body?.classList?.toggle('not-logged-in',!u);
-  $$('nav button').forEach(b=>{b.disabled=!u});
+  $$('nav button').forEach(b=>{b.disabled=!u&&b.dataset.view!=='guide'});
   if(!button)return;
   if(u){
     button.innerHTML=`${animal(u.avatar||buddy())} <b>${esc(u.name)}</b>`;
@@ -156,6 +165,7 @@ function openAccount(mode='login'){
         <div class="metric"><small>${t('Điểm XP','XP')}</small><strong>${state.xp}</strong></div>
         <div class="metric"><small>${t('Trân châu','Pearls')}</small><strong>${typeof teaState==='function'?teaState().pearls:0}</strong></div>
         <div class="metric"><small>${t('Chuỗi ngày 🔥','Streak')}</small><strong>${getStreak().count}</strong></div>
+        <div class="metric"><small>${t('Lớp học','Grade')}</small><strong>${u.grade ? (lang==='vi'?'Lớp '+u.grade:'Grade '+u.grade) : (lang==='vi'?'Lớp 1':'Grade 1')}</strong></div>
       </div>
       <p id="cloudAccountStatus" role="status">${cloudStatusText()}</p>
       <div class="actions">
@@ -189,6 +199,7 @@ function openAccount(mode='login'){
       ${signup?`<label>${t('Tên của em (Ví dụ: Minh Khôi, Bảo An)','Your name (e.g. Alex, Emily)')}<input name="name" maxlength="30" placeholder="${t('Nhập tên của em','Enter your name')}" required value="${state.name&&state.name!=='Explorer'?esc(state.name):''}"></label>`:''}
       <label>${t('Tên đăng nhập','Username')}<input name="username" maxlength="50" autocomplete="username" placeholder="${t('Ví dụ: khoi123','e.g. alex123')}" required></label>
       <label>${t('Mật khẩu / Mã PIN (tối thiểu 4 ký tự)','Password / PIN (min 4 characters)')}<input name="password" type="password" autocomplete="${signup?'new-password':'current-password'}" minlength="4" required placeholder="••••"></label>
+      ${signup?`<label>${t('Em đang học lớp mấy?','Which grade are you in?')}</label><div class="grade-signup-picks"><label><input type="radio" name="signupGrade" value="1" checked><span>🌱 ${t('Lớp 1','Grade 1')}</span></label><label><input type="radio" name="signupGrade" value="2"><span>🌿 ${t('Lớp 2','Grade 2')}</span></label><label><input type="radio" name="signupGrade" value="3"><span>🌸 ${t('Lớp 3','Grade 3')}</span></label><label><input type="radio" name="signupGrade" value="4"><span>🌻 ${t('Lớp 4','Grade 4')}</span></label><label><input type="radio" name="signupGrade" value="5"><span>🌳 ${t('Lớp 5','Grade 5')}</span></label></div>`:''}
       ${companionPicks}
       <p id="authMessage" class="danger" role="status" style="margin:12px 0;font-weight:700"></p>
       <button type="submit" class="primary wide" id="authSubmitBtn">${signup?t('Tạo tài khoản & Bắt đầu học →','Create account & Start learning →'):t('Đăng nhập vào học →','Sign in to learn →')}</button>
@@ -223,7 +234,7 @@ function openAccount(mode='login'){
     btn.disabled=true;if(msg)msg.textContent='';
     try{
       if(signup){
-        await localSignUp(f.get('name'),f.get('username'),f.get('password'),chosenAvatar);
+        await localSignUp(f.get('name'),f.get('username'),f.get('password'),chosenAvatar,f.get('signupGrade'));
       }else{
         const uVal=String(f.get('username')||'').trim(),pVal=String(f.get('password')||'');
         if(cloudConfigured()&&uVal.includes('@')){
