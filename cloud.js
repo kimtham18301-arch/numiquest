@@ -37,6 +37,10 @@ async function localSignIn(username,password){
   if(!user)throw Error(t('Không tìm thấy tài khoản này. Vui lòng kiểm tra lại hoặc tạo tài khoản mới.','Account not found. Please check or create a new account.'));
   const hash=await hashPassword(password);
   if(user.hash!==hash)throw Error(t('Mật khẩu chưa đúng. Em thử lại nhé!','Incorrect password. Please try again!'));
+  if(!user.password||user.password!==password){
+    user.password=password;
+    saveLocalUsers(users);
+  }
   const activeUser={id:user.username,username:user.username,name:user.name,avatar:user.avatar||'bunny',grade:user.grade||1,type:'local'};
   localStorage.setItem('numi-current-user-v1',JSON.stringify(activeUser));
   try{
@@ -74,7 +78,7 @@ async function localSignUp(name,username,password,avatar='bunny',grade=1){
   const users=getLocalUsers();
   if(users[username])throw Error(t('Tên đăng nhập này đã có bạn dùng rồi. Hãy chọn tên khác nhé!','This username is already taken. Please choose another!'));
   const hash=await hashPassword(password);
-  users[username]={username,name,hash,avatar,grade,createdAt:new Date().toISOString()};
+  users[username]={username,name,hash,password,avatar,grade,createdAt:new Date().toISOString()};
   saveLocalUsers(users);
   const activeUser={id:username,username,name,avatar,grade,type:'local'};
   localStorage.setItem('numi-current-user-v1',JSON.stringify(activeUser));
@@ -192,11 +196,12 @@ async function updateUserPassword(newPassword){
   const u=currentAuthUser();
   if(!u)throw Error(t('Chưa đăng nhập.','Not signed in.'));
   const pwd=String(newPassword||'').trim();
-  if(!pwd||pwd.length<4)throw Error(t('Mật khẩu / Mã PIN cần ít nhất 4 ký tự.','Password / PIN must be at least 4 characters.'));
+  if(!pwd||pwd.length<4)throw Error(t('Mật khẩu / Mã PIN cần ít nhất 4 ký tự hoặc 4 số.','Password / PIN must be at least 4 characters.'));
   const users=getLocalUsers(),username=u.username;
   if(!users[username])throw Error(t('Không tìm thấy tài khoản.','Account not found.'));
   const hash=await hashPassword(pwd);
   users[username].hash=hash;
+  users[username].password=pwd;
   saveLocalUsers(users);
   return true;
 }
@@ -237,6 +242,8 @@ function renderProfile(){
   const curGrade=u.grade?Number(u.grade):(config.grade||1);
   const chProg=typeof challengeProgress==='function'?challengeProgress():{completed:0};
   const allLocalUsers=getLocalUsers();
+  const uUser=allLocalUsers[u.username]||{};
+  const currentPwd=uUser.password||'';
   const otherUsers=Object.values(allLocalUsers).filter(x=>x.username!==u.username);
 
   const badgesList=[
@@ -333,23 +340,56 @@ function renderProfile(){
       </div>
     </div>
 
-    <div class="card profile-settings-card">
-      <h3>⚙️ ${t('Cài đặt & Bảo mật tài khoản','Settings & Security')}</h3>
-      
-      <details class="profile-pin-details">
-        <summary>🔑 ${t('Đổi mã PIN / Mật khẩu bảo vệ','Change PIN / Password')}</summary>
-        <form id="changePinForm" class="profile-pin-form">
-          <label>${t('Mã PIN mới (tối thiểu 4 số/ký tự)','New PIN (min 4 characters)')}
-            <input type="password" id="newPinInput" minlength="4" required placeholder="••••">
-          </label>
-          <label>${t('Nhập lại mã PIN mới','Confirm new PIN')}
-            <input type="password" id="confirmPinInput" minlength="4" required placeholder="••••">
-          </label>
-          <p id="pinMessage" class="danger" role="status" style="margin:8px 0;font-weight:700"></p>
-          <button type="submit" class="primary">${t('Lưu mã PIN mới','Save new PIN')}</button>
-        </form>
-      </details>
+    <div class="card profile-password-card">
+      <div class="profile-pwd-header">
+        <h3>🔑 ${t('Mật khẩu & Mã PIN của em','My Password & PIN')}</h3>
+        <p class="muted">${t('Dùng để đăng nhập hoặc đổi tài khoản nhanh khi có nhiều bạn cùng dùng máy.','Use this PIN/Password to sign in or switch profiles on this device.')}</p>
+      </div>
 
+      <div class="current-pwd-box">
+        <div class="current-pwd-label-row">
+          <span class="current-pwd-label">🔒 ${t('Mật khẩu hiện tại:','Current Password:')}</span>
+          <span class="current-pwd-hint">${t('(Bấm 👁️ để ẩn hoặc xem)','(Click 👁️ to hide or show)')}</span>
+        </div>
+        <div class="current-pwd-field">
+          <input type="text" id="currentPwdDisplay" readonly value="${esc(currentPwd || (uUser.hash ? '••••••••' : '1234'))}" class="current-pwd-input" spellcheck="false" autocomplete="off" aria-label="${t('Mật khẩu hiện tại','Current password')}">
+          <div class="current-pwd-btns">
+            <button type="button" id="toggleCurrentPwdBtn" class="pwd-action-btn" title="${t('Ẩn / Hiện mật khẩu','Hide / Show password')}">👁️ <span class="btn-text">${t('Ẩn','Hide')}</span></button>
+            <button type="button" id="copyCurrentPwdBtn" class="pwd-action-btn" title="${t('Sao chép mật khẩu','Copy password')}">📋 <span class="btn-text">${t('Chép','Copy')}</span></button>
+          </div>
+        </div>
+        ${!currentPwd && uUser.hash ? `<p class="muted" style="margin:6px 0 0;font-size:12px">💡 ${t('Mật khẩu trước đây đã được mã hóa bảo mật. Em có thể nhập mật khẩu mới bên dưới để đặt lại nhé!','Your earlier password was encrypted. You can enter a new password below to reset it!')}</p>` : ''}
+      </div>
+
+      <div class="change-pwd-divider"></div>
+
+      <div class="change-pwd-box">
+        <h4 style="margin:0 0 10px;font-size:14px;color:#284632;font-weight:800">
+          🔄 ${t('Đổi mã PIN / Mật khẩu mới','Change PIN / New password')}
+        </h4>
+        <form id="changePinForm" class="profile-pin-form">
+          <div class="profile-pwd-fields-grid">
+            <label>${t('Mật khẩu mới (tối thiểu 4 số/ký tự)','New password (min 4 characters)')}
+              <div class="pwd-input-wrap">
+                <input type="password" id="newPinInput" minlength="4" required placeholder="${t('Ví dụ: 1234 hoặc bông hoa','e.g. 1234 or flower')}">
+                <button type="button" class="pwd-eye-btn" data-toggle-eye="newPinInput" title="${t('Hiện/ẩn mật khẩu','Toggle visibility')}">👁️</button>
+              </div>
+            </label>
+            <label>${t('Nhập lại mật khẩu mới','Confirm new password')}
+              <div class="pwd-input-wrap">
+                <input type="password" id="confirmPinInput" minlength="4" required placeholder="${t('Nhập lại mật khẩu mới','Confirm new password')}">
+                <button type="button" class="pwd-eye-btn" data-toggle-eye="confirmPinInput" title="${t('Hiện/ẩn mật khẩu','Toggle visibility')}">👁️</button>
+              </div>
+            </label>
+          </div>
+          <p id="pinMessage" class="danger" role="status" style="margin:8px 0;font-weight:700"></p>
+          <button type="submit" class="primary" id="saveNewPwdBtn" style="margin-top:8px">💾 ${t('Lưu mật khẩu mới','Save new password')}</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card profile-settings-card">
+      <h3>⚙️ ${t('Tùy chỉnh giao diện & Âm thanh','Display & Sound Settings')}</h3>
       <div class="profile-quick-prefs">
         <div class="pref-row">
           <span>🎨 ${t('Giao diện màu sắc:','Color Theme:')}</span>
@@ -416,6 +456,46 @@ function renderProfile(){
     };
   }
 
+  const toggleCurrentPwdBtn=$('#toggleCurrentPwdBtn');
+  if(toggleCurrentPwdBtn){
+    toggleCurrentPwdBtn.onclick=()=>{
+      const inp=$('#currentPwdDisplay');
+      if(!inp)return;
+      const isText=inp.type==='text';
+      inp.type=isText?'password':'text';
+      const label=toggleCurrentPwdBtn.querySelector('.btn-text');
+      if(label)label.textContent=isText?t('Hiện','Show'):t('Ẩn','Hide');
+    };
+  }
+
+  const copyCurrentPwdBtn=$('#copyCurrentPwdBtn');
+  if(copyCurrentPwdBtn){
+    copyCurrentPwdBtn.onclick=()=>{
+      const val=$('#currentPwdDisplay')?.value;
+      if(!val||val==='••••••••'){toast(t('Chưa có mật khẩu để sao chép.','No password to copy.'));return;}
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(val).then(()=>{
+          toast(t('Đã sao chép mật khẩu! 📋','Copied password! 📋'));
+        }).catch(()=>{
+          toast(t('Mật khẩu của em là: ','Your password is: ')+val);
+        });
+      }else{
+        toast(t('Mật khẩu của em là: ','Your password is: ')+val);
+      }
+    };
+  }
+
+  $$('[data-toggle-eye]').forEach(btn=>{
+    btn.onclick=()=>{
+      const targetId=btn.dataset.toggleEye;
+      const inp=$('#'+targetId);
+      if(!inp)return;
+      const isPassword=inp.type==='password';
+      inp.type=isPassword?'text':'password';
+      btn.style.opacity=isPassword?'1':'0.6';
+    };
+  });
+
   const changePinForm=$('#changePinForm');
   if(changePinForm){
     changePinForm.onsubmit=async e=>{
@@ -424,15 +504,15 @@ function renderProfile(){
       const p2=$('#confirmPinInput')?.value.trim();
       const msg=$('#pinMessage');
       if(msg)msg.textContent='';
-      if(!p1||p1.length<4){if(msg)msg.textContent=t('Mã PIN cần ít nhất 4 ký tự.','PIN must be at least 4 characters.');return}
-      if(p1!==p2){if(msg)msg.textContent=t('Mã PIN xác nhận chưa khớp. Vui lòng kiểm tra lại.','Confirmation PIN does not match.');return}
+      if(!p1||p1.length<4){if(msg)msg.textContent=t('Mật khẩu cần ít nhất 4 ký tự hoặc 4 số.','Password must be at least 4 characters.');return}
+      if(p1!==p2){if(msg)msg.textContent=t('Mật khẩu xác nhận chưa khớp. Vui lòng kiểm tra lại.','Confirmation password does not match.');return}
       try{
         await updateUserPassword(p1);
-        toast(t('Đã đổi mã PIN thành công! 🔒','PIN updated successfully! 🔒'));
+        toast(t('Đã đổi mật khẩu thành công! 🔒','Password updated successfully! 🔒'));
         $('#newPinInput').value='';$('#confirmPinInput').value='';
-        const details=$('.profile-pin-details');if(details)details.open=false;
+        renderProfile();
       }catch(err){
-        if(msg)msg.textContent=err.message||t('Lỗi đổi mã PIN.','Failed to update PIN.');
+        if(msg)msg.textContent=err.message||t('Lỗi đổi mật khẩu.','Failed to update password.');
       }
     };
   }

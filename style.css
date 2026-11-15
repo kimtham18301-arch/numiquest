@@ -263,6 +263,26 @@ body.not-logged-in .brand{pointer-events:none}
 .tag-unlocked{background:#fef3cd;color:#856404}
 .tag-locked{background:#e9ecef;color:#6c757d}
 
+.profile-password-card{padding:20px;border-radius:20px;background:var(--card-bg,#fff);border:1.5px solid #e5ede0;margin-bottom:18px}
+.profile-pwd-header h3{margin:0 0 4px;font-size:16px;font-weight:800;color:#284632}
+.current-pwd-box{background:#f4f9ef;border:1.5px solid #cce2c0;border-radius:14px;padding:14px 16px;margin:12px 0 16px}
+.current-pwd-label-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.current-pwd-label{font-weight:800;font-size:13px;color:#234c2b;display:inline-flex;align-items:center;gap:4px}
+.current-pwd-hint{font-size:12px;color:#637a5f}
+.current-pwd-field{display:flex;gap:8px;align-items:center}
+.current-pwd-input{flex:1;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:18px;font-weight:800;letter-spacing:1.5px;color:#1b3d22;background:#fff;border:1.5px solid #b7d6a5;border-radius:10px;padding:9px 12px;outline:none}
+.current-pwd-btns{display:flex;gap:6px}
+.pwd-action-btn{display:inline-flex;align-items:center;gap:4px;padding:9px 12px;border-radius:10px;border:1.5px solid #b7d6a5;background:#fff;font-weight:700;font-size:13px;color:#234c2b;cursor:pointer;transition:all .15s ease}
+.pwd-action-btn:hover{background:#eaf4e2;border-color:#8fb875}
+.change-pwd-divider{height:1px;background:#e5ede0;margin:16px 0}
+.change-pwd-box h4{margin:0 0 10px;font-size:14px;color:#284632;font-weight:800}
+.profile-pwd-fields-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:600px){.profile-pwd-fields-grid{grid-template-columns:1fr}}
+.pwd-input-wrap{position:relative;display:flex;align-items:center}
+.pwd-input-wrap input{width:100%;font-size:15px;padding:9px 36px 9px 12px;border-radius:10px;border:1.5px solid #c2dfae;background:#fff;margin-top:4px}
+.pwd-eye-btn{position:absolute;right:8px;top:50%;transform:translateY(-30%);background:transparent;border:none;font-size:15px;cursor:pointer;padding:4px;opacity:0.6;transition:opacity .15s}
+.pwd-eye-btn:hover{opacity:1}
+
 .profile-settings-card{padding:18px 20px;border-radius:20px;background:var(--card-bg,#fff);border:1.5px solid #e5ede0;margin-bottom:18px}
 .profile-settings-card h3{margin:0 0 14px;font-size:16px;font-weight:800;color:#284632}
 .profile-pin-details{background:#f6f9f3;border-radius:12px;border:1px solid #d4e5cb;padding:10px 14px;margin-bottom:14px}
