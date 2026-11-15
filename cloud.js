@@ -147,6 +147,349 @@ save=function(){
 };
 function cloudStatusText(){return cloudSession?(cloudStatus==='saved'?t('Đã lưu trực tuyến.','Saved online.'):cloudStatus==='saving'?t('Đang lưu trực tuyến…','Saving online…'):cloudStatus==='conflict'?t('Có bản lưu mới từ thiết bị khác. Chọn bản muốn tiếp tục bên dưới.','A newer save exists on another device. Choose which one to continue.'):cloudStatus==='offline'?t('Chưa lưu lên mạng. Kết quả vẫn có trên thiết bị; kết nối lại để đồng bộ.','Not saved online yet. Progress is on this device; reconnect to sync.'):t('Kết quả hiện được lưu trên thiết bị.','Progress is currently saved on this device.')):t('Tài khoản học sinh được lưu an toàn trên máy này.','Student account is saved securely on this device.')}
 
+function updateUserProfile(updates={}){
+  const u=currentAuthUser();
+  if(!u)return;
+  const users=getLocalUsers(),username=u.username;
+  if(!users[username])users[username]={...u};
+  if(updates.name){
+    const cleanName=String(updates.name).trim().slice(0,30);
+    if(cleanName){
+      u.name=cleanName;users[username].name=cleanName;
+      if(typeof state!=='undefined'){state.name=cleanName;}
+      if(typeof global!=='undefined'&&global.state){global.state.name=cleanName;}
+      if(typeof window!=='undefined'&&window.state){window.state.name=cleanName;}
+    }
+  }
+  if(updates.avatar){
+    const valid=['bunny','panda','fox','lion'];
+    if(valid.includes(updates.avatar)){
+      u.avatar=updates.avatar;users[username].avatar=updates.avatar;
+      if(typeof state!=='undefined'){state.buddy=updates.avatar;}
+      if(typeof global!=='undefined'&&global.state){global.state.buddy=updates.avatar;}
+      if(typeof window!=='undefined'&&window.state){window.state.buddy=updates.avatar;}
+    }
+  }
+  if(updates.grade){
+    const g=Number(updates.grade);
+    if(g>=1&&g<=5){
+      u.grade=g;users[username].grade=g;
+      if(typeof NUMI_GRADES!=='undefined'&&NUMI_GRADES[g]){
+        config={...defaults,...NUMI_GRADES[g],grade:g};
+        if(typeof window!=='undefined')window.config=config;if(typeof global!=='undefined')global.config=config;
+      }
+    }
+  }
+  saveLocalUsers(users);
+  localStorage.setItem('numi-current-user-v1',JSON.stringify(u));
+  try{localStorage.setItem('numi-buddy-profile-v1',JSON.stringify({name:u.name,avatar:u.avatar}))}catch{}
+  save();
+  cloudBadge();
+  return u;
+}
+
+async function updateUserPassword(newPassword){
+  const u=currentAuthUser();
+  if(!u)throw Error(t('Chưa đăng nhập.','Not signed in.'));
+  const pwd=String(newPassword||'').trim();
+  if(!pwd||pwd.length<4)throw Error(t('Mật khẩu / Mã PIN cần ít nhất 4 ký tự.','Password / PIN must be at least 4 characters.'));
+  const users=getLocalUsers(),username=u.username;
+  if(!users[username])throw Error(t('Không tìm thấy tài khoản.','Account not found.'));
+  const hash=await hashPassword(pwd);
+  users[username].hash=hash;
+  saveLocalUsers(users);
+  return true;
+}
+
+function renderProfile(){
+  const u=currentAuthUser();
+  if(!u){
+    stop();view='profile';document.body.dataset.view='profile';
+    $$('nav button').forEach(b=>b.classList.toggle('active',b.dataset.view==='profile'));
+    $('#app').innerHTML=`<section class="narrow card profile-gate-card">
+      <div class="intro-animal">${animal('bunny')}</div>
+      <span class="eyebrow">NUMIQUICK · ${t('HỒ SƠ CÁ NHÂN','STUDENT PROFILE')}</span>
+      <h1>${t('Đăng nhập để xem hồ sơ của em','Sign in to view your profile')}</h1>
+      <p class="muted">${t('Xem cấp độ, chuỗi ngày học 🔥, điểm kinh nghiệm và bộ sưu tập huy hiệu của riêng em.','Track your level, streak 🔥, experience points and badge collection.')}</p>
+      <div class="actions" style="margin-top:20px">
+        <button class="primary wide" onclick="openAccount('login')">🔒 ${t('Đăng nhập vào học','Sign in to learn')} →</button>
+        <button class="wide" onclick="openAccount('signup')" style="margin-top:8px">✨ ${t('Tạo tài khoản mới','Create new account')}</button>
+        <button class="wide" onclick="nav('home')" style="margin-top:8px">⌂ ${t('Về trang chủ','Back to home')}</button>
+      </div>
+    </section>`;
+    translate();
+    window.scrollTo(0,0);
+    return;
+  }
+
+  stop();view='profile';document.body.dataset.view='profile';
+  $$('nav button').forEach(b=>b.classList.toggle('active',b.dataset.view==='profile'));
+
+  const tea=typeof teaState==='function'?teaState():{pearls:0,size:'S'};
+  const goal=(typeof teaSizes!=='undefined'&&teaSizes[tea.size])||20;
+  const streak=getStreak();
+  const h=state.history||[];
+  const totalSessions=h.length;
+  const totalAnswered=h.reduce((a,b)=>a+(b.total||0),0);
+  const totalCorrect=h.reduce((a,b)=>a+(b.correct||0),0);
+  const accuracy=totalAnswered>0?Math.round((totalCorrect/totalAnswered)*100):100;
+  const avgSpeed=h.length>0?(h.reduce((a,b)=>a+(b.time||0),0)/h.length).toFixed(1):'0.0';
+  const curGrade=u.grade?Number(u.grade):(config.grade||1);
+  const chProg=typeof challengeProgress==='function'?challengeProgress():{completed:0};
+  const allLocalUsers=getLocalUsers();
+  const otherUsers=Object.values(allLocalUsers).filter(x=>x.username!==u.username);
+
+  const badgesList=[
+    {id:'first_step',icon:'🌱',titleVi:'Khởi đầu tự tin',titleEn:'Confident Start',descVi:'Hoàn thành bài luyện tập đầu tiên',descEn:'Complete your first practice session',unlocked:totalSessions>=1},
+    {id:'streak_3',icon:'🔥',titleVi:'Chiến thần kiên trì',titleEn:'Streak Master',descVi:'Học liên tục 3 ngày giữ lửa',descEn:'Keep a 3-day daily streak',unlocked:streak.count>=3},
+    {id:'pearl_20',icon:'🧋',titleVi:'Tín đồ trà sữa',titleEn:'Boba Lover',descVi:'Thu thập từ 20 viên trân châu',descEn:'Collect 20+ pearls in your cup',unlocked:tea.pearls>=20},
+    {id:'fast_speed',icon:'⚡',titleVi:'Phản xạ thần tốc',titleEn:'Fast Reflexes',descVi:'Tốc độ trung bình dưới 5s/câu',descEn:'Average speed under 5s/question',unlocked:totalSessions>=1&&parseFloat(avgSpeed)>0&&parseFloat(avgSpeed)<=5.0},
+    {id:'challenge_champ',icon:'🏆',titleVi:'Nhà chinh phục',titleEn:'Challenge Champion',descVi:'Vượt qua 3 level Thử thách',descEn:'Clear 3 challenge levels',unlocked:(state.badges||0)>=1||chProg.completed>=3},
+    {id:'garden_bloom',icon:'🌼',titleVi:'Bác sĩ vườn hoa',titleEn:'Flower Healer',descVi:'Sửa sạch hết câu sai trong Vườn hoa',descEn:'Clear all pending mistakes in Garden',unlocked:totalSessions>=1&&state.mistakes.length===0}
+  ];
+
+  $('#app').innerHTML=`<section class="profile-view narrow">
+    <div class="card profile-header-card">
+      <div class="profile-avatar-wrap">
+        <div class="profile-avatar">${animal(u.avatar||buddy())}</div>
+      </div>
+      <span class="eyebrow">NUMIQUICK · ${t('HỒ SƠ HỌC SINH','STUDENT PROFILE')}</span>
+      <h1 class="profile-name">
+        <span id="profileNameText">${esc(u.name)}</span>
+        <button type="button" class="profile-edit-name-btn" id="editNameBtn" title="${t('Đổi tên hiển thị','Change display name')}">✏️</button>
+      </h1>
+      <p class="profile-username">@${esc(u.username)} · <span class="profile-joined">${t('Thành viên NumiQuick','NumiQuick Learner')}</span></p>
+
+      <div class="profile-field-group">
+        <label class="profile-field-label">🎓 ${t('Lớp học của em:','Current Grade Level:')}</label>
+        <div class="profile-grade-chips">
+          ${[1,2,3,4,5].map(g=>`<button type="button" class="profile-grade-chip ${curGrade===g?'active':''}" data-set-grade="${g}">${NUMI_GRADES[g]?NUMI_GRADES[g].icon:'🌱'} ${lang==='vi'?NUMI_GRADES[g].name:NUMI_GRADES[g].enName}</button>`).join('')}
+        </div>
+      </div>
+
+      <div class="profile-field-group">
+        <label class="profile-field-label">🐾 ${t('Bạn thú đồng hành:','Choose Study Buddy:')}</label>
+        <div class="profile-buddy-chips">
+          ${[['bunny','Thỏ Mimi 🐰'],['panda','Gấu Baobao 🐼'],['fox','Cáo Kiki 🦊'],['lion','Sư tử Leo 🦁']].map(([av,lbl])=>`<button type="button" class="profile-buddy-chip ${(u.avatar||'bunny')===av?'active':''}" data-set-avatar="${av}"><div class="buddy-chip-icon">${animal(av)}</div><span>${lbl}</span></button>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-stats-grid">
+      <div class="profile-stat-box card">
+        <span class="stat-icon">🏅</span>
+        <div class="stat-info"><small>${t('Cấp độ','Level')}</small><strong>${level()}</strong></div>
+      </div>
+      <div class="profile-stat-box card">
+        <span class="stat-icon">⭐</span>
+        <div class="stat-info"><small>${t('Điểm XP','XP Score')}</small><strong>${state.xp}</strong></div>
+      </div>
+      <div class="profile-stat-box card">
+        <span class="stat-icon">🔥</span>
+        <div class="stat-info"><small>${t('Chuỗi ngày 🔥','Daily Streak')}</small><strong>${streak.count} ${t('ngày','days')}</strong></div>
+      </div>
+      <div class="profile-stat-box card">
+        <span class="stat-icon">🧋</span>
+        <div class="stat-info"><small>${t('Trân châu','Pearls')}</small><strong>${tea.pearls} ${t('viên','pearls')}</strong></div>
+      </div>
+    </div>
+
+    <div class="card profile-tea-card">
+      <div class="tea-card-header">
+        <span class="tea-cup-icon">${typeof teaIcon==='function'?teaIcon(tea.size):'🧋'}</span>
+        <div>
+          <h3>${t('Mục tiêu Trà Sữa Trân Châu','Milk Tea Boba Goal')} · Size ${tea.size}</h3>
+          <p class="muted">${t('Mỗi câu đúng tích lũy 1 viên trân châu cho ly trà sữa ngọt ngào!','Every correct answer adds 1 chewy boba pearl!')}</p>
+        </div>
+      </div>
+      <div class="tea-progress-wrap">
+        <div class="tea-progress-label">
+          <span><b>${Math.min(goal,tea.pearls)}</b> / ${goal} ${t('viên trân châu','pearls')}</span>
+          <span>${Math.round((Math.min(goal,tea.pearls)/goal)*100)}%</span>
+        </div>
+        <progress class="tea-progress-bar" max="${goal}" value="${Math.min(goal,tea.pearls)}"></progress>
+      </div>
+      <button class="primary wide" onclick="nav('atlas')">🧋 ${t('Vào quán trà sữa & Nhận thưởng','View Milk Tea Shop & Level Up')} →</button>
+    </div>
+
+    <div class="card profile-perf-card">
+      <h3>📈 ${t('Hiệu suất tính nhẩm','Mental Math Performance')}</h3>
+      <div class="perf-stats-row">
+        <div class="perf-col"><span class="perf-val">${totalSessions}</span><small>${t('Lượt luyện','Sessions')}</small></div>
+        <div class="perf-col"><span class="perf-val">${totalCorrect}/${totalAnswered}</span><small>${t('Câu đúng','Correct')}</small></div>
+        <div class="perf-col"><span class="perf-val">${accuracy}%</span><small>${t('Chính xác','Accuracy')}</small></div>
+        <div class="perf-col"><span class="perf-val">${avgSpeed}s</span><small>${t('Tốc độ/câu','Speed/Q')}</small></div>
+      </div>
+      <button class="wide" onclick="nav('stats')" style="margin-top:14px">🏅 ${t('Xem nhật ký tiến bộ chi tiết 7 ngày','View 7-day progress journal')} →</button>
+    </div>
+
+    <div class="card profile-badges-card">
+      <div class="badges-header">
+        <h3>🎖️ ${t('Bộ sưu tập Huy hiệu & Danh hiệu','Badges & Milestone Honors')}</h3>
+        <span class="badges-count">${badgesList.filter(b=>b.unlocked).length}/${badgesList.length} ${t('đã đạt','unlocked')}</span>
+      </div>
+      <div class="badges-grid">
+        ${badgesList.map(b=>`<div class="badge-item ${b.unlocked?'unlocked':'locked'}"><div class="badge-icon-wrap">${b.icon}</div><div class="badge-details"><b>${lang==='vi'?b.titleVi:b.titleEn}</b><p>${lang==='vi'?b.descVi:b.descEn}</p><span class="badge-tag ${b.unlocked?'tag-unlocked':'tag-locked'}">${b.unlocked?'🌟 '+t('Đã mở khóa','Unlocked'):'🔒 '+t('Chưa mở','Locked')}</span></div></div>`).join('')}
+      </div>
+    </div>
+
+    <div class="card profile-settings-card">
+      <h3>⚙️ ${t('Cài đặt & Bảo mật tài khoản','Settings & Security')}</h3>
+      
+      <details class="profile-pin-details">
+        <summary>🔑 ${t('Đổi mã PIN / Mật khẩu bảo vệ','Change PIN / Password')}</summary>
+        <form id="changePinForm" class="profile-pin-form">
+          <label>${t('Mã PIN mới (tối thiểu 4 số/ký tự)','New PIN (min 4 characters)')}
+            <input type="password" id="newPinInput" minlength="4" required placeholder="••••">
+          </label>
+          <label>${t('Nhập lại mã PIN mới','Confirm new PIN')}
+            <input type="password" id="confirmPinInput" minlength="4" required placeholder="••••">
+          </label>
+          <p id="pinMessage" class="danger" role="status" style="margin:8px 0;font-weight:700"></p>
+          <button type="submit" class="primary">${t('Lưu mã PIN mới','Save new PIN')}</button>
+        </form>
+      </details>
+
+      <div class="profile-quick-prefs">
+        <div class="pref-row">
+          <span>🎨 ${t('Giao diện màu sắc:','Color Theme:')}</span>
+          <div class="pref-theme-chips">
+            ${Object.keys(typeof NUMI_THEMES!=='undefined'?NUMI_THEMES:{}).map(k=>`<button type="button" class="theme-chip ${document.body.dataset.theme===k?'active':''}" data-theme-pick="${k}">${NUMI_THEMES[k].name}</button>`).join('')}
+          </div>
+        </div>
+        <div class="pref-row">
+          <span>🔊 ${t('Âm thanh vui nhộn:','Sound effects:')}</span>
+          <button type="button" id="profileSoundToggle" class="profile-btn-pill">
+            ${soundEnabled?'🔊 '+t('Bật','On'):'🔈 '+t('Tắt','Off')}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    ${otherUsers.length?`<div class="card profile-family-card">
+      <h3>👨‍👩‍👧 ${t('Chuyển sang tài khoản bé khác trong nhà','Switch to another child profile')}</h3>
+      <p class="muted">${t('Mỗi bé có bảng điểm, cấp độ và chuỗi ngày riêng biệt.','Each child has their own progress, level, and daily streak.')}</p>
+      <div class="family-chips">
+        ${otherUsers.map(uOther=>`<button type="button" class="family-chip" data-switch-user="${esc(uOther.username)}"><span class="family-chip-avatar">${animal(uOther.avatar||'bunny')}</span><span class="family-chip-name">${esc(uOther.name)} (${uOther.grade?(lang==='vi'?'Lớp '+uOther.grade:'Grade '+uOther.grade):'Lớp 1'})</span></button>`).join('')}
+      </div>
+    </div>`:''}
+
+    <div class="profile-bottom-actions">
+      <button class="primary wide" onclick="nav('setup')">⚡ ${t('Vào luyện tập ngay','Start practicing now')} →</button>
+      <button class="wide" onclick="renderWorksheet()" style="margin-top:8px">📄 ${t('In phiếu bài tập (PDF)','Print worksheet (PDF)')}</button>
+      <button class="wide" onclick="openAccount('signup')" style="margin-top:8px">➕ ${t('Tạo thêm tài khoản bé khác','Add another child profile')}</button>
+      <button id="profileSignOutBtn" class="danger wide" style="margin-top:14px">🚪 ${t('Đăng xuất tài khoản','Sign out')}</button>
+    </div>
+  </section>`;
+
+  $$('[data-set-grade]').forEach(btn=>{
+    btn.onclick=()=>{
+      const g=+btn.dataset.setGrade;
+      updateUserProfile({grade:g});
+      renderProfile();
+      toast(t('Đã chuyển sang '+(lang==='vi'?'Lớp '+g:'Grade '+g)+'! 🎓','Switched to Grade '+g+'! 🎓'));
+    };
+  });
+
+  $$('[data-set-avatar]').forEach(btn=>{
+    btn.onclick=()=>{
+      const av=btn.dataset.setAvatar;
+      updateUserProfile({avatar:av});
+      renderProfile();
+      toast(t('Đã đổi bạn đồng hành thành công! 🌟','Companion updated! 🌟'));
+    };
+  });
+
+  const editNameBtn=$('#editNameBtn');
+  if(editNameBtn){
+    editNameBtn.onclick=()=>{
+      modal(`<h2>✏️ ${t('Đổi tên hiển thị','Change display name')}</h2><p class="muted">${t('Nhập tên của em (Ví dụ: Minh Khôi, Bảo An)','Enter your name (e.g. Alex, Emily)')}</p><input id="profileModalNameInput" maxlength="30" value="${esc(u.name)}" style="width:100%;font-size:16px;padding:10px;margin:12px 0;border-radius:10px;border:1.5px solid #d5e4c7"><div class="actions"><button class="primary" id="saveProfileNameBtn">${t('Lưu tên mới','Save name')}</button><button id="cancelProfileNameBtn">${t('Hủy','Cancel')}</button></div>`);
+      $('#cancelProfileNameBtn').onclick=()=>$('#modal').close();
+      $('#saveProfileNameBtn').onclick=()=>{
+        const val=$('#profileModalNameInput')?.value.trim();
+        if(!val){toast(t('Vui lòng nhập tên của em.','Please enter a name.'));return}
+        updateUserProfile({name:val});
+        $('#modal').close();
+        renderProfile();
+        toast(t('Đã cập nhật tên thành '+val+'! 🎉','Name updated to '+val+'! 🎉'));
+      };
+    };
+  }
+
+  const changePinForm=$('#changePinForm');
+  if(changePinForm){
+    changePinForm.onsubmit=async e=>{
+      e.preventDefault();
+      const p1=$('#newPinInput')?.value.trim();
+      const p2=$('#confirmPinInput')?.value.trim();
+      const msg=$('#pinMessage');
+      if(msg)msg.textContent='';
+      if(!p1||p1.length<4){if(msg)msg.textContent=t('Mã PIN cần ít nhất 4 ký tự.','PIN must be at least 4 characters.');return}
+      if(p1!==p2){if(msg)msg.textContent=t('Mã PIN xác nhận chưa khớp. Vui lòng kiểm tra lại.','Confirmation PIN does not match.');return}
+      try{
+        await updateUserPassword(p1);
+        toast(t('Đã đổi mã PIN thành công! 🔒','PIN updated successfully! 🔒'));
+        $('#newPinInput').value='';$('#confirmPinInput').value='';
+        const details=$('.profile-pin-details');if(details)details.open=false;
+      }catch(err){
+        if(msg)msg.textContent=err.message||t('Lỗi đổi mã PIN.','Failed to update PIN.');
+      }
+    };
+  }
+
+  $$('[data-theme-pick]').forEach(btn=>{
+    btn.onclick=()=>{
+      const th=btn.dataset.themePick;
+      if(typeof numiThemeApply==='function')numiThemeApply(th);
+      renderProfile();
+    };
+  });
+
+  const soundToggle=$('#profileSoundToggle');
+  if(soundToggle){
+    soundToggle.onclick=()=>{
+      soundEnabled=!soundEnabled;state.sound=soundEnabled;save();renderProfile();
+      toast(soundEnabled?t('Đã bật âm thanh ♫','Sound turned on ♫'):t('Đã tắt âm thanh ♪','Sound turned off ♪'));
+    };
+  }
+
+  $$('[data-switch-user]').forEach(btn=>{
+    btn.onclick=()=>{
+      const targetUser=btn.dataset.switchUser;
+      const targetObj=allLocalUsers[targetUser];
+      if(!targetObj)return;
+      modal(`<h2>👤 ${t('Đăng nhập tài khoản '+targetObj.name,'Sign in as '+targetObj.name)}</h2><p class="muted">${t('Nhập mã PIN của bé để vào học:','Enter PIN to switch profile:')}</p><input type="password" id="switchPinInput" minlength="4" placeholder="••••" style="width:100%;font-size:18px;padding:10px;margin:12px 0;border-radius:10px;border:1.5px solid #d5e4c7;text-align:center"><p id="switchPinError" class="danger" style="margin:6px 0;font-weight:700"></p><div class="actions"><button class="primary" id="confirmSwitchBtn">${t('Vào học →','Sign in →')}</button><button id="cancelSwitchBtn">${t('Hủy','Cancel')}</button></div>`);
+      $('#cancelSwitchBtn').onclick=()=>$('#modal').close();
+      $('#confirmSwitchBtn').onclick=async()=>{
+        const pin=$('#switchPinInput')?.value.trim();
+        const errEl=$('#switchPinError');
+        if(!pin){if(errEl)errEl.textContent=t('Vui lòng nhập mã PIN.','Please enter PIN.');return}
+        try{
+          await localSignIn(targetUser,pin);
+          $('#modal').close();
+          renderProfile();
+        }catch(err){
+          if(errEl)errEl.textContent=err.message||t('Mật khẩu chưa đúng.','Incorrect password.');
+        }
+      };
+    };
+  });
+
+  const signOutBtn=$('#profileSignOutBtn');
+  if(signOutBtn){
+    signOutBtn.onclick=()=>{
+      if(confirm(t('Em có chắc muốn đăng xuất không?','Are you sure you want to sign out?'))){
+        localSignOut();
+      }
+    };
+  }
+
+  translate();
+  window.scrollTo(0,0);
+}
+if(typeof window!=='undefined')window.renderProfile=renderProfile;
+if(typeof global!=='undefined')global.renderProfile=renderProfile;
+
 function openAccount(mode='login'){
   if(session&&!session.done&&['quiz','garden','battle'].includes(view)){
     toast(t('Hoàn thành lượt đang chơi trước khi đổi tài khoản nhé.','Finish the current session before changing accounts.'));
@@ -155,27 +498,7 @@ function openAccount(mode='login'){
   stop();view='account';session=null;document.body.dataset.view='account';
   const u=currentAuthUser();
   if(u){
-    $('#app').innerHTML=`<div class="narrow card account-card">
-      <div class="intro-animal">${animal(u.avatar||buddy())}</div>
-      <span class="eyebrow">NUMIQUICK · ${t('TÀI KHOẢN HỌC SINH','STUDENT ACCOUNT')}</span>
-      <h1>${esc(u.name)}</h1>
-      <p class="account-email">@${esc(u.username||u.email||'')}</p>
-      <div class="metrics" style="margin:18px 0">
-        <div class="metric"><small>${t('Cấp độ','Level')}</small><strong>${level()}</strong></div>
-        <div class="metric"><small>${t('Điểm XP','XP')}</small><strong>${state.xp}</strong></div>
-        <div class="metric"><small>${t('Trân châu','Pearls')}</small><strong>${typeof teaState==='function'?teaState().pearls:0}</strong></div>
-        <div class="metric"><small>${t('Chuỗi ngày 🔥','Streak')}</small><strong>${getStreak().count}</strong></div>
-        <div class="metric"><small>${t('Lớp học','Grade')}</small><strong>${u.grade ? (lang==='vi'?'Lớp '+u.grade:'Grade '+u.grade) : (lang==='vi'?'Lớp 1':'Grade 1')}</strong></div>
-      </div>
-      <p id="cloudAccountStatus" role="status">${cloudStatusText()}</p>
-      <div class="actions">
-        <button class="primary" onclick="nav('home')">${t('Tiếp tục học →','Continue learning →')}</button>
-        <button onclick="nav('stats')">${t('Nhật ký tiến bộ','View progress')}</button>
-        <button id="accountSignOut" class="danger">${t('Đăng xuất','Sign out')}</button>
-      </div>
-    </div>`;
-    $('#accountSignOut').onclick=()=>localSignOut();
-    translate();
+    renderProfile();
     return;
   }
 
