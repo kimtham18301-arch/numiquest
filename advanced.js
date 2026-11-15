@@ -8,6 +8,40 @@ function generatedOptions(answer, near=[]){
   for(let d=1;out.length<4;d++)for(const n of [Number(answer)+d,Number(answer)-d])if(Number.isFinite(n)&&!out.includes(String(n)))out.push(String(Math.round(n*1000)/1000));
   return shuffle(out.slice(0,4));
 }
+function safeEvalMath(expr) {
+  const tokens = expr.match(/\d+(\.\d+)?|[+\-*/()]/g);
+  if (!tokens) return NaN;
+  const prec = { '+': 1, '-': 1, '*': 2, '/': 2 };
+  const values = [];
+  const ops = [];
+  function applyOp() {
+    const op = ops.pop();
+    const b = values.pop();
+    const a = values.pop();
+    if (a === undefined || b === undefined) return;
+    if (op === '+') values.push(a + b);
+    else if (op === '-') values.push(a - b);
+    else if (op === '*') values.push(a * b);
+    else if (op === '/') values.push(b !== 0 ? a / b : NaN);
+  }
+  for (let i = 0; i < tokens.length; i++) {
+    const tok = tokens[i];
+    if (/^\d/.test(tok)) {
+      values.push(parseFloat(tok));
+    } else if (tok === '(') {
+      ops.push(tok);
+    } else if (tok === ')') {
+      while (ops.length && ops[ops.length - 1] !== '(') applyOp();
+      ops.pop();
+    } else if (prec[tok]) {
+      while (ops.length && prec[ops[ops.length - 1]] >= prec[tok]) applyOp();
+      ops.push(tok);
+    }
+  }
+  while (ops.length) applyOp();
+  return values.length === 1 ? values[0] : NaN;
+}
+
 function customGenerate(c=config){
   if(c.questionStyle==='normal')return plainGenerate(c);
   const selectedType=pick(c.types?.length?c.types:[c.type||'natural']);
@@ -33,7 +67,12 @@ function customGenerate(c=config){
     // Use one clear grouping around the first operation; avoid redundant nested symbols.
     if(terms>=3){let grouped=`(${values[0]} ${glyph[chosen[0]]} ${values[1]})`;for(let i=1;i<chosen.length;i++)grouped+=` ${glyph[chosen[i]]} ${values[i+1]}`;readable=grouped}
     const js=readable.replaceAll('−','-').replaceAll('×','*').replaceAll('÷','/').replaceAll('[','(').replaceAll(']',')').replaceAll('{','(').replaceAll('}',')');
-    let value;try{value=Function(`"use strict";return (${js})`)()}catch{return plainGenerate(c)}
+    let value;
+    try {
+      value = safeEvalMath(js);
+    } catch {
+      return plainGenerate(c);
+    }
     if(!Number.isFinite(value)||Math.abs(value)>999999)return plainGenerate(c);
     const answer=String(Math.round(value*1000)/1000);
     const left=values.reduce((acc,n,i)=>i?acc+({'+':n,'-':-n,'*':n,'/':1}[chosen[i-1]]||n):n,0);

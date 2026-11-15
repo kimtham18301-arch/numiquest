@@ -1,0 +1,20 @@
+{
+  "name": "NumiQuick · Luyện tính nhẩm vui",
+  "short_name": "NumiQuick",
+  "description": "Luyện tính nhẩm vui cho học sinh. Chọn dạng bài phù hợp, thử thách bản thân và gom trân châu cùng thỏ Numi.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fbfaf5",
+  "theme_color": "#386950",
+  "categories": ["education", "games"],
+  "icons": [
+    {
+      "src": "og-image.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
