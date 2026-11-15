@@ -2,7 +2,7 @@
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const KEY='numiquest-v1';const fresh=()=>({version:1,lang:'vi',name:'Explorer',xp:0,selected:'VN',pieces:{},history:[],mistakes:[],mastery:{},best:0});let state=fresh();try{state={...state,...JSON.parse(localStorage.getItem(KEY)||'{}')}}catch{}if(typeof window!=='undefined')window.state=state;if(typeof global!=='undefined')global.state=state;let lang=state.lang==='en'?'en':'vi',view='home',session=null,tick=null,raf=null,afterModal=null;const t=(vi,en)=>lang==='vi'?vi:en;const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // Keep fractions as strings for arithmetic; render their numerators and denominators visually.
-function mathMarkup(value){const text=String(value);let out='',last=0;const re=/(-?\d+)\/(\d+)/g;for(const m of text.matchAll(re)){out+=esc(text.slice(last,m.index));out+=`<span class="stacked-fraction" role="math" aria-label="${esc(m[1])} ${t('phần','over')} ${esc(m[2])}"><span class="fraction-numerator" aria-hidden="true">${esc(m[1])}</span><span class="fraction-denominator" aria-hidden="true">${esc(m[2])}</span></span>`;last=m.index+m[0].length}return out+esc(text.slice(last))}
+function mathMarkup(value){const text=String(value);let out='',last=0;const re=/(-?\d+)\/(\d+)/g;for(const m of text.matchAll(re)){out+=esc(text.slice(last,m.index));out+=`<span class="stacked-fraction" role="math" aria-label="${esc(m[1])} ${t('phần','over')} ${esc(m[2])}"><span class="fraction-numerator" aria-hidden="true">${esc(m[1])}</span><span class="fraction-denominator" aria-hidden="true">${esc(m[2])}</span></span>`;last=m.index+m[0].length}out+=esc(text.slice(last));return out.replace(/\^(\d+)/g,'<sup>$1</sup>')}
 const countries=[
 ['VN','Việt Nam','Vietnam','🇻🇳','Hà Nội','Hanoi','Châu Á','Asia','Vịnh Hạ Long','Ha Long Bay','⛰️','Vịnh Hạ Long nổi tiếng với các đảo đá vôi.','Ha Long Bay is known for its limestone islands.'],
 ['JP','Nhật Bản','Japan','🇯🇵','Tokyo','Tokyo','Châu Á','Asia','Núi Phú Sĩ','Mount Fuji','🗻','Núi Phú Sĩ là ngọn núi cao nhất Nhật Bản.','Mount Fuji is the highest mountain in Japan.'],
@@ -317,7 +317,7 @@ function triggerConfetti(){
   requestAnimationFrame(render);
 }
 function track(q,correct,elapsed,mode){if(mode!=='review'){let m=state.mastery[q.skill]||[];m.push(correct?1:0);state.mastery[q.skill]=m.slice(-10)}if(!correct&&!state.mistakes.some(x=>x.id===q.id))state.mistakes.push(q);save()}
-function startQuiz(){stop();view='quiz';if(typeof window!=='undefined')window.config=config;if(typeof global!=='undefined')global.config=config;session={kind:'practice',questions:Array.from({length:config.count},()=>generate(config)),index:0,results:[],combo:0,done:false};if(typeof window!=='undefined')window.session=session;if(typeof global!=='undefined')global.session=session;showQuiz()}
+function startQuiz(){if(typeof currentAuthUser==='function'&&!currentAuthUser()){toast(t('Vui lòng đăng nhập để bắt đầu học và lưu tiến độ nhé! 👤','Please sign in to learn and save your progress! 👤'));if(typeof openAccount==='function')openAccount('login');return}stop();view='quiz';if(typeof window!=='undefined')window.config=config;if(typeof global!=='undefined')global.config=config;session={kind:'practice',questions:Array.from({length:config.count},()=>generate(config)),index:0,results:[],combo:0,done:false};if(typeof window!=='undefined')window.session=session;if(typeof global!=='undefined')global.session=session;showQuiz()}
 let currentNumpad='';
 function handleNumpad(k,q){
   if(session?.answered)return;
@@ -621,9 +621,16 @@ function initializeZoo(){document.title='NumiQuest · Vườn thú tính nhẩm'
 
 const originalAtlas=atlas;atlas=function(){originalAtlas();const note=$('#app>.notice');if(note){note.className='atlas-welcome';note.innerHTML=`${animal('panda')}<div><b>${t('Bamboo giữ hộ chiếu giúp em nhé!','Bamboo is looking after your passport!')}</b><p>${t('10 điểm đến đang chờ. Chọn một nước rồi thu thập đủ 4 mảnh để mở minh họa địa danh và tìm hiểu châu lục.','10 destinations await. Pick a country and collect 4 pieces to unlock its landmark illustration and discover its continent.')}</p></div>`}const art=$('.landmark');if(art)art.setAttribute('aria-label',t('Minh họa địa danh bằng biểu tượng','Symbolic landmark illustration'))};
 window.addEventListener('keydown',e=>{
-  if($('#modal').open||e.ctrlKey||e.metaKey||e.altKey||['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName))return;
+  if($('#modal')?.open||e.ctrlKey||e.metaKey||e.altKey||['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName))return;
+  const sheet=$('#moreSheet');
+  if(sheet?.classList.contains('open')){
+    if(e.key==='Escape'){e.preventDefault();$('#closeMoreSheetBtn')?.click();}
+    return;
+  }
   if(view==='quiz'){
-    const isNumpad=config.inputMode==='numpad'&&session?.kind!=='battle';
+    const q=session?.questions?.[session?.index];
+    const type=q?.skill?.split(':')?.[0];
+    const isNumpad=config.inputMode==='numpad'&&session?.kind!=='battle'&&type!=='remainder';
     if(isNumpad){
       if(e.key==='Enter'){e.preventDefault();$('#numpadSubmit')?.click();return}
       if(e.key==='Backspace'){e.preventDefault();$('[data-np="backspace"]')?.click();return}
@@ -634,6 +641,9 @@ window.addEventListener('keydown',e=>{
       let i='abcd'.indexOf(e.key.toLowerCase());
       if(i>=0){const b=$$('[data-answer]')[i];if(b&&!b.disabled){e.preventDefault();b.click()}}
     }
+  }else if(view==='battle'){
+    let i='abcd'.indexOf(e.key.toLowerCase());
+    if(i>=0){const b=$$('[data-battle]')[i];if(b&&!b.disabled){e.preventDefault();b.click()}}
   }
 });
 
@@ -911,7 +921,7 @@ function generate(c){
   if(!allowedTypes.length)allowedTypes=['natural'];
 
   let type=pick(allowedTypes);
-  if(grade===6&&allowedTypes.includes('negative')&&Math.random()<0.45){
+  if(grade>=6&&allowedTypes.includes('negative')&&Math.random()<0.45){
     type='negative';
   }
   const digits=cfg.digits?.length?cfg.digits:null;
@@ -920,6 +930,31 @@ function generate(c){
   const range=d=>[10**(d-1),10**d-1],number=d=>ri(...range(d));
   let a=number(d1),b=number(d2);
   let op=type==='remainder'?'/':pick(allowedOps);
+
+  if(grade===8&&Math.random()<0.28){
+    const base=type==='negative'&&Math.random()<0.4?(-ri(2,5)):ri(2,6);
+    const exp=Math.abs(base)>=5?2:ri(2,3);
+    const val=base**exp;
+    const qStr=base<0?`(${base})^${exp}`:`${base}^${exp}`;
+    const ansStr=String(val);
+    const opts=new Set([ansStr,String(base*exp),String(-val),String(val+ri(1,3)),String(val-ri(1,3))]);
+    opts.delete('');
+    const expText=`${qStr} = ${ansStr}\n• ${t('Lũy thừa bậc '+exp+': nhân '+exp+' thừa số '+base+' với nhau.','Power of '+exp+': multiply '+exp+' factors of '+base+' together.')}`;
+    return {id:crypto.randomUUID(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'power:^',config:{...cfg,type,grade},explanation:expText};
+  }
+  if(grade===9&&Math.random()<0.28){
+    const root=ri(2,15);
+    const square=root*root;
+    const hasOffset=Math.random()<0.35;
+    const offset=hasOffset?ri(1,20):0;
+    const sign=hasOffset?pick(['+','-']):'+';
+    const val=hasOffset?(sign==='+'?root+offset:root-offset):root;
+    const qStr=hasOffset?`√${square} ${sign} ${offset}`:`√${square}`;
+    const ansStr=String(val);
+    const opts=new Set([ansStr,String(root),String(val+1),String(val-1),String(square+offset)]);
+    const expText=`${qStr} = ${ansStr}\n• ${t('Căn bậc hai số học: √'+square+' = '+root+' (vì '+root+' > 0 và '+root+'² = '+square+')','Arithmetic square root: √'+square+' = '+root+' (since '+root+' > 0 and '+root+'² = '+square+')')}`;
+    return {id:crypto.randomUUID(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'sqrt:√',config:{...cfg,type,grade},explanation:expText};
+  }
 
   if(grade===1){
     if(op==='+'){
@@ -934,8 +969,10 @@ function generate(c){
     }else if(op==='/'){
       const divisor=pick([2,5]),quotient=ri(1,10);
       a=divisor*quotient;b=divisor;
+    }else if(op==='+'){
+      a=ri(1,89);b=ri(1,Math.min(99-a,40));
     }else if(op==='-'){
-      if(a<b)[a,b]=[b,a];
+      a=ri(2,99);b=ri(1,a);
     }
   }else if(grade===3){
     if(op==='*'&&type==='natural'){
@@ -1015,7 +1052,7 @@ function generate(c){
     if(type==='negative'){
       a=-a;if(Math.random()<.5)b=-b;
     }
-    if(op==='-'&&type==='natural'&&a<b)[a,b]=[b,a];
+    if(op==='-'&&(type==='natural'||((grade<6||!grade)&&type==='decimal'))&&a<b)[a,b]=[b,a];
     const val=op==='+'?a+b:op==='-'?a-b:op==='*'?a*b:a/b;
     const display=n=>{
       const precision=type==='decimal'?(op==='/'?Math.max(4,d2):op==='*'?2:1):0;
