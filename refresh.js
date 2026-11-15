@@ -15,7 +15,55 @@ function numiStartPractice(){if(!currentAuthUser()){toast(t('Vui lòng đăng nh
 const numiOldHome=home;home=numiWelcome;
 // Keep results focused on learning and pearls; do not expose old food/farm inventory.
 const numiOldFinish=finishPractice;
-finishPractice=function(){const s=session;numiOldFinish();if(!s||s.kind==='challenge')return;const n=s.results.filter(x=>x.correct).length,tea=teaState(),earned=s.pearlsEarned||0,streak=getStreak();$('#app').innerHTML=`<section class="narrow card home-v2-result"><div class="home-v2-result-mascot">${animal('bunny')}</div><span class="home-v2-eyebrow">${t('LƯỢT LUYỆN HOÀN THÀNH','PRACTICE COMPLETE')}</span><h1>${t('Làm tốt lắm!','Well done!')}</h1><div style="margin:10px 0"><span class="home-v2-streak"><span>🔥</span><b>${streak.count}</b> <small>${t('ngày liên tiếp','days streak')}</small></span></div><p class="home-v2-score">${n}/${s.results.length} ${t('câu đúng','correct')} · ${avg(s.results.map(x=>x.elapsed)).toFixed(1)}s/${t('câu','question')}</p><div class="home-v2-earned"><span>🧋</span><b>+${earned}</b><small>${t('viên trân châu','pearls')}</small></div><p>${t('Tổng cộng em có','You now have')} ${tea.pearls} ${t('viên.','pearls.')}</p><button class="home-v2-cta" onclick="nav('atlas')">${t('Xem mục tiêu','View goal')} →</button>${state.mistakes.length?`<button class="home-v2-review" onclick="startReview()">🌼 ${t('Ôn '+state.mistakes.length+' câu sai','Review '+state.mistakes.length+' mistakes')} →</button>`:''}<button class="home-v2-settings" onclick="numiStartPractice()">${t('Luyện thêm một lượt','Practice another lesson')}</button></section>`;translate()};
+finishPractice=function(){
+  const s=session;
+  numiOldFinish();
+  if(!s||s.kind==='challenge')return;
+  const n=s.results.filter(x=>x.correct).length,tea=teaState(),earned=s.pearlsEarned||0,streak=getStreak();
+  const pct=s.results.length>0?Math.round((n/s.results.length)*100):0;
+  if(pct>=70){
+    if(typeof haptic==='function')haptic('victory');
+    if(typeof triggerConfetti==='function')triggerConfetti();
+  }
+  const avgSpeed=avg(s.results.map(x=>x.elapsed)).toFixed(1);
+
+  $('#app').innerHTML=`<section class="narrow card home-v2-result quiz-finish-card">
+    <div class="finish-trophy-wrap">${pct>=80?'🏆':pct>=60?'🌟':'🌱'}</div>
+    <span class="home-v2-eyebrow">${t('LƯỢT LUYỆN HOÀN THÀNH','PRACTICE COMPLETE')}</span>
+    <h1 class="finish-title">${pct===100?t('Xuất sắc! Đúng toàn bộ!','Flawless! 100% Correct!'):pct>=70?t('Làm tốt lắm!','Well done!'):t('Cố gắng lên nhé!','Keep practicing!')}</h1>
+
+    <div class="finish-streak-wrap">
+      <span class="home-v2-streak"><span>🔥</span><b>${streak.count}</b> <small>${t('ngày liên tiếp','days streak')}</small></span>
+      <span class="finish-xp-pill">+${n*3} XP ⭐</span>
+    </div>
+
+    <div class="finish-stats-grid">
+      <div class="finish-stat-box">
+        <small>${t('Điểm số','Score')}</small>
+        <strong style="color:${pct>=80?'#2b8a3e':pct>=60?'#d97706':'#e03131'}">${n}/${s.results.length}</strong>
+        <span>(${pct}%)</span>
+      </div>
+      <div class="finish-stat-box">
+        <small>${t('Tốc độ TB','Avg Speed')}</small>
+        <strong>${avgSpeed}s</strong>
+        <span>/${t('câu','question')}</span>
+      </div>
+    </div>
+
+    <div class="home-v2-earned" style="margin:10px auto">
+      <span>🧋</span><b>+${earned}</b><small>${t('viên trân châu','pearls')}</small>
+    </div>
+    <p style="font-size:13px;color:#617a69;margin:4px 0 16px">${t('Tổng cộng em có','You now have')} <b>${tea.pearls}</b> ${t('viên.','pearls.')}</p>
+
+    <div class="finish-actions">
+      ${state.mistakes.length?`<button class="primary wide" onclick="startReview()">🌼 ${t('Ôn '+state.mistakes.length+' câu sai bằng Vườn hoa','Review '+state.mistakes.length+' mistakes')} →</button>`:''}
+      <button class="${state.mistakes.length?'':'primary'} wide" onclick="numiStartPractice()">⚡ ${t('Luyện thêm một lượt','Practice another lesson')}</button>
+      <button class="wide" onclick="nav('atlas')">🧋 ${t('Xem mục tiêu trà sữa','View goal')}</button>
+      <button class="wide" onclick="nav('home')">⌂ ${t('Về trang chủ','Back to Home')}</button>
+    </div>
+  </section>`;
+  translate();
+};
 // Stop the app router from treating an account destination as the home fallback.
 const numiOldNav=nav;nav=function(destination){if(destination==='login'){openAccount('login');return}if(destination==='profile'||destination==='account'){view=destination;if(typeof window!=='undefined')window.view=destination;if(typeof global!=='undefined')global.view=destination;renderProfile();return}if(destination==='guide'){view='guide';if(typeof window!=='undefined')window.view='guide';if(typeof global!=='undefined')global.view='guide';renderGuide();return}if(!currentAuthUser()){toast(t('Vui lòng đăng nhập để bắt đầu học.','Please sign in to start learning.'));openAccount('login');return}numiOldNav(destination)};
 // Make the controls concise; the help button explains which question types are included.

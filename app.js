@@ -177,18 +177,157 @@ function detailedExplanation(q,a,b,op,type,val,sym){
   if(op==='/')return `${a} ÷ ${b} = ${val}\n• ${t('Nhẩm ngược lại:','Multiply back:')} ${b} × ${val} = ${a}`;
   return `${q} = ${val}`;
 }
+function haptic(type='tap'){
+  if(typeof navigator==='undefined'||!('vibrate' in navigator))return;
+  try{
+    if(type==='correct')navigator.vibrate(22);
+    else if(type==='wrong')navigator.vibrate([35,45,35]);
+    else if(type==='victory')navigator.vibrate([30,40,30,40,75]);
+    else if(type==='tap')navigator.vibrate(8);
+  }catch{}
+}
+function triggerConfetti(){
+  if(typeof document==='undefined')return;
+  const canvas=document.createElement('canvas');
+  canvas.id='confettiCanvas';
+  canvas.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:999;';
+  document.body.appendChild(canvas);
+  const ctx=canvas.getContext('2d');
+  canvas.width=window.innerWidth;
+  canvas.height=window.innerHeight;
+  const colors=['#34765c','#ffbd2e','#e74c3c','#3498db','#2ecc71','#f39c12'];
+  const pieces=Array.from({length:55},()=>({
+    x:Math.random()*canvas.width,
+    y:Math.random()*-canvas.height*0.5,
+    size:Math.random()*8+6,
+    color:colors[Math.floor(Math.random()*colors.length)],
+    speedY:Math.random()*3+2.5,
+    speedX:Math.random()*2-1,
+    rot:Math.random()*360,
+    rotSpeed:Math.random()*6-3
+  }));
+  let frame=0;
+  function render(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    pieces.forEach(p=>{
+      p.y+=p.speedY;
+      p.x+=p.speedX;
+      p.rot+=p.rotSpeed;
+      ctx.save();
+      ctx.translate(p.x,p.y);
+      ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle=p.color;
+      ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size*0.65);
+      ctx.restore();
+    });
+    frame++;
+    if(frame<120)requestAnimationFrame(render);
+    else canvas.remove();
+  }
+  requestAnimationFrame(render);
+}
 function track(q,correct,elapsed,mode){if(mode!=='review'){let m=state.mastery[q.skill]||[];m.push(correct?1:0);state.mastery[q.skill]=m.slice(-10)}if(!correct&&!state.mistakes.some(x=>x.id===q.id))state.mistakes.push(q);save()}
-function startQuiz(){stop();view='quiz';session={kind:'practice',questions:Array.from({length:config.count},()=>generate()),index:0,results:[],done:false};showQuiz()}
+function startQuiz(){stop();view='quiz';session={kind:'practice',questions:Array.from({length:config.count},()=>generate()),index:0,results:[],combo:0,done:false};showQuiz()}
 let currentNumpad='';
-function handleNumpad(k,q){if(session?.answered)return;if(k==='clear'){currentNumpad=''}else if(k==='backspace'){currentNumpad=currentNumpad.slice(0,-1)}else if(currentNumpad.length<14){if(k==='-'&&currentNumpad.length===0)currentNumpad='-';else if(k!=='-')currentNumpad+=k}const el=$('#numpadVal');if(el)el.textContent=currentNumpad||'?'}
+function handleNumpad(k,q){
+  if(session?.answered)return;
+  haptic('tap');
+  if(k==='clear'){
+    currentNumpad='';
+  }else if(k==='backspace'){
+    currentNumpad=currentNumpad.slice(0,-1);
+  }else if(currentNumpad.length<14){
+    if(k==='-'){
+      if(currentNumpad.length===0)currentNumpad='-';
+      else if(currentNumpad==='-')currentNumpad='';
+    }else if(k===','||k==='.'){
+      if(!currentNumpad.includes(',')&&!currentNumpad.includes('.')){
+        currentNumpad+=(currentNumpad===''||currentNumpad==='-'?'0,':',');
+      }
+    }else if(k==='/'){
+      if(currentNumpad!==''&&currentNumpad!=='-'&&!currentNumpad.includes('/')){
+        currentNumpad+='/';
+      }
+    }else if(k!=='-'){
+      currentNumpad+=k;
+    }
+  }
+  const el=$('#numpadVal');
+  if(el)el.textContent=currentNumpad||'?';
+}
 function showQuiz(){
   cancelQuizAdvance();const s=session;s.answered=false;if(s.index>=s.questions.length){finishPractice();return}
   const q=s.questions[s.index];currentNumpad='';const isNumpad=config.inputMode==='numpad'&&s.kind!=='battle',type=q.skill.split(':')[0];
+  const isLongQuestion=(q.q||'').length>11||q.q.includes('/')||q.q.includes('^')||q.q.includes('(')||q.q.includes('√');
+  const qClass=isLongQuestion?'question question-compact':'question';
+
   const choicesHtml=`<div class="answers">${q.options.map((o,i)=>`<button class="answer" data-answer="${i}"><small>${'ABCD'[i]}</small>${mathMarkup(o)}</button>`).join('')}</div>`;
-  const numpadHtml=`<div class="numpad-wrap"><div class="numpad-display"><span id="numpadVal">?</span></div><div class="numpad-grid">${[1,2,3,4,5,6,7,8,9].map(n=>`<button type="button" class="np-btn" data-np="${n}">${n}</button>`).join('')}<button type="button" class="np-btn np-act" data-np="clear" title="Xóa hết">C</button><button type="button" class="np-btn" data-np="0">0</button><button type="button" class="np-btn np-act" data-np="backspace" title="Xóa lùi">⌫</button>${type==='fraction'?`<button type="button" class="np-btn np-act" data-np="/">/</button>`:''}${type==='decimal'?`<button type="button" class="np-btn np-act" data-np=",">,</button>`:''}${type==='negative'?`<button type="button" class="np-btn np-act" data-np="-">−</button>`:''}</div><button type="button" id="numpadSubmit" class="primary wide np-submit">${t('Trả lời','Submit')} ✔</button></div>`;
-  $('#app').innerHTML=`<div class="narrow"><div class="row"><span class="tag">${t('Câu','Question')} ${s.index+1}/${s.questions.length}</span><strong class="timer" id="clock"></strong></div><div class="progress"><div style="width:${s.index/s.questions.length*100}%"></div></div><div class="card"><div class="question">${mathMarkup(q.q)} = ?</div>${isNumpad?numpadHtml:choicesHtml}<p id="feedback" class="muted" role="status" aria-live="polite"></p><p id="workedAnswer" class="worked-example" hidden></p></div></div>`;
-  if(isNumpad){$$('[data-np]').forEach(b=>b.onclick=()=>handleNumpad(b.dataset.np,q));$('#numpadSubmit').onclick=()=>{if(currentNumpad.trim())answerQuiz(currentNumpad.trim(),q.id)}}else{$$('[data-answer]').forEach(b=>b.onclick=()=>answerQuiz(q.options[+b.dataset.answer],q.id))}
-  s.started=performance.now();s.extra=false;startClock(q.config?.seconds||config.seconds,()=>{if(s.kind==='challenge'){answerQuiz(null,q.id);return}modal(`<h2>⏳ ${t('Hết giờ rồi','Time is up')}</h2><p>${t('Thêm thời gian hoặc bỏ qua để ôn lại trong game.','Add time or skip to review in the game.')}</p><div class="actions"><button id="extra">+${config.seconds}s</button><button id="skip">${t('Bỏ qua','Skip')}</button></div>`);$('#closeModal').hidden=true;$('#extra').onclick=()=>{s.extra=true;$('#closeModal').hidden=false;$('#modal').close();startClock(config.seconds,()=>timeoutAgain())};$('#skip').onclick=()=>{$('#closeModal').hidden=false;$('#modal').close();answerQuiz(null)}});translate()
+  const numpadHtml=`<div class="numpad-wrap">
+    <div class="numpad-display">
+      <span class="numpad-prompt">${mathMarkup(q.q)} = </span>
+      <span id="numpadVal" class="numpad-current-val">?</span>
+    </div>
+    <div class="numpad-grid">
+      <button type="button" class="np-btn" data-np="1">1</button>
+      <button type="button" class="np-btn" data-np="2">2</button>
+      <button type="button" class="np-btn" data-np="3">3</button>
+      <button type="button" class="np-btn np-act" data-np="backspace" title="${t('Xóa lùi','Backspace')}">⌫</button>
+
+      <button type="button" class="np-btn" data-np="4">4</button>
+      <button type="button" class="np-btn" data-np="5">5</button>
+      <button type="button" class="np-btn" data-np="6">6</button>
+      <button type="button" class="np-btn np-act" data-np="clear" title="${t('Xóa hết','Clear')}">C</button>
+
+      <button type="button" class="np-btn" data-np="7">7</button>
+      <button type="button" class="np-btn" data-np="8">8</button>
+      <button type="button" class="np-btn" data-np="9">9</button>
+      <button type="button" class="np-btn np-symbol" data-np="-" title="${t('Dấu âm','Negative')}">−</button>
+
+      <button type="button" class="np-btn np-symbol" data-np="/" title="${t('Phân số','Fraction')}">/</button>
+      <button type="button" class="np-btn" data-np="0">0</button>
+      <button type="button" class="np-btn np-symbol" data-np="," title="${t('Dấu phẩy','Decimal')}">,</button>
+      <button type="button" id="numpadSubmit" class="primary np-btn np-submit-key" title="${t('Trả lời','Submit')}">✔</button>
+    </div>
+  </div>`;
+
+  const stepperDots=s.questions.map((_,i)=>{
+    let st='is-pending',icon='';
+    if(i<s.results.length){
+      if(s.results[i].correct){st='is-correct';icon='✓';}
+      else{st='is-wrong';icon='✕';}
+    }else if(i===s.index){
+      st='is-current';icon=`${i+1}`;
+    }
+    return `<span class="stepper-dot ${st}" title="${t('Câu','Question')} ${i+1}">${icon}</span>`;
+  }).join('');
+
+  $('#app').innerHTML=`<div class="narrow quiz-view-container">
+    <div class="quiz-top-bar">
+      <div class="quiz-meta-left">
+        <button type="button" class="quiz-quit-btn" onclick="nav('setup')" title="${t('Rời bài luyện','Exit')}">✕</button>
+        <span class="tag quiz-q-badge">${t('Câu','Question')} <b>${s.index+1}</b>/${s.questions.length}</span>
+        ${s.combo>=2?`<span class="quiz-combo-pill animate-pop">🔥 Combo x${s.combo}!</span>`:''}
+      </div>
+      <strong class="timer" id="clock"></strong>
+    </div>
+
+    <div class="quiz-stepper" aria-label="Tiến độ">${stepperDots}</div>
+
+    <div class="card quiz-card" id="quizCard">
+      <div class="${qClass}">${mathMarkup(q.q)} = ?</div>
+      ${isNumpad?numpadHtml:choicesHtml}
+      <p id="feedback" class="muted quiz-feedback" role="status" aria-live="polite"></p>
+      <div id="workedAnswer" class="worked-example" hidden></div>
+    </div>
+  </div>`;
+
+  if(isNumpad){
+    $$('[data-np]').forEach(b=>b.onclick=()=>handleNumpad(b.dataset.np,q));
+    $('#numpadSubmit').onclick=()=>{if(currentNumpad.trim())answerQuiz(currentNumpad.trim(),q.id)};
+  }else{
+    $$('[data-answer]').forEach(b=>b.onclick=()=>answerQuiz(q.options[+b.dataset.answer],q.id));
+  }
+  s.started=performance.now();s.extra=false;startClock(q.config?.seconds||config.seconds,()=>{if(s.kind==='challenge'){answerQuiz(null,q.id);return}modal(`<h2>⏳ ${t('Hết giờ rồi','Time is up')}</h2><p>${t('Thêm thời gian hoặc bỏ qua để ôn lại trong game.','Add time or skip to review in the game.')}</p><div class="actions"><button id="extra">+${config.seconds}s</button><button id="skip">${t('Bỏ qua','Skip')}</button></div>`);$('#closeModal').hidden=true;$('#extra').onclick=()=>{s.extra=true;$('#closeModal').hidden=false;$('#modal').close();startClock(config.seconds,()=>timeoutAgain())};$('#skip').onclick=()=>{$('#closeModal').hidden=false;$('#modal').close();answerQuiz(null)}});translate();
 }
 function timeoutAgain(){clearInterval(tick);modal(`<h2>⏳ ${t('Cần thêm thời gian?','Need more time?')}</h2><div class="actions"><button id="extra">+${config.seconds}s</button><button id="skip">${t('Bỏ qua','Skip')}</button></div>`);$('#closeModal').hidden=true;$('#extra').onclick=()=>{$('#closeModal').hidden=false;$('#modal').close();startClock(config.seconds,timeoutAgain)};$('#skip').onclick=()=>{$('#closeModal').hidden=false;$('#modal').close();answerQuiz(null)}}
 function startClock(seconds,cb){clearInterval(tick);let end=performance.now()+seconds*1000;function update(){let left=Math.max(0,(end-performance.now())/1000);if($('#clock'))$('#clock').textContent=left.toFixed(1)+'s';if(left<=0){clearInterval(tick);cb()}}update();tick=setInterval(update,100)}
@@ -198,6 +337,27 @@ function answerQuiz(ans,questionId){
   const norm=str=>String(str||'').trim().replace(/\s+/g,'').replace('.',',').toLowerCase();
   const correct=ans!==null&&norm(ans)===norm(q.answer),elapsed=(performance.now()-s.started)/1000;
   s.results.push({correct,elapsed,extra:s.extra});track(q,correct,elapsed,'practice');
+
+  if(correct){
+    s.combo=(s.combo||0)+1;
+    haptic('correct');
+  }else{
+    s.combo=0;
+    haptic('wrong');
+  }
+
+  const currentDot=$$('.stepper-dot')[s.index];
+  if(currentDot){
+    currentDot.className='stepper-dot '+(correct?'is-correct':'is-wrong');
+    currentDot.textContent=correct?'✓':'✕';
+  }
+  const quizCard=$('#quizCard');
+  if(quizCard){
+    quizCard.classList.remove('quiz-card-pop','quiz-card-shake');
+    void quizCard.offsetWidth;
+    quizCard.classList.add(correct?'quiz-card-pop':'quiz-card-shake');
+  }
+
   const isNumpad=config.inputMode==='numpad'&&s.kind!=='battle';
   if(isNumpad){
     const disp=$('#numpadVal');if(disp){disp.textContent=(ans!==null?ans:t('Hết giờ','Time out'))+(correct?' ✓':` (≠ ${q.answer})`);if(disp.parentElement)disp.parentElement.className='numpad-display '+(correct?'is-correct':'is-wrong')}
@@ -217,7 +377,44 @@ function finishPractice(){
   state.history.push({date:new Date().toISOString(),mode:'practice',correct:n,total:s.results.length,time:avg(s.results.map(x=>x.elapsed)),extra:s.results.filter(x=>x.extra).length});
   state.history=state.history.slice(-200);state.xp+=n*3;save();
   const streak=getStreak();
-  $('#app').innerHTML=`<div class="narrow card"><div class="trophy">🌟</div><h1>${t('Một bước tiến mới!','Another step forward!')}</h1><div style="margin:10px 0"><span class="home-v2-streak"><span>🔥</span><b>${streak.count}</b> <small>${t('ngày liên tiếp','days streak')}</small></span></div><p>${n}/${s.results.length} ${t('câu đúng lần đầu','correct on the first try')} · ${avg(s.results.map(x=>x.elapsed)).toFixed(1)}s/${t('câu','question')}</p><p>${state.mistakes.length?t('Cùng ôn lại câu sai trong vườn hoa nhé.','Review your mistakes in the garden.'):t('Em đã làm đúng tất cả! Làm thật tuyệt vời!','All correct! Fantastic job!')}</p>${state.mistakes.length?`<button class="primary" onclick="startReview()">${t('Ôn câu sai bằng vườn hoa','Review mistakes in flower garden')} →</button>`:`<div class="actions"><button class="primary" onclick="nav('setup')">${t('Luyện lượt mới','Practice again')}</button><button onclick="nav('atlas')">${t('Xem mục tiêu trà sữa','Open goals')}</button></div>`}</div>`;translate();
+  const pct=s.results.length>0?Math.round((n/s.results.length)*100):0;
+  if(pct>=70){
+    haptic('victory');
+    triggerConfetti();
+  }
+  const avgSpeed=avg(s.results.map(x=>x.elapsed)).toFixed(1);
+
+  $('#app').innerHTML=`<div class="narrow card quiz-finish-card">
+    <div class="finish-trophy-wrap">${pct>=80?'🏆':pct>=60?'🌟':'🌱'}</div>
+    <h1 class="finish-title">${pct===100?t('Xuất sắc! Đúng toàn bộ!','Flawless! 100% Correct!'):pct>=70?t('Làm tốt lắm, tiếp tục nhé!','Great job, keep going!'):t('Cố gắng lên nhé!','Keep practicing!')}</h1>
+    
+    <div class="finish-streak-wrap">
+      <span class="home-v2-streak"><span>🔥</span><b>${streak.count}</b> <small>${t('ngày liên tiếp','days streak')}</small></span>
+      <span class="finish-xp-pill">+${n*3} XP ⭐</span>
+    </div>
+
+    <div class="finish-stats-grid">
+      <div class="finish-stat-box">
+        <small>${t('Điểm số','Score')}</small>
+        <strong style="color:${pct>=80?'#2b8a3e':pct>=60?'#d97706':'#e03131'}">${n}/${s.results.length}</strong>
+        <span>(${pct}%)</span>
+      </div>
+      <div class="finish-stat-box">
+        <small>${t('Tốc độ TB','Avg Speed')}</small>
+        <strong>${avgSpeed}s</strong>
+        <span>/${t('câu','question')}</span>
+      </div>
+    </div>
+
+    <p class="finish-message">${state.mistakes.length?t('Numi đã lưu lại những câu chưa đúng vào Vườn hoa để em ôn tập thêm.','Missed questions are saved to your flower garden for review.'):t('Em không mắc lỗi nào trong lượt này!','Zero mistakes in this session!')}</p>
+
+    <div class="finish-actions">
+      ${state.mistakes.length?`<button class="primary wide" onclick="startReview()">🌼 ${t('Ôn câu sai bằng Vườn hoa','Review in Flower Garden')} (${state.mistakes.length}) →</button>`:''}
+      <button class="${state.mistakes.length?'':'primary'} wide" onclick="nav('setup')">⚡ ${t('Luyện lượt tiếp theo','Practice Again')}</button>
+      <button class="wide" onclick="nav('home')">⌂ ${t('Về trang chủ','Back to Home')}</button>
+    </div>
+  </div>`;
+  translate();
 }
 function hint(q){
   const [type,op]=q.skill.split(':');
