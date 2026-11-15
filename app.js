@@ -161,8 +161,36 @@ const NUMI_GRADES={
 if(typeof window!=='undefined')window.NUMI_GRADES=NUMI_GRADES;
 if(typeof global!=='undefined')global.NUMI_GRADES=NUMI_GRADES;
 const defaults={grade:1,ops:['+','-'],type:'natural',types:['natural'],digits:[1],d1:1,d2:1,count:10,seconds:20,gameCount:3,inputMode:'choices'};let config={...defaults};
-if(typeof window!=='undefined'){window.defaults=defaults;window.config=config;}
-if(typeof global!=='undefined'){global.defaults=defaults;global.config=config;}
+function syncUserGradeToConfig(overrideGrade){
+  let gId=overrideGrade;
+  if(!gId){
+    try{
+      const u=JSON.parse(localStorage.getItem('numi-current-user-v1')||'null');
+      if(u&&u.grade)gId=Number(u.grade);
+    }catch(_){}
+  }
+  if(gId&&NUMI_GRADES[gId]){
+    const g=NUMI_GRADES[gId];
+    config={
+      ...defaults,
+      grade:g.id,
+      ops:[...g.ops],
+      types:[...g.types],
+      type:g.types[0],
+      digits:[...g.digits],
+      count:g.count,
+      seconds:g.seconds,
+      inputMode:g.inputMode
+    };
+    if(typeof window!=='undefined')window.config=config;
+    if(typeof global!=='undefined')global.config=config;
+    return config;
+  }
+  return config;
+}
+if(typeof window!=='undefined'){window.defaults=defaults;window.config=config;window.syncUserGradeToConfig=syncUserGradeToConfig;}
+if(typeof global!=='undefined'){global.defaults=defaults;global.config=config;global.syncUserGradeToConfig=syncUserGradeToConfig;}
+syncUserGradeToConfig();
 const ri=(a,b)=>Math.floor(Math.random()*(b-a+1))+a, pick=a=>a[ri(0,a.length-1)],shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=ri(0,i);[a[i],a[j]]=[a[j],a[i]]}return a};const gcd=(a,b)=>b?gcd(b,a%b):Math.abs(a);function frac(n,d){if(d<0){n=-n;d=-d}let g=gcd(n,d);return d/g===1?String(n/g):`${n/g}/${d/g}`}const fmt=n=>String(Math.round(n*10000)/10000).replace('.',lang==='vi'?',':'.');
 function smartDistractors(a,b,op,type,val,displayFn){
   const opts=new Set([displayFn(val)]);
@@ -284,7 +312,7 @@ function triggerConfetti(){
   requestAnimationFrame(render);
 }
 function track(q,correct,elapsed,mode){if(mode!=='review'){let m=state.mastery[q.skill]||[];m.push(correct?1:0);state.mastery[q.skill]=m.slice(-10)}if(!correct&&!state.mistakes.some(x=>x.id===q.id))state.mistakes.push(q);save()}
-function startQuiz(){stop();view='quiz';session={kind:'practice',questions:Array.from({length:config.count},()=>generate()),index:0,results:[],combo:0,done:false};showQuiz()}
+function startQuiz(){stop();view='quiz';if(typeof window!=='undefined')window.config=config;if(typeof global!=='undefined')global.config=config;session={kind:'practice',questions:Array.from({length:config.count},()=>generate(config)),index:0,results:[],combo:0,done:false};if(typeof window!=='undefined')window.session=session;if(typeof global!=='undefined')global.session=session;showQuiz()}
 let currentNumpad='';
 function handleNumpad(k,q){
   if(session?.answered)return;
@@ -756,6 +784,8 @@ function setup(){
   function applyGrade(gradeKey){
     if(gradeKey==='custom'||!NUMI_GRADES[gradeKey]){
       config.grade='custom';
+      if(typeof window!=='undefined')window.config=config;
+      if(typeof global!=='undefined')global.config=config;
       activeLevel='custom';
       updateLevelSegButtons('custom');
       const subgrid=$('#gradeSubgrid');
@@ -767,6 +797,15 @@ function setup(){
     }
     const g=NUMI_GRADES[gradeKey];
     config.grade=g.id;
+    config.ops=[...g.ops];
+    config.types=[...g.types];
+    config.type=g.types[0];
+    config.digits=[...g.digits];
+    config.count=g.count;
+    config.seconds=g.seconds;
+    config.inputMode=g.inputMode;
+    if(typeof window!=='undefined')window.config=config;
+    if(typeof global!=='undefined')global.config=config;
     activeLevel=g.id>=6?'secondary':'primary';
     updateLevelSegButtons(activeLevel);
     const subgrid=$('#gradeSubgrid');
@@ -784,6 +823,8 @@ function setup(){
     const r=$(`[name=inputMode][value="${g.inputMode}"]`);if(r)r.checked=true;
     refresh();
   }
+  if(typeof window!=='undefined')window.applyGrade=applyGrade;
+  if(typeof global!=='undefined')global.applyGrade=applyGrade;
 
   $$('.level-seg-btn').forEach(btn=>{
     btn.onclick=()=>{
@@ -836,7 +877,9 @@ function setup(){
       toast(t('Chọn ít nhất một phép tính, loại số và số chữ số nhé.','Choose at least one operation, number type and digit length.'));
       return;
     }
-    config={...defaults,ops,types,digits,count:+f.get('count'),seconds:+f.get('seconds'),inputMode:f.get('inputMode')||'choices',grade:config.grade};
+    config={...defaults,ops,types,type:types[0]||'natural',digits,count:+f.get('count'),seconds:+f.get('seconds'),inputMode:f.get('inputMode')||'choices',grade:config.grade};
+    if(typeof window!=='undefined')window.config=config;
+    if(typeof global!=='undefined')global.config=config;
     startQuiz();
   };
   const stickyBtn=$('#stickyStartBtn');
@@ -849,14 +892,15 @@ function setup(){
   refresh();
 }
 
-function generate(c=config){
-  const grade=c.grade?Number(c.grade):null;
-  let allowedOps=c.ops?.length?c.ops:['+'];
+function generate(c){
+  const cfg=c||(typeof window!=='undefined'&&window.config)||config;
+  const grade=cfg.grade?Number(cfg.grade):null;
+  let allowedOps=cfg.ops?.length?cfg.ops:['+'];
   if(grade===1){
     allowedOps=allowedOps.filter(o=>o==='+'||o==='-');
     if(!allowedOps.length)allowedOps=['+'];
   }
-  let allowedTypes=c.types?.length?c.types:[c.type||'natural'];
+  let allowedTypes=cfg.types?.length?cfg.types:[cfg.type||'natural'];
   if(grade===1||grade===2)allowedTypes=['natural'];
   else if(grade===3)allowedTypes=allowedTypes.filter(t=>t==='natural'||t==='remainder');
   if(!allowedTypes.length)allowedTypes=['natural'];
@@ -865,8 +909,8 @@ function generate(c=config){
   if(grade===6&&allowedTypes.includes('negative')&&Math.random()<0.45){
     type='negative';
   }
-  const digits=c.digits?.length?c.digits:null;
-  let d1=digits?pick(digits):c.d1||1,d2=digits?pick(digits):c.d2||1;
+  const digits=cfg.digits?.length?cfg.digits:null;
+  let d1=digits?pick(digits):cfg.d1||1,d2=digits?pick(digits):cfg.d2||1;
   d1=Math.min(6,Math.max(1,d1));d2=Math.min(6,Math.max(1,d2));
   const range=d=>[10**(d-1),10**d-1],number=d=>ri(...range(d));
   let a=number(d1),b=number(d2);
@@ -951,7 +995,7 @@ function generate(c=config){
     options=smartDistractors(a,b,op,type,val,display);
     explanation=detailedExplanation(q,a,b,op,type,answer,sym);
   }
-  return {id:crypto.randomUUID(),q,answer,options:shuffle(options),skill:type+':'+op,config:{...c,type,grade},explanation};
+  return {id:crypto.randomUUID(),q,answer,options:shuffle(options),skill:type+':'+op,config:{...cfg,type,grade},explanation};
 }
 if(typeof window!=='undefined')window.generate=generate;
 if(typeof global!=='undefined')global.generate=generate;

@@ -122,7 +122,8 @@ async function localSignIn(username,password){
     state.buddy=user.avatar||'bunny';
   }
   if(user.grade&&typeof NUMI_GRADES!=='undefined'&&NUMI_GRADES[user.grade]){
-    config={...defaults,...NUMI_GRADES[user.grade],grade:user.grade};
+    const gDef=NUMI_GRADES[user.grade];
+    config={...defaults,...gDef,grade:gDef.id,ops:[...gDef.ops],types:[...gDef.types],type:gDef.types[0],digits:[...gDef.digits]};
     if(typeof window!=='undefined')window.config=config;if(typeof global!=='undefined')global.config=config;
   }
   cloudBadge();
@@ -150,7 +151,8 @@ async function localSignUp(name,username,password,avatar='bunny',grade=1){
   save();
   localStorage.setItem('numi-user-state-'+username,JSON.stringify(state));
   if(typeof NUMI_GRADES!=='undefined'&&NUMI_GRADES[grade]){
-    config={...defaults,...NUMI_GRADES[grade],grade};
+    const gDef=NUMI_GRADES[grade];
+    config={...defaults,...gDef,grade:gDef.id,ops:[...gDef.ops],types:[...gDef.types],type:gDef.types[0],digits:[...gDef.digits]};
     if(typeof window!=='undefined')window.config=config;if(typeof global!=='undefined')global.config=config;
   }
   cloudBadge();
@@ -251,7 +253,8 @@ function updateUserProfile(updates={}){
     if(g>=1&&g<=9){
       u.grade=g;users[username].grade=g;
       if(typeof NUMI_GRADES!=='undefined'&&NUMI_GRADES[g]){
-        config={...defaults,...NUMI_GRADES[g],grade:g};
+        const gDef=NUMI_GRADES[g];
+        config={...defaults,...gDef,grade:gDef.id,ops:[...gDef.ops],types:[...gDef.types],type:gDef.types[0],digits:[...gDef.digits]};
         if(typeof window!=='undefined')window.config=config;if(typeof global!=='undefined')global.config=config;
       }
     }
@@ -803,3 +806,4 @@ if(typeof global!=='undefined'){
   global.localSignUp=localSignUp;
   global.openAccount=openAccount;
 }
+if(typeof syncUserGradeToConfig==='function')syncUserGradeToConfig();

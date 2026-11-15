@@ -42,22 +42,23 @@ function safeEvalMath(expr) {
   return values.length === 1 ? values[0] : NaN;
 }
 
-function customGenerate(c=config){
-  if(c.questionStyle==='normal')return plainGenerate(c);
-  const selectedType=pick(c.types?.length?c.types:[c.type||'natural']);
-  const terms=Math.max(2,Math.min(6,+c.termCount||3)),digits=c.digits?.length?c.digits:[1],digit=pick(digits),lo=10**(digit-1),hi=10**digit-1,rand=()=>ri(lo,hi);
-  if(c.questionStyle==='expression'&&selectedType==='fraction'){
-    const values=Array.from({length:terms},()=>({n:ri(1,9),d:ri(2,12)}));let n=values[0].n,d=values[0].d;for(const v of values.slice(1)){n=n*v.d+v.n*d;d*=v.d}const answer=frac(n,d);let readable=values.map(v=>`${v.n}/${v.d}`).join(' + ');const pairs=(c.brackets||'none').split(',');if(pairs[0]!=='none'){const open={round:'(',square:'[',curly:'{'},close={round:')',square:']',curly:'}'};for(const pair of pairs)if(open[pair])readable=`${open[pair]}${readable}${close[pair]}`}return {id:crypto.randomUUID(),q:readable,answer,options:generatedOptions(answer,[frac(n+1,d),frac(n-1,d),frac(n,d+1)]),skill:'fraction:+',config:{...c,type:'fraction'},explanation:`${readable} = ${answer}`};
+function customGenerate(c){
+  const cfg=c||(typeof window!=='undefined'&&window.config)||config;
+  if(cfg.questionStyle==='normal')return plainGenerate(cfg);
+  const selectedType=pick(cfg.types?.length?cfg.types:[cfg.type||'natural']);
+  const terms=Math.max(2,Math.min(6,+cfg.termCount||3)),digits=cfg.digits?.length?cfg.digits:[1],digit=pick(digits),lo=10**(digit-1),hi=10**digit-1,rand=()=>ri(lo,hi);
+  if(cfg.questionStyle==='expression'&&selectedType==='fraction'){
+    const values=Array.from({length:terms},()=>({n:ri(1,9),d:ri(2,12)}));let n=values[0].n,d=values[0].d;for(const v of values.slice(1)){n=n*v.d+v.n*d;d*=v.d}const answer=frac(n,d);let readable=values.map(v=>`${v.n}/${v.d}`).join(' + ');const pairs=(cfg.brackets||'none').split(',');if(pairs[0]!=='none'){const open={round:'(',square:'[',curly:'{'},close={round:')',square:']',curly:'}'};for(const pair of pairs)if(open[pair])readable=`${open[pair]}${readable}${close[pair]}`}return {id:crypto.randomUUID(),q:readable,answer,options:generatedOptions(answer,[frac(n+1,d),frac(n-1,d),frac(n,d+1)]),skill:'fraction:+',config:{...cfg,type:'fraction'},explanation:`${readable} = ${answer}`};
   }
-  if(selectedType!=='natural')return plainGenerate(c);
-  if(c.questionStyle==='convenient'){
+  if(selectedType!=='natural')return plainGenerate(cfg);
+  if(cfg.questionStyle==='convenient'){
     const factor=ri(2,9),pair=pick([[1,9],[2,8],[3,7],[4,6]]),a=pair[0],b=pair[1];
     const answer=factor*10, q=`${factor} × (${a} + ${b})`;
     const naive=factor*a+factor+b;
-    return {id:crypto.randomUUID(),q,answer:String(answer),options:generatedOptions(answer,[naive,factor*(a+b-1),factor*(a+b+1)]),skill:'natural:convenient',config:{...c,type:'natural'},explanation:`${factor} × ${a} + ${factor} × ${b} = ${factor} × (${a} + ${b}) = ${factor} × 10 = ${answer}`};
+    return {id:crypto.randomUUID(),q,answer:String(answer),options:generatedOptions(answer,[naive,factor*(a+b-1),factor*(a+b+1)]),skill:'natural:convenient',config:{...cfg,type:'natural'},explanation:`${factor} × ${a} + ${factor} × ${b} = ${factor} × (${a} + ${b}) = ${factor} × 10 = ${answer}`};
   }
-  if(c.questionStyle==='expression'){
-    const ops=(c.ops||['+','-','*']).filter(op=>['+','-','*','/'].includes(op));
+  if(cfg.questionStyle==='expression'){
+    const ops=(cfg.ops||['+','-','*']).filter(op=>['+','-','*','/'].includes(op));
     const values=Array.from({length:terms},rand), chosen=Array.from({length:terms-1},()=>pick(ops.length?ops:['+','-','*']));
     // For division, choose divisible values so young learners see exact answers.
     for(let i=0;i<chosen.length;i++)if(chosen[i]==='/'){const maxDiv=Math.min(hi,Math.floor(values[i]/2));const divisors=[];for(let d=2;d<=maxDiv;d++)if(values[i]%d===0)divisors.push(d);if(divisors.length)values[i+1]=pick(divisors);else{const alternatives=ops.filter(x=>x!=='/');if(alternatives.length)chosen[i]=pick(alternatives);else{values[i]=Math.max(4,values[i]);values[i+1]=2;chosen[i]='/'}}}
@@ -71,16 +72,18 @@ function customGenerate(c=config){
     try {
       value = safeEvalMath(js);
     } catch {
-      return plainGenerate(c);
+      return plainGenerate(cfg);
     }
-    if(!Number.isFinite(value)||Math.abs(value)>999999)return plainGenerate(c);
+    if(!Number.isFinite(value)||Math.abs(value)>999999)return plainGenerate(cfg);
     const answer=String(Math.round(value*1000)/1000);
     const left=values.reduce((acc,n,i)=>i?acc+({'+':n,'-':-n,'*':n,'/':1}[chosen[i-1]]||n):n,0);
-    return {id:crypto.randomUUID(),q:readable,answer,options:generatedOptions(answer,[Math.round(left),value+1,value-1]),skill:'natural:expression',config:{...c,type:'natural'},explanation:`${readable} = ${answer}`};
+    return {id:crypto.randomUUID(),q:readable,answer,options:generatedOptions(answer,[Math.round(left),value+1,value-1]),skill:'natural:expression',config:{...cfg,type:'natural'},explanation:`${readable} = ${answer}`};
   }
-  return plainGenerate(c);
+  return plainGenerate(cfg);
 }
 generate=customGenerate;
+if(typeof window!=='undefined')window.generate=generate;
+if(typeof global!=='undefined')global.generate=generate;
 
 const setupBeforeAdvanced=setup;
 setup=function(){
@@ -90,7 +93,7 @@ setup=function(){
   field.innerHTML=`<legend><span>4</span>${t('Kiểu bài nâng cao','Challenge style')}</legend><div class="formgrid"><label>${t('Dạng luyện','Practice mode')}<select name="questionStyle"><option value="normal">${t('Tính từng phép tính','One calculation at a time')}</option><option value="convenient">${t('Tính thuận tiện · gộp số tròn','Regroup to make round numbers')}</option><option value="expression">${t('Biểu thức nhiều phép tính','Multi-operation expressions')}</option></select></label><label>${t('Số phép tính','Number of operations')}<select name="termCount">${[2,3,4,5,6].map(n=>`<option value="${n}">${n}</option>`).join('')}</select></label></div><p class="settings-hint small">${t('App tự thêm ngoặc khi cần để biểu thức dễ đọc. Bé chỉ cần tự tính.','The app adds brackets when useful to make expressions clear. Just work them out.')}</p>`;
   form.insertBefore(field,form.querySelector('.session-size'));
   const oldSubmit=form.onsubmit;
-  form.onsubmit=e=>{e.preventDefault();const f=new FormData(form),ops=f.getAll('op'),types=f.getAll('type'),digits=f.getAll('digits').map(Number),style=f.get('questionStyle');if(!ops.length||!types.length||!digits.length){toast(t('Chọn ít nhất một phép tính, loại số và số chữ số nhé.','Choose at least one operation, number type and digit length.'));return}if(style==='convenient'&&types.some(x=>x!=='natural')){toast(t('Bài tính thuận tiện hiện dùng số tự nhiên. Hãy chọn riêng “Số tự nhiên” nhé.','Convenient regrouping currently uses whole numbers. Select only “Whole numbers.”'));return}if(style==='expression'&&types.some(x=>!['natural','fraction'].includes(x))){toast(t('Biểu thức nhiều số hiện dùng số tự nhiên hoặc phân số. Hãy bỏ chọn loại số khác nhé.','Multi-operation expressions currently use whole numbers or fractions. Uncheck other number types.'));return}config={...defaults,ops,types,digits,count:+f.get('count'),seconds:+f.get('seconds'),questionStyle:style,termCount:+f.get('termCount')};startQuiz()};
+  form.onsubmit=e=>{e.preventDefault();const f=new FormData(form),ops=f.getAll('op'),types=f.getAll('type'),digits=f.getAll('digits').map(Number),style=f.get('questionStyle');if(!ops.length||!types.length||!digits.length){toast(t('Chọn ít nhất một phép tính, loại số và số chữ số nhé.','Choose at least one operation, number type and digit length.'));return}if(style==='convenient'&&types.some(x=>x!=='natural')){toast(t('Bài tính thuận tiện hiện dùng số tự nhiên. Hãy chọn riêng “Số tự nhiên” nhé.','Convenient regrouping currently uses whole numbers. Select only “Whole numbers.”'));return}if(style==='expression'&&types.some(x=>!['natural','fraction'].includes(x))){toast(t('Biểu thức nhiều số hiện dùng số tự nhiên hoặc phân số. Hãy bỏ chọn loại số khác nhé.','Multi-operation expressions currently use whole numbers or fractions. Uncheck other number types.'));return}config={...defaults,ops,types,type:types[0]||'natural',digits,count:+f.get('count'),seconds:+f.get('seconds'),questionStyle:style,termCount:+f.get('termCount'),grade:config.grade};if(typeof window!=='undefined')window.config=config;if(typeof global!=='undefined')global.config=config;startQuiz()};
   const style=form.elements.questionStyle,terms=form.elements.termCount;
   style.value=config.questionStyle||'normal';terms.value=config.termCount||3;
   style.onchange=()=>{terms.disabled=style.value==='normal'};style.onchange();
