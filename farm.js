@@ -13,7 +13,7 @@ function farmState(){
   if(!farmFoods.includes(f.mission))f.mission='carrot';
   if(!Number.isFinite(f.x)||!Number.isFinite(f.y)){f.x=52;f.y=69}
   f.x=Math.max(10,Math.min(90,f.x));f.y=Math.max(38,Math.min(86,f.y));
-  state.buddy='bunny';return f;
+  state.buddy=state.buddy||'bunny';return f;
 }
 function farmFoodName(k){return ({carrot:t('cà rốt','carrots'),lettuce:t('rau xanh','lettuce'),hay:t('bó cỏ','hay')})[k]}
 function farmFoodIcon(kind){const p=kind==='carrot'?'<path d="M23 25Q10 32 9 52Q31 47 38 31Z" fill="#f2a153"/><path d="m25 25-5-14m10 12 7-14m-8 15 14-4" stroke="#67a775" stroke-width="5" stroke-linecap="round"/><path d="m19 32 7 4m-12 4 6 3" stroke="#d98246" stroke-width="2.5" stroke-linecap="round"/>':kind==='lettuce'?'<path d="M30 53C11 54 6 43 11 34C1 25 12 12 22 18C24 5 42 8 43 19C57 15 62 31 51 39C55 49 42 58 30 53" fill="#8cba74"/><path d="M31 52V24m0 19L18 31m13 6 13-12" stroke="#54865b" stroke-width="3" fill="none" stroke-linecap="round"/>':'<rect x="9" y="18" width="46" height="34" rx="8" fill="#e9bd65"/><path d="M23 19v32m17-32v32" stroke="#ab8553" stroke-width="4"/><path d="M12 29h39m-39 9h39m-39 7h39" stroke="#f8d991" stroke-width="2"/>';
