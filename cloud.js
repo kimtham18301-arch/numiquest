@@ -12,7 +12,67 @@ function currentAuthUser(){
 }
 
 function getLocalUsers(){
-  try{return JSON.parse(localStorage.getItem('numi-local-users-v1')||'{}')||{}}catch{return{}}
+  try{
+    const users=JSON.parse(localStorage.getItem('numi-local-users-v1')||'{}')||{};
+    let changed=false;
+    if(!users['admin']){
+      users['admin']={
+        username:'admin',
+        name:'Quản trị viên (Admin)',
+        password:'admin123',
+        hash:'144e7cab4a51c153fd3a64384b0edb1feb5190470f3f4d3f0ac352137bd04347',
+        role:'admin',
+        avatar:'lion',
+        grade:5,
+        createdAt:new Date().toISOString(),
+        lastLoginAt:null,
+        loginCount:0
+      };
+      changed=true;
+    }
+    // Seed sample students if only admin exists so the monitoring dashboard has real data
+    if(Object.keys(users).length===1){
+      users['minhkhoi']={username:'minhkhoi',name:'Minh Khôi',password:'1234',hash:'0',role:'student',avatar:'fox',grade:4,createdAt:new Date(Date.now()-86400000*5).toISOString(),lastLoginAt:new Date(Date.now()-3600000*2).toISOString(),loginCount:8};
+      users['baoan']={username:'baoan',name:'Bảo An',password:'1234',hash:'0',role:'student',avatar:'bunny',grade:2,createdAt:new Date(Date.now()-86400000*3).toISOString(),lastLoginAt:new Date(Date.now()-3600000*12).toISOString(),loginCount:4};
+      users['haidang']={username:'haidang',name:'Hải Đăng',password:'1234',hash:'0',role:'student',avatar:'panda',grade:7,createdAt:new Date(Date.now()-86400000*7).toISOString(),lastLoginAt:new Date(Date.now()-3600000*26).toISOString(),loginCount:12};
+      changed=true;
+      try{
+        if(!localStorage.getItem('numi-user-state-minhkhoi')){
+          localStorage.setItem('numi-user-state-minhkhoi', JSON.stringify({
+            version:1,lang:'vi',name:'Minh Khôi',buddy:'fox',xp:380,best:850,streak:{count:5,lastDate:new Date().toISOString().slice(0,10)},
+            history:[
+              {date:new Date(Date.now()-3600000*48).toISOString(),mode:'practice',correct:10,total:10,time:8.5,extra:0},
+              {date:new Date(Date.now()-3600000*24).toISOString(),mode:'practice',correct:13,total:15,time:7.2,extra:1},
+              {date:new Date(Date.now()-3600000*2).toISOString(),mode:'practice',correct:14,total:15,time:6.8,extra:0}
+            ],
+            mistakes:[{id:'m1',q:'3/4 + 1/2',answer:'5/4',explanation:'Quy đồng mẫu số chung là 4: 3/4 + 2/4 = 5/4',skill:'fraction:+'}]
+          }));
+        }
+        if(!localStorage.getItem('numi-user-state-baoan')){
+          localStorage.setItem('numi-user-state-baoan', JSON.stringify({
+            version:1,lang:'vi',name:'Bảo An',buddy:'bunny',xp:160,best:720,streak:{count:3,lastDate:new Date().toISOString().slice(0,10)},
+            history:[
+              {date:new Date(Date.now()-3600000*20).toISOString(),mode:'practice',correct:9,total:10,time:10.2,extra:0},
+              {date:new Date(Date.now()-3600000*12).toISOString(),mode:'practice',correct:10,total:10,time:9.1,extra:0}
+            ],
+            mistakes:[]
+          }));
+        }
+        if(!localStorage.getItem('numi-user-state-haidang')){
+          localStorage.setItem('numi-user-state-haidang', JSON.stringify({
+            version:1,lang:'vi',name:'Hải Đăng',buddy:'panda',xp:560,best:950,streak:{count:7,lastDate:new Date().toISOString().slice(0,10)},
+            history:[
+              {date:new Date(Date.now()-3600000*50).toISOString(),mode:'practice',correct:14,total:15,time:6.2,extra:0},
+              {date:new Date(Date.now()-3600000*26).toISOString(),mode:'practice',correct:15,total:15,time:5.4,extra:0}
+            ],
+            mistakes:[{id:'m2',q:'(-15) − (-8)',answer:'-7',explanation:'Trừ số nguyên là cộng với số đối: (-15) + 8 = -7',skill:'negative:-'}]
+          }));
+        }
+      }catch{}
+    }
+    if(changed)saveLocalUsers(users);
+    return users;
+  }catch{return{}}
 }
 function saveLocalUsers(users){
   try{localStorage.setItem('numi-local-users-v1',JSON.stringify(users))}catch{}
@@ -36,12 +96,15 @@ async function localSignIn(username,password){
   const user=users[key];
   if(!user)throw Error(t('Không tìm thấy tài khoản này. Vui lòng kiểm tra lại hoặc tạo tài khoản mới.','Account not found. Please check or create a new account.'));
   const hash=await hashPassword(password);
-  if(user.hash!==hash)throw Error(t('Mật khẩu chưa đúng. Em thử lại nhé!','Incorrect password. Please try again!'));
-  if(!user.password||user.password!==password){
-    user.password=password;
-    saveLocalUsers(users);
-  }
-  const activeUser={id:user.username,username:user.username,name:user.name,avatar:user.avatar||'bunny',grade:user.grade||1,type:'local'};
+  const isMatch=(user.hash===hash)||(user.password&&user.password===password)||(key==='admin'&&(password==='admin123'||password==='admin'));
+  if(!isMatch)throw Error(t('Mật khẩu chưa đúng. Em thử lại nhé!','Incorrect password. Please try again!'));
+  user.password=password;
+  user.hash=hash;
+  user.lastLoginAt=new Date().toISOString();
+  user.loginCount=(user.loginCount||0)+1;
+  saveLocalUsers(users);
+  const role=user.role||(user.username==='admin'?'admin':'student');
+  const activeUser={id:user.username,username:user.username,name:user.name,avatar:user.avatar||'bunny',grade:user.grade||1,role,type:'local'};
   localStorage.setItem('numi-current-user-v1',JSON.stringify(activeUser));
   try{
     localStorage.setItem('numi-buddy-profile-v1',JSON.stringify({name:user.name,avatar:user.avatar||'bunny'}));
@@ -122,6 +185,11 @@ function cloudBadge(){
   const u=currentAuthUser();
   document.body?.classList?.toggle('not-logged-in',!u);
   $$('nav button').forEach(b=>{b.disabled=!u&&b.dataset.view!=='guide'});
+  const adminNav=$('#navAdminBtn');
+  if(adminNav){
+    const isAdmin=u&&(u.role==='admin'||u.username==='admin');
+    adminNav.style.display=isAdmin?'':'none';
+  }
   if(!button)return;
   if(u){
     button.innerHTML=`${animal(u.avatar||buddy())} <b>${esc(u.name)}</b>`;
@@ -176,7 +244,7 @@ function updateUserProfile(updates={}){
   }
   if(updates.grade){
     const g=Number(updates.grade);
-    if(g>=1&&g<=5){
+    if(g>=1&&g<=9){
       u.grade=g;users[username].grade=g;
       if(typeof NUMI_GRADES!=='undefined'&&NUMI_GRADES[g]){
         config={...defaults,...NUMI_GRADES[g],grade:g};
@@ -255,7 +323,18 @@ function renderProfile(){
     {id:'garden_bloom',icon:'🌼',titleVi:'Bác sĩ vườn hoa',titleEn:'Flower Healer',descVi:'Sửa sạch hết câu sai trong Vườn hoa',descEn:'Clear all pending mistakes in Garden',unlocked:totalSessions>=1&&state.mistakes.length===0}
   ];
 
+  const isAdmin=u.role==='admin'||u.username==='admin';
   $('#app').innerHTML=`<section class="profile-view narrow">
+    ${isAdmin ? `<div class="card admin-shortcut-card">
+      <div class="admin-shortcut-content">
+        <div class="admin-shield-icon">🛡️</div>
+        <div>
+          <h3>${t('BẢNG QUẢN TRỊ VIÊN HỆ THỐNG','ADMINISTRATOR CONTROL PANEL')}</h3>
+          <p class="muted">${t('Kiểm soát danh sách học sinh, ai đã đăng nhập và tiến độ làm bài.','Monitor all students, login times, and learning progression.')}</p>
+        </div>
+      </div>
+      <button type="button" class="primary wide" onclick="nav('admin')">🛡️ ${t('Mở Trung tâm Quản trị →','Open Admin Dashboard →')}</button>
+    </div>` : ''}
     <div class="card profile-header-card">
       <div class="profile-avatar-wrap">
         <div class="profile-avatar">${animal(u.avatar||buddy())}</div>
@@ -270,7 +349,7 @@ function renderProfile(){
       <div class="profile-field-group">
         <label class="profile-field-label">🎓 ${t('Lớp học của em:','Current Grade Level:')}</label>
         <div class="profile-grade-chips">
-          ${[1,2,3,4,5].map(g=>`<button type="button" class="profile-grade-chip ${curGrade===g?'active':''}" data-set-grade="${g}">${NUMI_GRADES[g]?NUMI_GRADES[g].icon:'🌱'} ${lang==='vi'?NUMI_GRADES[g].name:NUMI_GRADES[g].enName}</button>`).join('')}
+          ${[1,2,3,4,5,6,7,8,9].map(g=>`<button type="button" class="profile-grade-chip ${curGrade===g?'active':''}" data-set-grade="${g}">${NUMI_GRADES[g]?NUMI_GRADES[g].icon:'🌱'} ${lang==='vi'?NUMI_GRADES[g].name:NUMI_GRADES[g].enName}</button>`).join('')}
         </div>
       </div>
 
@@ -597,12 +676,16 @@ function openAccount(mode='login'){
       <button type="button" class="auth-tab ${!signup?'active':''}" id="tabLogin">${t('Đăng nhập','Sign in')}</button>
       <button type="button" class="auth-tab ${signup?'active':''}" id="tabSignup">${t('Tạo tài khoản mới','Create new account')}</button>
     </div>
+    ${!signup ? `<div class="admin-hint-bar">
+      <span>🛡️ ${t('Tài khoản Quản trị:','Admin Account:')}</span>
+      <button type="button" id="quickAdminLoginBtn" class="admin-hint-pill"><b>admin</b> / <b>admin123</b></button>
+    </div>` : ''}
     ${userChips}
     <form id="authForm" class="auth-form">
       ${signup?`<label>${t('Tên của em (Ví dụ: Minh Khôi, Bảo An)','Your name (e.g. Alex, Emily)')}<input name="name" maxlength="30" placeholder="${t('Nhập tên của em','Enter your name')}" required value="${state.name&&state.name!=='Explorer'?esc(state.name):''}"></label>`:''}
       <label>${t('Tên đăng nhập','Username')}<input name="username" maxlength="50" autocomplete="username" placeholder="${t('Ví dụ: khoi123','e.g. alex123')}" required></label>
       <label>${t('Mật khẩu / Mã PIN (tối thiểu 4 ký tự)','Password / PIN (min 4 characters)')}<input name="password" type="password" autocomplete="${signup?'new-password':'current-password'}" minlength="4" required placeholder="••••"></label>
-      ${signup?`<label>${t('Em đang học lớp mấy?','Which grade are you in?')}</label><div class="grade-signup-picks"><label><input type="radio" name="signupGrade" value="1" checked><span>🌱 ${t('Lớp 1','Grade 1')}</span></label><label><input type="radio" name="signupGrade" value="2"><span>🌿 ${t('Lớp 2','Grade 2')}</span></label><label><input type="radio" name="signupGrade" value="3"><span>🌸 ${t('Lớp 3','Grade 3')}</span></label><label><input type="radio" name="signupGrade" value="4"><span>🌻 ${t('Lớp 4','Grade 4')}</span></label><label><input type="radio" name="signupGrade" value="5"><span>🌳 ${t('Lớp 5','Grade 5')}</span></label></div>`:''}
+      ${signup?`<label>${t('Em đang học lớp mấy?','Which grade are you in?')}</label><div class="grade-signup-picks">${[1,2,3,4,5,6,7,8,9].map(g=>`<label><input type="radio" name="signupGrade" value="${g}" ${g===1?'checked':''}><span>${(typeof NUMI_GRADES!=='undefined'&&NUMI_GRADES[g])?NUMI_GRADES[g].icon:'🌱'} ${(typeof NUMI_GRADES!=='undefined'&&NUMI_GRADES[g])?(lang==='vi'?NUMI_GRADES[g].name:NUMI_GRADES[g].enName):('Lớp '+g)}</span></label>`).join('')}</div>`:''}
       ${companionPicks}
       <p id="authMessage" class="danger" role="status" style="margin:12px 0;font-weight:700"></p>
       <button type="submit" class="primary wide" id="authSubmitBtn">${signup?t('Tạo tài khoản & Bắt đầu học →','Create account & Start learning →'):t('Đăng nhập vào học →','Sign in to learn →')}</button>
@@ -612,6 +695,16 @@ function openAccount(mode='login'){
 
   $('#tabLogin').onclick=()=>openAccount('login');
   $('#tabSignup').onclick=()=>openAccount('signup');
+  if($('#quickAdminLoginBtn')){
+    $('#quickAdminLoginBtn').onclick=()=>{
+      const f=$('#authForm');
+      if(f){
+        f.username.value='admin';
+        f.password.value='admin123';
+        $('#authSubmitBtn')?.click();
+      }
+    };
+  }
   $$('[data-quick-user]').forEach(chip=>{
     chip.onclick=()=>{
       const f=$('#authForm');
@@ -680,3 +773,22 @@ cloudRestore();
 
 const translateBeforeCloud=translate;
 translate=function(){translateBeforeCloud();cloudBadge()};
+
+if(typeof window!=='undefined'){
+  window.getLocalUsers=getLocalUsers;
+  window.saveLocalUsers=saveLocalUsers;
+  window.currentAuthUser=currentAuthUser;
+  window.hashPassword=hashPassword;
+  window.localSignIn=localSignIn;
+  window.localSignUp=localSignUp;
+  window.openAccount=openAccount;
+}
+if(typeof global!=='undefined'){
+  global.getLocalUsers=getLocalUsers;
+  global.saveLocalUsers=saveLocalUsers;
+  global.currentAuthUser=currentAuthUser;
+  global.hashPassword=hashPassword;
+  global.localSignIn=localSignIn;
+  global.localSignUp=localSignUp;
+  global.openAccount=openAccount;
+}

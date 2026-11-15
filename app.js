@@ -23,7 +23,7 @@ $('#closeModal').onclick=()=>$('#modal').close();$('#modal').addEventListener('c
 let quizAdvanceTimer=null,quizCountdownTimer=null;
 function cancelQuizAdvance(){clearTimeout(quizAdvanceTimer);clearInterval(quizCountdownTimer);quizAdvanceTimer=null;quizCountdownTimer=null}
 function stop(){cancelQuizAdvance();clearInterval(tick);tick=null;cancelAnimationFrame(raf);raf=null}
-function nav(v){if(session&&!session.done&&['quiz','game','garden','battle'].includes(view)&&v!==view){if(!confirm(t('Rời lượt hiện tại? Câu sai đã lưu vẫn được giữ.','Leave this session? Saved mistakes will remain.')))return}stop();session=null;view=v;if(typeof window!=='undefined')window.view=v;if(typeof global!=='undefined')global.view=v;({home,setup,atlas,stats,battleSetup,guide:()=>renderGuide(),profile:()=>renderProfile(),account:()=>renderProfile(),challenge:()=>challenge()}[v]||home)();translate();window.scrollTo(0,0)}
+function nav(v){if(session&&!session.done&&['quiz','game','garden','battle'].includes(view)&&v!==view){if(!confirm(t('Rời lượt hiện tại? Câu sai đã lưu vẫn được giữ.','Leave this session? Saved mistakes will remain.')))return}stop();session=null;view=v;if(typeof window!=='undefined')window.view=v;if(typeof global!=='undefined')global.view=v;({home,setup,atlas,stats,battleSetup,guide:()=>renderGuide(),profile:()=>renderProfile(),account:()=>renderProfile(),challenge:()=>challenge(),admin:()=>typeof renderAdmin==='function'?renderAdmin():renderProfile()}[v]||home)();translate();window.scrollTo(0,0)}
 $$('[data-view]').forEach(b=>b.onclick=()=>nav(b.dataset.view));$('.brand').onclick=e=>{e.preventDefault();nav('home')};$('#lang').onclick=()=>{if(session&&!session.done){toast(t('Hãy hoàn thành lượt trước khi đổi ngôn ngữ.','Finish the session before switching languages.'));return}lang=lang==='vi'?'en':'vi';save();nav(view)};
 const totalPieces=()=>Object.values(state.pieces).reduce((a,b)=>a+b,0);const level=()=>1+Math.floor(state.xp/100);const avg=arr=>arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:0;
 function getStreak(){if(!state.streak||typeof state.streak!=='object')state.streak={count:0,lastDate:''};return state.streak}
@@ -33,16 +33,34 @@ const NUMI_GRADES={
   2:{id:2,name:'Lớp 2',enName:'Grade 2',icon:'🌿',descVi:'Cộng trừ có nhớ đến 100, bảng nhân & chia 2 và 5',descEn:'2-digit add/subtract up to 100, multiplication & division by 2 and 5',ops:['+','-','*','/'],types:['natural'],digits:[1,2],seconds:15,count:10,inputMode:'choices'},
   3:{id:3,name:'Lớp 3',enName:'Grade 3',icon:'🌸',descVi:'Bảng nhân chia 2–9, cộng trừ đến 1.000, phép chia có dư',descEn:'Times tables 2–9, add/sub within 1,000, division with remainders',ops:['+','-','*','/'],types:['natural','remainder'],digits:[1,2,3],seconds:15,count:10,inputMode:'choices'},
   4:{id:4,name:'Lớp 4',enName:'Grade 4',icon:'🌻',descVi:'Phép tính nhiều chữ số, cộng trừ nhân chia phân số',descEn:'Multi-digit arithmetic, fractions (+, −, ×, ÷)',ops:['+','-','*','/'],types:['natural','fraction'],digits:[2,3,4],seconds:20,count:15,inputMode:'choices'},
-  5:{id:5,name:'Lớp 5',enName:'Grade 5',icon:'🌳',descVi:'Số thập phân, hỗn số, phân số và tính nhanh biểu thức',descEn:'Decimals, fractions, mixed quick calculations',ops:['+','-','*','/'],types:['natural','fraction','decimal'],digits:[2,3],seconds:20,count:15,inputMode:'choices'}
+  5:{id:5,name:'Lớp 5',enName:'Grade 5',icon:'🌳',descVi:'Số thập phân, hỗn số, phân số và tính nhanh biểu thức',descEn:'Decimals, fractions, mixed quick calculations',ops:['+','-','*','/'],types:['natural','fraction','decimal'],digits:[2,3],seconds:20,count:15,inputMode:'choices'},
+  6:{id:6,name:'Lớp 6',enName:'Grade 6',icon:'🍁',descVi:'Tập hợp số nguyên Z (cộng trừ nhân chia số âm), quy tắc dấu ngoặc, phân số & số thập phân',descEn:'Integers Z (signed operations), sign rules, fractions and decimals',ops:['+','-','*','/'],types:['negative','fraction','decimal','natural'],digits:[1,2,3],seconds:15,count:15,inputMode:'choices'},
+  7:{id:7,name:'Lớp 7',enName:'Grade 7',icon:'🎋',descVi:'Tập hợp số hữu tỉ Q, số thập phân âm, quy tắc chuyển vế và tính nhanh biểu thức hợp lý',descEn:'Rational numbers Q, negative decimals, sign rules and quick mental algebra',ops:['+','-','*','/'],types:['negative','fraction','decimal'],digits:[2,3],seconds:15,count:15,inputMode:'choices'},
+  8:{id:8,name:'Lớp 8',enName:'Grade 8',icon:'⚡',descVi:'Phân thức đại số, tính nhanh biểu thức số hữu tỉ, luỹ thừa và số âm nhiều chữ số',descEn:'Algebraic fractions, fast rational calculations, powers and multi-digit integers',ops:['+','-','*','/'],types:['negative','fraction','decimal'],digits:[2,3,4],seconds:15,count:20,inputMode:'choices'},
+  9:{id:9,name:'Lớp 9',enName:'Grade 9',icon:'🎓',descVi:'Căn bậc hai số học, phân số số âm, tính nhẩm thần tốc chuẩn bị thi vào lớp 10',descEn:'Arithmetic square roots, signed fractions/decimals and fast high-school prep',ops:['+','-','*','/'],types:['negative','fraction','decimal'],digits:[2,3,4],seconds:12,count:20,inputMode:'choices'}
 };
 if(typeof window!=='undefined')window.NUMI_GRADES=NUMI_GRADES;
 if(typeof global!=='undefined')global.NUMI_GRADES=NUMI_GRADES;
 const defaults={grade:1,ops:['+','-'],type:'natural',types:['natural'],digits:[1],d1:1,d2:1,count:10,seconds:20,gameCount:3,inputMode:'choices'};let config={...defaults};
+if(typeof window!=='undefined'){window.defaults=defaults;window.config=config;}
+if(typeof global!=='undefined'){global.defaults=defaults;global.config=config;}
 const ri=(a,b)=>Math.floor(Math.random()*(b-a+1))+a, pick=a=>a[ri(0,a.length-1)],shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=ri(0,i);[a[i],a[j]]=[a[j],a[i]]}return a};const gcd=(a,b)=>b?gcd(b,a%b):Math.abs(a);function frac(n,d){if(d<0){n=-n;d=-d}let g=gcd(n,d);return d/g===1?String(n/g):`${n/g}/${d/g}`}const fmt=n=>String(Math.round(n*10000)/10000).replace('.',lang==='vi'?',':'.');
 function smartDistractors(a,b,op,type,val,displayFn){
   const opts=new Set([displayFn(val)]);
   const addOpt=(v)=>{if(v!==undefined&&v!==null&&!isNaN(v)){const s=displayFn(v);if(s&&!opts.has(s)&&(type!=='natural'||(!s.startsWith('-')&&Number(s)>=0)))opts.add(s)}};
   if(type==='natural'||type==='negative'){
+    if(type==='negative'){
+      addOpt(-val);
+      if(op==='+'||op==='-'){
+        addOpt(Math.abs(a)+Math.abs(b));
+        addOpt(-(Math.abs(a)+Math.abs(b)));
+        addOpt(Math.abs(a)-Math.abs(b));
+        addOpt(-(Math.abs(a)-Math.abs(b)));
+      }else if(op==='*'||op==='/'){
+        addOpt(-val);
+        addOpt(val>0?-val:Math.abs(val));
+      }
+    }
     if(op==='+'){
       if((a%10)+(b%10)>=10)addOpt(val-10);
       addOpt(val+10);addOpt(val+1);addOpt(val-1);addOpt(val+2);
@@ -64,6 +82,24 @@ function smartDistractors(a,b,op,type,val,displayFn){
 function detailedExplanation(q,a,b,op,type,val,sym){
   if(type==='fraction')return `${q} = ${val}\n`+t('Quy đồng mẫu số chung, sau đó cộng/trừ các tử số và rút gọn phân số tối giản.','Find a common denominator, add or subtract the numerators, then simplify.');
   if(type==='remainder'){const quotient=Math.floor(a/b),r=a%b;return `${a} ÷ ${b} = ${quotient} (${t('dư','r')} ${r})\n`+`${b} × ${quotient} = ${b*quotient} → ${a} − ${b*quotient} = ${r}`;}
+  if(type==='negative'){
+    const sa=a<0?`(${a})`:`${a}`,sb=b<0?`(${b})`:`${b}`;
+    if(op==='*'||op==='/'){
+      const sameSign=(a<0&&b<0)||(a>0&&b>0);
+      const signRule=sameSign?t('Cùng dấu (+) × (+) hoặc (−) × (−) ra DƯƠNG (+)','Same signs yield POSITIVE (+)'):t('Khác dấu (+) × (−) hoặc (−) × (+) ra ÂM (−)','Different signs yield NEGATIVE (−)');
+      return `${sa} ${sym} ${sb} = ${val}\n• ${t('Quy tắc dấu:','Sign rule:')} ${signRule}\n• ${t('Tính giá trị:','Magnitude:')} ${Math.abs(a)} ${sym} ${Math.abs(b)} = ${Math.abs(val)}`;
+    }
+    if(op==='+'){
+      if(a<0&&b<0){
+        return `${sa} + ${sb} = ${val}\n• ${t('Cộng hai số âm: Giữ dấu trừ, cộng hai giá trị tuyệt đối:','Adding two negative numbers: Keep minus sign and add:')} −(${Math.abs(a)} + ${Math.abs(b)}) = ${val}`;
+      }
+      const absA=Math.abs(a),absB=Math.abs(b);
+      return `${sa} + ${sb} = ${val}\n• ${t('Cộng hai số khác dấu: Lấy số lớn trừ số bé, mang dấu của số có giá trị tuyệt đối lớn hơn:','Adding different signs: Subtract smaller magnitude from larger, take sign of larger:')} ${absA>=absB?(a<0?`−(${absA} − ${absB})`:`+(${absA} − ${absB})`):(b<0?`−(${absB} − ${absA})`:`+(${absB} − ${absA})`)} = ${val}`;
+    }
+    if(op==='-'){
+      return `${sa} − ${sb} = ${val}\n• ${t('Quy tắc trừ số nguyên: Muốn trừ số b, ta cộng với số đối của b:','Subtracting integers: Add the opposite:')}\n  ${sa} − ${sb} = ${sa} + (${-b}) = ${val}`;
+    }
+  }
   if(op==='+'){
     if(b>=10){const tens=Math.floor(b/10)*10,ones=b%10;return `${a} + ${b} = ${val}\n• ${t('Bước 1: Tách','Step 1: Split')} ${b} = ${tens} + ${ones}\n• ${t('Bước 2: Cộng hàng chục:','Step 2: Add tens:')} ${a} + ${tens} = ${a+tens}\n• ${t('Bước 3: Cộng hàng đơn vị:','Step 3: Add ones:')} ${a+tens} + ${ones} = ${val}`;}
     return `${a} + ${b} = ${val}`;
@@ -137,7 +173,7 @@ function renderStudentGuideHtml(){
   return `<div class="guide-cards">
     <div class="guide-card card">
       <div class="guide-step-header"><span class="guide-step-num">1</span><h3>🌱 ${t('Chọn đúng Lớp học của em','Choose your Grade level')}</h3></div>
-      <p>${t('Vào mục <b>Luyện tập</b>, bấm chọn từ <b>Lớp 1 đến Lớp 5</b>. Numi sẽ tự động chuẩn bị các bài toán đúng chuẩn kiến thức trên lớp (Lớp 1 cộng trừ phạm vi 100; Lớp 2 nhân chia 2 và 5; Lớp 3 bảng nhân chia 2–9 & chia có dư; Lớp 4 phân số; Lớp 5 số thập phân).','Head to <b>Practice</b> and tap your <b>Grade (1 to 5)</b>. Numi automatically selects questions matching what you learn at school.')}</p>
+      <p>${t('Vào mục <b>Luyện tập</b>, bấm chọn từ <b>Lớp 1 đến Lớp 9</b>. Numi sẽ tự động chuẩn bị các bài toán đúng chuẩn kiến thức trên lớp (Tiểu học: cộng trừ, nhân chia, phân số, số thập phân; THCS Lớp 6–9: số nguyên âm, số hữu tỉ, luỹ thừa, biểu thức tính nhanh).','Head to <b>Practice</b> and tap your <b>Grade (1 to 9)</b>. Numi automatically selects questions matching what you learn at school (Primary: arithmetic, fractions, decimals; Middle School Grades 6–9: integers, rational numbers, powers, mental algebra).')}</p>
       <div class="guide-tip">💡 <b>${t('Mẹo:','Tip:')}</b> ${t('Em cũng có thể bấm “Tùy chỉnh” để tự chọn số chữ số và phép tính theo ý thích.','You can also tap “Custom” to freely pick operations and number of digits.')}</div>
     </div>
     <div class="guide-card card">
@@ -284,15 +320,11 @@ function setup(){
     
     <div class="grade-picker-box card">
       <div class="grade-header">
-        <span class="grade-title">🎓 ${t('Lớp học theo chuẩn GDPT 2018:','Grade level (Primary Curriculum):')}</span>
+        <span class="grade-title">🎓 ${t('Lớp học theo chuẩn GDPT 2018:','Grade level (Curriculum Grades 1–9):')}</span>
         <span class="grade-badge" id="gradeActiveBadge">${gradeInfo ? (lang==='vi'?gradeInfo.name:gradeInfo.enName) : t('Tùy chỉnh','Custom')}</span>
       </div>
       <div class="grade-tabs">
-        <button type="button" class="grade-tab ${curGrade===1?'active':''}" data-grade="1">🌱 ${t('Lớp 1','Grade 1')}</button>
-        <button type="button" class="grade-tab ${curGrade===2?'active':''}" data-grade="2">🌿 ${t('Lớp 2','Grade 2')}</button>
-        <button type="button" class="grade-tab ${curGrade===3?'active':''}" data-grade="3">🌸 ${t('Lớp 3','Grade 3')}</button>
-        <button type="button" class="grade-tab ${curGrade===4?'active':''}" data-grade="4">🌻 ${t('Lớp 4','Grade 4')}</button>
-        <button type="button" class="grade-tab ${curGrade===5?'active':''}" data-grade="5">🌳 ${t('Lớp 5','Grade 5')}</button>
+        ${[1,2,3,4,5,6,7,8,9].map(g=>`<button type="button" class="grade-tab ${curGrade===g?'active':''}" data-grade="${g}">${NUMI_GRADES[g]?NUMI_GRADES[g].icon:'🌱'} ${lang==='vi'?NUMI_GRADES[g].name:NUMI_GRADES[g].enName}</button>`).join('')}
         <button type="button" class="grade-tab ${curGrade==='custom'?'active':''}" data-grade="custom">⚙️ ${t('Tùy chỉnh','Custom')}</button>
       </div>
       <p class="grade-desc" id="gradeDesc">${gradeInfo ? (lang==='vi'?gradeInfo.descVi:gradeInfo.descEn) : t('Tùy ý kết hợp các phép tính, loại số và số chữ số.','Freely combine operations, number types and digits.')}</p>
@@ -442,7 +474,10 @@ function generate(c=config){
   else if(grade===3)allowedTypes=allowedTypes.filter(t=>t==='natural'||t==='remainder');
   if(!allowedTypes.length)allowedTypes=['natural'];
 
-  const type=pick(allowedTypes);
+  let type=pick(allowedTypes);
+  if(grade===6&&allowedTypes.includes('negative')&&Math.random()<0.45){
+    type='negative';
+  }
   const digits=c.digits?.length?c.digits:null;
   let d1=digits?pick(digits):c.d1||1,d2=digits?pick(digits):c.d2||1;
   d1=Math.min(6,Math.max(1,d1));d2=Math.min(6,Math.max(1,d2));
@@ -531,5 +566,7 @@ function generate(c=config){
   }
   return {id:crypto.randomUUID(),q,answer,options:shuffle(options),skill:type+':'+op,config:{...c,type,grade},explanation};
 }
+if(typeof window!=='undefined')window.generate=generate;
+if(typeof global!=='undefined')global.generate=generate;
 
 initializeZoo();
