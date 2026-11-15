@@ -194,8 +194,16 @@ function renderAdmin() {
         <input type="text" id="adminSearchInput" placeholder="${t('Tìm kiếm theo tên học sinh hoặc @username...','Search by name or @username...')}" value="${esc(adminSearchQuery)}">
         ${adminSearchQuery ? `<button type="button" id="adminClearSearchBtn" class="clear-search-btn">✕</button>` : ''}
       </div>
+      <div class="admin-grade-chips-scroll">
+        <button type="button" class="admin-grade-chip ${adminGradeFilter==='all'?'active':''}" data-admin-grade="all">🎓 ${t('Tất cả','All')} (${allSummary.length})</button>
+        ${[1,2,3,4,5,6,7,8,9].map(g=>{
+          const count = allSummary.filter(s=>s.grade===g).length;
+          const gInfo = typeof NUMI_GRADES!=='undefined'&&NUMI_GRADES[g];
+          return `<button type="button" class="admin-grade-chip ${adminGradeFilter===String(g)?'active':''}" data-admin-grade="${g}">${gInfo?gInfo.icon:'🌱'} Lớp ${g} <span class="chip-count">(${count})</span></button>`;
+        }).join('')}
+      </div>
       <div class="admin-filters">
-        <select id="adminGradeSelect" class="admin-select">
+        <select id="adminGradeSelect" class="admin-select admin-desktop-only">
           <option value="all" ${adminGradeFilter==='all'?'selected':''}>🎓 ${t('Tất cả khối lớp (1–9)','All Grades (1–9)')}</option>
           ${[1,2,3,4,5,6,7,8,9].map(g=>`<option value="${g}" ${adminGradeFilter===String(g)?'selected':''}>${typeof NUMI_GRADES!=='undefined'&&NUMI_GRADES[g]?NUMI_GRADES[g].icon:'🌱'} ${typeof NUMI_GRADES!=='undefined'&&NUMI_GRADES[g]?(currentLang()==='vi'?NUMI_GRADES[g].name:NUMI_GRADES[g].enName):('Lớp '+g)}</option>`).join('')}
         </select>
@@ -217,7 +225,8 @@ function renderAdmin() {
           <small class="muted">${t('Theo dõi thời gian đăng nhập thực tế, số câu đúng/sai và hỗ trợ đổi mã PIN cho bé.','Track real login times, accuracy rates, and reset PINs when requested.')}</small>
         </div>
       </div>
-      <div class="admin-table-responsive">
+      <!-- Desktop Table View (>= 840px) -->
+      <div class="admin-table-responsive admin-desktop-only">
         <table class="admin-table">
           <thead>
             <tr>
@@ -285,6 +294,62 @@ function renderAdmin() {
           </tbody>
         </table>
       </div>
+
+      <!-- Mobile Cards View (< 840px) -->
+      <div class="admin-cards-list admin-mobile-only">
+        ${filteredList.length === 0 ? `<div class="admin-empty-card">${t('Không tìm thấy học sinh nào phù hợp với bộ lọc.','No students found matching your filter.')}</div>` : ''}
+        ${filteredList.map(s => {
+          const gradeInfo = typeof NUMI_GRADES !== 'undefined' && NUMI_GRADES[s.grade];
+          const gradeLabel = gradeInfo ? (currentLang() === 'vi' ? gradeInfo.name : gradeInfo.enName) : `Lớp ${s.grade}`;
+          const gradeIcon = gradeInfo ? gradeInfo.icon : '🌱';
+          const isAdminUser = s.role === 'admin' || s.username === 'admin';
+          const accClass = s.accuracy >= 80 ? 'acc-high' : s.accuracy >= 65 ? 'acc-med' : 'acc-low';
+
+          return `<div class="admin-student-card ${isAdminUser ? 'admin-user-card' : ''}">
+            <div class="admin-card-top">
+              <div class="student-cell">
+                <div class="student-avatar">${animal(s.avatar)}</div>
+                <div class="student-meta">
+                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                    <b class="student-name">${esc(s.name)}</b>
+                    ${isAdminUser ? `<span class="role-badge admin-badge">🛡️ Admin</span>` : `<span class="role-badge student-badge">🎓 HS</span>`}
+                  </div>
+                  <span class="student-uname">@${esc(s.username)}</span>
+                </div>
+              </div>
+              <span class="grade-tag">${gradeIcon} <b>${gradeLabel}</b></span>
+            </div>
+
+            <div class="admin-card-stats-grid">
+              <div class="admin-card-stat">
+                <small>${t('Chính xác','Accuracy')}</small>
+                <span class="acc-pill ${accClass}">${s.accuracy}%</span>
+              </div>
+              <div class="admin-card-stat">
+                <small>${t('Cấp độ & XP','Level & XP')}</small>
+                <strong>Lv.${s.userLevel} <span class="stat-meta-note">(${s.xp} XP)</span></strong>
+              </div>
+              <div class="admin-card-stat">
+                <small>${t('Đăng nhập','Last Login')}</small>
+                <span class="stat-line-text">🕒 ${formatAdminTime(s.lastLogin)}</span>
+                <span class="stat-meta-note">${s.loginCount > 0 ? `${s.loginCount} ${t('lần vào học','logins')}` : t('Chưa vào','Never')}</span>
+              </div>
+              <div class="admin-card-stat">
+                <small>${t('Bài làm & Lỗi','Lessons & Errors')}</small>
+                <span class="stat-line-text">📝 ${s.totalSessions} ${t('bài','lessons')} (${s.totalAnswered} ${t('câu','qs')})</span>
+                ${s.mistakesCount > 0 ? `<span class="mistake-pill" style="margin-top:2px;display:inline-block">🌼 ${s.mistakesCount} ${t('câu sai','mistakes')}</span>` : `<span class="stat-meta-note" style="color:#4a7758">✓ 0 ${t('lỗi tồn','errors')}</span>`}
+              </div>
+            </div>
+
+            <div class="admin-card-actions">
+              <button type="button" class="admin-act-btn btn-view" data-action="view" data-user="${esc(s.username)}">👁️ ${t('Chi tiết','Details')}</button>
+              <button type="button" class="admin-act-btn btn-pin" data-action="pin" data-user="${esc(s.username)}">🔑 ${t('Mã PIN','PIN')}</button>
+              ${!isAdminUser ? `<button type="button" class="admin-act-btn btn-switch" data-action="switch" data-user="${esc(s.username)}">🚀 ${t('Vào học','Open')}</button>` : ''}
+              ${!isAdminUser ? `<button type="button" class="admin-act-btn btn-del" data-action="delete" data-user="${esc(s.username)}">🗑️</button>` : ''}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
     </div>
   </section>`;
 
@@ -315,6 +380,13 @@ function renderAdmin() {
       renderAdmin();
     };
   }
+
+  $$('.admin-grade-chip').forEach(b => {
+    b.onclick = () => {
+      adminGradeFilter = b.dataset.adminGrade;
+      renderAdmin();
+    };
+  });
 
   const sortSelect = $('#adminSortSelect');
   if (sortSelect) {

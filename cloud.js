@@ -184,11 +184,15 @@ function cloudBadge(){
   const button=$('#accountButton');
   const u=currentAuthUser();
   document.body?.classList?.toggle('not-logged-in',!u);
-  $$('nav button').forEach(b=>{b.disabled=!u&&b.dataset.view!=='guide'});
+  $$('nav button').forEach(b=>{b.disabled=!u&&b.dataset.view!=='guide'&&b.id!=='navMoreBtn'});
   const adminNav=$('#navAdminBtn');
+  const sheetAdmin=$('#sheetAdminItem');
+  const isAdmin=u&&(u.role==='admin'||u.username==='admin');
   if(adminNav){
-    const isAdmin=u&&(u.role==='admin'||u.username==='admin');
     adminNav.style.display=isAdmin?'':'none';
+  }
+  if(sheetAdmin){
+    sheetAdmin.style.display=isAdmin?'flex':'none';
   }
   if(!button)return;
   if(u){

@@ -16,7 +16,17 @@ const countries=[
 ['GB','Vương quốc Anh','United Kingdom','🇬🇧','London','London','Châu Âu','Europe','Tháp đồng hồ Elizabeth','Elizabeth Tower','🕰️','Big Ben là tên quả chuông bên trong tháp.','Big Ben is the bell inside the tower.']];
 const cname=c=>c[lang==='vi'?1:2],cap=c=>c[lang==='vi'?4:5],cont=c=>c[lang==='vi'?6:7],landmark=c=>c[lang==='vi'?8:9],fact=c=>c[lang==='vi'?11:12];
 function save(){state.lang=lang;try{localStorage.setItem(KEY,JSON.stringify(state))}catch{toast(t('Không lưu được. Hãy xuất bản sao lưu.','Could not save. Please export a backup.'))}}
-function translate(){document.documentElement.lang=lang;$$('[data-vi]').forEach(el=>el.textContent=el.dataset[lang]);$('#lang').textContent=lang==='vi'?'EN':'VI';$$('nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===view))}
+function translate(){
+  document.documentElement.lang=lang;
+  $$('[data-vi]').forEach(el=>el.textContent=el.dataset[lang]);
+  $('#lang').textContent=lang==='vi'?'EN':'VI';
+  $$('nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
+  const isMoreView=['guide','atlas','admin'].includes(view);
+  const moreBtn=$('#navMoreBtn');
+  if(moreBtn)moreBtn.classList.toggle('active',isMoreView);
+  const sheetLangLabel=$('#sheetLangLabel');
+  if(sheetLangLabel)sheetLangLabel.textContent=lang==='vi'?'Tiếng Việt 🇻🇳':'English 🇬🇧';
+}
 function toast(msg){$('#toast')?.remove();const d=document.createElement('div');d.id='toast';d.textContent=msg;document.body.append(d);setTimeout(()=>d.remove(),3500)}
 function modal(html,cb){$('#modalBody').innerHTML=html;afterModal=cb;$('#modal').showModal()}
 $('#closeModal').onclick=()=>$('#modal').close();$('#modal').addEventListener('cancel',e=>e.preventDefault());$('#modal').addEventListener('close',()=>{const cb=afterModal;afterModal=null;cb?.()});
@@ -25,6 +35,58 @@ function cancelQuizAdvance(){clearTimeout(quizAdvanceTimer);clearInterval(quizCo
 function stop(){cancelQuizAdvance();clearInterval(tick);tick=null;cancelAnimationFrame(raf);raf=null}
 function nav(v){if(session&&!session.done&&['quiz','game','garden','battle'].includes(view)&&v!==view){if(!confirm(t('Rời lượt hiện tại? Câu sai đã lưu vẫn được giữ.','Leave this session? Saved mistakes will remain.')))return}stop();session=null;view=v;if(typeof window!=='undefined')window.view=v;if(typeof global!=='undefined')global.view=v;({home,setup,atlas,stats,battleSetup,guide:()=>renderGuide(),profile:()=>renderProfile(),account:()=>renderProfile(),challenge:()=>challenge(),admin:()=>typeof renderAdmin==='function'?renderAdmin():renderProfile()}[v]||home)();translate();window.scrollTo(0,0)}
 $$('[data-view]').forEach(b=>b.onclick=()=>nav(b.dataset.view));$('.brand').onclick=e=>{e.preventDefault();nav('home')};$('#lang').onclick=()=>{if(session&&!session.done){toast(t('Hãy hoàn thành lượt trước khi đổi ngôn ngữ.','Finish the session before switching languages.'));return}lang=lang==='vi'?'en':'vi';save();nav(view)};
+function initMoreSheet(){
+  const moreBtn=$('#navMoreBtn');
+  const sheet=$('#moreSheet');
+  const backdrop=$('#moreSheetBackdrop');
+  const closeBtn=$('#closeMoreSheetBtn');
+  if(!moreBtn||!sheet)return;
+  function openSheet(){
+    sheet.style.display='block';
+    if(backdrop)backdrop.style.display='block';
+    requestAnimationFrame(()=>{
+      sheet.classList.add('open');
+      if(backdrop)backdrop.classList.add('open');
+    });
+  }
+  function closeSheet(){
+    sheet.classList.remove('open');
+    if(backdrop)backdrop.classList.remove('open');
+    setTimeout(()=>{
+      if(!sheet.classList.contains('open')){
+        sheet.style.display='none';
+        if(backdrop)backdrop.style.display='none';
+      }
+    },280);
+  }
+  moreBtn.onclick=e=>{
+    e.preventDefault();
+    if(sheet.classList.contains('open'))closeSheet();
+    else openSheet();
+  };
+  if(backdrop)backdrop.onclick=closeSheet;
+  if(closeBtn)closeBtn.onclick=closeSheet;
+  $$('[data-sheet-view]').forEach(btn=>{
+    btn.onclick=()=>{
+      closeSheet();
+      nav(btn.dataset.sheetView);
+    };
+  });
+  const sheetLang=$('#sheetLangBtn');
+  if(sheetLang){
+    sheetLang.onclick=()=>{
+      closeSheet();
+      $('#lang')?.click();
+    };
+  }
+}
+if(typeof window!=='undefined'){
+  if(document.readyState==='loading'){
+    window.addEventListener('DOMContentLoaded',initMoreSheet);
+  }else{
+    initMoreSheet();
+  }
+}
 const totalPieces=()=>Object.values(state.pieces).reduce((a,b)=>a+b,0);const level=()=>1+Math.floor(state.xp/100);const avg=arr=>arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:0;
 function getStreak(){if(!state.streak||typeof state.streak!=='object')state.streak={count:0,lastDate:''};return state.streak}
 function updateStreak(){const s=getStreak(),today=new Date().toISOString().slice(0,10);if(s.lastDate===today)return s.count;if(s.lastDate){const last=new Date(s.lastDate+'T00:00:00'),cur=new Date(today+'T00:00:00');const diff=Math.round((cur-last)/86400000);if(diff===1)s.count++;else if(diff>1)s.count=1}else s.count=1;s.lastDate=today;save();return s.count}
@@ -387,6 +449,13 @@ function setup(){
       <button type="button" id="openWorksheetBtn" class="wide" style="margin-top:8px">📄 ${t('In phiếu bài tập (PDF)','Print worksheet (PDF)')}</button>
       <p class="settings-hint small">${t('Câu sai tự vào vườn hoa. Không cần chọn số chậu.','Missed questions automatically become flower pots. No pot settings needed.')}</p>
     </form>
+    <div class="setup-sticky-cta" id="setupStickyBar">
+      <div class="setup-sticky-meta">
+        <span id="stickyGradePill" class="sticky-grade-pill">${config.grade && NUMI_GRADES[config.grade] ? (lang==='vi'?NUMI_GRADES[config.grade].name:NUMI_GRADES[config.grade].enName) : t('Tùy chỉnh','Custom')}</span>
+        <span id="stickySummaryText" class="sticky-sub-text">${config.count||10} ${t('câu','questions')} · ${config.seconds||15}s</span>
+      </div>
+      <button type="button" id="stickyStartBtn" class="primary setup-sticky-btn">⚡ ${t('Bắt đầu học','Start Practice')} →</button>
+    </div>
   </div>`;
 
   const form=$('#config');
@@ -398,6 +467,12 @@ function setup(){
     const gradeBadge = config.grade && NUMI_GRADES[config.grade] ? (lang==='vi'?NUMI_GRADES[config.grade].name:NUMI_GRADES[config.grade].enName) : t('Tùy chỉnh','Custom');
     $('#lessonSummary').textContent=`${gradeBadge} · ${count} ${t('câu','questions')} · ${seconds}s/${t('câu','question')} · ${digits.length?digits.join(', ')+' '+t('chữ số','digits'):t('Chưa chọn chữ số','Choose digits')} · ${types.length} ${t('loại số','number types')} · ${modeLabel}`;
     if(ops.length===0)$('#lessonSummary').textContent+=' · '+t('Hãy chọn phép tính','Choose an operation');
+    const stickyGrade=$('#stickyGradePill');
+    const stickySub=$('#stickySummaryText');
+    if(stickyGrade&&stickySub){
+      stickyGrade.textContent=gradeBadge;
+      stickySub.textContent=`${count} ${t('câu','qs')} · ${seconds}s`;
+    }
   }
 
   function applyGrade(gradeKey){
@@ -459,6 +534,13 @@ function setup(){
     config={...defaults,ops,types,digits,count:+f.get('count'),seconds:+f.get('seconds'),inputMode:f.get('inputMode')||'choices',grade:config.grade};
     startQuiz();
   };
+  const stickyBtn=$('#stickyStartBtn');
+  if(stickyBtn){
+    stickyBtn.onclick=()=>{
+      if(form.requestSubmit)form.requestSubmit();
+      else form.dispatchEvent(new Event('submit',{cancelable:true}));
+    };
+  }
   refresh();
 }
 
