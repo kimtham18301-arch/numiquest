@@ -75,7 +75,7 @@ function customGenerate(c){
       return plainGenerate(cfg);
     }
     if(!Number.isFinite(value)||Math.abs(value)>999999)return plainGenerate(cfg);
-    const answer=String(Math.round(value*1000)/1000);
+    const answer=typeof fmt==='function'?fmt(value):String(Math.round(value*1000)/1000);
     const left=values.reduce((acc,n,i)=>i?acc+({'+':n,'-':-n,'*':n,'/':1}[chosen[i-1]]||n):n,0);
     return {id:crypto.randomUUID(),q:readable,answer,options:generatedOptions(answer,[Math.round(left),value+1,value-1]),skill:'natural:expression',config:{...cfg,type:'natural'},explanation:`${readable} = ${answer}`};
   }
@@ -93,7 +93,25 @@ setup=function(){
   field.innerHTML=`<legend><span>4</span>${t('Kiểu bài nâng cao','Challenge style')}</legend><div class="formgrid"><label>${t('Dạng luyện','Practice mode')}<select name="questionStyle"><option value="normal">${t('Tính từng phép tính','One calculation at a time')}</option><option value="convenient">${t('Tính thuận tiện · gộp số tròn','Regroup to make round numbers')}</option><option value="expression">${t('Biểu thức nhiều phép tính','Multi-operation expressions')}</option></select></label><label>${t('Số phép tính','Number of operations')}<select name="termCount">${[2,3,4,5,6].map(n=>`<option value="${n}">${n}</option>`).join('')}</select></label></div><p class="settings-hint small">${t('App tự thêm ngoặc khi cần để biểu thức dễ đọc. Bé chỉ cần tự tính.','The app adds brackets when useful to make expressions clear. Just work them out.')}</p>`;
   form.insertBefore(field,form.querySelector('.session-size'));
   const oldSubmit=form.onsubmit;
-  form.onsubmit=e=>{e.preventDefault();const f=new FormData(form),ops=f.getAll('op'),types=f.getAll('type'),digits=f.getAll('digits').map(Number),style=f.get('questionStyle');if(!ops.length||!types.length||!digits.length){toast(t('Chọn ít nhất một phép tính, loại số và số chữ số nhé.','Choose at least one operation, number type and digit length.'));return}if(style==='convenient'&&types.some(x=>x!=='natural')){toast(t('Bài tính thuận tiện hiện dùng số tự nhiên. Hãy chọn riêng “Số tự nhiên” nhé.','Convenient regrouping currently uses whole numbers. Select only “Whole numbers.”'));return}if(style==='expression'&&types.some(x=>!['natural','fraction'].includes(x))){toast(t('Biểu thức nhiều số hiện dùng số tự nhiên hoặc phân số. Hãy bỏ chọn loại số khác nhé.','Multi-operation expressions currently use whole numbers or fractions. Uncheck other number types.'));return}config={...defaults,ops,types,type:types[0]||'natural',digits,count:+f.get('count'),seconds:+f.get('seconds'),questionStyle:style,termCount:+f.get('termCount'),grade:config.grade};if(typeof window!=='undefined')window.config=config;if(typeof global!=='undefined')global.config=config;startQuiz()};
+  form.onsubmit=e=>{
+    e.preventDefault();
+    const f=new FormData(form),ops=f.getAll('op'),rawTypes=f.getAll('type'),digits=f.getAll('digits').map(Number),style=f.get('questionStyle');
+    if(!ops.length||!rawTypes.length||!digits.length){
+      toast(t('Chọn ít nhất một phép tính, loại số và số chữ số nhé.','Choose at least one operation, number type and digit length.'));
+      return;
+    }
+    let types=[...rawTypes];
+    if(style==='convenient'){
+      types=['natural'];
+    }else if(style==='expression'){
+      types=types.filter(x=>['natural','fraction'].includes(x));
+      if(!types.length)types=['natural'];
+    }
+    config={...defaults,ops,types,type:types[0]||'natural',digits,count:+f.get('count'),seconds:+f.get('seconds'),questionStyle:style,termCount:+f.get('termCount'),grade:config.grade};
+    if(typeof window!=='undefined')window.config=config;
+    if(typeof global!=='undefined')global.config=config;
+    startQuiz();
+  };
   const style=form.elements.questionStyle,terms=form.elements.termCount;
   style.value=config.questionStyle||'normal';terms.value=config.termCount||3;
   style.onchange=()=>{terms.disabled=style.value==='normal'};style.onchange();

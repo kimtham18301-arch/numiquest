@@ -227,7 +227,11 @@ function smartDistractors(a,b,op,type,val,displayFn){
   return shuffle([...opts].slice(0,4));
 }
 function detailedExplanation(q,a,b,op,type,val,sym){
-  if(type==='fraction')return `${q} = ${val}\n`+t('Quy đồng mẫu số chung, sau đó cộng/trừ các tử số và rút gọn phân số tối giản.','Find a common denominator, add or subtract the numerators, then simplify.');
+  if(type==='fraction'){
+    if(op==='*') return `${q} = ${val}\n• `+t('Nhân hai phân số: Nhân tử số với tử số, nhân mẫu số với mẫu số rồi rút gọn phân số tối giản.','Multiply fractions: Multiply numerators together and denominators together, then simplify.');
+    if(op==='/') return `${q} = ${val}\n• `+t('Chia hai phân số: Giữ nguyên phân số thứ nhất, nhân với phân số thứ hai đảo ngược rồi rút gọn.','Divide fractions: Keep first fraction, multiply by reciprocal of second, then simplify.');
+    return `${q} = ${val}\n• `+t('Cộng/trừ phân số: Quy đồng mẫu số chung, cộng/trừ các tử số, giữ nguyên mẫu số chung rồi rút gọn phân số tối giản.','Add/subtract fractions: Find common denominator, add/subtract numerators, then simplify.');
+  }
   if(type==='remainder'){const quotient=Math.floor(a/b),r=a%b;return `${a} ÷ ${b} = ${quotient} (${t('dư','r')} ${r})\n`+`${b} × ${quotient} = ${b*quotient} → ${a} − ${b*quotient} = ${r}`;}
   if(type==='negative'){
     const sa=a<0?`(${a})`:`${a}`,sb=b<0?`(${b})`:`${b}`;
@@ -247,19 +251,20 @@ function detailedExplanation(q,a,b,op,type,val,sym){
       return `${sa} − ${sb} = ${val}\n• ${t('Quy tắc trừ số nguyên: Muốn trừ số b, ta cộng với số đối của b:','Subtracting integers: Add the opposite:')}\n  ${sa} − ${sb} = ${sa} + (${-b}) = ${val}`;
     }
   }
+  const fa=typeof fmt==='function'?fmt(a):String(a), fb=typeof fmt==='function'?fmt(b):String(b);
   if(op==='+'){
-    if(b>=10){const tens=Math.floor(b/10)*10,ones=b%10;return `${a} + ${b} = ${val}\n• ${t('Bước 1: Tách','Step 1: Split')} ${b} = ${tens} + ${ones}\n• ${t('Bước 2: Cộng hàng chục:','Step 2: Add tens:')} ${a} + ${tens} = ${a+tens}\n• ${t('Bước 3: Cộng hàng đơn vị:','Step 3: Add ones:')} ${a+tens} + ${ones} = ${val}`;}
-    return `${a} + ${b} = ${val}`;
+    if(type==='natural'&&b>=10){const tens=Math.floor(b/10)*10,ones=b%10;return `${fa} + ${fb} = ${val}\n• ${t('Bước 1: Tách','Step 1: Split')} ${fb} = ${tens} + ${ones}\n• ${t('Bước 2: Cộng hàng chục:','Step 2: Add tens:')} ${fa} + ${tens} = ${fmt(a+tens)}\n• ${t('Bước 3: Cộng hàng đơn vị:','Step 3: Add ones:')} ${fmt(a+tens)} + ${ones} = ${val}`;}
+    return `${fa} + ${fb} = ${val}`;
   }
   if(op==='-'){
-    if(b>=10){const tens=Math.floor(b/10)*10,ones=b%10;return `${a} − ${b} = ${val}\n• ${t('Bước 1: Tách','Step 1: Split')} ${b} = ${tens} + ${ones}\n• ${t('Bước 2: Trừ hàng chục:','Step 2: Subtract tens:')} ${a} − ${tens} = ${a-tens}\n• ${t('Bước 3: Trừ hàng đơn vị:','Step 3: Subtract ones:')} ${a-tens} − ${ones} = ${val}`;}
-    return `${a} − ${b} = ${val}`;
+    if(type==='natural'&&b>=10){const tens=Math.floor(b/10)*10,ones=b%10;return `${fa} − ${fb} = ${val}\n• ${t('Bước 1: Tách','Step 1: Split')} ${fb} = ${tens} + ${ones}\n• ${t('Bước 2: Trừ hàng chục:','Step 2: Subtract tens:')} ${fa} − ${tens} = ${fmt(a-tens)}\n• ${t('Bước 3: Trừ hàng đơn vị:','Step 3: Subtract ones:')} ${fmt(a-tens)} − ${ones} = ${val}`;}
+    return `${fa} − ${fb} = ${val}`;
   }
   if(op==='*'){
-    if(a>=10&&b<10){const tens=Math.floor(a/10)*10,ones=a%10;return `${a} × ${b} = ${val}\n• ${t('Tách','Split')} ${a} = ${tens} + ${ones}\n• ${tens} × ${b} = ${tens*b}\n• ${ones} × ${b} = ${ones*b}\n• ${tens*b} + ${ones*b} = ${val}`;}
-    return `${a} × ${b} = ${val}`;
+    if(type==='natural'&&a>=10&&b<10){const tens=Math.floor(a/10)*10,ones=a%10;return `${fa} × ${fb} = ${val}\n• ${t('Tách','Split')} ${fa} = ${tens} + ${ones}\n• ${tens} × ${fb} = ${tens*b}\n• ${ones} × ${fb} = ${ones*b}\n• ${tens*b} + ${ones*b} = ${val}`;}
+    return `${fa} × ${fb} = ${val}`;
   }
-  if(op==='/')return `${a} ÷ ${b} = ${val}\n• ${t('Nhẩm ngược lại:','Multiply back:')} ${b} × ${val} = ${a}`;
+  if(op==='/')return `${fa} ÷ ${fb} = ${val}\n• ${t('Nhẩm ngược lại:','Multiply back:')} ${fb} × ${val} = ${fa}`;
   return `${q} = ${val}`;
 }
 function haptic(type='tap'){
@@ -342,7 +347,7 @@ function handleNumpad(k,q){
 }
 function showQuiz(){
   cancelQuizAdvance();const s=session;s.answered=false;if(s.index>=s.questions.length){finishPractice();return}
-  const q=s.questions[s.index];currentNumpad='';const isNumpad=config.inputMode==='numpad'&&s.kind!=='battle',type=q.skill.split(':')[0];
+  const q=s.questions[s.index];currentNumpad='';const type=q.skill.split(':')[0],isNumpad=config.inputMode==='numpad'&&s.kind!=='battle'&&type!=='remainder';
   const isLongQuestion=(q.q||'').length>11||q.q.includes('/')||q.q.includes('^')||q.q.includes('(')||q.q.includes('√');
   const qClass=isLongQuestion?'question question-compact':'question';
 
@@ -943,29 +948,54 @@ function generate(c){
   let answer,q,options=[],explanation='';
   const sym={'+':'+','-':'−','*':'×','/':'÷'}[op];
   if(type==='fraction'){
-    const da=ri(2,12),db=ri(2,12);
-    let n,d;
-    if(op==='+'){n=a*db+b*da;d=da*db}
-    else if(op==='-'){n=a*db-b*da;d=da*db}
-    else if(op==='*'){n=a*b;d=da*db}
-    else{n=a*db;d=da*b}
-    answer=frac(n,d);
-    q=`${a}/${da} ${sym} ${b}/${db}`;
-    options=[answer];
-    for(let i=1;options.length<4;i++){
-      const v=frac(n+i,d);
-      if(!options.includes(v))options.push(v);
+    let da=ri(2,12),db=ri(2,12);
+    let na=ri(1,9),nb=ri(1,9);
+    if(grade>=6&&Math.random()<0.4)na=-na;
+    if(grade>=6&&Math.random()<0.3)nb=-nb;
+    if((grade===4||grade===5||!grade)&&op==='-'){
+      if(na*db<nb*da){
+        [na,nb]=[nb,na];
+        [da,db]=[db,da];
+      }
     }
-    explanation=detailedExplanation(q,a,b,op,type,answer,sym);
+    let n,d;
+    if(op==='+'){n=na*db+nb*da;d=da*db}
+    else if(op==='-'){n=na*db-nb*da;d=da*db}
+    else if(op==='*'){n=na*nb;d=da*db}
+    else{
+      if(nb===0)nb=1;
+      n=na*db;d=da*nb;
+    }
+    answer=frac(n,d);
+    const opA=na<0?`(${na}/${da})`:`${na}/${da}`;
+    const opB=nb<0?`(${nb}/${db})`:`${nb}/${db}`;
+    q=`${opA} ${sym} ${opB}`;
+    const opts=new Set([answer]);
+    if(op==='+'&&da+db>0)opts.add(frac(na+nb,da+db));
+    if(op==='-'&&Math.abs(da-db)>0)opts.add(frac(na-nb,Math.abs(da-db)));
+    if(op==='*'&&da*nb>0)opts.add(frac(na*db,da*nb));
+    opts.add(frac(n+1,d));opts.add(frac(n-1,d));opts.add(frac(n+d,d));opts.add(frac(Math.abs(n-d),d));
+    for(let i=1;opts.size<4&&i<50;i++){
+      opts.add(frac(n+i,d));
+      opts.add(frac(n-i,d));
+    }
+    options=[...opts].slice(0,4);
+    explanation=detailedExplanation(q,na,nb,op,type,answer,sym);
   }else if(type==='remainder'){
-    if(d1<d2){[d1,d2]=[d2,d1];[a,b]=[b,a]}
-    b=Math.max(2,Math.min(b,10**d1-2));
-    a=Math.max(a,b+1);
-    if(a%b===0){if(a<10**d1-1)a++;else a--}
-    const quotient=Math.floor(a/b),r=a%b;
+    const divisor=ri(2,9);
+    const maxQuotient=(grade===3||d1<=2)?ri(3,25):ri(10,50);
+    const quotient=maxQuotient;
+    const r=ri(1,divisor-1);
+    a=divisor*quotient+r;
+    b=divisor;
     answer=`${quotient} ${t('dư','r')} ${r}`;
     q=`${a} ÷ ${b}`;
-    options=[answer,`${quotient+1} ${t('dư','r')} ${r}`,`${quotient} ${t('dư','r')} ${r+1}`,`${quotient+2} ${t('dư','r')} 0`];
+    options=[
+      answer,
+      `${quotient+1} ${t('dư','r')} ${r}`,
+      `${quotient} ${t('dư','r')} ${r===1?r+1:r-1}`,
+      `${quotient+1} ${t('dư','r')} 0`
+    ];
     explanation=detailedExplanation(q,a,b,op,type,answer,sym);
   }else{
     if(op==='/'){
@@ -975,7 +1005,9 @@ function generate(c){
       const low=Math.max(1,Math.ceil(lo/b)),high=Math.max(low,Math.floor(hi/b));
       a=b*ri(low,high);
       if(type==='decimal'){
-        b=10**(d2-1);a=number(d1)+ri(1,9)/10;
+        b=pick([2,4,5,10]);
+        const cleanQuotient=ri(10,250)/10;
+        a=Number((cleanQuotient*b).toFixed(2));
       }
     }else if(type==='decimal'){
       a+=ri(1,9)/10;b+=ri(1,9)/10;

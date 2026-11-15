@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_NAME = 'numiquick-v1.0.2';
+const CACHE_NAME = 'numiquick-v1.0.3';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -12,6 +12,7 @@ const STATIC_ASSETS = [
   './milktea.js',
   './cloud-config.js',
   './cloud.js',
+  './admin.js',
   './ui.js',
   './advanced.js',
   './refresh.js',
@@ -53,7 +54,7 @@ self.addEventListener('fetch', event => {
   }
 
   event.respondWith(
-    caches.match(req).then(cached => {
+    caches.match(req, { ignoreSearch: true }).then(cached => {
       if (cached) return cached;
       return fetch(req).then(res => {
         if (!res || res.status !== 200 || res.type !== 'basic') return res;
@@ -62,7 +63,7 @@ self.addEventListener('fetch', event => {
         return res;
       }).catch(() => {
         if (req.headers.get('accept')?.includes('text/html')) {
-          return caches.match('./index.html');
+          return caches.match('./index.html', { ignoreSearch: true });
         }
       });
     })

@@ -536,6 +536,7 @@ async function adminSwitchToStudent(username) {
     }
     save();
   } catch {}
+  if (typeof syncUserGradeToConfig === 'function') syncUserGradeToConfig(user.grade);
   cloudBadge();
   nav('profile');
   toast(t('Đang xem giao diện học của: ' + user.name + ' 👤 (Chuyển về admin trong Hồ sơ bất cứ lúc nào)', 'Viewing as: ' + user.name + ' 👤'));
