@@ -1,11 +1,12 @@
 'use strict';
 
-const CACHE_NAME = 'numiquick-v1.0.5';
+const CACHE_NAME = 'numiquick-v1.0.7';
 const STATIC_ASSETS = [
   './',
   './index.html',
   './style.css',
   './app.js',
+  './geo-data.js',
   './discovery.js',
   './challenge.js',
   './farm.js',
@@ -23,6 +24,10 @@ const STATIC_ASSETS = [
   './nunito-600.woff',
   './nunito-700.woff',
   './nunito-800.woff',
+  './play-race.svg',
+  './play-school.svg',
+  './play-world.svg',
+  './zoo.svg',
   './og-image.png',
   './manifest.json'
 ];
@@ -55,17 +60,19 @@ self.addEventListener('fetch', event => {
 
   event.respondWith(
     caches.match(req, { ignoreSearch: true }).then(cached => {
-      if (cached) return cached;
-      return fetch(req).then(res => {
-        if (!res || res.status !== 200 || res.type !== 'basic') return res;
-        const copy = res.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
+      const networkFetch = fetch(req).then(res => {
+        if (res && res.status === 200 && res.type === 'basic') {
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
+        }
         return res;
       }).catch(() => {
+        if (cached) return cached;
         if (req.headers.get('accept')?.includes('text/html')) {
           return caches.match('./index.html', { ignoreSearch: true });
         }
       });
+      return cached || networkFetch;
     })
   );
 });

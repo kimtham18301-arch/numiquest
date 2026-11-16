@@ -39,18 +39,18 @@ function getLocalUsers(){
       try{
         if(!localStorage.getItem('numi-user-state-minhkhoi')){
           localStorage.setItem('numi-user-state-minhkhoi', JSON.stringify({
-            version:1,lang:'vi',name:'Minh Khôi',buddy:'fox',xp:380,best:850,streak:{count:5,lastDate:new Date().toISOString().slice(0,10)},
+            version:1,lang:'vi',name:'Minh Khôi',buddy:'fox',xp:380,best:850,pieces:{},mastery:{},streak:{count:5,lastDate:new Date().toISOString().slice(0,10)},
             history:[
               {date:new Date(Date.now()-3600000*48).toISOString(),mode:'practice',correct:10,total:10,time:8.5,extra:0},
               {date:new Date(Date.now()-3600000*24).toISOString(),mode:'practice',correct:13,total:15,time:7.2,extra:1},
               {date:new Date(Date.now()-3600000*2).toISOString(),mode:'practice',correct:14,total:15,time:6.8,extra:0}
             ],
-            mistakes:[{id:'m1',q:'3/4 + 1/2',answer:'5/4',explanation:'Quy đồng mẫu số chung là 4: 3/4 + 2/4 = 5/4',skill:'fraction:+'}]
+            mistakes:[{id:'m1',q:'3/4 + 1/2',answer:'5/4',options:['5/4','4/6','3/6','7/4'],config:{seconds:20,type:'fraction'},explanation:'Quy đồng mẫu số chung là 4: 3/4 + 2/4 = 5/4',skill:'fraction:+'}]
           }));
         }
         if(!localStorage.getItem('numi-user-state-baoan')){
           localStorage.setItem('numi-user-state-baoan', JSON.stringify({
-            version:1,lang:'vi',name:'Bảo An',buddy:'bunny',xp:160,best:720,streak:{count:3,lastDate:new Date().toISOString().slice(0,10)},
+            version:1,lang:'vi',name:'Bảo An',buddy:'bunny',xp:160,best:720,pieces:{},mastery:{},streak:{count:3,lastDate:new Date().toISOString().slice(0,10)},
             history:[
               {date:new Date(Date.now()-3600000*20).toISOString(),mode:'practice',correct:9,total:10,time:10.2,extra:0},
               {date:new Date(Date.now()-3600000*12).toISOString(),mode:'practice',correct:10,total:10,time:9.1,extra:0}
@@ -60,12 +60,12 @@ function getLocalUsers(){
         }
         if(!localStorage.getItem('numi-user-state-haidang')){
           localStorage.setItem('numi-user-state-haidang', JSON.stringify({
-            version:1,lang:'vi',name:'Hải Đăng',buddy:'panda',xp:560,best:950,streak:{count:7,lastDate:new Date().toISOString().slice(0,10)},
+            version:1,lang:'vi',name:'Hải Đăng',buddy:'panda',xp:560,best:950,pieces:{},mastery:{},streak:{count:7,lastDate:new Date().toISOString().slice(0,10)},
             history:[
               {date:new Date(Date.now()-3600000*50).toISOString(),mode:'practice',correct:14,total:15,time:6.2,extra:0},
               {date:new Date(Date.now()-3600000*26).toISOString(),mode:'practice',correct:15,total:15,time:5.4,extra:0}
             ],
-            mistakes:[{id:'m2',q:'(-15) − (-8)',answer:'-7',explanation:'Trừ số nguyên là cộng với số đối: (-15) + 8 = -7',skill:'negative:-'}]
+            mistakes:[{id:'m2',q:'(-15) − (-8)',answer:'-7',options:['-7','-23','7','23'],config:{seconds:15,type:'negative'},explanation:'Trừ số nguyên là cộng với số đối: (-15) + 8 = -7',skill:'negative:-'}]
           }));
         }
       }catch{}
@@ -96,7 +96,7 @@ async function localSignIn(username,password){
   const user=users[key];
   if(!user)throw Error(t('Không tìm thấy tài khoản này. Vui lòng kiểm tra lại hoặc tạo tài khoản mới.','Account not found. Please check or create a new account.'));
   const hash=await hashPassword(password);
-  const isMatch=(user.hash===hash)||(user.password&&user.password===password)||(key==='admin'&&(password==='admin123'||password==='admin'));
+  const isMatch=(user.hash===hash)||(user.password&&user.password===password)||(key==='admin'&&!user.passwordChanged&&(password==='admin123'||password==='admin'));
   if(!isMatch)throw Error(t('Mật khẩu chưa đúng. Em thử lại nhé!','Incorrect password. Please try again!'));
   user.password=password;
   user.hash=hash;
@@ -113,13 +113,13 @@ async function localSignIn(username,password){
       state={...fresh(),...savedState};
       lang=state.lang==='en'?'en':'vi';
     }else{
-      state.name=user.name;
-      state.buddy=user.avatar||'bunny';
-      save();
+      state={...fresh(),name:user.name,buddy:user.avatar||'bunny'};
     }
+    if(typeof window!=='undefined')window.state=state;if(typeof global!=='undefined')global.state=state;
+    save();
   }catch{
-    state.name=user.name;
-    state.buddy=user.avatar||'bunny';
+    state={...fresh(),name:user.name,buddy:user.avatar||'bunny'};
+    if(typeof window!=='undefined')window.state=state;if(typeof global!=='undefined')global.state=state;
   }
   if(user.grade&&typeof NUMI_GRADES!=='undefined'&&NUMI_GRADES[user.grade]){
     const gDef=NUMI_GRADES[user.grade];
@@ -128,7 +128,7 @@ async function localSignIn(username,password){
   }
   cloudBadge();
   nav('home');
-  toast(t('Chào mừng '+user.name+' đã trở lại! 🌟','Welcome back, '+user.name+'! 🌟'));
+  toast(t('Chào mừng '+user.name+' đã trở lại!','Welcome back, '+user.name+'!'));
 }
 
 async function localSignUp(name,username,password,avatar='bunny',grade=1){
@@ -157,7 +157,7 @@ async function localSignUp(name,username,password,avatar='bunny',grade=1){
   }
   cloudBadge();
   nav('home');
-  toast(t('Tài khoản đã tạo thành công! Chào mừng '+name+'! 🎉','Account created! Welcome, '+name+'! 🎉'));
+  toast(t('Tài khoản đã tạo thành công! Chào mừng '+name+'!','Account created! Welcome, '+name+'!'));
 }
 
 async function localSignOut(){
@@ -198,12 +198,12 @@ function cloudBadge(){
   }
   if(!button)return;
   if(u){
-    button.innerHTML=`${animal(u.avatar||buddy())} <b>${esc(u.name)}</b>`;
+    button.innerHTML=`<b>${esc(u.name)}</b>`;
     button.title=t('Tài khoản của em','Your account');
     button.classList.add('is-logged-in');
     button.dataset.status=cloudSession?cloudStatus:'local';
   }else{
-    button.innerHTML=`🔒 <b>${t('Đăng nhập','Sign in')}</b>`;
+    button.innerHTML=`<b>${t('Đăng nhập','Sign in')}</b>`;
     button.title=t('Vui lòng đăng nhập để bắt đầu học','Please sign in to start learning');
     button.classList.remove('is-logged-in');
     button.dataset.status='unauthenticated';
@@ -277,6 +277,7 @@ async function updateUserPassword(newPassword){
   const hash=await hashPassword(pwd);
   users[username].hash=hash;
   users[username].password=pwd;
+  users[username].passwordChanged=true;
   saveLocalUsers(users);
   return true;
 }
@@ -290,11 +291,11 @@ function renderProfile(){
       <div class="intro-animal">${animal('bunny')}</div>
       <span class="eyebrow">NUMIQUICK · ${t('HỒ SƠ CÁ NHÂN','STUDENT PROFILE')}</span>
       <h1>${t('Đăng nhập để xem hồ sơ của em','Sign in to view your profile')}</h1>
-      <p class="muted">${t('Xem cấp độ, chuỗi ngày học 🔥, điểm kinh nghiệm và bộ sưu tập huy hiệu của riêng em.','Track your level, streak 🔥, experience points and badge collection.')}</p>
+      <p class="muted">${t('Xem cấp độ, chuỗi ngày học, điểm kinh nghiệm và bộ sưu tập huy hiệu của riêng em.','Track your level, streak, experience points and badge collection.')}</p>
       <div class="actions" style="margin-top:20px">
-        <button class="primary wide" onclick="openAccount('login')">🔒 ${t('Đăng nhập vào học','Sign in to learn')} →</button>
-        <button class="wide" onclick="openAccount('signup')" style="margin-top:8px">✨ ${t('Tạo tài khoản mới','Create new account')}</button>
-        <button class="wide" onclick="nav('home')" style="margin-top:8px">⌂ ${t('Về trang chủ','Back to home')}</button>
+        <button class="primary wide" onclick="openAccount('login')">${t('Đăng nhập vào học','Sign in to learn')} →</button>
+        <button class="wide" onclick="openAccount('signup')" style="margin-top:8px">${t('Tạo tài khoản mới','Create new account')}</button>
+        <button class="wide" onclick="nav('home')" style="margin-top:8px">${t('Về trang chủ','Back to home')}</button>
       </div>
     </section>`;
     translate();
@@ -334,13 +335,12 @@ function renderProfile(){
   $('#app').innerHTML=`<section class="profile-view">
     ${isAdmin ? `<div class="card admin-shortcut-card">
       <div class="admin-shortcut-content">
-        <div class="admin-shield-icon">🛡️</div>
         <div>
           <h3>${t('BẢNG QUẢN TRỊ VIÊN HỆ THỐNG','ADMINISTRATOR CONTROL PANEL')}</h3>
           <p class="muted">${t('Kiểm soát danh sách học sinh, ai đã đăng nhập và tiến độ làm bài.','Monitor all students, login times, and learning progression.')}</p>
         </div>
       </div>
-      <button type="button" class="primary wide" onclick="nav('admin')">🛡️ ${t('Mở Trung tâm Quản trị →','Open Admin Dashboard →')}</button>
+      <button type="button" class="primary wide" onclick="nav('admin')">${t('Mở Trung tâm Quản trị →','Open Admin Dashboard →')}</button>
     </div>` : ''}
 
     <div class="profile-bento-grid">
@@ -352,93 +352,93 @@ function renderProfile(){
           <span class="eyebrow">NUMIQUICK · ${t('HỒ SƠ HỌC SINH','STUDENT PROFILE')}</span>
           <h1 class="profile-name">
             <span id="profileNameText">${esc(u.name)}</span>
-            <button type="button" class="profile-edit-name-btn" id="editNameBtn" title="${t('Đổi tên hiển thị','Change display name')}">✏️</button>
+            <button type="button" class="profile-edit-name-btn" id="editNameBtn" title="${t('Đổi tên hiển thị','Change display name')}">Sửa</button>
           </h1>
           <p class="profile-username">@${esc(u.username)} · <span class="profile-joined">${t('Thành viên NumiQuick','NumiQuick Learner')}</span></p>
 
           <div class="profile-field-group">
-            <label class="profile-field-label">🎓 ${t('Lớp học của em:','Current Grade Level:')}</label>
+            <label class="profile-field-label">${t('Lớp học của em:','Current Grade Level:')}</label>
             <div class="profile-grade-chips">
-              ${[1,2,3,4,5,6,7,8,9].map(g=>`<button type="button" class="profile-grade-chip ${curGrade===g?'active':''}" data-set-grade="${g}">${NUMI_GRADES[g]?NUMI_GRADES[g].icon:'🌱'} ${lang==='vi'?NUMI_GRADES[g].name:NUMI_GRADES[g].enName}</button>`).join('')}
+              ${[1,2,3,4,5,6,7,8,9].map(g=>`<button type="button" class="profile-grade-chip ${curGrade===g?'active':''}" data-set-grade="${g}">${lang==='vi'?NUMI_GRADES[g].name:NUMI_GRADES[g].enName}</button>`).join('')}
             </div>
           </div>
 
           <div class="profile-field-group">
-            <label class="profile-field-label">🐾 ${t('Bạn thú đồng hành:','Choose Study Buddy:')}</label>
+            <label class="profile-field-label">${t('Bạn thú đồng hành:','Choose Study Buddy:')}</label>
             <div class="profile-buddy-chips">
-              ${[['bunny','Thỏ Mimi 🐰'],['panda','Gấu Baobao 🐼'],['fox','Cáo Kiki 🦊'],['lion','Sư tử Leo 🦁']].map(([av,lbl])=>`<button type="button" class="profile-buddy-chip ${(u.avatar||'bunny')===av?'active':''}" data-set-avatar="${av}"><div class="buddy-chip-icon">${animal(av)}</div><span>${lbl}</span></button>`).join('')}
+              ${[['bunny','Thỏ Mimi'],['panda','Gấu Baobao'],['fox','Cáo Kiki'],['lion','Sư tử Leo']].map(([av,lbl])=>`<button type="button" class="profile-buddy-chip ${(u.avatar||'bunny')===av?'active':''}" data-set-avatar="${av}"><div class="buddy-chip-icon">${animal(av)}</div><span>${lbl}</span></button>`).join('')}
             </div>
           </div>
         </div>
 
         <div class="card profile-password-card">
           <div class="profile-pwd-header">
-            <h3>🔑 ${t('Mật khẩu & Mã PIN của em','My Password & PIN')}</h3>
+            <h3>${t('Mật khẩu & Mã PIN của em','My Password & PIN')}</h3>
             <p class="muted">${t('Dùng để đăng nhập hoặc đổi tài khoản nhanh khi có nhiều bạn cùng dùng máy.','Use this PIN/Password to sign in or switch profiles on this device.')}</p>
           </div>
 
           <div class="current-pwd-box">
             <div class="current-pwd-label-row">
-              <span class="current-pwd-label">🔒 ${t('Mật khẩu hiện tại:','Current Password:')}</span>
-              <span class="current-pwd-hint">${t('(Bấm 👁️ để ẩn hoặc xem)','(Click 👁️ to hide or show)')}</span>
+              <span class="current-pwd-label">${t('Mật khẩu hiện tại:','Current Password:')}</span>
+              <span class="current-pwd-hint">${t('(Bấm Ẩn/Hiện để xem)','(Click Hide/Show to toggle)')}</span>
             </div>
             <div class="current-pwd-field">
               <input type="text" id="currentPwdDisplay" readonly value="${esc(currentPwd || (uUser.hash ? '••••••••' : '1234'))}" class="current-pwd-input" spellcheck="false" autocomplete="off" aria-label="${t('Mật khẩu hiện tại','Current password')}">
               <div class="current-pwd-btns">
-                <button type="button" id="toggleCurrentPwdBtn" class="pwd-action-btn" title="${t('Ẩn / Hiện mật khẩu','Hide / Show password')}">👁️ <span class="btn-text">${t('Ẩn','Hide')}</span></button>
-                <button type="button" id="copyCurrentPwdBtn" class="pwd-action-btn" title="${t('Sao chép mật khẩu','Copy password')}">📋 <span class="btn-text">${t('Chép','Copy')}</span></button>
+                <button type="button" id="toggleCurrentPwdBtn" class="pwd-action-btn" title="${t('Ẩn / Hiện mật khẩu','Hide / Show password')}"><span class="btn-text">${t('Ẩn','Hide')}</span></button>
+                <button type="button" id="copyCurrentPwdBtn" class="pwd-action-btn" title="${t('Sao chép mật khẩu','Copy password')}"><span class="btn-text">${t('Chép','Copy')}</span></button>
               </div>
             </div>
-            ${!currentPwd && uUser.hash ? `<p class="muted" style="margin:6px 0 0;font-size:12px">💡 ${t('Mật khẩu trước đây đã được mã hóa bảo mật. Em có thể nhập mật khẩu mới bên dưới để đặt lại nhé!','Your earlier password was encrypted. You can enter a new password below to reset it!')}</p>` : ''}
+            ${!currentPwd && uUser.hash ? `<p class="muted" style="margin:6px 0 0;font-size:12px">${t('Mật khẩu trước đây đã được mã hóa bảo mật. Em có thể nhập mật khẩu mới bên dưới để đặt lại nhé!','Your earlier password was encrypted. You can enter a new password below to reset it!')}</p>` : ''}
           </div>
 
           <div class="change-pwd-divider"></div>
 
           <div class="change-pwd-box">
             <h4 style="margin:0 0 10px;font-size:14px;color:#284632;font-weight:800">
-              🔄 ${t('Đổi mã PIN / Mật khẩu mới','Change PIN / New password')}
+              ${t('Đổi mã PIN / Mật khẩu mới','Change PIN / New password')}
             </h4>
             <form id="changePinForm" class="profile-pin-form">
               <div class="profile-pwd-fields-grid">
                 <label>${t('Mật khẩu mới (tối thiểu 4 số/ký tự)','New password (min 4 characters)')}
                   <div class="pwd-input-wrap">
                     <input type="password" id="newPinInput" minlength="4" required placeholder="${t('Ví dụ: 1234 hoặc bông hoa','e.g. 1234 or flower')}">
-                    <button type="button" class="pwd-eye-btn" data-toggle-eye="newPinInput" title="${t('Hiện/ẩn mật khẩu','Toggle visibility')}">👁️</button>
+                    <button type="button" class="pwd-eye-btn" data-toggle-eye="newPinInput" title="${t('Hiện/ẩn mật khẩu','Toggle visibility')}">${t('Hiện','Show')}</button>
                   </div>
                 </label>
                 <label>${t('Nhập lại mật khẩu mới','Confirm new password')}
                   <div class="pwd-input-wrap">
                     <input type="password" id="confirmPinInput" minlength="4" required placeholder="${t('Nhập lại mật khẩu mới','Confirm new password')}">
-                    <button type="button" class="pwd-eye-btn" data-toggle-eye="confirmPinInput" title="${t('Hiện/ẩn mật khẩu','Toggle visibility')}">👁️</button>
+                    <button type="button" class="pwd-eye-btn" data-toggle-eye="confirmPinInput" title="${t('Hiện/ẩn mật khẩu','Toggle visibility')}">${t('Hiện','Show')}</button>
                   </div>
                 </label>
               </div>
               <p id="pinMessage" class="danger" role="status" style="margin:8px 0;font-weight:700"></p>
-              <button type="submit" class="primary" id="saveNewPwdBtn" style="margin-top:8px">💾 ${t('Lưu mật khẩu mới','Save new password')}</button>
+              <button type="submit" class="primary" id="saveNewPwdBtn" style="margin-top:8px">${t('Lưu mật khẩu mới','Save new password')}</button>
             </form>
           </div>
         </div>
 
         <div class="card profile-settings-card">
-          <h3>⚙️ ${t('Tùy chỉnh giao diện & Âm thanh','Display & Sound Settings')}</h3>
+          <h3>${t('Tùy chỉnh giao diện & Âm thanh','Display & Sound Settings')}</h3>
           <div class="profile-quick-prefs">
             <div class="pref-row">
-              <span>🎨 ${t('Giao diện màu sắc:','Color Theme:')}</span>
+              <span>${t('Giao diện màu sắc:','Color Theme:')}</span>
               <div class="pref-theme-chips">
                 ${Object.keys(typeof NUMI_THEMES!=='undefined'?NUMI_THEMES:{}).map(k=>`<button type="button" class="theme-chip ${document.body.dataset.theme===k?'active':''}" data-theme-pick="${k}">${NUMI_THEMES[k].name}</button>`).join('')}
               </div>
             </div>
             <div class="pref-row">
-              <span>🔊 ${t('Âm thanh vui nhộn:','Sound effects:')}</span>
+              <span>${t('Âm thanh vui nhộn:','Sound effects:')}</span>
               <button type="button" id="profileSoundToggle" class="profile-btn-pill">
-                ${soundEnabled?'🔊 '+t('Bật','On'):'🔈 '+t('Tắt','Off')}
+                ${soundEnabled?t('Đang bật','On'):t('Đang tắt','Off')}
               </button>
             </div>
           </div>
         </div>
 
         ${otherUsers.length?`<div class="card profile-family-card">
-          <h3>👨‍👩‍👧 ${t('Chuyển sang tài khoản bé khác trong nhà','Switch to another child profile')}</h3>
+          <h3>${t('Chuyển sang tài khoản bé khác trong nhà','Switch to another child profile')}</h3>
           <p class="muted">${t('Mỗi bé có bảng điểm, cấp độ và chuỗi ngày riêng biệt.','Each child has their own progress, level, and daily streak.')}</p>
           <div class="family-chips">
             ${otherUsers.map(uOther=>`<button type="button" class="family-chip" data-switch-user="${esc(uOther.username)}"><span class="family-chip-avatar">${animal(uOther.avatar||'bunny')}</span><span class="family-chip-name">${esc(uOther.name)} (${uOther.grade?(lang==='vi'?'Lớp '+uOther.grade:'Grade '+uOther.grade):'Lớp 1'})</span></button>`).join('')}
@@ -446,36 +446,32 @@ function renderProfile(){
         </div>`:''}
 
         <div class="profile-bottom-actions card profile-actions-card">
-          <button class="primary wide" onclick="nav('setup')">⚡ ${t('Vào luyện tập ngay','Start practicing now')} →</button>
-          <button class="wide" onclick="renderWorksheet()" style="margin-top:8px">📄 ${t('In phiếu bài tập (PDF)','Print worksheet (PDF)')}</button>
-          <button class="wide" onclick="openAccount('signup')" style="margin-top:8px">➕ ${t('Tạo thêm tài khoản bé khác','Add another child profile')}</button>
-          <button id="profileSignOutBtn" class="danger wide" style="margin-top:14px">🚪 ${t('Đăng xuất tài khoản','Sign out')}</button>
+          <button class="primary wide" onclick="nav('setup')">${t('Vào luyện tập ngay','Start practicing now')} →</button>
+          <button class="wide" onclick="renderWorksheet()" style="margin-top:8px">${t('In phiếu bài tập (PDF)','Print worksheet (PDF)')}</button>
+          <button class="wide" onclick="openAccount('signup')" style="margin-top:8px">${t('Tạo thêm tài khoản bé khác','Add another child profile')}</button>
+          <button id="profileSignOutBtn" class="danger wide" style="margin-top:14px">${t('Đăng xuất tài khoản','Sign out')}</button>
         </div>
       </div>
 
       <div class="profile-bento-col-right">
         <div class="profile-stats-grid">
           <div class="profile-stat-box card">
-            <span class="stat-icon">🏅</span>
             <div class="stat-info"><small>${t('Cấp độ','Level')}</small><strong>${level()}</strong></div>
           </div>
           <div class="profile-stat-box card">
-            <span class="stat-icon">⭐</span>
             <div class="stat-info"><small>${t('Điểm XP','XP Score')}</small><strong>${state.xp}</strong></div>
           </div>
           <div class="profile-stat-box card">
-            <span class="stat-icon">🔥</span>
-            <div class="stat-info"><small>${t('Chuỗi ngày 🔥','Daily Streak')}</small><strong>${streak.count} ${t('ngày','days')}</strong></div>
+            <div class="stat-info"><small>${t('Chuỗi ngày','Daily Streak')}</small><strong>${streak.count} ${t('ngày','days')}</strong></div>
           </div>
           <div class="profile-stat-box card">
-            <span class="stat-icon">🧋</span>
             <div class="stat-info"><small>${t('Trân châu','Pearls')}</small><strong>${tea.pearls} ${t('viên','pearls')}</strong></div>
           </div>
         </div>
 
         <div class="card profile-tea-card">
           <div class="tea-card-header">
-            <span class="tea-cup-icon">${typeof teaIcon==='function'?teaIcon(tea.size):'🧋'}</span>
+            <span class="tea-cup-icon">${typeof teaIcon==='function'?teaIcon(tea.size):''}</span>
             <div>
               <h3>${t('Mục tiêu Trà Sữa Trân Châu','Milk Tea Boba Goal')} · Size ${tea.size}</h3>
               <p class="muted">${t('Mỗi câu đúng tích lũy 1 viên trân châu cho ly trà sữa ngọt ngào!','Every correct answer adds 1 chewy boba pearl!')}</p>
@@ -488,27 +484,27 @@ function renderProfile(){
             </div>
             <progress class="tea-progress-bar" max="${goal}" value="${Math.min(goal,tea.pearls)}"></progress>
           </div>
-          <button class="primary wide" onclick="nav('atlas')">🧋 ${t('Vào quán trà sữa & Nhận thưởng','View Milk Tea Shop & Level Up')} →</button>
+          <button class="primary wide" onclick="nav('atlas')">${t('Vào quán trà sữa & Nhận thưởng','View Milk Tea Shop & Level Up')} →</button>
         </div>
 
         <div class="card profile-perf-card">
-          <h3>📈 ${t('Hiệu suất tính nhẩm','Mental Math Performance')}</h3>
+          <h3>${t('Hiệu suất tính nhẩm','Mental Math Performance')}</h3>
           <div class="perf-stats-row">
             <div class="perf-col"><span class="perf-val">${totalSessions}</span><small>${t('Lượt luyện','Sessions')}</small></div>
             <div class="perf-col"><span class="perf-val">${totalCorrect}/${totalAnswered}</span><small>${t('Câu đúng','Correct')}</small></div>
             <div class="perf-col"><span class="perf-val">${accuracy}%</span><small>${t('Chính xác','Accuracy')}</small></div>
             <div class="perf-col"><span class="perf-val">${avgSpeed}s</span><small>${t('Tốc độ/câu','Speed/Q')}</small></div>
           </div>
-          <button class="wide" onclick="nav('stats')" style="margin-top:14px">🏅 ${t('Xem nhật ký tiến bộ chi tiết 7 ngày','View 7-day progress journal')} →</button>
+          <button class="wide" onclick="nav('stats')" style="margin-top:14px">${t('Xem nhật ký tiến bộ chi tiết 7 ngày','View 7-day progress journal')} →</button>
         </div>
 
         <div class="card profile-badges-card">
           <div class="badges-header">
-            <h3>🎖️ ${t('Bộ sưu tập Huy hiệu & Danh hiệu','Badges & Milestone Honors')}</h3>
+            <h3>${t('Bộ sưu tập Huy hiệu & Danh hiệu','Badges & Milestone Honors')}</h3>
             <span class="badges-count">${badgesList.filter(b=>b.unlocked).length}/${badgesList.length} ${t('đã đạt','unlocked')}</span>
           </div>
           <div class="badges-grid">
-            ${badgesList.map(b=>`<div class="badge-item ${b.unlocked?'unlocked':'locked'}"><div class="badge-icon-wrap">${b.icon}</div><div class="badge-details"><b>${lang==='vi'?b.titleVi:b.titleEn}</b><p>${lang==='vi'?b.descVi:b.descEn}</p><span class="badge-tag ${b.unlocked?'tag-unlocked':'tag-locked'}">${b.unlocked?'🌟 '+t('Đã mở khóa','Unlocked'):'🔒 '+t('Chưa mở','Locked')}</span></div></div>`).join('')}
+            ${badgesList.map(b=>`<div class="badge-item ${b.unlocked?'unlocked':'locked'}"><div class="badge-details"><b>${lang==='vi'?b.titleVi:b.titleEn}</b><p>${lang==='vi'?b.descVi:b.descEn}</p><span class="badge-tag ${b.unlocked?'tag-unlocked':'tag-locked'}">${b.unlocked?t('Đã mở khóa','Unlocked'):t('Chưa mở','Locked')}</span></div></div>`).join('')}
           </div>
         </div>
       </div>
@@ -520,7 +516,7 @@ function renderProfile(){
       const g=+btn.dataset.setGrade;
       updateUserProfile({grade:g});
       renderProfile();
-      toast(t('Đã chuyển sang '+(lang==='vi'?'Lớp '+g:'Grade '+g)+'! 🎓','Switched to Grade '+g+'! 🎓'));
+      toast(t('Đã chuyển sang '+(lang==='vi'?'Lớp '+g:'Grade '+g)+'!','Switched to Grade '+g+'!'));
     };
   });
 
@@ -529,14 +525,14 @@ function renderProfile(){
       const av=btn.dataset.setAvatar;
       updateUserProfile({avatar:av});
       renderProfile();
-      toast(t('Đã đổi bạn đồng hành thành công! 🌟','Companion updated! 🌟'));
+      toast(t('Đã đổi bạn đồng hành thành công!','Companion updated!'));
     };
   });
 
   const editNameBtn=$('#editNameBtn');
   if(editNameBtn){
     editNameBtn.onclick=()=>{
-      modal(`<h2>✏️ ${t('Đổi tên hiển thị','Change display name')}</h2><p class="muted">${t('Nhập tên của em (Ví dụ: Minh Khôi, Bảo An)','Enter your name (e.g. Alex, Emily)')}</p><input id="profileModalNameInput" maxlength="30" value="${esc(u.name)}" style="width:100%;font-size:16px;padding:10px;margin:12px 0;border-radius:10px;border:1.5px solid #d5e4c7"><div class="actions"><button class="primary" id="saveProfileNameBtn">${t('Lưu tên mới','Save name')}</button><button id="cancelProfileNameBtn">${t('Hủy','Cancel')}</button></div>`);
+      modal(`<h2>${t('Đổi tên hiển thị','Change display name')}</h2><p class="muted">${t('Nhập tên của em (Ví dụ: Minh Khôi, Bảo An)','Enter your name (e.g. Alex, Emily)')}</p><input id="profileModalNameInput" maxlength="30" value="${esc(u.name)}" style="width:100%;font-size:16px;padding:10px;margin:12px 0;border-radius:10px;border:1.5px solid #d5e4c7"><div class="actions"><button class="primary" id="saveProfileNameBtn">${t('Lưu tên mới','Save name')}</button><button id="cancelProfileNameBtn">${t('Hủy','Cancel')}</button></div>`);
       $('#cancelProfileNameBtn').onclick=()=>$('#modal').close();
       $('#saveProfileNameBtn').onclick=()=>{
         const val=$('#profileModalNameInput')?.value.trim();
@@ -544,7 +540,7 @@ function renderProfile(){
         updateUserProfile({name:val});
         $('#modal').close();
         renderProfile();
-        toast(t('Đã cập nhật tên thành '+val+'! 🎉','Name updated to '+val+'! 🎉'));
+        toast(t('Đã cập nhật tên thành '+val+'!','Name updated to '+val+'!'));
       };
     };
   }
@@ -568,7 +564,7 @@ function renderProfile(){
       if(!val||val==='••••••••'){toast(t('Chưa có mật khẩu để sao chép.','No password to copy.'));return;}
       if(navigator.clipboard&&navigator.clipboard.writeText){
         navigator.clipboard.writeText(val).then(()=>{
-          toast(t('Đã sao chép mật khẩu! 📋','Copied password! 📋'));
+          toast(t('Đã sao chép mật khẩu!','Copied password!'));
         }).catch(()=>{
           toast(t('Mật khẩu của em là: ','Your password is: ')+val);
         });
@@ -585,7 +581,7 @@ function renderProfile(){
       if(!inp)return;
       const isPassword=inp.type==='password';
       inp.type=isPassword?'text':'password';
-      btn.style.opacity=isPassword?'1':'0.6';
+      btn.textContent=isPassword?t('Ẩn','Hide'):t('Hiện','Show');
     };
   });
 
@@ -601,7 +597,7 @@ function renderProfile(){
       if(p1!==p2){if(msg)msg.textContent=t('Mật khẩu xác nhận chưa khớp. Vui lòng kiểm tra lại.','Confirmation password does not match.');return}
       try{
         await updateUserPassword(p1);
-        toast(t('Đã đổi mật khẩu thành công! 🔒','Password updated successfully! 🔒'));
+        toast(t('Đã đổi mật khẩu thành công!','Password updated successfully!'));
         $('#newPinInput').value='';$('#confirmPinInput').value='';
         renderProfile();
       }catch(err){
@@ -622,7 +618,7 @@ function renderProfile(){
   if(soundToggle){
     soundToggle.onclick=()=>{
       soundEnabled=!soundEnabled;state.sound=soundEnabled;save();renderProfile();
-      toast(soundEnabled?t('Đã bật âm thanh ♫','Sound turned on ♫'):t('Đã tắt âm thanh ♪','Sound turned off ♪'));
+      toast(soundEnabled?t('Đã bật âm thanh','Sound turned on'):t('Đã tắt âm thanh','Sound turned off'));
     };
   }
 
@@ -631,7 +627,7 @@ function renderProfile(){
       const targetUser=btn.dataset.switchUser;
       const targetObj=allLocalUsers[targetUser];
       if(!targetObj)return;
-      modal(`<h2>👤 ${t('Đăng nhập tài khoản '+targetObj.name,'Sign in as '+targetObj.name)}</h2><p class="muted">${t('Nhập mã PIN của bé để vào học:','Enter PIN to switch profile:')}</p><input type="password" id="switchPinInput" minlength="4" placeholder="••••" style="width:100%;font-size:18px;padding:10px;margin:12px 0;border-radius:10px;border:1.5px solid #d5e4c7;text-align:center"><p id="switchPinError" class="danger" style="margin:6px 0;font-weight:700"></p><div class="actions"><button class="primary" id="confirmSwitchBtn">${t('Vào học →','Sign in →')}</button><button id="cancelSwitchBtn">${t('Hủy','Cancel')}</button></div>`);
+      modal(`<h2>${t('Đăng nhập tài khoản '+targetObj.name,'Sign in as '+targetObj.name)}</h2><p class="muted">${t('Nhập mã PIN của bé để vào học:','Enter PIN to switch profile:')}</p><input type="password" id="switchPinInput" minlength="4" placeholder="••••" style="width:100%;font-size:18px;padding:10px;margin:12px 0;border-radius:10px;border:1.5px solid #d5e4c7;text-align:center"><p id="switchPinError" class="danger" style="margin:6px 0;font-weight:700"></p><div class="actions"><button class="primary" id="confirmSwitchBtn">${t('Vào học →','Sign in →')}</button><button id="cancelSwitchBtn">${t('Hủy','Cancel')}</button></div>`);
       $('#cancelSwitchBtn').onclick=()=>$('#modal').close();
       $('#confirmSwitchBtn').onclick=async()=>{
         const pin=$('#switchPinInput')?.value.trim();
@@ -677,21 +673,21 @@ function openAccount(mode='login'){
 
   // Not logged in -> Render login/register gate wall
   const signup=mode==='signup',localUsers=getLocalUsers(),usersList=Object.values(localUsers);
-  const userChips=usersList.length&&!signup?`<div class="quick-users"><div class="quick-users-label">👤 ${t('Tài khoản đã có trên máy này (chạm để chọn):','Accounts on this device (tap to select):')}</div><div class="quick-user-chips">${usersList.map(u=>`<button type="button" class="quick-user-chip" data-quick-user="${esc(u.username)}">${animal(u.avatar||'bunny')} <span>${esc(u.name)}</span></button>`).join('')}</div></div>`:'';
+  const userChips=usersList.length&&!signup?`<div class="quick-users"><div class="quick-users-label">${t('Tài khoản đã có trên máy này (chạm để chọn):','Accounts on this device (tap to select):')}</div><div class="quick-user-chips">${usersList.map(u=>`<button type="button" class="quick-user-chip" data-quick-user="${esc(u.username)}"><span>${esc(u.name)}</span></button>`).join('')}</div></div>`:'';
   let chosenAvatar='bunny';
-  const companionPicks=signup?`<div class="settings-hint" style="margin-top:14px">${t('Chọn bạn thú đồng hành:','Choose your study buddy:')}</div><div class="buddy-choices">${[['bunny','Thỏ 🐰'],['panda','Gấu 🐼'],['fox','Cáo 🦊'],['lion','Sư tử 🦁']].map(([k,label])=>`<button type="button" data-signup-avatar="${k}" class="${k===chosenAvatar?'chosen':''}">${animal(k)}<span>${label}</span></button>`).join('')}</div>`:'';
+  const companionPicks=signup?`<div class="settings-hint" style="margin-top:14px">${t('Chọn bạn thú đồng hành:','Choose your study buddy:')}</div><div class="buddy-choices">${[['bunny','Thỏ'],['panda','Gấu'],['fox','Cáo'],['lion','Sư tử']].map(([k,label])=>`<button type="button" data-signup-avatar="${k}" class="${k===chosenAvatar?'chosen':''}">${animal(k)}<span>${label}</span></button>`).join('')}</div>`:'';
 
   $('#app').innerHTML=`<div class="narrow card account-card auth-gate-card">
     <div class="intro-animal">${animal('bunny')}</div>
     <span class="eyebrow">NUMIQUICK · ${t('BẢO VỆ TIẾN ĐỘ HỌC','SAVE YOUR PROGRESS')}</span>
     <h1>${signup?t('Tạo tài khoản học sinh','Create student account'):t('Đăng nhập để vào học','Sign in to learn')}</h1>
-    <p class="muted">${signup?t('Tạo tài khoản riêng để lưu điểm số, chuỗi ngày học 🔥 và trân châu của em.','Create an account to save your scores, daily streak and pearls.'):t('Nhập tài khoản để mở khóa toàn bộ bài học và tiếp tục tiến độ.','Enter your account to unlock all lessons and resume your progress.')}</p>
+    <p class="muted">${signup?t('Tạo tài khoản riêng để lưu điểm số, chuỗi ngày học và trân châu của em.','Create an account to save your scores, daily streak and pearls.'):t('Nhập tài khoản để mở khóa toàn bộ bài học và tiếp tục tiến độ.','Enter your account to unlock all lessons and resume your progress.')}</p>
     <div class="auth-tabs">
       <button type="button" class="auth-tab ${!signup?'active':''}" id="tabLogin">${t('Đăng nhập','Sign in')}</button>
       <button type="button" class="auth-tab ${signup?'active':''}" id="tabSignup">${t('Tạo tài khoản mới','Create new account')}</button>
     </div>
     ${!signup ? `<div class="admin-hint-bar">
-      <span>🛡️ ${t('Tài khoản Quản trị:','Admin Account:')}</span>
+      <span>${t('Tài khoản Quản trị:','Admin Account:')}</span>
       <button type="button" id="quickAdminLoginBtn" class="admin-hint-pill"><b>admin</b> / <b>admin123</b></button>
     </div>` : ''}
     ${userChips}
@@ -699,7 +695,7 @@ function openAccount(mode='login'){
       ${signup?`<label>${t('Tên của em (Ví dụ: Minh Khôi, Bảo An)','Your name (e.g. Alex, Emily)')}<input name="name" maxlength="30" placeholder="${t('Nhập tên của em','Enter your name')}" required value="${state.name&&state.name!=='Explorer'?esc(state.name):''}"></label>`:''}
       <label>${t('Tên đăng nhập','Username')}<input name="username" maxlength="50" autocomplete="username" placeholder="${t('Ví dụ: khoi123','e.g. alex123')}" required></label>
       <label>${t('Mật khẩu / Mã PIN (tối thiểu 4 ký tự)','Password / PIN (min 4 characters)')}<input name="password" type="password" autocomplete="${signup?'new-password':'current-password'}" minlength="4" required placeholder="••••"></label>
-      ${signup?`<label>${t('Em đang học lớp mấy?','Which grade are you in?')}</label><div class="grade-signup-picks">${[1,2,3,4,5,6,7,8,9].map(g=>`<label><input type="radio" name="signupGrade" value="${g}" ${g===1?'checked':''}><span>${(typeof NUMI_GRADES!=='undefined'&&NUMI_GRADES[g])?NUMI_GRADES[g].icon:'🌱'} ${(typeof NUMI_GRADES!=='undefined'&&NUMI_GRADES[g])?(lang==='vi'?NUMI_GRADES[g].name:NUMI_GRADES[g].enName):('Lớp '+g)}</span></label>`).join('')}</div>`:''}
+      ${signup?`<label>${t('Em đang học lớp mấy?','Which grade are you in?')}</label><div class="grade-signup-picks">${[1,2,3,4,5,6,7,8,9].map(g=>`<label><input type="radio" name="signupGrade" value="${g}" ${g===1?'checked':''}><span>${(typeof NUMI_GRADES!=='undefined'&&NUMI_GRADES[g])?(lang==='vi'?NUMI_GRADES[g].name:NUMI_GRADES[g].enName):('Lớp '+g)}</span></label>`).join('')}</div>`:''}
       ${companionPicks}
       <p id="authMessage" class="danger" role="status" style="margin:12px 0;font-weight:700"></p>
       <button type="submit" class="primary wide" id="authSubmitBtn">${signup?t('Tạo tài khoản & Bắt đầu học →','Create account & Start learning →'):t('Đăng nhập vào học →','Sign in to learn →')}</button>

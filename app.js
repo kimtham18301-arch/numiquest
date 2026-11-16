@@ -1,6 +1,8 @@
 'use strict';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const KEY='numiquest-v1';const fresh=()=>({version:1,lang:'vi',name:'Explorer',xp:0,selected:'VN',pieces:{},history:[],mistakes:[],mastery:{},best:0});let state=fresh();try{state={...state,...JSON.parse(localStorage.getItem(KEY)||'{}')}}catch{}if(typeof window!=='undefined')window.state=state;if(typeof global!=='undefined')global.state=state;let lang=state.lang==='en'?'en':'vi',view='home',session=null,tick=null,raf=null,afterModal=null;const t=(vi,en)=>lang==='vi'?vi:en;const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function uid(){if(typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function'){try{return crypto.randomUUID()}catch{}}return 'id-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10)}
+if(typeof window!=='undefined')window.uid=uid;if(typeof global!=='undefined')global.uid=uid;
 // Keep fractions as strings for arithmetic; render their numerators and denominators visually.
 function mathMarkup(value){const text=String(value);let out='',last=0;const re=/(-?\d+)\/(\d+)/g;for(const m of text.matchAll(re)){out+=esc(text.slice(last,m.index));out+=`<span class="stacked-fraction" role="math" aria-label="${esc(m[1])} ${t('phần','over')} ${esc(m[2])}"><span class="fraction-numerator" aria-hidden="true">${esc(m[1])}</span><span class="fraction-denominator" aria-hidden="true">${esc(m[2])}</span></span>`;last=m.index+m[0].length}out+=esc(text.slice(last));return out.replace(/\^(\d+)/g,'<sup>$1</sup>')}
 const countries=[
@@ -25,13 +27,22 @@ function translate(){
   const moreBtn=$('#navMoreBtn');
   if(moreBtn)moreBtn.classList.toggle('active',isMoreView);
   const sheetLangLabel=$('#sheetLangLabel');
-  if(sheetLangLabel)sheetLangLabel.textContent=lang==='vi'?'Tiếng Việt 🇻🇳':'English 🇬🇧';
+  if(sheetLangLabel)sheetLangLabel.textContent=lang==='vi'?'Tiếng Việt':'English';
   if(typeof document!=='undefined'&&document.body){
     applyDarkMode(document.body.classList.contains('dark-mode'));
   }
 }
 function toast(msg){$('#toast')?.remove();const d=document.createElement('div');d.id='toast';d.textContent=msg;document.body.append(d);setTimeout(()=>d.remove(),3500)}
-function modal(html,cb){$('#modalBody').innerHTML=html;afterModal=cb;$('#modal').showModal()}
+function modal(html,cb){
+  $('#modalBody').innerHTML=html;
+  afterModal=cb;
+  const closeBtn=$('#closeModal');
+  if(closeBtn){
+    const hasCustomActions=Boolean($('#modalBody .actions, #modalBody .review-exit-actions, #modalBody #teaClaimDone, #modalBody #numiBuddySave'));
+    closeBtn.hidden=hasCustomActions;
+  }
+  $('#modal').showModal();
+}
 $('#closeModal').onclick=()=>$('#modal').close();$('#modal').addEventListener('cancel',e=>e.preventDefault());$('#modal').addEventListener('close',()=>{const cb=afterModal;afterModal=null;cb?.()});
 let quizAdvanceTimer=null,quizCountdownTimer=null;
 function cancelQuizAdvance(){clearTimeout(quizAdvanceTimer);clearInterval(quizCountdownTimer);quizAdvanceTimer=null;quizCountdownTimer=null}
@@ -43,12 +54,10 @@ function applyDarkMode(enabled){
   document.body.classList.toggle('dark-mode',!!enabled);
   const themeBtn=$('#themeModeBtn');
   if(themeBtn){
-    themeBtn.textContent=enabled?'☀️':'🌙';
+    themeBtn.textContent=enabled?(lang==='vi'?'Sáng':'Light'):(lang==='vi'?'Tối':'Dark');
     themeBtn.setAttribute('aria-pressed',String(!!enabled));
     themeBtn.title=enabled?(lang==='vi'?'Chuyển sang giao diện Sáng':'Switch to Light mode'):(lang==='vi'?'Chuyển sang giao diện Tối':'Switch to Dark mode');
   }
-  const sheetIcon=$('#sheetDarkIcon');
-  if(sheetIcon)sheetIcon.textContent=enabled?'☀️':'🌙';
   const sheetLabel=$('#sheetDarkLabel');
   if(sheetLabel){
     sheetLabel.textContent=enabled?(lang==='vi'?'Đang bật · Chạm để tắt':'Active · Tap to turn off'):(lang==='vi'?'Bảo vệ mắt ban đêm':'Eye comfort mode');
@@ -148,15 +157,15 @@ const totalPieces=()=>Object.values(state.pieces).reduce((a,b)=>a+b,0);const lev
 function getStreak(){if(!state.streak||typeof state.streak!=='object')state.streak={count:0,lastDate:''};return state.streak}
 function updateStreak(){const s=getStreak(),today=new Date().toISOString().slice(0,10);if(s.lastDate===today)return s.count;if(s.lastDate){const last=new Date(s.lastDate+'T00:00:00'),cur=new Date(today+'T00:00:00');const diff=Math.round((cur-last)/86400000);if(diff===1)s.count++;else if(diff>1)s.count=1}else s.count=1;s.lastDate=today;save();return s.count}
 const NUMI_GRADES={
-  1:{id:1,name:'Lớp 1',enName:'Grade 1',icon:'🌱',descVi:'Cộng trừ trong phạm vi 10, 20 & 100 (không số âm, không phân số)',descEn:'Addition & subtraction within 100 (single/double digits)',ops:['+','-'],types:['natural'],digits:[1],seconds:20,count:10,inputMode:'choices'},
-  2:{id:2,name:'Lớp 2',enName:'Grade 2',icon:'🌿',descVi:'Cộng trừ có nhớ đến 100, bảng nhân & chia 2 và 5',descEn:'2-digit add/subtract up to 100, multiplication & division by 2 and 5',ops:['+','-','*','/'],types:['natural'],digits:[1,2],seconds:15,count:10,inputMode:'choices'},
-  3:{id:3,name:'Lớp 3',enName:'Grade 3',icon:'🌸',descVi:'Bảng nhân chia 2–9, cộng trừ đến 1.000, phép chia có dư',descEn:'Times tables 2–9, add/sub within 1,000, division with remainders',ops:['+','-','*','/'],types:['natural','remainder'],digits:[1,2,3],seconds:15,count:10,inputMode:'choices'},
-  4:{id:4,name:'Lớp 4',enName:'Grade 4',icon:'🌻',descVi:'Phép tính nhiều chữ số, cộng trừ nhân chia phân số',descEn:'Multi-digit arithmetic, fractions (+, −, ×, ÷)',ops:['+','-','*','/'],types:['natural','fraction'],digits:[2,3,4],seconds:20,count:15,inputMode:'choices'},
-  5:{id:5,name:'Lớp 5',enName:'Grade 5',icon:'🌳',descVi:'Số thập phân, hỗn số, phân số và tính nhanh biểu thức',descEn:'Decimals, fractions, mixed quick calculations',ops:['+','-','*','/'],types:['natural','fraction','decimal'],digits:[2,3],seconds:20,count:15,inputMode:'choices'},
-  6:{id:6,name:'Lớp 6',enName:'Grade 6',icon:'🍁',descVi:'Tập hợp số nguyên Z (cộng trừ nhân chia số âm), quy tắc dấu ngoặc, phân số & số thập phân',descEn:'Integers Z (signed operations), sign rules, fractions and decimals',ops:['+','-','*','/'],types:['negative','fraction','decimal','natural'],digits:[1,2,3],seconds:15,count:15,inputMode:'choices'},
-  7:{id:7,name:'Lớp 7',enName:'Grade 7',icon:'🎋',descVi:'Tập hợp số hữu tỉ Q, số thập phân âm, quy tắc chuyển vế và tính nhanh biểu thức hợp lý',descEn:'Rational numbers Q, negative decimals, sign rules and quick mental algebra',ops:['+','-','*','/'],types:['negative','fraction','decimal'],digits:[2,3],seconds:15,count:15,inputMode:'choices'},
-  8:{id:8,name:'Lớp 8',enName:'Grade 8',icon:'⚡',descVi:'Phân thức đại số, tính nhanh biểu thức số hữu tỉ, luỹ thừa và số âm nhiều chữ số',descEn:'Algebraic fractions, fast rational calculations, powers and multi-digit integers',ops:['+','-','*','/'],types:['negative','fraction','decimal'],digits:[2,3,4],seconds:15,count:20,inputMode:'choices'},
-  9:{id:9,name:'Lớp 9',enName:'Grade 9',icon:'🎓',descVi:'Căn bậc hai số học, phân số số âm, tính nhẩm thần tốc chuẩn bị thi vào lớp 10',descEn:'Arithmetic square roots, signed fractions/decimals and fast high-school prep',ops:['+','-','*','/'],types:['negative','fraction','decimal'],digits:[2,3,4],seconds:12,count:20,inputMode:'choices'}
+  1:{id:1,name:'Lớp 1',enName:'Grade 1',icon:'',descVi:'Cộng trừ trong phạm vi 10, 20 & 100 (không số âm, không phân số)',descEn:'Addition & subtraction within 100 (single/double digits)',ops:['+','-'],types:['natural'],digits:[1],seconds:20,count:10,inputMode:'choices'},
+  2:{id:2,name:'Lớp 2',enName:'Grade 2',icon:'',descVi:'Cộng trừ có nhớ đến 100, bảng nhân & chia 2 và 5',descEn:'2-digit add/subtract up to 100, multiplication & division by 2 and 5',ops:['+','-','*','/'],types:['natural'],digits:[1,2],seconds:15,count:10,inputMode:'choices'},
+  3:{id:3,name:'Lớp 3',enName:'Grade 3',icon:'',descVi:'Bảng nhân chia 2–9, cộng trừ đến 1.000, phép chia có dư',descEn:'Times tables 2–9, add/sub within 1,000, division with remainders',ops:['+','-','*','/'],types:['natural','remainder'],digits:[1,2,3],seconds:15,count:10,inputMode:'choices'},
+  4:{id:4,name:'Lớp 4',enName:'Grade 4',icon:'',descVi:'Phép tính nhiều chữ số, cộng trừ nhân chia phân số',descEn:'Multi-digit arithmetic, fractions (+, −, ×, ÷)',ops:['+','-','*','/'],types:['natural','fraction'],digits:[2,3,4],seconds:20,count:15,inputMode:'choices'},
+  5:{id:5,name:'Lớp 5',enName:'Grade 5',icon:'',descVi:'Số thập phân, hỗn số, phân số và tính nhanh biểu thức',descEn:'Decimals, fractions, mixed quick calculations',ops:['+','-','*','/'],types:['natural','fraction','decimal'],digits:[2,3],seconds:20,count:15,inputMode:'choices'},
+  6:{id:6,name:'Lớp 6',enName:'Grade 6',icon:'',descVi:'Tập hợp số nguyên Z (cộng trừ nhân chia số âm), quy tắc dấu ngoặc, phân số & số thập phân',descEn:'Integers Z (signed operations), sign rules, fractions and decimals',ops:['+','-','*','/'],types:['negative','fraction','decimal','natural'],digits:[1,2,3],seconds:15,count:15,inputMode:'choices'},
+  7:{id:7,name:'Lớp 7',enName:'Grade 7',icon:'',descVi:'Tập hợp số hữu tỉ Q, số thập phân âm, quy tắc chuyển vế và tính nhanh biểu thức hợp lý',descEn:'Rational numbers Q, negative decimals, sign rules and quick mental algebra',ops:['+','-','*','/'],types:['negative','fraction','decimal'],digits:[2,3],seconds:15,count:15,inputMode:'choices'},
+  8:{id:8,name:'Lớp 8',enName:'Grade 8',icon:'',descVi:'Phân thức đại số, tính nhanh biểu thức số hữu tỉ, luỹ thừa và số âm nhiều chữ số',descEn:'Algebraic fractions, fast rational calculations, powers and multi-digit integers',ops:['+','-','*','/'],types:['negative','fraction','decimal'],digits:[2,3,4],seconds:15,count:20,inputMode:'choices'},
+  9:{id:9,name:'Lớp 9',enName:'Grade 9',icon:'',descVi:'Căn bậc hai số học, phân số số âm, tính nhẩm thần tốc chuẩn bị thi vào lớp 10',descEn:'Arithmetic square roots, signed fractions/decimals and fast high-school prep',ops:['+','-','*','/'],types:['negative','fraction','decimal'],digits:[2,3,4],seconds:12,count:20,inputMode:'choices'}
 };
 if(typeof window!=='undefined')window.NUMI_GRADES=NUMI_GRADES;
 if(typeof global!=='undefined')global.NUMI_GRADES=NUMI_GRADES;
@@ -317,7 +326,22 @@ function triggerConfetti(){
   requestAnimationFrame(render);
 }
 function track(q,correct,elapsed,mode){if(mode!=='review'){let m=state.mastery[q.skill]||[];m.push(correct?1:0);state.mastery[q.skill]=m.slice(-10)}if(!correct&&!state.mistakes.some(x=>x.id===q.id))state.mistakes.push(q);save()}
-function startQuiz(){if(typeof currentAuthUser==='function'&&!currentAuthUser()){toast(t('Vui lòng đăng nhập để bắt đầu học và lưu tiến độ nhé! 👤','Please sign in to learn and save your progress! 👤'));if(typeof openAccount==='function')openAccount('login');return}stop();view='quiz';if(typeof window!=='undefined')window.config=config;if(typeof global!=='undefined')global.config=config;session={kind:'practice',questions:Array.from({length:config.count},()=>generate(config)),index:0,results:[],combo:0,done:false};if(typeof window!=='undefined')window.session=session;if(typeof global!=='undefined')global.session=session;showQuiz()}
+function generateUniqueQuestions(count,cfg){
+  const out=[],seen=new Set();
+  for(let i=0;i<count;i++){
+    let q;
+    for(let tries=0;tries<25;tries++){
+      q=generate(cfg);
+      if(!seen.has(q.q))break;
+    }
+    seen.add(q.q);
+    out.push(q);
+  }
+  return out;
+}
+if(typeof window!=='undefined')window.generateUniqueQuestions=generateUniqueQuestions;
+if(typeof global!=='undefined')global.generateUniqueQuestions=generateUniqueQuestions;
+function startQuiz(){if(typeof currentAuthUser==='function'&&!currentAuthUser()){toast(t('Vui lòng đăng nhập để bắt đầu học và lưu tiến độ nhé!','Please sign in to learn and save your progress!'));if(typeof openAccount==='function')openAccount('login');return}stop();view='quiz';if(typeof window!=='undefined')window.config=config;if(typeof global!=='undefined')global.config=config;session={kind:'practice',questions:generateUniqueQuestions(config.count,config),index:0,results:[],combo:0,done:false};if(typeof window!=='undefined')window.session=session;if(typeof global!=='undefined')global.session=session;showQuiz()}
 let currentNumpad='';
 function handleNumpad(k,q){
   if(session?.answered)return;
@@ -396,7 +420,7 @@ function showQuiz(){
       <div class="quiz-meta-left">
         <button type="button" class="quiz-quit-btn" onclick="nav('setup')" title="${t('Rời bài luyện','Exit')}">✕</button>
         <span class="tag quiz-q-badge">${t('Câu','Question')} <b>${s.index+1}</b>/${s.questions.length}</span>
-        ${s.combo>=2?`<span class="quiz-combo-pill animate-pop">🔥 Combo x${s.combo}!</span>`:''}
+        ${s.combo>=2?`<span class="quiz-combo-pill animate-pop">Combo x${s.combo}!</span>`:''}
       </div>
       <strong class="timer" id="clock"></strong>
     </div>
@@ -417,15 +441,31 @@ function showQuiz(){
   }else{
     $$('[data-answer]').forEach(b=>b.onclick=()=>answerQuiz(q.options[+b.dataset.answer],q.id));
   }
-  s.started=performance.now();s.extra=false;startClock(q.config?.seconds||config.seconds,()=>{if(s.kind==='challenge'){answerQuiz(null,q.id);return}modal(`<h2>⏳ ${t('Hết giờ rồi','Time is up')}</h2><p>${t('Thêm thời gian hoặc bỏ qua để ôn lại trong game.','Add time or skip to review in the game.')}</p><div class="actions"><button id="extra">+${config.seconds}s</button><button id="skip">${t('Bỏ qua','Skip')}</button></div>`);$('#closeModal').hidden=true;$('#extra').onclick=()=>{s.extra=true;$('#closeModal').hidden=false;$('#modal').close();startClock(config.seconds,()=>timeoutAgain())};$('#skip').onclick=()=>{$('#closeModal').hidden=false;$('#modal').close();answerQuiz(null)}});translate();
+  s.started=performance.now();s.extra=false;startClock(q.config?.seconds||config.seconds,()=>{if(s.kind==='challenge'){answerQuiz(null,q.id);return}modal(`<h2>${t('Hết giờ rồi','Time is up')}</h2><p>${t('Thêm thời gian hoặc bỏ qua để ôn lại trong game.','Add time or skip to review in the game.')}</p><div class="actions"><button id="extra">+${config.seconds}s</button><button id="skip">${t('Bỏ qua','Skip')}</button></div>`);$('#closeModal').hidden=true;$('#extra').onclick=()=>{s.extra=true;$('#closeModal').hidden=false;$('#modal').close();startClock(config.seconds,()=>timeoutAgain())};$('#skip').onclick=()=>{$('#closeModal').hidden=false;$('#modal').close();answerQuiz(null)}});translate();
 }
-function timeoutAgain(){clearInterval(tick);modal(`<h2>⏳ ${t('Cần thêm thời gian?','Need more time?')}</h2><div class="actions"><button id="extra">+${config.seconds}s</button><button id="skip">${t('Bỏ qua','Skip')}</button></div>`);$('#closeModal').hidden=true;$('#extra').onclick=()=>{$('#closeModal').hidden=false;$('#modal').close();startClock(config.seconds,timeoutAgain)};$('#skip').onclick=()=>{$('#closeModal').hidden=false;$('#modal').close();answerQuiz(null)}}
+function timeoutAgain(){clearInterval(tick);modal(`<h2>${t('Cần thêm thời gian?','Need more time?')}</h2><div class="actions"><button id="extra">+${config.seconds}s</button><button id="skip">${t('Bỏ qua','Skip')}</button></div>`);$('#closeModal').hidden=true;$('#extra').onclick=()=>{$('#closeModal').hidden=false;$('#modal').close();startClock(config.seconds,timeoutAgain)};$('#skip').onclick=()=>{$('#closeModal').hidden=false;$('#modal').close();answerQuiz(null)}}
 function startClock(seconds,cb){clearInterval(tick);let end=performance.now()+seconds*1000;function update(){let left=Math.max(0,(end-performance.now())/1000);if($('#clock'))$('#clock').textContent=left.toFixed(1)+'s';if(left<=0){clearInterval(tick);cb()}}update();tick=setInterval(update,100)}
+function parseMathValue(str){
+  const s=String(str||'').trim().replace(/\s+/g,'').replace(/−/g,'-').replace(',','.');
+  if(!s||/[a-zA-Z]/.test(s))return NaN;
+  const fracMatch=s.match(/^(-?\d+)\/(-?\d+)$/);
+  if(fracMatch){const n=Number(fracMatch[1]),d=Number(fracMatch[2]);return d!==0?n/d:NaN}
+  if(/^-?\d+(\.\d+)?$/.test(s))return Number(s);
+  return NaN;
+}
+function isAnswerMatch(ans,expected){
+  if(ans===null||ans===undefined)return false;
+  const norm=str=>String(str||'').trim().replace(/\s+/g,'').replace(/−/g,'-').replace('.',',').toLowerCase();
+  if(norm(ans)===norm(expected))return true;
+  const v1=parseMathValue(ans),v2=parseMathValue(expected);
+  if(Number.isFinite(v1)&&Number.isFinite(v2)&&Math.abs(v1-v2)<1e-6)return true;
+  return false;
+}
 function answerQuiz(ans,questionId){
   if(view!=='quiz'||!session||session.done||session.answered)return;const s=session,q=s.questions[s.index];if(questionId&&questionId!==q.id)return;
   s.answered=true;clearInterval(tick);cancelQuizAdvance();
-  const norm=str=>String(str||'').trim().replace(/\s+/g,'').replace('.',',').toLowerCase();
-  const correct=ans!==null&&norm(ans)===norm(q.answer),elapsed=(performance.now()-s.started)/1000;
+  const norm=str=>String(str||'').trim().replace(/\s+/g,'').replace(/−/g,'-').replace('.',',').toLowerCase();
+  const correct=isAnswerMatch(ans,q.answer),elapsed=(performance.now()-s.started)/1000;
   s.results.push({correct,elapsed,extra:s.extra});track(q,correct,elapsed,'practice');
 
   if(correct){
@@ -475,12 +515,11 @@ function finishPractice(){
   const avgSpeed=avg(s.results.map(x=>x.elapsed)).toFixed(1);
 
   $('#app').innerHTML=`<div class="narrow card quiz-finish-card">
-    <div class="finish-trophy-wrap">${pct>=80?'🏆':pct>=60?'🌟':'🌱'}</div>
     <h1 class="finish-title">${pct===100?t('Xuất sắc! Đúng toàn bộ!','Flawless! 100% Correct!'):pct>=70?t('Làm tốt lắm, tiếp tục nhé!','Great job, keep going!'):t('Cố gắng lên nhé!','Keep practicing!')}</h1>
     
     <div class="finish-streak-wrap">
-      <span class="home-v2-streak"><span>🔥</span><b>${streak.count}</b> <small>${t('ngày liên tiếp','days streak')}</small></span>
-      <span class="finish-xp-pill">+${n*3} XP ⭐</span>
+      <span class="home-v2-streak"><b>${streak.count}</b> <small>${t('ngày liên tiếp','days streak')}</small></span>
+      <span class="finish-xp-pill">+${n*3} XP</span>
     </div>
 
     <div class="finish-stats-grid">
@@ -499,9 +538,9 @@ function finishPractice(){
     <p class="finish-message">${state.mistakes.length?t('Numi đã lưu lại những câu chưa đúng vào Vườn hoa để em ôn tập thêm.','Missed questions are saved to your flower garden for review.'):t('Em không mắc lỗi nào trong lượt này!','Zero mistakes in this session!')}</p>
 
     <div class="finish-actions">
-      ${state.mistakes.length?`<button class="primary wide" onclick="startReview()">🌼 ${t('Ôn câu sai bằng Vườn hoa','Review in Flower Garden')} (${state.mistakes.length}) →</button>`:''}
-      <button class="${state.mistakes.length?'':'primary'} wide" onclick="nav('setup')">⚡ ${t('Luyện lượt tiếp theo','Practice Again')}</button>
-      <button class="wide" onclick="nav('home')">⌂ ${t('Về trang chủ','Back to Home')}</button>
+      ${state.mistakes.length?`<button class="primary wide" onclick="startReview()">${t('Ôn câu sai bằng Vườn hoa','Review in Flower Garden')} (${state.mistakes.length}) →</button>`:''}
+      <button class="${state.mistakes.length?'':'primary'} wide" onclick="nav('setup')">${t('Luyện lượt tiếp theo','Practice Again')}</button>
+      <button class="wide" onclick="nav('home')">${t('Về trang chủ','Back to Home')}</button>
     </div>
   </div>`;
   translate();
@@ -513,53 +552,53 @@ function hint(q){
 }
 function renderWorksheet(){
   stop();view='worksheet';
-  const count=20,qs=Array.from({length:count},()=>generate(config)),dateStr=new Date().toLocaleDateString(lang==='vi'?'vi-VN':'en-US');
+  const count=20,qs=generateUniqueQuestions(count,config),dateStr=new Date().toLocaleDateString(lang==='vi'?'vi-VN':'en-US');
   const gradeLabel = config.grade && NUMI_GRADES[config.grade] ? (lang==='vi' ? NUMI_GRADES[config.grade].name : NUMI_GRADES[config.grade].enName) : (lang==='vi' ? 'Tự do' : 'General');
-  $('#app').innerHTML=`<section class="worksheet-view"><div class="worksheet-toolbar no-print"><button class="primary" onclick="window.print()">🖨️ ${t('In phiếu / Lưu PDF','Print / Save PDF')}</button><button onclick="nav('setup')">← ${t('Quay lại chọn bài','Back to settings')}</button></div><div class="worksheet-paper"><div class="worksheet-header"><div class="worksheet-brand"><h2>NUMIQUICK · ${t('PHIẾU LUYỆN TÍNH NHANH','MENTAL MATH WORKSHEET')} · ${gradeLabel.toUpperCase()}</h2><p>${t('Chăm chỉ mỗi ngày, giỏi lên từng chút!','Practice a little every day and grow your skills!')}</p></div><div class="worksheet-fields"><div><b>${t('Họ và tên','Full Name')}:</b> .....................................................................</div><div style="display:flex;justify-content:space-between;gap:15px;margin-top:6px;flex-wrap:wrap"><span><b>${t('Lớp','Grade')}:</b> ${gradeLabel}</span><span><b>${t('Ngày','Date')}:</b> ${dateStr}</span><span><b>${t('Thời gian','Time')}:</b> .......... phút</span><span><b>${t('Điểm số','Score')}:</b> ..... / ${count}</span></div></div></div><hr class="worksheet-rule"><div class="worksheet-grid">${qs.map((q,i)=>`<div class="worksheet-item"><span class="ws-idx">${i+1})</span><span class="ws-prob">${mathMarkup(q.q)} = </span><span class="ws-line">....................</span></div>`).join('')}</div><div class="worksheet-footer"><span>NumiQuick · https://kimtham18301-arch.github.io/numiquest/</span></div><div class="worksheet-key no-print"><details><summary>🔑 ${t('Xem đáp án cho phụ huynh / giáo viên','Answer Key for Parents / Teachers')}</summary><div class="key-grid">${qs.map((q,i)=>`<div><b>${i+1}.</b> ${q.answer}</div>`).join('')}</div></details></div></div></section>`;
+  $('#app').innerHTML=`<section class="worksheet-view"><div class="worksheet-toolbar no-print"><button class="primary" onclick="window.print()">${t('In phiếu / Lưu PDF','Print / Save PDF')}</button><button onclick="nav('setup')">← ${t('Quay lại chọn bài','Back to settings')}</button></div><div class="worksheet-paper"><div class="worksheet-header"><div class="worksheet-brand"><h2>NUMIQUICK · ${t('PHIẾU LUYỆN TÍNH NHANH','MENTAL MATH WORKSHEET')} · ${gradeLabel.toUpperCase()}</h2><p>${t('Chăm chỉ mỗi ngày, giỏi lên từng chút!','Practice a little every day and grow your skills!')}</p></div><div class="worksheet-fields"><div><b>${t('Họ và tên','Full Name')}:</b> .....................................................................</div><div style="display:flex;justify-content:space-between;gap:15px;margin-top:6px;flex-wrap:wrap"><span><b>${t('Lớp','Grade')}:</b> ${gradeLabel}</span><span><b>${t('Ngày','Date')}:</b> ${dateStr}</span><span><b>${t('Thời gian','Time')}:</b> .......... phút</span><span><b>${t('Điểm số','Score')}:</b> ..... / ${count}</span></div></div></div><hr class="worksheet-rule"><div class="worksheet-grid">${qs.map((q,i)=>`<div class="worksheet-item"><span class="ws-idx">${i+1})</span><span class="ws-prob">${mathMarkup(q.q)} = </span><span class="ws-line">....................</span></div>`).join('')}</div><div class="worksheet-footer"><span>NumiQuick · https://kimtham18301-arch.github.io/numiquest/</span></div><div class="worksheet-key no-print"><details><summary>${t('Xem đáp án cho phụ huynh / giáo viên','Answer Key for Parents / Teachers')}</summary><div class="key-grid">${qs.map((q,i)=>`<div><b>${i+1}.</b> ${q.answer}</div>`).join('')}</div></details></div></div></section>`;
   translate();
 }
 function renderStudentGuideHtml(){
   return `<div class="guide-cards">
     <div class="guide-card card">
-      <div class="guide-step-header"><span class="guide-step-num">1</span><h3>🌱 ${t('Chọn đúng Lớp học của em','Choose your Grade level')}</h3></div>
+      <div class="guide-step-header"><span class="guide-step-num">1</span><h3>${t('Chọn đúng Lớp học của em','Choose your Grade level')}</h3></div>
       <p>${t('Vào mục <b>Luyện tập</b>, bấm chọn từ <b>Lớp 1 đến Lớp 9</b>. Numi sẽ tự động chuẩn bị các bài toán đúng chuẩn kiến thức trên lớp (Tiểu học: cộng trừ, nhân chia, phân số, số thập phân; THCS Lớp 6–9: số nguyên âm, số hữu tỉ, luỹ thừa, biểu thức tính nhanh).','Head to <b>Practice</b> and tap your <b>Grade (1 to 9)</b>. Numi automatically selects questions matching what you learn at school (Primary: arithmetic, fractions, decimals; Middle School Grades 6–9: integers, rational numbers, powers, mental algebra).')}</p>
-      <div class="guide-tip">💡 <b>${t('Mẹo:','Tip:')}</b> ${t('Em cũng có thể bấm “Tùy chỉnh” để tự chọn số chữ số và phép tính theo ý thích.','You can also tap “Custom” to freely pick operations and number of digits.')}</div>
+      <div class="guide-tip"><b>${t('Mẹo:','Tip:')}</b> ${t('Em cũng có thể bấm “Tùy chỉnh” để tự chọn số chữ số và phép tính theo ý thích.','You can also tap “Custom” to freely pick operations and number of digits.')}</div>
     </div>
     <div class="guide-card card">
-      <div class="guide-step-header"><span class="guide-step-num">2</span><h3>🔢 ${t('Hai cách trả lời: Trắc nghiệm hoặc Bàn phím số','Two Answer Modes: Multiple Choice or Numpad')}</h3></div>
-      <p>${t('• <b>Trắc nghiệm 4 đáp án (🔘):</b> Chạm vào đáp án đúng hoặc bấm phím A, B, C, D trên máy tính.<br>• <b>Bàn phím số (🔢):</b> Tự gõ đáp án để rèn luyện phản xạ tính toán sâu hơn. Hỗ trợ bấm phím số trên bàn phím thật, Enter để nộp bài và Esc để xóa.','• <b>Multiple Choice (🔘):</b> Tap the answer or press A, B, C, D on your keyboard.<br>• <b>Numpad Input (🔢):</b> Type your answer directly to sharpen recall. Supports physical keyboard number keys, Enter to submit, and Esc to clear.')}</p>
+      <div class="guide-step-header"><span class="guide-step-num">2</span><h3>${t('Hai cách trả lời: Trắc nghiệm hoặc Bàn phím số','Two Answer Modes: Multiple Choice or Numpad')}</h3></div>
+      <p>${t('• <b>Trắc nghiệm 4 đáp án:</b> Chạm vào đáp án đúng hoặc bấm phím A, B, C, D (hoặc 1, 2, 3, 4) trên máy tính.<br>• <b>Bàn phím số:</b> Tự gõ đáp án để rèn luyện phản xạ tính toán sâu hơn. Hỗ trợ bấm phím số trên bàn phím thật, Enter để nộp bài và Esc để xóa.','• <b>Multiple Choice:</b> Tap the answer or press A, B, C, D (or 1, 2, 3, 4) on your keyboard.<br>• <b>Numpad Input:</b> Type your answer directly to sharpen recall. Supports physical keyboard number keys, Enter to submit, and Esc to clear.')}</p>
     </div>
     <div class="guide-card card">
-      <div class="guide-step-header"><span class="guide-step-num">3</span><h3>💡 ${t('Xem hướng dẫn từng bước khi gặp câu khó','Step-by-step Explanations for Mistakes')}</h3></div>
+      <div class="guide-step-header"><span class="guide-step-num">3</span><h3>${t('Xem hướng dẫn từng bước khi gặp câu khó','Step-by-step Explanations for Mistakes')}</h3></div>
       <p>${t('Đừng lo khi làm sai! Numi sẽ ngay lập tức hiện bảng hướng dẫn cách tách số nhẩm nhanh (ví dụ: tách số tròn chục, quy đồng mẫu số). Đọc kỹ hướng dẫn sẽ giúp em không bị nhầm ở các câu tiếp theo.','Don’t worry if you miss a question! Numi instantly shows mental math breakdown steps (like splitting tens or common denominators) so you master it next time.')}</p>
     </div>
     <div class="guide-card card">
-      <div class="guide-step-header"><span class="guide-step-num">4</span><h3>🌼 ${t('Vườn hoa sửa sai – Biến lỗi sai thành hoa đẹp','Flower Garden Review – Turn Mistakes into Blooms')}</h3></div>
+      <div class="guide-step-header"><span class="guide-step-num">4</span><h3>${t('Vườn hoa sửa sai – Biến lỗi sai thành hoa đẹp','Flower Garden Review – Turn Mistakes into Blooms')}</h3></div>
       <p>${t('Mỗi câu em chưa làm đúng sẽ được chuyển vào <b>Vườn hoa</b> thành một chậu cây. Em chỉ cần ghép đúng chậu bài toán với bông hoa đáp án tương ứng. Khi ghép đúng, hoa sẽ nở rực rỡ và câu sai được xóa khỏi bộ nhớ!','Missed problems go to your <b>Flower Garden</b> as flower pots. Drag or tap to match each problem pot with its blooming answer flower!')}</p>
     </div>
     <div class="guide-card card">
-      <div class="guide-step-header"><span class="guide-step-num">5</span><h3>🔥 ${t('Nuôi chuỗi ngày học & Uống trà sữa trân châu 🧋','Keep Your Daily Streak 🔥 & Fill Your Bubble Tea 🧋')}</h3></div>
-      <p>${t('• <b>Chuỗi ngày học 🔥:</b> Mỗi ngày làm ít nhất 1 bài để giữ lửa học tập liên tục không bị gián đoạn.<br>• <b>Trân châu 🧋:</b> Mỗi câu trả lời đúng thưởng 1 viên trân châu. Tích lũy đủ trân châu để nâng cấp ly trà sữa từ Size S → M → L → XL!','• <b>Daily Streak 🔥:</b> Complete at least one practice session every day to keep your streak burning.<br>• <b>Pearls 🧋:</b> Every correct answer adds 1 chewy pearl. Collect enough to level up your cup from Size S to XL!')}</p>
+      <div class="guide-step-header"><span class="guide-step-num">5</span><h3>${t('Nuôi chuỗi ngày học & Tích lũy trân châu','Keep Your Daily Streak & Fill Your Bubble Tea')}</h3></div>
+      <p>${t('• <b>Chuỗi ngày học:</b> Mỗi ngày làm ít nhất 1 bài để giữ chuỗi học tập liên tục không bị gián đoạn.<br>• <b>Trân châu:</b> Mỗi câu trả lời đúng thưởng 1 viên trân châu. Tích lũy đủ trân châu để nâng cấp ly trà sữa từ Size S → M → L!','• <b>Daily Streak:</b> Complete at least one practice session every day to keep your streak going.<br>• <b>Pearls:</b> Every correct answer adds 1 chewy pearl. Collect enough to level up your cup from Size S to L!')}</p>
     </div>
   </div>`;
 }
 function renderParentGuideHtml(){
   return `<div class="guide-cards">
     <div class="guide-card card">
-      <div class="guide-step-header"><span class="guide-step-num">1</span><h3>👨‍👩‍👧 ${t('Quản lý tài khoản riêng cho từng bé trên cùng một máy','Separate Child Profiles on One Device')}</h3></div>
+      <div class="guide-step-header"><span class="guide-step-num">1</span><h3>${t('Quản lý tài khoản riêng cho từng bé trên cùng một máy','Separate Child Profiles on One Device')}</h3></div>
       <p>${t('Nhà có nhiều bé học các lớp khác nhau? Phụ huynh có thể tạo cho mỗi bé một tài khoản riêng (ví dụ: Bé Anh Lớp 4, Bé Em Lớp 2) kèm mã PIN đơn giản. Điểm số, chuỗi ngày và lịch sử làm bài của từng bé được lưu riêng biệt hoàn toàn.','Have multiple children? Create individual profiles with simple PINs. Each child keeps their own grade level, history, streak, and flower review without overlapping.')}</p>
-      <div class="guide-tip">💡 <b>${t('Mẹo:','Tip:')}</b> ${t('Tại màn hình Đăng nhập có sẵn danh sách tên các bé, bé chỉ cần chạm vào tên mình và nhập mã PIN để vào học.','Quick user chips on the sign-in screen allow 1-tap switching between siblings.')}</div>
+      <div class="guide-tip"><b>${t('Mẹo:','Tip:')}</b> ${t('Tại màn hình Đăng nhập có sẵn danh sách tên các bé, bé chỉ cần chạm vào tên mình và nhập mã PIN để vào học.','Quick user chips on the sign-in screen allow 1-tap switching between siblings.')}</div>
     </div>
     <div class="guide-card card">
-      <div class="guide-step-header"><span class="guide-step-num">2</span><h3>📈 ${t('Theo dõi biểu đồ tiến bộ & Tốc độ phản xạ','Track 7-Day Progress & Reflex Speeds')}</h3></div>
-      <p>${t('Bấm vào <b>Tiến bộ</b> (hoặc biểu tượng 🏅 trên thanh điều hướng) để xem:<br>• Tỷ lệ làm đúng theo từng dạng toán (số tự nhiên, phân số, số thập phân, phép chia có dư).<br>• Tốc độ tính trung bình (số giây/câu) để biết con có tiến bộ về phản xạ nhanh hay không.<br>• Biểu đồ lịch sử 7 ngày gần nhất.','Open <b>Progress</b> (or 🏅 in the navigation) to view:<br>• Accuracy broken down by operation and number type.<br>• Average reaction speed (seconds/question).<br>• 7-day practice volume chart.')}</p>
+      <div class="guide-step-header"><span class="guide-step-num">2</span><h3>${t('Theo dõi biểu đồ tiến bộ & Tốc độ phản xạ','Track 7-Day Progress & Reflex Speeds')}</h3></div>
+      <p>${t('Bấm vào <b>Thành tích</b> trên thanh điều hướng để xem:<br>• Tỷ lệ làm đúng theo từng dạng toán (số tự nhiên, phân số, số thập phân, phép chia có dư).<br>• Tốc độ tính trung bình (số giây/câu) để biết con có tiến bộ về phản xạ nhanh hay không.<br>• Biểu đồ lịch sử 7 ngày gần nhất.','Open <b>Progress</b> in the navigation to view:<br>• Accuracy broken down by operation and number type.<br>• Average reaction speed (seconds/question).<br>• 7-day practice volume chart.')}</p>
     </div>
     <div class="guide-card card">
-      <div class="guide-step-header"><span class="guide-step-num">3</span><h3>📄 ${t('In phiếu bài tập giấy A4 kèm đáp án chấm nhanh','Printable A4 Worksheets with Instant Answer Key')}</h3></div>
-      <p>${t('Nếu muốn cho con luyện viết tay trên giấy hoặc tránh nhìn màn hình nhiều:<br>1. Vào <b>Luyện tập</b>, chọn Lớp học (hoặc tùy chỉnh dạng bài).<br>2. Bấm nút <b>“📄 In phiếu bài tập (PDF)”</b>.<br>3. Phiếu in chuẩn A4 được thiết kế đẹp mắt với 20 câu hỏi, kèm ô ghi Họ tên, Lớp, Ngày và Điểm số.<br>4. Cuối phiếu có sẵn <b>Bảng đáp án (Answer Key)</b> ẩn trong mục mở rộng, giúp phụ huynh và thầy cô chấm bài chỉ trong 10 giây!','For handwriting practice away from screens:<br>1. In <b>Practice</b>, select the Grade level.<br>2. Tap <b>“📄 Print worksheet (PDF)”</b>.<br>3. Enjoy an elegant A4 layout with 20 questions, student info headers, and a collapsible Answer Key for 10-second grading!')}</p>
+      <div class="guide-step-header"><span class="guide-step-num">3</span><h3>${t('In phiếu bài tập giấy A4 kèm đáp án chấm nhanh','Printable A4 Worksheets with Instant Answer Key')}</h3></div>
+      <p>${t('Nếu muốn cho con luyện viết tay trên giấy hoặc tránh nhìn màn hình nhiều:<br>1. Vào <b>Luyện tập</b>, chọn Lớp học (hoặc tùy chỉnh dạng bài).<br>2. Bấm nút <b>“In phiếu bài tập (PDF)”</b>.<br>3. Phiếu in chuẩn A4 được thiết kế đẹp mắt với 20 câu hỏi, kèm ô ghi Họ tên, Lớp, Ngày và Điểm số.<br>4. Cuối phiếu có sẵn <b>Bảng đáp án (Answer Key)</b> ẩn trong mục mở rộng, giúp phụ huynh và thầy cô chấm bài chỉ trong 10 giây!','For handwriting practice away from screens:<br>1. In <b>Practice</b>, select the Grade level.<br>2. Tap <b>“Print worksheet (PDF)”</b>.<br>3. Enjoy an elegant A4 layout with 20 questions, student info headers, and a collapsible Answer Key for 10-second grading!')}</p>
     </div>
     <div class="guide-card card">
-      <div class="guide-step-header"><span class="guide-step-num">4</span><h3>🎯 ${t('Chuẩn hóa theo Chương trình GDPT 2018','Aligned with Primary Math Standards (GDPT 2018)')}</h3></div>
+      <div class="guide-step-header"><span class="guide-step-num">4</span><h3>${t('Chuẩn hóa theo Chương trình GDPT 2018','Aligned with Primary Math Standards (GDPT 2018)')}</h3></div>
       <p>${t('Hệ thống câu hỏi của NumiQuick được xây dựng bám sát định hướng phát triển năng lực tính toán của học sinh tiểu học Việt Nam:<br>• <b>Lớp 1:</b> Cộng trừ phạm vi 100 không nhớ, rèn cấu tạo số.<br>• <b>Lớp 2:</b> Cộng trừ có nhớ đến 100, bảng nhân chia 2 và 5.<br>• <b>Lớp 3:</b> Hoàn chỉnh bảng nhân chia 2–9, cộng trừ đến 1.000, phép chia có dư.<br>• <b>Lớp 4:</b> Số nhiều chữ số, 4 phép tính phân số.<br>• <b>Lớp 5:</b> Số thập phân, hỗn số, biểu thức tính nhanh.','Curriculum levels are calibrated to primary school development benchmarks from Grade 1 to 5, fostering genuine mental math fluency without cognitive overload.')}</p>
     </div>
   </div>`;
@@ -570,21 +609,20 @@ function renderGuide(activeTab = 'student'){
   const studentActive=activeTab==='student';
   $('#app').innerHTML=`<section class="guide-view narrow">
     <div class="guide-hero card">
-      <div class="intro-animal">${animal(buddy())}</div>
       <span class="eyebrow">NUMIQUICK · ${t('TRUNG TÂM HƯỚNG DẪN','USER GUIDE')}</span>
       <h1>${t('Hướng dẫn sử dụng NumiQuick','How to Use NumiQuick')}</h1>
       <p class="muted">${t('Bí kíp luyện tính nhanh, rèn tư duy và theo dõi tiến bộ dễ dàng mỗi ngày.','Everything you need to practice mental math, build confidence and track progress.')}</p>
       <div class="guide-role-tabs">
-        <button type="button" class="guide-role-tab ${studentActive?'active':''}" id="guideTabStudent">🎒 ${t('Dành cho Học sinh','For Students')}</button>
-        <button type="button" class="guide-role-tab ${!studentActive?'active':''}" id="guideTabParent">👨‍👩‍👧 ${t('Dành cho Phụ huynh & Thầy cô','For Parents & Teachers')}</button>
+        <button type="button" class="guide-role-tab ${studentActive?'active':''}" id="guideTabStudent">${t('Dành cho Học sinh','For Students')}</button>
+        <button type="button" class="guide-role-tab ${!studentActive?'active':''}" id="guideTabParent">${t('Dành cho Phụ huynh & Thầy cô','For Parents & Teachers')}</button>
       </div>
     </div>
     <div class="guide-content">
       ${studentActive?renderStudentGuideHtml():renderParentGuideHtml()}
     </div>
     <div class="guide-footer-actions">
-      <button class="primary wide" onclick="nav('setup')">⚡ ${t('Vào luyện tập ngay','Start practicing now')} →</button>
-      <button class="wide" onclick="nav('home')" style="margin-top:8px">⌂ ${t('Về trang chủ','Back to home')}</button>
+      <button class="primary wide" onclick="nav('setup')">${t('Vào luyện tập ngay','Start practicing now')} →</button>
+      <button class="wide" onclick="nav('home')" style="margin-top:8px">${t('Về trang chủ','Back to home')}</button>
     </div>
   </section>`;
   $('#guideTabStudent').onclick=()=>renderGuide('student');
@@ -596,28 +634,62 @@ function startReview(){}
 function award(n){state.pieces[state.selected]=(state.pieces[state.selected]||0)+n;save()}
 function atlas(){let c=countries.find(c=>c[0]===state.selected)||countries[0],p=state.pieces[c[0]]||0,complete=Math.floor(p/4);$('#app').innerHTML=`<span class="eyebrow">${t('HỘ CHIẾU KHÁM PHÁ','DISCOVERY PASSPORT')}</span><h1>${t('Thế giới đang chờ em.','A world waiting for you.')}</h1><p class="muted">${t('Chọn điểm đến. Mỗi màn vượt qua đem lại một mảnh ghép.','Choose a destination. Each completed game stage earns a piece.')}</p><div class="notice">${t('Bản thử: 10 nước, địa danh minh họa bằng biểu tượng; hoạt động bản đồ hiện ở mức châu lục. Ảnh ghép thật, hình lãnh thổ và toàn bộ quốc gia sẽ bổ sung sau.','Prototype: 10 countries with symbolic landmark illustrations and continent placement. Real photo puzzles, country outlines and all countries are not included yet.')}</div><div class="grid country-grid">${countries.map(x=>{let n=state.pieces[x[0]]||0;return `<article class="card country ${x[0]===c[0]?'selected':''}" data-country="${x[0]}"><span class="flag">${x[3]}</span><h3>${cname(x)}</h3><small class="muted">${cont(x)} · ${t('Bộ','Set')} ${Math.floor(n/4)+1}</small><div class="pieces">${[0,1,2,3].map(i=>`<span class="${n%4>i?'yes':''}"></span>`).join('')}</div><p>${n} ${t('mảnh','pieces')} · ${Math.floor(n/4)} ${t('bộ hoàn thành','sets complete')}</p></article>`}).join('')}</div><section class="card section"><div class="row"><h2>${c[3]} ${cname(c)}</h2><span class="tag">${complete>=3?'🥇':complete>=2?'🥈':complete>=1?'🥉':'🧩'} ${p%4}/4 · ${t('Cấp khám phá','Discovery level')} ${complete+1}</span></div><div class="landmark ${complete?'':'locked'}">${c[10]}</div><h3 class="section">${landmark(c)}</h3>${complete?`<p>${t('Thủ đô','Capital')}: <b>${cap(c)}</b> · ${cont(c)}</p><p>${fact(c)}</p><button id="speak">🔊 ${t('Nghe giới thiệu','Listen')}</button><h3 class="section">${t('Đất nước này thuộc châu lục nào?','Which continent is this country in?')}</h3><p class="muted">${t('Kéo thẻ vào châu lục, hoặc chạm thẻ rồi chạm vị trí.','Drag the card to a continent, or tap the card and then a location.')}</p><div class="drag-country" id="countryDrag" draggable="true">${c[3]} ${cname(c)} ↗</div><div class="map">${[['Châu Á','Asia'],['Châu Âu','Europe'],['Châu Phi','Africa'],['Bắc Mỹ','North America'],['Nam Mỹ','South America'],['Châu Đại Dương','Oceania']].map(x=>`<div class="zone" role="button" tabindex="0" data-zone="${x[1]}">${t(...x)}</div>`).join('')}</div><button id="help" style="margin-top:15px">💡 ${t('Trợ giúp','Hint')}</button>`:`<p>${t('Thu thập đủ 4 mảnh để mở phần giới thiệu và hoạt động bản đồ.','Collect 4 pieces to unlock the introduction and map activity.')}</p>`}<div class="actions"><button class="primary" onclick="nav('setup')">${t('Luyện để thu thập','Practice to collect')}</button></div></section>`;$$('[data-country]').forEach(el=>el.onclick=()=>{state.selected=el.dataset.country;save();atlas()});if(complete){$('#speak').onclick=()=>{if(!('speechSynthesis'in window)){toast(t('Thiết bị chưa hỗ trợ giọng đọc.','Speech is not supported.'));return}speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(`${cname(c)}. ${t('Thủ đô','Capital')}: ${cap(c)}. ${landmark(c)}. ${fact(c)}`);u.lang=lang==='vi'?'vi-VN':'en-US';speechSynthesis.speak(u)};$('#countryDrag').ondragstart=e=>e.dataTransfer.setData('text/plain',c[0]);$$('[data-zone]').forEach(z=>{const check=()=>{if(z.dataset.zone===c[7]){z.classList.add('good');toast(t('Đúng châu lục rồi!','Correct continent!'))}else toast(t('Thử lại nhé. Dùng trợ giúp nếu cần.','Try again, or use a hint.'))};z.onclick=check;z.onkeydown=e=>{if(e.key==='Enter'||e.key===' ')check()};z.ondragover=e=>e.preventDefault();z.ondrop=e=>{e.preventDefault();if(e.dataTransfer.getData('text/plain')===c[0])check()}});$('#help').onclick=()=>toast(`${cname(c)} → ${cont(c)}`)}}
 function battleSetup(){$('#app').innerHTML=`<div class="narrow"><span class="eyebrow">${t('ĐẤU MÁY · KHÔNG TRỰC TUYẾN','BOT ARENA · OFFLINE')}</span><h1>${t('Sẵn sàng so tài?','Ready for a challenge?')}</h1><form id="battleConfig" class="card"><label>${t('Biệt danh trên bảng thành tích','Nickname on your scorecard')}<input name="name" maxlength="20" value="${esc(state.name)}" required></label><div class="formgrid section"><label>${t('Thời gian trận','Match duration')}<select name="duration"><option value="180">3 ${t('phút','minutes')}</option><option value="300">5 ${t('phút','minutes')}</option><option value="60">1 ${t('phút · chơi thử','minute · quick test')}</option></select></label><label>${t('Độ khó','Difficulty')}<select name="difficulty"><option value="1">${t('Dễ · cộng trừ 1 chữ số','Easy · 1-digit addition/subtraction')}</option><option value="2">${t('Vừa · cộng trừ 2 chữ số','Medium · 2-digit addition/subtraction')}</option><option value="3">${t('Khó · bốn phép tính','Hard · all operations')}</option></select></label></div><p class="muted">${t('Ba đối thủ đều là máy có nhãn rõ ràng. Điểm gồm 70% đúng và 30% tốc độ. Mỗi câu chỉ chọn một lần.','All three opponents are labeled bots. Scoring: 70% accuracy and 30% speed. One answer per question.')}</p><button class="primary">${t('Vào trận','Start match')} →</button></form></div>`;$('#battleConfig').onsubmit=e=>{e.preventDefault();if(state.mistakes.length){modal(`<h2>🌱 ${t('Còn câu cần ôn','Review comes first')}</h2><p>${t('Ôn xong câu cũ rồi mình vào trận mới nhé.','Complete your pending review before a new match.')}</p>`,startReview);return}let f=new FormData(e.target);state.name=String(f.get('name')).trim()||'Explorer';save();startBattle(+f.get('duration'),+f.get('difficulty'))}}
-function startBattle(duration,difficulty){stop();view='battle';const count=Math.round(duration/15),c={...defaults,d1:difficulty===1?1:2,d2:difficulty===3?2:1,ops:difficulty===3?['+','-','*','/']:['+','-'],seconds:15};session={kind:'battle',duration,difficulty,questions:Array.from({length:count},()=>generate(c)),index:0,results:[],scores:[0,0,0,0],botAnswers:[],done:false};battleQuestion()}
+function startBattle(duration,difficulty){stop();view='battle';const count=Math.round(duration/15),c={...defaults,d1:difficulty===1?1:2,d2:difficulty===3?2:1,ops:difficulty===3?['+','-','*','/']:['+','-'],seconds:15};session={kind:'battle',duration,difficulty,questions:generateUniqueQuestions(count,c),index:0,results:[],scores:[0,0,0,0],botAnswers:[],done:false};battleQuestion()}
 function battleQuestion(){const s=session;if(s.index>=s.questions.length){finishBattle();return}let q=s.questions[s.index];s.locked=false;s.chosen=null;s.started=performance.now();let strength=s.difficulty===1?.7:s.difficulty===2?.8:.88;s.botAnswers=[0,1,2].map((_,i)=>({correct:Math.random()<Math.min(.97,strength+(i-1)*.06),time:ri(25,125)/10}));$('#app').innerHTML=`<div class="narrow"><div class="row"><span class="tag">🤖 ${t('Đấu máy','Bot match')} · ${s.index+1}/${s.questions.length}</span><strong id="clock" class="timer"></strong></div><div class="progress"><div style="width:${s.index/s.questions.length*100}%"></div></div><div class="bots">${[state.name,'Mochi 🤖','Pip 🤖','Luna 🤖'].map((n,i)=>`<div class="bot">${esc(n)}<strong>${Math.round(s.scores[i])}</strong>${i?t('Đối thủ máy','Bot opponent'):t('Em','You')}</div>`).join('')}</div><div class="card section"><div class="question">${mathMarkup(q.q)} = ?</div><div class="answers">${q.options.map((o,i)=>`<button class="answer" data-battle="${i}"><small>${'ABCD'[i]}</small>${mathMarkup(o)}</button>`).join('')}</div><p id="feedback" class="muted">${t('Câu hỏi đóng khi mọi đối thủ đã trả lời hoặc hết 15 giây.','The question closes when all participants answer or after 15 seconds.')}</p></div></div>`;s.deadline=performance.now()+15000;clearInterval(tick);tick=setInterval(()=>{let elapsed=(performance.now()-s.started)/1000;$('#clock').textContent=Math.max(0,15-elapsed).toFixed(1)+'s';if(elapsed>=15||(s.locked&&s.botAnswers.every(x=>elapsed>=x.time)))resolveBattle()},100);$$('[data-battle]').forEach(b=>b.onclick=()=>{if(s.locked)return;s.locked=true;s.chosen=q.options[+b.dataset.battle];s.answerTime=(performance.now()-s.started)/1000;$$('[data-battle]').forEach(x=>x.disabled=true);$('#feedback').textContent=t('Đã ghi nhận! Chờ các đối thủ…','Answer recorded! Waiting for opponents…')})}
 function points(correct,time,count){return correct?(700+300*Math.max(0,1-time/15))/count:0}
-function resolveBattle(){clearInterval(tick);const s=session;if(view!=='battle'||!s||s.done)return;const q=s.questions[s.index];if(!q||s.resolvedId===q.id)return;s.resolvedId=q.id;const correct=s.chosen===q.answer,elapsed=s.locked?s.answerTime:15;s.scores[0]+=points(correct,elapsed,s.questions.length);s.botAnswers.forEach((b,i)=>s.scores[i+1]+=points(b.correct,b.time,s.questions.length));s.results.push({correct,elapsed});track(q,correct,elapsed,'battle');s.index++;battleQuestion()}
+function resolveBattle(){clearInterval(tick);const s=session;if(view!=='battle'||!s||s.done)return;const q=s.questions[s.index];if(!q||s.resolvedId===q.id)return;s.resolvedId=q.id;const correct=isAnswerMatch(s.chosen,q.answer),elapsed=s.locked?s.answerTime:15;s.scores[0]+=points(correct,elapsed,s.questions.length);s.botAnswers.forEach((b,i)=>s.scores[i+1]+=points(b.correct,b.time,s.questions.length));s.results.push({correct,elapsed});track(q,correct,elapsed,'battle');s.index++;battleQuestion()}
 function finishBattle(){stop();const s=session;s.done=true;const correct=s.results.filter(x=>x.correct).length,score=Math.min(1000,Math.round(s.scores[0])),rank=1+s.scores.slice(1).filter(x=>x>s.scores[0]).length;state.best=Math.max(state.best,score);state.xp+=correct*4;state.history.push({date:new Date().toISOString(),mode:'bot',correct,total:s.questions.length,time:avg(s.results.map(x=>x.elapsed)),score});state.history=state.history.slice(-200);const reward=0;save();let names=[state.name,'Mochi 🤖','Pip 🤖','Luna 🤖'];$('#app').innerHTML=`<div class="narrow card"><div class="trophy">${rank===1?'🏆':'🌟'}</div><span class="eyebrow">${t('BẢNG VINH DANH · ĐẤU MÁY','HALL OF FAME · BOT MATCH')}</span><h1>${esc(state.name)}</h1><h2>${score}/1000 · ${t('Hạng','Rank')} ${rank}/4</h2><p>${correct}/${s.questions.length} ${t('câu đúng','correct')} · ${avg(s.results.map(x=>x.elapsed)).toFixed(1)}s/${t('câu','question')}</p><p>${reward?`🧩 +${reward} ${t('mảnh khám phá','discovery pieces')}`:t('Đấu máy giúp luyện tốc độ. Vào Chinh phục để kiếm mảnh nhé!','Bot matches build speed. Visit Challenges to earn pieces!')}</p><table class="history">${s.scores.map((v,i)=>({v,i})).sort((a,b)=>b.v-a.v).map((x,i)=>`<tr><td>${i+1}</td><td>${esc(names[x.i])}</td><td>${Math.round(x.v)}</td></tr>`).join('')}</table><div class="actions"><button class="primary" id="shareCard">${t('Lưu ảnh thành tích','Save scorecard')}</button>${state.mistakes.length?`<button onclick="startReview()">${t('Ôn câu sai','Review mistakes')}</button>`:`<button onclick="nav('battleSetup')">${t('Đấu lượt mới','Another match')}</button>`}<button onclick="nav('home')">${t('Trang chủ','Home')}</button></div><p class="muted">${t('Không tính bảng hạng tuần.','Not included in weekly rankings.')}</p></div>`;$('#shareCard').onclick=()=>scorecard(score,rank,correct,s.questions.length)}
 function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 function scorecard(score,rank,correct,total){let c=document.createElement('canvas');c.width=1080;c.height=1080;let x=c.getContext('2d');x.fillStyle='#edf1df';x.fillRect(0,0,1080,1080);x.fillStyle='#176b53';x.fillRect(70,70,940,940);x.textAlign='center';x.fillStyle='#f8cc58';x.font='bold 55px Arial';x.fillText('NumiQuest',540,190);x.font='100px Arial';x.fillText('★',540,330);x.fillStyle='white';x.font='bold 60px Arial';x.fillText(state.name,540,450,820);x.font='bold 100px Arial';x.fillText(score+' / 1000',540,610);x.font='36px Arial';x.fillText(t('Hạng ','Rank ')+rank+'/4 · '+correct+'/'+total+t(' câu đúng',' correct'),540,720);x.fillText(t('Thử thách tính nhẩm · Đấu máy','Mental math challenge · Bot match'),540,820);x.font='28px Arial';x.fillText(new Date().toLocaleDateString(lang==='vi'?'vi-VN':'en-US'),540,930);c.toBlob(b=>download(b,'NumiQuest-score.png'))}
 function stats(){let h=state.history,correct=h.reduce((a,b)=>a+b.correct,0),total=h.reduce((a,b)=>a+b.total,0),weak=Object.entries(state.mastery).filter(([,a])=>a.length>=5&&avg(a)<.6);$('#app').innerHTML=`<span class="eyebrow">${t('NHẬT KÝ HÀNH TRÌNH','YOUR JOURNEY LOG')}</span><h1>${t('Giỏi hơn từng ngày.','Growing every day.')}</h1><div class="metrics"><div class="metric"><small>${t('Độ chính xác lần đầu','First-try accuracy')}</small><strong>${total?Math.round(correct/total*100):0}%</strong></div><div class="metric"><small>${t('Thời gian TB / câu','Average seconds / question')}</small><strong>${avg(h.map(x=>x.time)).toFixed(1)}s</strong></div><div class="metric"><small>${t('Cấp nhà thám hiểm','Explorer level')}</small><strong>${level()}</strong></div><div class="metric"><small>${t('Câu cần ôn','Pending review')}</small><strong>${state.mistakes.length}</strong></div></div><div class="grid"><section class="card"><h3>${t('10 lượt gần nhất','Last 10 sessions')}</h3><div class="chart">${h.slice(-10).map(x=>`<div style="height:${Math.round(x.correct/x.total*100)}%" title="${x.correct}/${x.total}"></div>`).join('')}</div><p>${t('Chiều cao cột = tỉ lệ trả lời đúng.','Bar height = correct answer percentage.')}</p></section><section class="card"><h3>${t('Kỹ năng cần củng cố','Skills to strengthen')}</h3>${weak.length?weak.map(([k,a])=>`<p>${esc(skillName(k))}: ${Math.round(avg(a)*100)}%</p><button data-weak="${esc(k)}">${t('Ôn có hướng dẫn','Guided review')}</button><button data-retest="${esc(k)}">${t('Kiểm tra lại · 5 câu','Retest · 5 questions')}</button>`).join(''):`<p>${t('Chưa có kỹ năng yếu được xác định. Cần ít nhất 5 câu mỗi dạng để đánh giá.','No weak skills identified. At least 5 answers per skill are needed.')}</p>`}</section><section class="card"><h3>${t('Giữ lại hành trình','Keep your journey')}</h3><p>${t('Dữ liệu lưu trên trình duyệt này. Xuất bản sao lưu trước khi đổi máy hoặc xóa dữ liệu.','Progress is saved in this browser. Export before changing devices or clearing browser data.')}</p><button id="backup">↓ ${t('Xuất sao lưu','Export backup')}</button><button id="import">↑ ${t('Nhập sao lưu','Import backup')}</button></section></div><section class="card section"><h3>${t('Lịch sử luyện tập','Practice history')}</h3>${h.length?`<table class="history"><thead><tr><th>${t('Ngày','Date')}</th><th>${t('Chế độ','Mode')}</th><th>${t('Đúng','Correct')}</th><th>${t('TB','Avg')}</th><th>+${t('giờ','time')}</th></tr></thead><tbody>${h.slice(-20).reverse().map(x=>`<tr><td>${new Date(x.date).toLocaleDateString(lang==='vi'?'vi-VN':'en-US')}</td><td>${x.mode==='bot'?t('Đấu máy','Bot'):x.mode==='challenge'?t('Chinh phục','Challenge'):t('Tự luyện','Practice')}</td><td>${x.correct}/${x.total}</td><td>${x.time.toFixed(1)}s</td><td>${x.extra||0}</td></tr>`).join('')}</tbody></table>`:`<div class="empty">${t('Hành trình của em bắt đầu từ lượt đầu tiên.','Your journey starts with your first session.')}</div>`}</section>`;$('#backup').onclick=()=>download(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),'NumiQuest-backup.json');$('#import').onclick=()=>$('#restore').click();$$('[data-weak]').forEach(b=>b.onclick=()=>{let k=b.dataset.weak,q=generate({...defaults,type:k.split(':')[0],ops:[k.split(':')[1]]});modal(`<h2>${esc(skillName(k))}</h2><p style="white-space:pre-line">${esc(hint(q))}</p><p>${t('Sau khi đọc, em có thể làm bài kiểm tra lại 5 câu.','After reading, try a 5-question retest.')}</p>`)});$$('[data-retest]').forEach(b=>b.onclick=()=>{if(state.mistakes.length){startReview();return}let [type,op]=b.dataset.retest.split(':');const u=typeof currentAuthUser==='function'?currentAuthUser():null;const gId=config.grade||u?.grade||1;config={...defaults,...config,type,types:[type],ops:[op],count:5,grade:gId};startQuiz()})}
 function skillName(k){let [type,op]=k.split(':');return ({natural:t('Số tự nhiên','Whole numbers'),remainder:t('Chia dư','Remainders'),decimal:t('Thập phân','Decimals'),negative:t('Số nguyên','Integers'),fraction:t('Phân số','Fractions')}[type]||type)+' '+({'+':'+','-':'−','*':'×','/':'÷'}[op]||op)}
-function validBackup(x){if(!x||x.version!==1||!Array.isArray(x.history)||x.history.length>200||!Array.isArray(x.mistakes)||x.mistakes.length>10000||!x.pieces||!x.mastery)return false;if(typeof x.name!=='string'||x.name.length>20||!Number.isFinite(x.xp)||x.xp<0||!Number.isFinite(x.best))return false;if(!Object.values(x.pieces).every(n=>Number.isSafeInteger(n)&&n>=0))return false;if(!Object.values(x.mastery).every(a=>Array.isArray(a)&&a.length<=10&&a.every(n=>n===0||n===1)))return false;return x.mistakes.every(q=>q&&typeof q.id==='string'&&typeof q.q==='string'&&typeof q.answer==='string'&&Array.isArray(q.options)&&q.options.length===4&&q.options.every(o=>typeof o==='string')&&q.options.includes(q.answer)&&q.config&&q.config.seconds>=5&&q.config.seconds<=120)&&x.history.every(h=>typeof h.date==='string'&&Number.isFinite(h.correct)&&Number.isFinite(h.total)&&h.total>0&&h.correct>=0&&h.correct<=h.total&&Number.isFinite(h.time))}
+function validBackup(x){
+  if(!x||typeof x!=='object'||x.version!==1)return false;
+  if(x.history!==undefined&&!Array.isArray(x.history))return false;
+  if(x.mistakes!==undefined&&(!Array.isArray(x.mistakes)||x.mistakes.length>10000))return false;
+  if(typeof x.name!=='string'||x.name.length>50||!Number.isFinite(x.xp)||x.xp<0)return false;
+  if(x.best!==undefined&&!Number.isFinite(x.best))return false;
+  if(x.pieces&&typeof x.pieces==='object'){
+    if(!Object.values(x.pieces).every(n=>Number.isSafeInteger(n)&&n>=0))return false;
+  }else{
+    x.pieces={};
+  }
+  if(x.mastery&&typeof x.mastery==='object'){
+    if(!Object.values(x.mastery).every(a=>Array.isArray(a)&&a.every(n=>n===0||n===1)))return false;
+  }else{
+    x.mastery={};
+  }
+  if(Array.isArray(x.history)){
+    if(!x.history.every(h=>h&&typeof h.date==='string'&&Number.isFinite(h.correct)&&Number.isFinite(h.total)&&h.total>0&&h.correct>=0&&h.correct<=h.total&&Number.isFinite(h.time)))return false;
+    if(x.history.length>200)x.history=x.history.slice(-200);
+  }else{
+    x.history=[];
+  }
+  if(Array.isArray(x.mistakes)){
+    if(!x.mistakes.every(q=>q&&typeof q.id==='string'&&typeof q.q==='string'&&typeof q.answer==='string'))return false;
+    x.mistakes=x.mistakes.map(q=>{
+      const ans=String(q.answer);
+      const opts=Array.isArray(q.options)&&q.options.length===4&&q.options.includes(ans)?q.options:[ans,String((parseFloat(ans)||0)+1),String((parseFloat(ans)||0)+2),String(Math.max(0,(parseFloat(ans)||2)-1))];
+      const cfg=(q.config&&typeof q.config==='object')?{...defaults,...q.config,seconds:Math.min(120,Math.max(5,+q.config.seconds||15))}:{...defaults,seconds:15};
+      return {...q,options:opts,config:cfg,skill:q.skill||'natural:+'};
+    });
+  }else{
+    x.mistakes=[];
+  }
+  return true;
+}
 $('#restore').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>5000000)throw Error();const x=JSON.parse(await file.text());if(!validBackup(x))throw Error();if(!confirm(t('Thay toàn bộ tiến độ hiện tại bằng bản sao lưu?','Replace current progress with this backup?')))return;state={...fresh(),...x};lang=state.lang==='en'?'en':'vi';save();nav('stats');toast(t('Đã khôi phục tiến độ.','Progress restored.'))}catch{toast(t('File sao lưu không hợp lệ. Dữ liệu hiện tại được giữ nguyên.','Invalid backup. Current progress is unchanged.'))}finally{e.target.value=''}};
 // Zoo experience v0.2. Storage key is unchanged to preserve existing progress.
 function animal(kind='lion',cls=''){const eyes='<ellipse cx="65" cy="82" rx="4" ry="6" fill="#405249"/><ellipse cx="95" cy="82" rx="4" ry="6" fill="#405249"/><ellipse cx="54" cy="94" rx="10" ry="6" fill="#f3b3a1"/><ellipse cx="106" cy="94" rx="10" ry="6" fill="#f3b3a1"/><path d="M75 94Q80 90 85 94L80 100Z" fill="#715443"/><path d="M72 104Q80 112 88 104" stroke="#715443" stroke-width="3" fill="none" stroke-linecap="round"/>';let parts=kind==='panda'?'<circle cx="38" cy="42" r="21" fill="#405b53"/><circle cx="122" cy="42" r="21" fill="#405b53"/><ellipse cx="80" cy="85" rx="62" ry="53" fill="#fffdf0"/><ellipse cx="60" cy="78" rx="15" ry="19" fill="#405b53" transform="rotate(20 60 78)"/><ellipse cx="100" cy="78" rx="15" ry="19" fill="#405b53" transform="rotate(-20 100 78)"/><circle cx="63" cy="77" r="4" fill="white"/><circle cx="97" cy="77" r="4" fill="white"/><ellipse cx="80" cy="98" rx="8" ry="6" fill="#405b53"/><path d="M72 110Q80 117 88 110" stroke="#405b53" stroke-width="3" fill="none"/>':kind==='bunny'?'<ellipse cx="54" cy="35" rx="16" ry="33" fill="#f8eee3" transform="rotate(-12 54 35)"/><ellipse cx="107" cy="35" rx="16" ry="33" fill="#f8eee3" transform="rotate(12 107 35)"/><ellipse cx="54" cy="32" rx="7" ry="22" fill="#f1c0b9" transform="rotate(-12 54 32)"/><ellipse cx="107" cy="32" rx="7" ry="22" fill="#f1c0b9" transform="rotate(12 107 32)"/><ellipse cx="80" cy="91" rx="57" ry="46" fill="#fff9f0"/>'+eyes:kind==='fox'?'<path d="M28 66L23 13L64 45M94 45L136 13L131 68" fill="#e9a06b"/><path d="M31 44L30 27L48 47M111 47L128 27L128 46" fill="#f9d7c0"/><ellipse cx="80" cy="85" rx="60" ry="49" fill="#e9a06b"/><path d="M22 79Q56 70 80 102Q104 70 138 79Q129 132 80 134Q31 132 22 79" fill="#fff3da"/>'+eyes:'<circle cx="80" cy="81" r="71" fill="#cf9254"/><circle cx="38" cy="39" r="19" fill="#edba6e"/><circle cx="122" cy="39" r="19" fill="#edba6e"/><circle cx="80" cy="84" r="52" fill="#ffdb8b"/><ellipse cx="80" cy="105" rx="24" ry="18" fill="#fff0c8"/>'+eyes;return `<svg class="animal ${cls}" viewBox="0 0 160 160" aria-hidden="true">${parts}</svg>`}
 const buddies=[['lion','Leo',t('Sư tử ham học','Curious lion')],['bunny','Mimi',t('Thỏ nhanh trí','Quick-thinking bunny')],['panda','Bamboo',t('Gấu trúc kiên trì','Patient panda')],['fox','Finn',t('Cáo tinh anh','Clever fox')]];const buddy=()=>state.buddy||'lion';
 function welcomeName(){return state.name==='Explorer'?t('bạn nhỏ','little explorer'):esc(state.name)}
 let soundEnabled=state.sound!==false,audioContext;function chime(ok){if(!soundEnabled)return;try{audioContext=audioContext||new(window.AudioContext||window.webkitAudioContext)();audioContext.resume();[ok?523:280,ok?659:230,ok?784:200].forEach((f,i)=>{const osc=audioContext.createOscillator(),gain=audioContext.createGain(),at=audioContext.currentTime+i*.09;osc.type='sine';osc.frequency.value=f;gain.gain.setValueAtTime(.045,at);gain.gain.exponentialRampToValueAtTime(.001,at+.18);osc.connect(gain);gain.connect(audioContext.destination);osc.start(at);osc.stop(at+.2)})}catch{}}
-const originalAnswer=answerQuiz;answerQuiz=function(ans,questionId){if(view!=='quiz'||!session||session.done||session.answered)return;const q=session.questions[session.index];if(questionId&&questionId!==q.id)return;chime(ans===q.answer);originalAnswer(ans,questionId)};
+const originalAnswer=answerQuiz;answerQuiz=function(ans,questionId){if(view!=='quiz'||!session||session.done||session.answered)return;const q=session.questions[session.index];if(questionId&&questionId!==q.id)return;chime(isAnswerMatch(ans,q.answer));originalAnswer(ans,questionId)};
 const originalShowQuiz=showQuiz;showQuiz=function(){originalShowQuiz();if(view!=='quiz'||session.done)return;const card=$('.narrow .card');if(!card)return;const guide=document.createElement('div');guide.className='quiz-companion';guide.innerHTML=`${animal(buddy())}<span>${t('Cứ từ từ, em làm được mà!','Take your time. You’ve got this!')}</span>`;card.prepend(guide);$$('[data-answer]').forEach((b,i)=>b.classList.add('answer-'+i));$('#clock')?.setAttribute('aria-live','off')};
 // Retry with shuffled choices rather than keeping the correct location fixed.
 function hint(q){if(q.detail)return q.detail;if(q.explanation)return q.explanation;const [type,op]=q.skill.split(':'),eq=q.explanation;if(type==='fraction')return eq+'\n'+(op==='+'||op==='-'?t('Quy đồng hai mẫu số, cộng hoặc trừ tử số, giữ mẫu số chung rồi rút gọn.','Find a common denominator, add or subtract the numerators, then simplify.'):op==='*'?t('Nhân tử với tử, mẫu với mẫu rồi rút gọn.','Multiply numerators and denominators, then simplify.'):t('Giữ phân số thứ nhất, đảo tử và mẫu phân số thứ hai rồi nhân.','Keep the first fraction, invert the second, then multiply.'));const match=q.q.match(/^(\d+) ([+−×÷]) (\d+)$/);if(match){const a=+match[1],b=+match[3];if(op==='+'&&b>=10){let tens=Math.floor(b/10)*10,ones=b%10;return `${eq}\n${a} + ${tens} = ${a+tens}\n${a+tens} + ${ones} = ${a+b}`};if(op==='-'&&b>=10){let tens=Math.floor(b/10)*10,ones=b%10;return `${eq}\n${a} − ${tens} = ${a-tens}\n${a-tens} − ${ones} = ${a-b}`};if(op==='*'&&b>=10){let tens=Math.floor(b/10)*10,ones=b%10;return `${eq}\n${a} × ${tens} = ${a*tens}\n${a} × ${ones} = ${a*ones}\n${a*tens} + ${a*ones} = ${a*b}`};if(op==='/')return `${eq}\n${b} × ${Math.floor(a/b)} = ${b*Math.floor(a/b)}${a%b?'\n'+a+' − '+b*Math.floor(a/b)+' = '+a%b:''}`;if(op==='*'&&b<=9)return eq+'\n'+Array.from({length:b},()=>a).join(' + ')+' = '+a*b}return eq+'\n'+(op==='+'?t('Tách thành phần nguyên và phần lẻ, rồi cộng từng phần.','Split into whole and fractional parts, then add.'):op==='-'?t('Tìm khoảng cách giữa hai số. Chú ý dấu âm và dấu phẩy.','Find the difference. Watch negative signs and decimal places.'):op==='*'?t('Tách một thừa số thành các phần nhỏ, nhân rồi cộng lại.','Split one factor, multiply each part, then add.'):t('Nhân ngược lại để kiểm tra kết quả.','Multiply back to check the answer.'))}
 const zooNav=nav;nav=function(v){zooNav(v);$('#app').classList.toggle('game-layout',view==='game');document.body.dataset.view=view};
-function initializeZoo(){document.title='NumiQuest · Vườn thú tính nhẩm';$('.brand').innerHTML=`<span class="brand-mark">${animal('lion')}</span><span class="brand-word">Numi<span>Quest</span><small data-vi="Cùng học, cùng chơi!" data-en="Learn a little. Play a lot!"></small></span>`;const sound=document.createElement('button');sound.id='soundToggle';sound.className='sound-toggle';sound.setAttribute('aria-label',t('Bật/tắt âm thanh','Toggle sound'));sound.textContent=soundEnabled?'♫':'♪';sound.setAttribute('aria-pressed',soundEnabled);sound.onclick=()=>{soundEnabled=!soundEnabled;state.sound=soundEnabled;save();sound.textContent=soundEnabled?'♫':'♪';sound.setAttribute('aria-pressed',soundEnabled);if(soundEnabled)chime(true)};$('#lang').before(sound);document.body.dataset.view='home';home();translate()}
+function initializeZoo(){document.title='NumiQuick · Luyện tính nhẩm vui';$('.brand').innerHTML=`<span class="brand-word">Numi<span>Quick</span><small data-vi="Cùng học, cùng chơi!" data-en="Learn a little. Play a lot!"></small></span>`;document.body.dataset.view='home';home();translate()}
 
 const originalAtlas=atlas;atlas=function(){originalAtlas();const note=$('#app>.notice');if(note){note.className='atlas-welcome';note.innerHTML=`${animal('panda')}<div><b>${t('Bamboo giữ hộ chiếu giúp em nhé!','Bamboo is looking after your passport!')}</b><p>${t('10 điểm đến đang chờ. Chọn một nước rồi thu thập đủ 4 mảnh để mở minh họa địa danh và tìm hiểu châu lục.','10 destinations await. Pick a country and collect 4 pieces to unlock its landmark illustration and discover its continent.')}</p></div>`}const art=$('.landmark');if(art)art.setAttribute('aria-label',t('Minh họa địa danh bằng biểu tượng','Symbolic landmark illustration'))};
 window.addEventListener('keydown',e=>{
@@ -628,6 +700,10 @@ window.addEventListener('keydown',e=>{
     return;
   }
   if(view==='quiz'){
+    if(session?.answered&&(e.key==='Enter'||e.key===' ')){
+      const nextBtn=$('#nextQuizBtn');
+      if(nextBtn){e.preventDefault();nextBtn.click();return}
+    }
     const q=session?.questions?.[session?.index];
     const type=q?.skill?.split(':')?.[0];
     const isNumpad=config.inputMode==='numpad'&&session?.kind!=='battle'&&type!=='remainder';
@@ -638,11 +714,15 @@ window.addEventListener('keydown',e=>{
       if(e.key==='.'){$('[data-np=","]')?.click();return}
       const b=$(`[data-np="${e.key}"]`);if(b&&!b.disabled){e.preventDefault();b.click();return}
     }else{
-      let i='abcd'.indexOf(e.key.toLowerCase());
+      const k=e.key.toLowerCase();
+      let i='abcd'.indexOf(k);
+      if(i<0)i='1234'.indexOf(k);
       if(i>=0){const b=$$('[data-answer]')[i];if(b&&!b.disabled){e.preventDefault();b.click()}}
     }
   }else if(view==='battle'){
-    let i='abcd'.indexOf(e.key.toLowerCase());
+    const k=e.key.toLowerCase();
+    let i='abcd'.indexOf(k);
+    if(i<0)i='1234'.indexOf(k);
     if(i>=0){const b=$$('[data-battle]')[i];if(b&&!b.disabled){e.preventDefault();b.click()}}
   }
 });
@@ -677,10 +757,10 @@ function setup(){
 
   function renderGradeButtons(lvl, current){
     if(lvl === 'custom'){
-      return `<div class="grade-custom-banner"><span>⚙️</span><div><b>${t('Chế độ Tùy chỉnh tự do','Free Custom Mode')}</b><p>${t('Tự do kết hợp phép tính (+, −, ×, ÷), loại số và số chữ số ở các mục 1–5 bên dưới.','Freely combine operations (+, −, ×, ÷), number types and digits in sections 1–5 below.')}</p></div></div>`;
+      return `<div class="grade-custom-banner"><div><b>${t('Chế độ Tùy chỉnh tự do','Free Custom Mode')}</b><p>${t('Tự do kết hợp phép tính (+, −, ×, ÷), loại số và số chữ số ở các mục 1–5 bên dưới.','Freely combine operations (+, −, ×, ÷), number types and digits in sections 1–5 below.')}</p></div></div>`;
     }
     const grades = lvl === 'secondary' ? [6,7,8,9] : [1,2,3,4,5];
-    return grades.map(g=>`<button type="button" class="grade-tab ${current===g?'active':''}" data-grade="${g}">${NUMI_GRADES[g]?NUMI_GRADES[g].icon:'🌱'} ${lang==='vi'?NUMI_GRADES[g].name:NUMI_GRADES[g].enName}</button>`).join('');
+    return grades.map(g=>`<button type="button" class="grade-tab ${current===g?'active':''}" data-grade="${g}">${lang==='vi'?NUMI_GRADES[g].name:NUMI_GRADES[g].enName}</button>`).join('');
   }
 
   $('#app').innerHTML=`<div class="narrow">
@@ -688,13 +768,13 @@ function setup(){
     
     <div class="grade-picker-box card">
       <div class="grade-header">
-        <span class="grade-title">🎓 ${t('Lớp học theo chuẩn GDPT 2018:','Grade level (Curriculum Grades 1–9):')}</span>
+        <span class="grade-title">${t('Lớp học theo chuẩn GDPT 2018:','Grade level (Curriculum Grades 1–9):')}</span>
         <span class="grade-badge" id="gradeActiveBadge">${gradeInfo ? (lang==='vi'?gradeInfo.name:gradeInfo.enName) : t('Tùy chỉnh','Custom')}</span>
       </div>
       <div class="level-seg-control" role="tablist" aria-label="${t('Bậc học','Education level')}">
-        <button type="button" class="level-seg-btn ${activeLevel==='primary'?'active':''}" data-level="primary" role="tab" aria-selected="${activeLevel==='primary'}">🌱 ${t('Tiểu học (Lớp 1–5)','Primary (Grades 1–5)')}</button>
-        <button type="button" class="level-seg-btn ${activeLevel==='secondary'?'active':''}" data-level="secondary" role="tab" aria-selected="${activeLevel==='secondary'}">⚡ ${t('THCS (Lớp 6–9)','Secondary (Grades 6–9)')}</button>
-        <button type="button" class="level-seg-btn ${activeLevel==='custom'?'active':''}" data-level="custom" role="tab" aria-selected="${activeLevel==='custom'}">⚙️ ${t('Tùy chỉnh','Custom')}</button>
+        <button type="button" class="level-seg-btn ${activeLevel==='primary'?'active':''}" data-level="primary" role="tab" aria-selected="${activeLevel==='primary'}">${t('Tiểu học (Lớp 1–5)','Primary (Grades 1–5)')}</button>
+        <button type="button" class="level-seg-btn ${activeLevel==='secondary'?'active':''}" data-level="secondary" role="tab" aria-selected="${activeLevel==='secondary'}">${t('THCS (Lớp 6–9)','Secondary (Grades 6–9)')}</button>
+        <button type="button" class="level-seg-btn ${activeLevel==='custom'?'active':''}" data-level="custom" role="tab" aria-selected="${activeLevel==='custom'}">${t('Tùy chỉnh','Custom')}</button>
       </div>
       <div class="grade-subgrid" id="gradeSubgrid">
         ${renderGradeButtons(activeLevel, curGrade)}
@@ -749,14 +829,14 @@ function setup(){
       <fieldset>
         <legend><span>5</span>${t('Cách trả lời','Answer mode')}</legend>
         <div class="type-picks">
-          <label><input type="radio" name="inputMode" value="choices" ${config.inputMode!=='numpad'?'checked':''}><span>🔘 ${t('Trắc nghiệm 4 đáp án','Multiple choice')}</span></label>
-          <label><input type="radio" name="inputMode" value="numpad" ${config.inputMode==='numpad'?'checked':''}><span>🔢 ${t('Bàn phím số tự nhập','Numpad input')}</span></label>
+          <label><input type="radio" name="inputMode" value="choices" ${config.inputMode!=='numpad'?'checked':''}><span>${t('Trắc nghiệm 4 đáp án','Multiple choice')}</span></label>
+          <label><input type="radio" name="inputMode" value="numpad" ${config.inputMode==='numpad'?'checked':''}><span>${t('Bàn phím số tự nhập','Numpad input')}</span></label>
         </div>
       </fieldset>
 
       <div id="lessonSummary" class="lesson-summary" aria-live="polite"></div>
       <button type="submit" class="primary wide">${t('Bắt đầu học','Let’s start')} →</button>
-      <button type="button" id="openWorksheetBtn" class="wide" style="margin-top:8px">📄 ${t('In phiếu bài tập (PDF)','Print worksheet (PDF)')}</button>
+      <button type="button" id="openWorksheetBtn" class="wide" style="margin-top:8px">${t('In phiếu bài tập (PDF)','Print worksheet (PDF)')}</button>
       <p class="settings-hint small">${t('Câu sai tự vào vườn hoa. Không cần chọn số chậu.','Missed questions automatically become flower pots. No pot settings needed.')}</p>
     </form>
     <div class="setup-sticky-cta" id="setupStickyBar">
@@ -764,7 +844,7 @@ function setup(){
         <span id="stickyGradePill" class="sticky-grade-pill">${config.grade && NUMI_GRADES[config.grade] ? (lang==='vi'?NUMI_GRADES[config.grade].name:NUMI_GRADES[config.grade].enName) : t('Tùy chỉnh','Custom')}</span>
         <span id="stickySummaryText" class="sticky-sub-text">${config.count||10} ${t('câu','questions')} · ${config.seconds||15}s</span>
       </div>
-      <button type="button" id="stickyStartBtn" class="primary setup-sticky-btn">⚡ ${t('Bắt đầu học','Start Practice')} →</button>
+      <button type="button" id="stickyStartBtn" class="primary setup-sticky-btn">${t('Bắt đầu học','Start Practice')} →</button>
     </div>
   </div>`;
 
@@ -940,7 +1020,7 @@ function generate(c){
     const opts=new Set([ansStr,String(base*exp),String(-val),String(val+ri(1,3)),String(val-ri(1,3))]);
     opts.delete('');
     const expText=`${qStr} = ${ansStr}\n• ${t('Lũy thừa bậc '+exp+': nhân '+exp+' thừa số '+base+' với nhau.','Power of '+exp+': multiply '+exp+' factors of '+base+' together.')}`;
-    return {id:crypto.randomUUID(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'power:^',config:{...cfg,type,grade},explanation:expText};
+    return {id:uid(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'power:^',config:{...cfg,type,grade},explanation:expText};
   }
   if(grade===9&&Math.random()<0.28){
     const root=ri(2,15);
@@ -953,7 +1033,7 @@ function generate(c){
     const ansStr=String(val);
     const opts=new Set([ansStr,String(root),String(val+1),String(val-1),String(square+offset)]);
     const expText=`${qStr} = ${ansStr}\n• ${t('Căn bậc hai số học: √'+square+' = '+root+' (vì '+root+' > 0 và '+root+'² = '+square+')','Arithmetic square root: √'+square+' = '+root+' (since '+root+' > 0 and '+root+'² = '+square+')')}`;
-    return {id:crypto.randomUUID(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'sqrt:√',config:{...cfg,type,grade},explanation:expText};
+    return {id:uid(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'sqrt:√',config:{...cfg,type,grade},explanation:expText};
   }
 
   if(grade===1){
@@ -1064,7 +1144,7 @@ function generate(c){
     options=smartDistractors(a,b,op,type,val,display);
     explanation=detailedExplanation(q,a,b,op,type,answer,sym);
   }
-  return {id:crypto.randomUUID(),q,answer,options:shuffle(options),skill:type+':'+op,config:{...cfg,type,grade},explanation};
+  return {id:uid(),q,answer,options:shuffle(options),skill:type+':'+op,config:{...cfg,type,grade},explanation};
 }
 if(typeof window!=='undefined')window.generate=generate;
 if(typeof global!=='undefined')global.generate=generate;

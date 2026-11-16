@@ -11,7 +11,7 @@ function formatAdminTime(iso) {
   if (isNaN(d.getTime())) return t('Chưa xác định', 'Unknown');
   const now = Date.now();
   const diffSec = Math.floor((now - d.getTime()) / 1000);
-  if (diffSec < 60) return t('Vừa xong ⚡', 'Just now ⚡');
+  if (diffSec < 60) return t('Vừa xong', 'Just now');
   if (diffSec < 3600) return `${Math.floor(diffSec / 60)} ${t('phút trước', 'mins ago')}`;
   if (diffSec < 86400) return `${Math.floor(diffSec / 3600)} ${t('giờ trước', 'hours ago')}`;
   if (diffSec < 86400 * 3) return `${Math.floor(diffSec / 86400)} ${t('ngày trước', 'days ago')}`;
@@ -113,11 +113,10 @@ function renderAdmin() {
 
   if (!isAdmin) {
     $('#app').innerHTML = `<div class="narrow card admin-gate-card">
-      <div style="font-size:48px;margin-bottom:12px">🔒</div>
       <h2>${t('Yêu cầu quyền Quản trị viên','Administrator Access Required')}</h2>
       <p class="muted">${t('Vui lòng đăng nhập bằng tài khoản Quản trị viên (admin) để quản lý danh sách học sinh và theo dõi tiến độ.','Please sign in with an Administrator account (admin) to monitor student activity.')}</p>
       <div class="actions">
-        <button class="primary wide" onclick="openAccount('login')">🔑 ${t('Đăng nhập Quản trị viên (admin)','Sign in as Admin')}</button>
+        <button class="primary wide" onclick="openAccount('login')">${t('Đăng nhập Quản trị viên (admin)','Sign in as Admin')}</button>
         <button class="wide" onclick="nav('home')">${t('Về trang chủ','Back to Home')}</button>
       </div>
     </div>`;
@@ -142,27 +141,25 @@ function renderAdmin() {
       <div class="admin-title-row">
         <div>
           <span class="eyebrow">NUMIQUICK · ${t('HỆ THỐNG QUẢN TRỊ','ADMINISTRATION SYSTEM')}</span>
-          <h1 class="admin-main-title">🛡️ ${t('Trung tâm Quản trị Học sinh','Student Learning Management')}</h1>
+          <h1 class="admin-main-title">${t('Trung tâm Quản trị Học sinh','Student Learning Management')}</h1>
           <p class="muted">${t('Kiểm soát danh sách học sinh, thời gian đăng nhập, khối lớp và toàn bộ tiến độ làm bài.','Monitor student logins, grade levels, and overall learning progression.')}</p>
         </div>
         <div class="admin-top-actions">
-          <button type="button" class="primary admin-btn" id="adminAddStudentBtn">➕ ${t('Thêm học sinh','Add Student')}</button>
-          <button type="button" class="admin-btn" id="adminExportBtn">📥 ${t('Xuất Excel / CSV','Export CSV')}</button>
-          <button type="button" class="admin-btn" id="adminRefreshBtn" title="${t('Làm mới dữ liệu','Refresh')}">🔄</button>
+          <button type="button" class="primary admin-btn" id="adminAddStudentBtn">+ ${t('Thêm học sinh','Add Student')}</button>
+          <button type="button" class="admin-btn" id="adminExportBtn">${t('Xuất Excel / CSV','Export CSV')}</button>
+          <button type="button" class="admin-btn" id="adminRefreshBtn" title="${t('Làm mới dữ liệu','Refresh')}">${t('Làm mới','Refresh')}</button>
         </div>
       </div>
 
       <div class="admin-kpi-grid">
         <div class="admin-kpi-card">
-          <span class="kpi-icon">👥</span>
           <div class="kpi-body">
             <small>${t('Tổng số học sinh','Total Students')}</small>
             <strong>${totalStudents}</strong>
-            <span class="kpi-subtext">🟢 ${activeRecent} ${t('hoạt động gần đây','active recently')}</span>
+            <span class="kpi-subtext">${activeRecent} ${t('hoạt động gần đây','active recently')}</span>
           </div>
         </div>
         <div class="admin-kpi-card">
-          <span class="kpi-icon">📝</span>
           <div class="kpi-body">
             <small>${t('Tổng số câu đã giải','Questions Solved')}</small>
             <strong>${totalQuestions.toLocaleString()}</strong>
@@ -170,7 +167,6 @@ function renderAdmin() {
           </div>
         </div>
         <div class="admin-kpi-card">
-          <span class="kpi-icon">🎯</span>
           <div class="kpi-body">
             <small>${t('Tỉ lệ đúng toàn trường','Average Accuracy')}</small>
             <strong style="color:${avgAccuracy>=80?'#2b8a3e':avgAccuracy>=65?'#d97706':'#e03131'}">${avgAccuracy}%</strong>
@@ -178,7 +174,6 @@ function renderAdmin() {
           </div>
         </div>
         <div class="admin-kpi-card">
-          <span class="kpi-icon">🔥</span>
           <div class="kpi-body">
             <small>${t('Tổng chuỗi ngày học','Total Streak Days')}</small>
             <strong>${totalStreakDays} ${t('ngày','days')}</strong>
@@ -190,30 +185,28 @@ function renderAdmin() {
 
     <div class="card admin-filter-bar">
       <div class="admin-search-wrap">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="adminSearchInput" placeholder="${t('Tìm kiếm theo tên học sinh hoặc @username...','Search by name or @username...')}" value="${esc(adminSearchQuery)}">
+        <input type="text" id="adminSearchInput" placeholder="${t('Tìm kiếm theo tên học sinh hoặc @username...','Search by name or @username...')}" value="${esc(adminSearchQuery)}" style="padding-left:14px">
         ${adminSearchQuery ? `<button type="button" id="adminClearSearchBtn" class="clear-search-btn">✕</button>` : ''}
       </div>
       <div class="admin-grade-chips-scroll">
-        <button type="button" class="admin-grade-chip ${adminGradeFilter==='all'?'active':''}" data-admin-grade="all">🎓 ${t('Tất cả','All')} (${allSummary.length})</button>
+        <button type="button" class="admin-grade-chip ${adminGradeFilter==='all'?'active':''}" data-admin-grade="all">${t('Tất cả','All')} (${allSummary.length})</button>
         ${[1,2,3,4,5,6,7,8,9].map(g=>{
           const count = allSummary.filter(s=>s.grade===g).length;
-          const gInfo = typeof NUMI_GRADES!=='undefined'&&NUMI_GRADES[g];
-          return `<button type="button" class="admin-grade-chip ${adminGradeFilter===String(g)?'active':''}" data-admin-grade="${g}">${gInfo?gInfo.icon:'🌱'} Lớp ${g} <span class="chip-count">(${count})</span></button>`;
+          return `<button type="button" class="admin-grade-chip ${adminGradeFilter===String(g)?'active':''}" data-admin-grade="${g}">Lớp ${g} <span class="chip-count">(${count})</span></button>`;
         }).join('')}
       </div>
       <div class="admin-filters">
         <select id="adminGradeSelect" class="admin-select admin-desktop-only">
-          <option value="all" ${adminGradeFilter==='all'?'selected':''}>🎓 ${t('Tất cả khối lớp (1–9)','All Grades (1–9)')}</option>
-          ${[1,2,3,4,5,6,7,8,9].map(g=>`<option value="${g}" ${adminGradeFilter===String(g)?'selected':''}>${typeof NUMI_GRADES!=='undefined'&&NUMI_GRADES[g]?NUMI_GRADES[g].icon:'🌱'} ${typeof NUMI_GRADES!=='undefined'&&NUMI_GRADES[g]?(currentLang()==='vi'?NUMI_GRADES[g].name:NUMI_GRADES[g].enName):('Lớp '+g)}</option>`).join('')}
+          <option value="all" ${adminGradeFilter==='all'?'selected':''}>${t('Tất cả khối lớp (1–9)','All Grades (1–9)')}</option>
+          ${[1,2,3,4,5,6,7,8,9].map(g=>`<option value="${g}" ${adminGradeFilter===String(g)?'selected':''}>${typeof NUMI_GRADES!=='undefined'&&NUMI_GRADES[g]?(currentLang()==='vi'?NUMI_GRADES[g].name:NUMI_GRADES[g].enName):('Lớp '+g)}</option>`).join('')}
         </select>
         <select id="adminSortSelect" class="admin-select">
-          <option value="lastLogin" ${adminSortBy==='lastLogin'?'selected':''}>🕒 ${t('Đăng nhập gần nhất','Recent Login')}</option>
-          <option value="xp" ${adminSortBy==='xp'?'selected':''}>⭐ ${t('Điểm XP cao nhất','Highest XP')}</option>
-          <option value="accuracy" ${adminSortBy==='accuracy'?'selected':''}>🎯 ${t('Tỉ lệ đúng cao nhất','Best Accuracy')}</option>
-          <option value="sessions" ${adminSortBy==='sessions'?'selected':''}>📝 ${t('Làm nhiều bài nhất','Most Sessions')}</option>
-          <option value="grade" ${adminSortBy==='grade'?'selected':''}>🎓 ${t('Khối lớp (1→9)','Grade (1→9)')}</option>
-          <option value="name" ${adminSortBy==='name'?'selected':''}>🔤 ${t('Tên A → Z','Name A → Z')}</option>
+          <option value="lastLogin" ${adminSortBy==='lastLogin'?'selected':''}>${t('Đăng nhập gần nhất','Recent Login')}</option>
+          <option value="xp" ${adminSortBy==='xp'?'selected':''}>${t('Điểm XP cao nhất','Highest XP')}</option>
+          <option value="accuracy" ${adminSortBy==='accuracy'?'selected':''}>${t('Tỉ lệ đúng cao nhất','Best Accuracy')}</option>
+          <option value="sessions" ${adminSortBy==='sessions'?'selected':''}>${t('Làm nhiều bài nhất','Most Sessions')}</option>
+          <option value="grade" ${adminSortBy==='grade'?'selected':''}>${t('Khối lớp (1→9)','Grade (1→9)')}</option>
+          <option value="name" ${adminSortBy==='name'?'selected':''}>${t('Tên A → Z','Name A → Z')}</option>
         </select>
       </div>
     </div>
@@ -221,7 +214,7 @@ function renderAdmin() {
     <div class="card admin-table-card">
       <div class="admin-table-header-row">
         <div>
-          <h3>👥 ${t('Danh sách học sinh & Tiến độ','Student Directory & Progress')} (${filteredList.length})</h3>
+          <h3>${t('Danh sách học sinh & Tiến độ','Student Directory & Progress')} (${filteredList.length})</h3>
           <small class="muted">${t('Theo dõi thời gian đăng nhập thực tế, số câu đúng/sai và hỗ trợ đổi mã PIN cho bé.','Track real login times, accuracy rates, and reset PINs when requested.')}</small>
         </div>
       </div>
@@ -242,7 +235,6 @@ function renderAdmin() {
             ${filteredList.map(s => {
               const gradeInfo = typeof NUMI_GRADES !== 'undefined' && NUMI_GRADES[s.grade];
               const gradeLabel = gradeInfo ? (currentLang() === 'vi' ? gradeInfo.name : gradeInfo.enName) : `Lớp ${s.grade}`;
-              const gradeIcon = gradeInfo ? gradeInfo.icon : '🌱';
               const isAdminUser = s.role === 'admin' || s.username === 'admin';
               const accClass = s.accuracy >= 80 ? 'acc-high' : s.accuracy >= 65 ? 'acc-med' : 'acc-low';
 
@@ -253,16 +245,16 @@ function renderAdmin() {
                     <div class="student-meta">
                       <b class="student-name">${esc(s.name)}</b>
                       <span class="student-uname">@${esc(s.username)}</span>
-                      ${isAdminUser ? `<span class="role-badge admin-badge">🛡️ ${t('Quản trị viên','Admin')}</span>` : `<span class="role-badge student-badge">🎓 ${t('Học sinh','Student')}</span>`}
+                      ${isAdminUser ? `<span class="role-badge admin-badge">${t('Quản trị viên','Admin')}</span>` : `<span class="role-badge student-badge">${t('Học sinh','Student')}</span>`}
                     </div>
                   </div>
                 </td>
                 <td>
-                  <span class="grade-tag">${gradeIcon} <b>${gradeLabel}</b></span>
+                  <span class="grade-tag"><b>${gradeLabel}</b></span>
                 </td>
                 <td>
                   <div class="login-meta">
-                    <span class="login-relative">🕒 ${formatAdminTime(s.lastLogin)}</span>
+                    <span class="login-relative">${formatAdminTime(s.lastLogin)}</span>
                     <small class="login-detail">${s.loginCount > 0 ? `${s.loginCount} ${t('lần vào học','logins')}` : t('Chưa đăng nhập lần nào','Never logged in')}</small>
                   </div>
                 </td>
@@ -270,23 +262,23 @@ function renderAdmin() {
                   <div class="progress-meta">
                     <div class="progress-main-row">
                       <span class="user-level-badge">Lv.${s.userLevel}</span>
-                      <b>⭐ ${s.xp} XP</b>
+                      <b>${s.xp} XP</b>
                       <span class="acc-pill ${accClass}">${s.accuracy}% ${t('đúng','correct')}</span>
                     </div>
                     <div class="progress-sub-row">
-                      <span>📝 ${s.totalSessions} ${t('bài','lessons')} (${s.totalAnswered} ${t('câu','qs')})</span>
-                      <span>⚡ ${s.avgSpeed}s/${t('câu','q')}</span>
-                      <span>🔥 ${s.streak}d</span>
-                      ${s.mistakesCount > 0 ? `<span class="mistake-pill">🌼 ${s.mistakesCount} ${t('câu sai','mistakes')}</span>` : ''}
+                      <span>${s.totalSessions} ${t('bài','lessons')} (${s.totalAnswered} ${t('câu','qs')})</span>
+                      <span>${s.avgSpeed}s/${t('câu','q')}</span>
+                      <span>${s.streak} ${t('ngày','d')}</span>
+                      ${s.mistakesCount > 0 ? `<span class="mistake-pill">${s.mistakesCount} ${t('câu sai','mistakes')}</span>` : ''}
                     </div>
                   </div>
                 </td>
                 <td>
                   <div class="action-buttons-wrap">
-                    <button type="button" class="admin-act-btn btn-view" data-action="view" data-user="${esc(s.username)}" title="${t('Xem chi tiết bài làm & câu sai','View detailed drill-down')}">👁️ ${t('Chi tiết','Details')}</button>
-                    <button type="button" class="admin-act-btn btn-pin" data-action="pin" data-user="${esc(s.username)}" title="${t('Đổi mã PIN cho học sinh','Reset PIN')}">🔑 ${t('Mã PIN','PIN')}</button>
-                    ${!isAdminUser ? `<button type="button" class="admin-act-btn btn-switch" data-action="switch" data-user="${esc(s.username)}" title="${t('Đăng nhập vào tài khoản học sinh','Switch to student profile')}">🚀 ${t('Vào học','Open')}</button>` : ''}
-                    ${!isAdminUser ? `<button type="button" class="admin-act-btn btn-del" data-action="delete" data-user="${esc(s.username)}" title="${t('Xóa tài khoản','Delete account')}">🗑️</button>` : ''}
+                    <button type="button" class="admin-act-btn btn-view" data-action="view" data-user="${esc(s.username)}" title="${t('Xem chi tiết bài làm & câu sai','View detailed drill-down')}">${t('Chi tiết','Details')}</button>
+                    <button type="button" class="admin-act-btn btn-pin" data-action="pin" data-user="${esc(s.username)}" title="${t('Đổi mã PIN cho học sinh','Reset PIN')}">${t('Mã PIN','PIN')}</button>
+                    ${!isAdminUser ? `<button type="button" class="admin-act-btn btn-switch" data-action="switch" data-user="${esc(s.username)}" title="${t('Đăng nhập vào tài khoản học sinh','Switch to student profile')}">${t('Vào học','Open')}</button>` : ''}
+                    ${!isAdminUser ? `<button type="button" class="admin-act-btn btn-del" data-action="delete" data-user="${esc(s.username)}" title="${t('Xóa tài khoản','Delete account')}">${t('Xóa','Delete')}</button>` : ''}
                   </div>
                 </td>
               </tr>`;
@@ -301,7 +293,6 @@ function renderAdmin() {
         ${filteredList.map(s => {
           const gradeInfo = typeof NUMI_GRADES !== 'undefined' && NUMI_GRADES[s.grade];
           const gradeLabel = gradeInfo ? (currentLang() === 'vi' ? gradeInfo.name : gradeInfo.enName) : `Lớp ${s.grade}`;
-          const gradeIcon = gradeInfo ? gradeInfo.icon : '🌱';
           const isAdminUser = s.role === 'admin' || s.username === 'admin';
           const accClass = s.accuracy >= 80 ? 'acc-high' : s.accuracy >= 65 ? 'acc-med' : 'acc-low';
 
@@ -312,12 +303,12 @@ function renderAdmin() {
                 <div class="student-meta">
                   <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
                     <b class="student-name">${esc(s.name)}</b>
-                    ${isAdminUser ? `<span class="role-badge admin-badge">🛡️ Admin</span>` : `<span class="role-badge student-badge">🎓 HS</span>`}
+                    ${isAdminUser ? `<span class="role-badge admin-badge">Admin</span>` : `<span class="role-badge student-badge">HS</span>`}
                   </div>
                   <span class="student-uname">@${esc(s.username)}</span>
                 </div>
               </div>
-              <span class="grade-tag">${gradeIcon} <b>${gradeLabel}</b></span>
+              <span class="grade-tag"><b>${gradeLabel}</b></span>
             </div>
 
             <div class="admin-card-stats-grid">
@@ -331,21 +322,21 @@ function renderAdmin() {
               </div>
               <div class="admin-card-stat">
                 <small>${t('Đăng nhập','Last Login')}</small>
-                <span class="stat-line-text">🕒 ${formatAdminTime(s.lastLogin)}</span>
+                <span class="stat-line-text">${formatAdminTime(s.lastLogin)}</span>
                 <span class="stat-meta-note">${s.loginCount > 0 ? `${s.loginCount} ${t('lần vào học','logins')}` : t('Chưa vào','Never')}</span>
               </div>
               <div class="admin-card-stat">
                 <small>${t('Bài làm & Lỗi','Lessons & Errors')}</small>
-                <span class="stat-line-text">📝 ${s.totalSessions} ${t('bài','lessons')} (${s.totalAnswered} ${t('câu','qs')})</span>
-                ${s.mistakesCount > 0 ? `<span class="mistake-pill" style="margin-top:2px;display:inline-block">🌼 ${s.mistakesCount} ${t('câu sai','mistakes')}</span>` : `<span class="stat-meta-note" style="color:#4a7758">✓ 0 ${t('lỗi tồn','errors')}</span>`}
+                <span class="stat-line-text">${s.totalSessions} ${t('bài','lessons')} (${s.totalAnswered} ${t('câu','qs')})</span>
+                ${s.mistakesCount > 0 ? `<span class="mistake-pill" style="margin-top:2px;display:inline-block">${s.mistakesCount} ${t('câu sai','mistakes')}</span>` : `<span class="stat-meta-note" style="color:#4a7758">0 ${t('lỗi tồn','errors')}</span>`}
               </div>
             </div>
 
             <div class="admin-card-actions">
-              <button type="button" class="admin-act-btn btn-view" data-action="view" data-user="${esc(s.username)}">👁️ ${t('Chi tiết','Details')}</button>
-              <button type="button" class="admin-act-btn btn-pin" data-action="pin" data-user="${esc(s.username)}">🔑 ${t('Mã PIN','PIN')}</button>
-              ${!isAdminUser ? `<button type="button" class="admin-act-btn btn-switch" data-action="switch" data-user="${esc(s.username)}">🚀 ${t('Vào học','Open')}</button>` : ''}
-              ${!isAdminUser ? `<button type="button" class="admin-act-btn btn-del" data-action="delete" data-user="${esc(s.username)}">🗑️</button>` : ''}
+              <button type="button" class="admin-act-btn btn-view" data-action="view" data-user="${esc(s.username)}">${t('Chi tiết','Details')}</button>
+              <button type="button" class="admin-act-btn btn-pin" data-action="pin" data-user="${esc(s.username)}">${t('Mã PIN','PIN')}</button>
+              ${!isAdminUser ? `<button type="button" class="admin-act-btn btn-switch" data-action="switch" data-user="${esc(s.username)}">${t('Vào học','Open')}</button>` : ''}
+              ${!isAdminUser ? `<button type="button" class="admin-act-btn btn-del" data-action="delete" data-user="${esc(s.username)}">${t('Xóa','Del')}</button>` : ''}
             </div>
           </div>`;
         }).join('')}
@@ -433,15 +424,21 @@ function adminExportCSV(students) {
     'Số câu sai cần ôn (Vườn hoa)'
   ];
 
+  const csvSafe = val => {
+    let s = String(val ?? '').replace(/"/g, '""');
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+    return `"${s}"`;
+  };
+
   const rows = students.map((s, i) => [
     i + 1,
-    `"${(s.name || '').replace(/"/g, '""')}"`,
-    `"${s.username}"`,
-    `"${s.password || ''}"`,
-    `"Lớp ${s.grade}"`,
-    `"${s.role === 'admin' ? 'Quản trị viên' : 'Học sinh'}"`,
-    `"${s.createdAt ? new Date(s.createdAt).toLocaleString('vi-VN') : ''}"`,
-    `"${s.lastLogin ? new Date(s.lastLogin).toLocaleString('vi-VN') : 'Chưa đăng nhập'}"`,
+    csvSafe(s.name || ''),
+    csvSafe(s.username),
+    csvSafe(s.password || ''),
+    csvSafe(`Lớp ${s.grade}`),
+    csvSafe(s.role === 'admin' ? 'Quản trị viên' : 'Học sinh'),
+    csvSafe(s.createdAt ? new Date(s.createdAt).toLocaleString('vi-VN') : ''),
+    csvSafe(s.lastLogin ? new Date(s.lastLogin).toLocaleString('vi-VN') : 'Chưa đăng nhập'),
     s.loginCount || 0,
     s.userLevel,
     s.xp,
@@ -461,21 +458,21 @@ function adminExportCSV(students) {
   a.download = `NumiQuick-Bao-Cao-Hoc-Sinh-${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1500);
-  toast(t('Đã xuất báo cáo học sinh thành công! 📊', 'Exported student report successfully! 📊'));
+  toast(t('Đã xuất báo cáo học sinh thành công!', 'Exported student report successfully!'));
 }
 
 async function adminResetPinModal(username) {
   const users = getLocalUsers(), user = users[username];
   if (!user) return;
 
-  modal(`<h2>🔑 ${t('Đổi mã PIN cho ' + user.name, 'Reset PIN for ' + user.name)}</h2>
+  modal(`<h2>${t('Đổi mã PIN cho ' + user.name, 'Reset PIN for ' + user.name)}</h2>
   <p class="muted">${t('Nhập mã PIN hoặc mật khẩu mới cho học sinh @' + username + ' (tối thiểu 4 ký tự):', 'Enter new PIN or password for student @' + username + ' (min 4 characters):')}</p>
   <div style="margin:16px 0">
     <label style="display:block;margin-bottom:6px;font-weight:700;font-size:13px;color:#3b5e39">${t('Mật khẩu / Mã PIN mới:','New PIN/Password:')}</label>
     <input type="text" id="adminNewPinInput" minlength="4" value="${user.password || '1234'}" placeholder="••••" style="width:100%;font-size:20px;padding:10px 14px;border-radius:12px;border:2px solid #b8dca5;text-align:center;font-weight:800;letter-spacing:2px">
   </div>
   <div class="actions">
-    <button class="primary" id="confirmResetPinBtn">${t('Lưu mã PIN mới ✔','Save New PIN ✔')}</button>
+    <button class="primary" id="confirmResetPinBtn">${t('Lưu mã PIN mới','Save New PIN')}</button>
     <button onclick="$('#modal').close()">${t('Hủy','Cancel')}</button>
   </div>`);
 
@@ -488,9 +485,10 @@ async function adminResetPinModal(username) {
     const hash = await hashPassword(newPin);
     users[username].password = newPin;
     users[username].hash = hash;
+    users[username].passwordChanged = true;
     saveLocalUsers(users);
     $('#modal').close();
-    toast(t('Đã đổi mã PIN cho ' + user.name + ' thành: ' + newPin + ' 🔑', 'PIN updated to: ' + newPin + ' 🔑'));
+    toast(t('Đã đổi mã PIN cho ' + user.name + ' thành: ' + newPin, 'PIN updated to: ' + newPin));
     renderAdmin();
   };
 }
@@ -548,12 +546,12 @@ async function adminSwitchToStudent(username) {
   if (typeof syncUserGradeToConfig === 'function') syncUserGradeToConfig(user.grade);
   cloudBadge();
   nav('profile');
-  toast(t('Đang xem giao diện học của: ' + user.name + ' 👤 (Chuyển về admin trong Hồ sơ bất cứ lúc nào)', 'Viewing as: ' + user.name + ' 👤'));
+  toast(t('Đang xem giao diện học của: ' + user.name + ' (Chuyển về admin trong Hồ sơ bất cứ lúc nào)', 'Viewing as: ' + user.name));
 }
 
 function adminAddStudentModal() {
   let chosenAvatar = 'bunny';
-  modal(`<h2>➕ ${t('Thêm tài khoản học sinh mới','Add New Student Account')}</h2>
+  modal(`<h2>${t('Thêm tài khoản học sinh mới','Add New Student Account')}</h2>
   <p class="muted">${t('Tạo tài khoản để theo dõi tiến độ học tập của bé:','Create profile to track student learning progress:')}</p>
   <form id="adminAddStudentForm" style="margin-top:14px;display:flex;flex-direction:column;gap:12px">
     <label style="font-weight:700;font-size:13px;color:#3b5e39">${t('Họ và tên học sinh (VD: Nguyễn Minh Khôi):','Full Name:')}
@@ -567,18 +565,18 @@ function adminAddStudentModal() {
     </label>
     <label style="font-weight:700;font-size:13px;color:#3b5e39">${t('Khối lớp hiện tại:','Current Grade Level:')}
       <select name="grade" style="width:100%;font-size:15px;padding:9px 12px;border-radius:10px;border:1.5px solid #c2dfae;margin-top:4px;background:#fff">
-        ${[1,2,3,4,5,6,7,8,9].map(g => `<option value="${g}">${typeof NUMI_GRADES!=='undefined'&&NUMI_GRADES[g]?NUMI_GRADES[g].icon:'🌱'} ${typeof NUMI_GRADES!=='undefined'&&NUMI_GRADES[g]?(currentLang()==='vi'?NUMI_GRADES[g].name:NUMI_GRADES[g].enName):('Lớp '+g)}</option>`).join('')}
+        ${[1,2,3,4,5,6,7,8,9].map(g => `<option value="${g}">${typeof NUMI_GRADES!=='undefined'&&NUMI_GRADES[g]?(currentLang()==='vi'?NUMI_GRADES[g].name:NUMI_GRADES[g].enName):('Lớp '+g)}</option>`).join('')}
       </select>
     </label>
     <div>
       <span style="font-weight:700;font-size:13px;color:#3b5e39;display:block;margin-bottom:6px">${t('Chọn bạn thú đồng hành:','Choose study buddy:')}</span>
       <div class="buddy-choices">
-        ${[['bunny','Thỏ Mimi 🐰'],['panda','Gấu Baobao 🐼'],['fox','Cáo Kiki 🦊'],['lion','Sư tử Leo 🦁']].map(([k,label])=>`<button type="button" data-admin-avatar="${k}" class="${k===chosenAvatar?'chosen':''}">${animal(k)}<span>${label}</span></button>`).join('')}
+        ${[['bunny','Thỏ Mimi'],['panda','Gấu Baobao'],['fox','Cáo Kiki'],['lion','Sư tử Leo']].map(([k,label])=>`<button type="button" data-admin-avatar="${k}" class="${k===chosenAvatar?'chosen':''}">${animal(k)}<span>${label}</span></button>`).join('')}
       </div>
     </div>
     <p id="adminAddError" class="danger" style="margin:4px 0;font-weight:700"></p>
     <div class="actions">
-      <button type="submit" class="primary">${t('Tạo tài khoản học sinh ✔','Create Student Account ✔')}</button>
+      <button type="submit" class="primary">${t('Tạo tài khoản học sinh','Create Student Account')}</button>
       <button type="button" onclick="$('#modal').close()">${t('Hủy','Cancel')}</button>
     </div>
   </form>`);
@@ -633,6 +631,7 @@ function adminAddStudentModal() {
       buddy: chosenAvatar,
       xp: 0,
       best: 0,
+      pieces: {},
       streak: { count: 0, lastDate: '' },
       history: [],
       mistakes: [],
@@ -641,7 +640,7 @@ function adminAddStudentModal() {
     try { localStorage.setItem('numi-user-state-' + username, JSON.stringify(studentState)); } catch {}
 
     $('#modal').close();
-    toast(t('Đã tạo thành công tài khoản cho ' + name + ' 🎉', 'Student account created for ' + name + ' 🎉'));
+    toast(t('Đã tạo thành công tài khoản cho ' + name, 'Student account created for ' + name));
     renderAdmin();
   };
 }
@@ -672,15 +671,16 @@ function adminViewDetailModal(username) {
       <div>
         <h2 style="margin:0">${esc(user.name)}</h2>
         <div style="font-size:13px;color:#5a7663;margin-top:2px">
-          @${esc(user.username)} · <b>${gradeLabel}</b> · 🔑 ${t('Mật khẩu/PIN:','PIN:')} <code style="background:#eaf3e3;padding:2px 6px;border-radius:4px;font-weight:700">${esc(user.password || '1234')}</code>
+          @${esc(user.username)} · <b>${gradeLabel}</b> · ${t('Mật khẩu/PIN:','PIN:')} <code id="studentPinCode" data-pin="${esc(user.password || '1234')}" data-masked="1" style="background:#eaf3e3;padding:2px 6px;border-radius:4px;font-weight:700">••••</code>
+          <button type="button" id="togglePinRevealBtn" class="ghost" style="padding:1px 6px;font-size:11px;min-height:auto;margin-left:4px">${t('Hiện','Show')}</button>
         </div>
       </div>
     </div>
 
     <div class="admin-detail-tabs" style="display:flex;gap:8px;margin:16px 0;border-bottom:1.5px solid #d4e5cb;padding-bottom:8px">
-      <button type="button" class="admin-tab-btn active" id="tabHistBtn">📝 ${t('Lịch sử bài làm (' + history.length + ')','Sessions (' + history.length + ')')}</button>
-      <button type="button" class="admin-tab-btn" id="tabMistakesBtn">🌼 ${t('Câu sai cần sửa (' + mistakes.length + ')','Pending Mistakes (' + mistakes.length + ')')}</button>
-      <button type="button" class="admin-tab-btn" id="tabMasteryBtn">🎯 ${t('Kỹ năng (Mastery)','Skill Breakdown')}</button>
+      <button type="button" class="admin-tab-btn active" id="tabHistBtn">${t('Lịch sử bài làm (' + history.length + ')','Sessions (' + history.length + ')')}</button>
+      <button type="button" class="admin-tab-btn" id="tabMistakesBtn">${t('Câu sai cần sửa (' + mistakes.length + ')','Pending Mistakes (' + mistakes.length + ')')}</button>
+      <button type="button" class="admin-tab-btn" id="tabMasteryBtn">${t('Kỹ năng (Mastery)','Skill Breakdown')}</button>
     </div>
 
     <div id="detailTabContent">
@@ -700,7 +700,7 @@ function adminViewDetailModal(username) {
             <tbody>
               ${history.slice(-15).reverse().map(h => `<tr>
                 <td>${new Date(h.date).toLocaleString(currentLang()==='vi'?'vi-VN':'en-US',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</td>
-                <td>${h.mode==='bot'?t('Đấu máy 🤖','Bot match'):h.mode==='challenge'?t('Thử thách 🏅','Challenge'):t('Tự luyện ⚡','Practice')}</td>
+                <td>${h.mode==='bot'?t('Đấu máy','Bot match'):h.mode==='challenge'?t('Thử thách','Challenge'):t('Tự luyện','Practice')}</td>
                 <td><b>${h.correct}</b>/${h.total} (${Math.round((h.correct/h.total)*100)}%)</td>
                 <td>${h.time ? h.time.toFixed(1) + 's' : '-'}</td>
               </tr>`).join('')}
@@ -711,7 +711,7 @@ function adminViewDetailModal(username) {
 
       <!-- Mistakes Garden Tab -->
       <div id="tabMistakesPanel" style="display:none">
-        ${mistakes.length === 0 ? `<div style="text-align:center;padding:24px;color:#2b8a3e">🎉 <b>${t('Tuyệt vời! Bé không có câu sai nào tồn đọng trong Vườn hoa.','Awesome! No pending mistakes in the garden.')}</b></div>` : `
+        ${mistakes.length === 0 ? `<div style="text-align:center;padding:24px;color:#2b8a3e"><b>${t('Tuyệt vời! Bé không có câu sai nào tồn đọng trong Vườn hoa.','Awesome! No pending mistakes in the garden.')}</b></div>` : `
         <div style="max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:8px">
           ${mistakes.map((m, idx) => `<div class="mistake-item-card">
             <div style="display:flex;justify-content:space-between;align-items:center">
@@ -742,6 +742,17 @@ function adminViewDetailModal(username) {
       <button class="primary" onclick="$('#modal').close()">${t('Đóng','Close')}</button>
     </div>
   </div>`);
+
+  const pinBtn = $('#togglePinRevealBtn');
+  const pinCode = $('#studentPinCode');
+  if (pinBtn && pinCode) {
+    pinBtn.onclick = () => {
+      const isMasked = pinCode.dataset.masked === '1';
+      pinCode.textContent = isMasked ? pinCode.dataset.pin : '••••';
+      pinCode.dataset.masked = isMasked ? '0' : '1';
+      pinBtn.textContent = isMasked ? t('Ẩn','Hide') : t('Hiện','Show');
+    };
+  }
 
   $('#tabHistBtn').onclick = () => {
     $$('.admin-tab-btn').forEach(b => b.classList.toggle('active', b.id === 'tabHistBtn'));

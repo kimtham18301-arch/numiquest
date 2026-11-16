@@ -30,7 +30,7 @@ function completeChallenge(index){
   const p=challengeProgress();if(index!==p.completed)return null;
   p.completed++;p.pending=null;
   const reward=p.completed%3===0;
-  if(reward){state.badges=(Number.isSafeInteger(state.badges)?state.badges:0)+1;p.lastAward={completed:p.completed,badge:state.badges,date:new Date().toISOString()}}
+  if(reward){state.badges=(Number.isSafeInteger(state.badges)?state.badges:0)+1;if(typeof award==='function')award(1);p.lastAward={completed:p.completed,badge:state.badges,piece:state.pieces?.VN||state.badges,date:new Date().toISOString()}}
   save();return {reward,index,completed:p.completed};
 }
 function challenge(){
@@ -41,16 +41,18 @@ function challenge(){
 function startChallengeQuiz(){
   if(state.mistakes.length){startReview();return}
   const spec=challengeSpec();stop();view='quiz';
-  session={kind:'challenge',challengeIndex:spec.index,questions:Array.from({length:spec.count},()=>generate({...defaults,...spec})),index:0,results:[],done:false};
+  const genList=typeof generateUniqueQuestions==='function'?generateUniqueQuestions(spec.count,{...defaults,...spec}):Array.from({length:spec.count},()=>generate({...defaults,...spec}));
+  session={kind:'challenge',challengeIndex:spec.index,questions:genList,index:0,results:[],done:false};
   showQuiz();
 }
 finishPractice=function(){
   stop();const s=session;s.done=true;
   const n=s.results.filter(x=>x.correct).length,total=s.results.length,isChallenge=s.kind==='challenge';
+  if(n>0&&typeof updateStreak==='function')updateStreak();
   const h={date:new Date().toISOString(),mode:isChallenge?'challenge':'practice',correct:n,total,time:avg(s.results.map(x=>x.elapsed)),extra:s.results.filter(x=>x.extra).length};
   state.history.push(h);state.history=state.history.slice(-200);state.xp+=n*3;
   let result=null,passed=false;
-  if(isChallenge){const p=challengeProgress();passed=n>=Math.ceil(total*.8)&&h.extra===0;p.best[s.challengeIndex]=Math.max(p.best[s.challengeIndex]||0,n/total);p.pending=passed?{index:s.challengeIndex}:null;if(passed&&!state.mistakes.length)result=completeChallenge(s.challengeIndex)}
+  if(isChallenge){const p=challengeProgress();passed=n>=Math.ceil(total*.8)&&h.extra===0;p.best[s.challengeIndex]=Math.max(p.best[s.challengeIndex]||0,n/total);p.pending=passed?{index:s.challengeIndex}:null;if(passed&&!state.mistakes.length)result=completeChallenge(s.challengeIndex);if(passed){if(typeof haptic==='function')haptic('victory');if(typeof triggerConfetti==='function')triggerConfetti();}}
   save();
   $('#app').innerHTML=`<div class="narrow card farm-result"><div class="intro-animal">${animal('bunny')}</div><h1>${isChallenge?(passed?t('Giỏi lắm, nhà nông nhỏ!','Well done, little farmer!'):t('Mình luyện thêm một chút nhé!','Let’s practice a little more!')):t('Giỏ đồ ăn đầy thêm rồi!','Your food basket is growing!')}</h1><p>${n}/${total} ${t('câu đúng lần đầu','correct on the first try')} · ${h.time.toFixed(1)}s/${t('câu','question')}</p><div class="notice">${typeof farmSessionSummary==='function'?farmSessionSummary(s):''}</div><p>${isChallenge?(passed?(state.mistakes.length?t('Đủ 80% rồi! Ôn hết câu sai để hoàn thành level này.','80% reached! Review the mistakes to complete this level.'):challengeStatus(result?.reward)):t('Cần đúng ít nhất 80%. Ôn câu sai rồi thử lại level này; em vẫn giữ đồ ăn đã kiếm được.','You need at least 80%. Review your mistakes and retry this level; your earned food stays.')):t('Mang đồ ăn về chăm Numi nhé. Vào Chinh phục để kiếm mảnh khám phá.','Bring your food home to Numi. Visit Challenges to earn discovery pieces.')}</p><div class="actions">${state.mistakes.length?`<button class="primary" onclick="startReview()">${t('Ôn câu sai · nhận cỏ','Review mistakes · earn hay')}</button>`:`<button class="primary" onclick="nav('${isChallenge?'challenge':'home'}')">${isChallenge?t('Xem đường level','View level path'):t('Về cho Numi ăn','Feed Numi at home')}</button>`}${result?.reward?`<button onclick="showFarmCertificate()">${t('Nhận bằng khen','Open certificate')}</button>`:''}<button onclick="nav('home')">${t('Về nông trại','Back to the farm')}</button></div></div>`;translate();
 };

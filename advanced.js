@@ -48,14 +48,14 @@ function customGenerate(c){
   const selectedType=pick(cfg.types?.length?cfg.types:[cfg.type||'natural']);
   const terms=Math.max(2,Math.min(6,+cfg.termCount||3)),digits=cfg.digits?.length?cfg.digits:[1],digit=pick(digits),lo=10**(digit-1),hi=10**digit-1,rand=()=>ri(lo,hi);
   if(cfg.questionStyle==='expression'&&selectedType==='fraction'){
-    const values=Array.from({length:terms},()=>({n:ri(1,9),d:ri(2,12)}));let n=values[0].n,d=values[0].d;for(const v of values.slice(1)){n=n*v.d+v.n*d;d*=v.d}const answer=frac(n,d);let readable=values.map(v=>`${v.n}/${v.d}`).join(' + ');const pairs=(cfg.brackets||'none').split(',');if(pairs[0]!=='none'){const open={round:'(',square:'[',curly:'{'},close={round:')',square:']',curly:'}'};for(const pair of pairs)if(open[pair])readable=`${open[pair]}${readable}${close[pair]}`}return {id:crypto.randomUUID(),q:readable,answer,options:generatedOptions(answer,[frac(n+1,d),frac(n-1,d),frac(n,d+1)]),skill:'fraction:+',config:{...cfg,type:'fraction'},explanation:`${readable} = ${answer}`};
+    const values=Array.from({length:terms},()=>({n:ri(1,9),d:ri(2,12)}));let n=values[0].n,d=values[0].d;for(const v of values.slice(1)){n=n*v.d+v.n*d;d*=v.d}const answer=frac(n,d);let readable=values.map(v=>`${v.n}/${v.d}`).join(' + ');const pairs=(cfg.brackets||'none').split(',');if(pairs[0]!=='none'){const open={round:'(',square:'[',curly:'{'},close={round:')',square:']',curly:'}'};for(const pair of pairs)if(open[pair])readable=`${open[pair]}${readable}${close[pair]}`}return {id:uid(),q:readable,answer,options:generatedOptions(answer,[frac(n+1,d),frac(n-1,d),frac(n,d+1)]),skill:'fraction:+',config:{...cfg,type:'fraction'},explanation:`${readable} = ${answer}`};
   }
   if(selectedType!=='natural')return plainGenerate(cfg);
   if(cfg.questionStyle==='convenient'){
     const factor=ri(2,9),pair=pick([[1,9],[2,8],[3,7],[4,6]]),a=pair[0],b=pair[1];
     const answer=factor*10, q=`${factor} × (${a} + ${b})`;
-    const naive=factor*a+factor+b;
-    return {id:crypto.randomUUID(),q,answer:String(answer),options:generatedOptions(answer,[naive,factor*(a+b-1),factor*(a+b+1)]),skill:'natural:convenient',config:{...cfg,type:'natural'},explanation:`${factor} × ${a} + ${factor} × ${b} = ${factor} × (${a} + ${b}) = ${factor} × 10 = ${answer}`};
+    const naive=factor*a+b;
+    return {id:uid(),q,answer:String(answer),options:generatedOptions(answer,[naive,factor*(a+b-1),factor*(a+b+1)]),skill:'natural:convenient',config:{...cfg,type:'natural'},explanation:`${factor} × ${a} + ${factor} × ${b} = ${factor} × (${a} + ${b}) = ${factor} × 10 = ${answer}`};
   }
   if(cfg.questionStyle==='expression'){
     const ops=(cfg.ops||['+','-','*']).filter(op=>['+','-','*','/'].includes(op));
@@ -77,7 +77,7 @@ function customGenerate(c){
     if(!Number.isFinite(value)||Math.abs(value)>999999)return plainGenerate(cfg);
     const answer=typeof fmt==='function'?fmt(value):String(Math.round(value*1000)/1000);
     const left=values.reduce((acc,n,i)=>i?acc+({'+':n,'-':-n,'*':n,'/':1}[chosen[i-1]]||n):n,0);
-    return {id:crypto.randomUUID(),q:readable,answer,options:generatedOptions(answer,[Math.round(left),value+1,value-1]),skill:'natural:expression',config:{...cfg,type:'natural'},explanation:`${readable} = ${answer}`};
+    return {id:uid(),q:readable,answer,options:generatedOptions(answer,[Math.round(left),value+1,value-1]),skill:'natural:expression',config:{...cfg,type:'natural'},explanation:`${readable} = ${answer}`};
   }
   return plainGenerate(cfg);
 }
