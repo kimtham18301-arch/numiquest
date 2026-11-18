@@ -150,7 +150,8 @@ function loadAppContext() {
     'review-exit.js',
     'adaptive-sprint.js',
     'classroom.js',
-    'pedagogy.js'
+    'pedagogy.js',
+    'engagement.js'
   ];
   for (const file of scripts) {
     const code = fs.readFileSync(path.join(rootDir, file), 'utf8');
@@ -298,4 +299,22 @@ test('pedagogy generators (missing, word), visual math SVG, and spaced repetitio
     { id: 'due', nextReviewAt: now - 1000 }
   ]);
   assert.equal(sorted[0].id, 'due');
+});
+
+test('engagement accessories, seeded friend challenge, and speech formatting work', () => {
+  const ctx = loadAppContext();
+  ctx.state.xp = 100;
+  assert.equal(ctx.buyOrEquipAccessory('glasses'), true);
+  assert.equal(ctx.state.xp, 50);
+  assert.equal(ctx.state.accessories.equipped, 'glasses');
+  assert.ok(ctx.animal('bunny').includes('buddy-acc'));
+
+  const code = ctx.encodeChallengeCode(12345, 4);
+  const parsed = ctx.decodeChallengeCode(code);
+  assert.equal(parsed.grade, 4);
+  const q1 = ctx.generateSeededQuestions(parsed.seed, { type: 'natural', ops: ['+'], digits: [1] }, 5);
+  const q2 = ctx.generateSeededQuestions(parsed.seed, { type: 'natural', ops: ['+'], digits: [1] }, 5);
+  assert.deepEqual(q1.map(x => x.q), q2.map(x => x.q));
+
+  assert.equal(ctx.formatMathForSpeech('3 + 4 = ?', 'vi'), '3 cộng 4 bằng mấy');
 });

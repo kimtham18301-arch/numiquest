@@ -14,10 +14,10 @@ Tài liệu lưu lại định hướng nâng cấp dài hạn cho **NumiQuick**
 
 ---
 
-## Nhóm 2: Tăng Động lực & Trải nghiệm cho Học sinh
-- [ ] **Cửa hàng phụ kiện cho bạn đồng hành:** Dùng XP hoặc trân châu tích lũy để mở khóa mũ, kính, nơ, huy hiệu trang trí cho Thỏ, Gấu trúc, Cáo, Sư tử.
-- [ ] **Thách đấu bạn cùng lớp (Async Challenge):** Tạo mã thử thách chứa bộ 10 câu hỏi cố định (dùng chung seed) để hai học sinh làm cùng một đề và so sánh kết quả.
-- [ ] **Hỗ trợ giọng đọc đề (Web Speech API):** Thêm nút đọc phép tính và lời động viên bằng giọng nói tiếng Việt/Anh cho học sinh lớp 1–2.
+## Nhóm 2: Tăng Động lực & Trải nghiệm cho Học sinh *(Đã triển khai)*
+- [x] **Cửa hàng phụ kiện cho bạn đồng hành:** Dùng XP hoặc trân châu tích lũy để mở khóa mũ, kính, nơ, huy hiệu trang trí cho Thỏ, Gấu trúc, Cáo, Sư tử.
+- [x] **Thách đấu bạn cùng lớp (Async Challenge):** Tạo mã thử thách chứa bộ 10 câu hỏi cố định (dùng chung seed) để hai học sinh làm cùng một đề và so sánh kết quả.
+- [x] **Hỗ trợ giọng đọc đề (Web Speech API):** Thêm nút đọc phép tính và lời động viên bằng giọng nói tiếng Việt/Anh cho học sinh lớp 1–2.
 
 ---
 
