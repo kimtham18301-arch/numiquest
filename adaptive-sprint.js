@@ -380,27 +380,29 @@
     const quests = getDailyQuests();
     const hub = document.createElement('section');
     hub.className = 'midterm-hub';
+    const questIcons = { q_warm: '🌅', q_acc: '🎯', q_sprint: '⚡' };
     hub.innerHTML = `
       <div class="sprint-banner">
         <div>
-          <span class="eyebrow">${t('CHẾ ĐỘ MỚI', 'NEW MODE')}</span>
+          <span class="eyebrow">${t('CHẾ ĐỘ TỐC ĐỘ', 'SPEED MODE')}</span>
           <b>⚡ ${t('Thi đấu 60 giây', '60-Second Sprint')}</b>
-          <small>${t('Trả lời nhanh liên tiếp trong 60 giây để lập kỷ lục!', 'Answer as many as you can in 60 seconds!')} ${state.sprintBest ? `· ${t('Kỷ lục', 'Best')}: ${state.sprintBest}` : ''}</small>
+          <small>${t('Trả lời nhanh liên tiếp trong 60 giây để lập kỷ lục!', 'Answer as many as you can in 60 seconds!')} ${state.sprintBest ? `· 🏆 ${t('Kỷ lục', 'Best')}: ${state.sprintBest}` : ''}</small>
         </div>
-        <button type="button" class="primary" id="startSprint60Btn">${t('Chơi ngay', 'Sprint')} →</button>
+        <button type="button" class="cls-3d-btn" id="startSprint60Btn">🚀 ${t('Chơi ngay', 'Sprint')} →</button>
       </div>
       <div class="daily-quests-box">
-        <h3>${t('Nhiệm vụ hôm nay', 'Daily Quests')}</h3>
+        <h3>✨ ${t('Nhiệm vụ hôm nay', 'Daily Quests')}</h3>
         <div class="daily-quests-list">
           ${quests.map(q => `<div class="dq-item ${q.done ? 'is-done' : ''}">
-            <div>
+            <div class="dq-badge">${questIcons[q.id] || '🌟'}</div>
+            <div style="flex:1;min-width:0">
               <b>${q.title}</b>
               <small>${q.desc}</small>
             </div>
             ${q.claimed
               ? `<span class="dq-claimed">✓ ${t('Đã nhận', 'Claimed')}</span>`
               : q.done
-                ? `<button type="button" class="dq-claim-btn" data-claim-quest="${q.id}">+${q.xp} XP · +${q.pearls}🧋</button>`
+                ? `<button type="button" class="dq-claim-btn" data-claim-quest="${q.id}">🎁 +${q.xp} XP · +${q.pearls}🧋</button>`
                 : `<span class="dq-reward">+${q.xp} XP</span>`}
           </div>`).join('')}
         </div>
@@ -434,18 +436,20 @@
     .adaptive-pill.is-up{background:#e6f6ec;color:#1b6e3c}
     .adaptive-pill.is-down{background:#fff4e2;color:#9a5b13}
     .midterm-hub{display:grid;gap:12px;margin:14px 0}
-    .sprint-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-radius:16px;background:linear-gradient(135deg,#eef8f2,#fdf6e4);border:1.5px solid #cfe3d4}
-    .sprint-banner b{display:block;font-size:16px;margin:2px 0}
+    .sprint-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 18px;border-radius:22px;background:linear-gradient(135deg,#eefbf3,#fff7e0);border:2px solid #c6e2cf;box-shadow:0 5px 0 #d7ebdd}
+    .sprint-banner b{display:block;font-size:17px;margin:2px 0;color:#234633}
     .sprint-banner small{display:block;color:#526b5c;font-size:13px}
-    .daily-quests-box{padding:14px 16px;border-radius:16px;background:rgba(255,255,255,.78);border:1.5px solid #dce8dc}
-    .daily-quests-box h3{margin:0 0 10px;font-size:15px}
-    .daily-quests-list{display:grid;gap:8px}
-    .dq-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:12px;background:#f7faf7;border:1px solid #e4efe4}
+    .daily-quests-box{padding:15px 18px;border-radius:22px;background:#fff;border:2px solid #d4e8da;box-shadow:0 5px 0 #e2f0e6}
+    .daily-quests-box h3{margin:0 0 10px;font-size:16px;color:#234633}
+    .daily-quests-list{display:grid;gap:9px}
+    .dq-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:16px;background:#f7fbf8;border:1.5px solid #e1efe5}
+    .dq-item.is-done{background:#eefbf2;border-color:#bfe3cb}
+    .dq-badge{width:38px;height:38px;border-radius:12px;background:#fff3cf;display:grid;place-items:center;font-size:20px;flex:none}
     .dq-item b{display:block;font-size:14px}
     .dq-item small{display:block;color:#5f7466;font-size:12px}
-    .dq-claim-btn{padding:6px 12px;border-radius:999px;border:0;background:#34765c;color:#fff;font-weight:800;font-size:12px;cursor:pointer}
+    .dq-claim-btn{padding:7px 13px;border-radius:12px;border:0;background:#34765c;color:#fff;font-weight:800;font-size:12px;cursor:pointer;box-shadow:0 3px 0 #204f3d}
     .dq-claimed{color:#2b8a3e;font-weight:800;font-size:12px}
-    .dq-reward{color:#6a7f71;font-weight:700;font-size:12px}
+    .dq-reward{color:#6a7f71;font-weight:700;font-size:12px;background:#eef4f0;padding:4px 9px;border-radius:999px}
     .sprint-hud{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;text-align:center}
     .sprint-stat{padding:8px;border-radius:12px;background:#f4f9f5}
     .sprint-stat small{display:block;font-size:11px;color:#5f7466}

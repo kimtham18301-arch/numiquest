@@ -352,17 +352,42 @@
       .sort((a, b) => (b.totalCorrect - a.totalCorrect) || (b.accuracy - a.accuracy) || a.name.localeCompare(b.name));
   }
 
+  function assignmentIcon(asg) {
+    const cfg = asg?.config || {};
+    if (cfg.questionStyle === 'missing') return '🧩';
+    if (cfg.questionStyle === 'word') return '📖';
+    if (cfg.type === 'fraction') return '🍰';
+    if (cfg.type === 'decimal') return '🎈';
+    if (cfg.type === 'negative') return '❄️';
+    return '🌟';
+  }
+
   function openClassroomLeaderboardModal(classroomId, dataOverride = null) {
     const store = dataOverride || loadLocalClassStore();
     const room = (store.classrooms || []).find(c => c.id === classroomId);
     const board = getClassroomLeaderboard(classroomId, store);
 
+    const top3 = [board[1], board[0], board[2]];
+    const podiumRanks = [2, 1, 3];
+    const podiumHtml = board.length >= 2 ? `<div class="cls-podium">${top3.map((row, idx) => {
+      if (!row) return '<div class="cls-podium-slot is-empty"></div>';
+      const rank = podiumRanks[idx];
+      return `<div class="cls-podium-slot rank-${rank}">
+        <div class="cls-podium-crown">${rank === 1 ? '👑' : rank === 2 ? '🥈' : '🥉'}</div>
+        <div class="cls-podium-avatar">${typeof animal === 'function' ? animal(row.avatar) : '🐰'}</div>
+        <b>${esc(row.name)}</b>
+        <span>${row.totalCorrect} ${t('đúng', 'pts')}</span>
+      </div>`;
+    }).join('')}</div>` : '';
+
     modal(`<h2>🏆 ${t('Bảng thi đua', 'Leaderboard')}${room ? ` · ${esc(room.name)}` : ''}</h2>
     <p class="muted">${t('Xếp hạng theo tổng số câu làm đúng và độ chính xác của các bài tập được giao.', 'Ranked by total correct answers and accuracy across assignments.')}</p>
+    ${podiumHtml}
     ${board.length === 0
       ? `<p class="muted" style="text-align:center;padding:18px 0">${t('Chưa có học sinh nào trong lớp.', 'No students enrolled yet.')}</p>`
       : `<div class="cls-board-list">${board.map((row, idx) => `<div class="cls-board-row">
           <span class="cls-rank">${idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}</span>
+          <span class="cls-mini-avatar">${typeof animal === 'function' ? animal(row.avatar) : '🐰'}</span>
           <div class="cls-board-user">
             <b>${esc(row.name)}</b>
             <small>${row.completedCount} ${t('bài đã nộp', 'completed')} · ${row.accuracy}%</small>
@@ -427,8 +452,14 @@
         const avgTime = Number((s.results.reduce((a, b) => a + b.elapsed, 0) / total).toFixed(1));
         const aid = activeAssignmentId;
         activeAssignmentId = null;
+        if (typeof teaState === 'function') {
+          const tea = teaState();
+          tea.pearls = (tea.pearls || 0) + 2;
+        }
+        state.xp = (state.xp || 0) + 30;
+        save();
         submitAssignmentResult(aid, correct, total, avgTime)
-          .then(() => toast(t('Đã nộp kết quả bài tập về lớp học!', 'Assignment result submitted!')))
+          .then(() => toast(t('🎉 Đã nộp bài tập! Thưởng +30 XP & +2 trân châu!', '🎉 Submitted! Earned +30 XP & +2 pearls!')))
           .catch(() => {});
       }
     };
@@ -668,25 +699,33 @@
     seedSampleClassroomIfNeeded();
 
     const box = document.createElement('section');
-    box.className = 'student-classroom-box';
+    box.className = 'student-classroom-box cls-cute-card';
     const anchor = host.querySelector('.home-v2-links') || host.querySelector('.home-v2-local');
     if (anchor) anchor.before(box);
     else host.append(box);
 
     const u = typeof currentAuthUser === 'function' ? currentAuthUser() : null;
     const isAdmin = u && (u.role === 'admin' || u.username === 'admin');
+    const mascotSvg = typeof animal === 'function' ? animal(u?.avatar || 'bunny', 'cls-mascot-svg') : '🐰';
 
     if (isAdmin) {
       let tData;
       try { tData = await fetchTeacherOverview(); } catch { tData = { classrooms: [], enrollments: [], assignments: [], submissions: [] }; }
       if (!box.isConnected || view !== 'home') return;
       box.innerHTML = `
-        <div class="classroom-student-head">
-          <div>
+        <div class="cls-cute-hero">
+          <div class="cls-mascot-badge">${mascotSvg}</div>
+          <div class="cls-hero-copy">
+            <span class="cls-cute-pill">${t('GÓC GIÁO VIÊN', 'TEACHER HUB')}</span>
             <b>🏫 ${t('Quản lý Lớp học & Giao bài', 'Classroom & Assignment Hub')}</b>
-            <small>${tData.classrooms.length} ${t('lớp học', 'classrooms')} · ${tData.assignments.length} ${t('bài đã giao', 'assignments')} · ${tData.submissions.length} ${t('lượt đã nộp', 'submissions')}</small>
+            <small>${t('Tạo lớp, lấy mã mời và theo dõi bài làm của các bé thật dễ dàng!', 'Create classrooms, share join codes, and track progress!')}</small>
           </div>
-          <button type="button" id="openTeacherClassBtn" class="dq-claim-btn">${t('Quản lý lớp', 'Manage')} →</button>
+          <button type="button" id="openTeacherClassBtn" class="cls-3d-btn">✨ ${t('Quản lý lớp', 'Manage')} →</button>
+        </div>
+        <div class="cls-teacher-stats">
+          <div class="cls-tstat is-mint"><span>🏫 ${t('Lớp học', 'Classrooms')}</span><b>${tData.classrooms.length}</b></div>
+          <div class="cls-tstat is-butter"><span>📝 ${t('Bài đã giao', 'Assignments')}</span><b>${tData.assignments.length}</b></div>
+          <div class="cls-tstat is-pink"><span>🎉 ${t('Lượt nộp', 'Submissions')}</span><b>${tData.submissions.length}</b></div>
         </div>
       `;
       $('#openTeacherClassBtn').onclick = renderClassroomManager;
@@ -701,27 +740,39 @@
     const pending = data.assignments.filter(a => !subByAsg.has(a.id));
     const completed = data.assignments.filter(a => subByAsg.has(a.id));
     const primaryRoom = data.classrooms[0];
+    const totalAsgs = data.assignments.length;
+    const progressPct = totalAsgs > 0 ? Math.round((completed.length / totalAsgs) * 100) : 0;
 
     box.innerHTML = `
-      <div class="classroom-student-head">
-        <div>
-          <b>🏫 ${t('Lớp học & Bài tập được giao', 'My Classroom & Assignments')}</b>
-          <small>${data.classrooms.length ? data.classrooms.map(c => esc(c.name)).join(', ') : t('Chưa tham gia lớp nào', 'Not enrolled in a classroom yet')}</small>
+      <div class="cls-cute-hero">
+        <div class="cls-mascot-badge">${mascotSvg}</div>
+        <div class="cls-hero-copy">
+          ${data.classrooms.length ? `<span class="cls-cute-pill">🏫 ${data.classrooms.map(c => esc(c.name)).join(', ')}</span>` : ''}
+          <b>${t('Nhiệm vụ Lớp học của em', 'My Classroom Quests')}</b>
+          <small>${data.classrooms.length
+            ? (pending.length ? t(`Cố lên! Còn ${pending.length} bài tập nhỏ đang chờ em chinh phục!`, `You’ve got ${pending.length} fun missions waiting!`) : t('Tuyệt vời! Em đã làm xong hết bài của lớp rồi!', 'Yay! You finished every class quest!'))
+            : t('Nhập mã 6 ký tự từ cô giáo hoặc ba mẹ để mở khóa bài tập nhé!', 'Enter a 6-letter code from your teacher or parent!')}</small>
         </div>
         <div class="cls-head-actions">
-          ${primaryRoom ? `<button type="button" id="studentClassRankBtn" class="ghost">🏆 ${t('Thi đua', 'Rank')}</button>` : ''}
-          <button type="button" id="joinClassBtn" class="ghost">${t('+ Nhập mã lớp', '+ Join Code')}</button>
+          ${primaryRoom ? `<button type="button" id="studentClassRankBtn" class="cls-soft-btn">🏆 ${t('Thi đua', 'Rank')}</button>` : ''}
+          <button type="button" id="joinClassBtn" class="cls-soft-btn">🔑 ${t('Nhập mã lớp', 'Join Code')}</button>
         </div>
       </div>
-      ${pending.length ? `<div class="student-asg-list">${pending.slice(0, 3).map(a => `<div class="dq-item">
-        <div><b>${esc(a.title)}</b><small>${a.config?.count || 10} ${t('câu', 'qs')}${a.due_date ? ' · ' + t('Hạn: ', 'Due: ') + esc(a.due_date) : ''}</small></div>
-        <button type="button" class="dq-claim-btn" data-start-asg="${esc(a.id)}">${t('Làm bài', 'Start')} →</button>
-      </div>`).join('')}</div>` : (data.classrooms.length ? `<small class="muted">✓ ${t('Em đã hoàn thành hết bài tập được giao!', 'All assigned lessons completed!')}</small>` : '')}
-      ${completed.length ? `<details class="cls-completed-wrap"><summary>${t('Bài đã hoàn thành', 'Completed assignments')} (${completed.length})</summary><div class="student-asg-list" style="margin-top:8px">${completed.slice(0, 3).map(a => {
+      ${totalAsgs > 0 ? `<div class="cls-star-bar"><span>⭐ ${t('Tiến độ:', 'Progress:')} ${completed.length}/${totalAsgs} ${t('bài', 'done')}</span><div class="cls-star-track"><i style="width:${progressPct}%"></i></div></div>` : ''}
+      ${pending.length ? `<div class="student-asg-list">${pending.slice(0, 3).map(a => `<div class="cls-cute-task">
+        <div class="cls-task-icon">${assignmentIcon(a)}</div>
+        <div class="cls-task-info">
+          <b>${esc(a.title)}</b>
+          <small>${a.config?.count || 10} ${t('câu', 'qs')}${a.due_date ? ' · ⏰ ' + esc(a.due_date) : ''} · <span class="cls-reward-tag">🎁 +30 XP · +2 🧋</span></small>
+        </div>
+        <button type="button" class="cls-3d-btn" data-start-asg="${esc(a.id)}">🚀 ${t('Làm ngay!', 'Play!')}</button>
+      </div>`).join('')}</div>` : ''}
+      ${completed.length ? `<details class="cls-completed-wrap"><summary>🌟 ${t('Bài đã hoàn thành', 'Completed quests')} (${completed.length})</summary><div class="student-asg-list" style="margin-top:8px">${completed.slice(0, 3).map(a => {
         const sub = subByAsg.get(a.id);
-        return `<div class="dq-item is-done">
-          <div><b>${esc(a.title)}</b><small>${t('Điểm:', 'Score:')} ${sub.correct}/${sub.total} · ${sub.avg_time || 0}s/${t('câu', 'q')}</small></div>
-          <button type="button" class="ghost cls-mini-btn" data-redo-asg="${esc(a.id)}">${t('Làm lại', 'Retry')}</button>
+        return `<div class="cls-cute-task is-done">
+          <div class="cls-task-icon">🏅</div>
+          <div class="cls-task-info"><b>${esc(a.title)}</b><small>${t('Điểm:', 'Score:')} ${sub.correct}/${sub.total} · ${sub.avg_time || 0}s/${t('câu', 'q')}</small></div>
+          <button type="button" class="cls-soft-btn cls-mini-btn" data-redo-asg="${esc(a.id)}">${t('Làm lại', 'Retry')}</button>
         </div>`;
       }).join('')}</div></details>` : ''}
     `;
@@ -774,31 +825,74 @@
 
   const style = document.createElement('style');
   style.textContent = `
-    .student-classroom-box{padding:14px 16px;border-radius:16px;background:rgba(255,255,255,.78);border:1.5px solid #dce8dc;margin:12px 0;display:grid;gap:10px}
-    .classroom-student-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-    .classroom-student-head b{display:block;font-size:15px}
-    .classroom-student-head small{display:block;color:#5f7466;font-size:12px}
+    .student-classroom-box.cls-cute-card{padding:16px 18px;border-radius:24px;background:linear-gradient(145deg,#fffcf3,#f1fbf5);border:2px solid #cbe4d3;box-shadow:0 5px 0 #d4eadc;margin:14px 0;display:grid;gap:12px}
+    .cls-cute-hero{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+    .cls-mascot-badge{width:56px;height:56px;border-radius:18px;background:#fff4cc;border:2px solid #f7dc88;display:grid;place-items:center;flex:none;box-shadow:0 3px 0 #eed073}
+    .cls-mascot-svg{width:46px;height:46px}
+    .cls-hero-copy{flex:1;min-width:180px}
+    .cls-hero-copy b{display:block;font-size:16px;color:#244835;margin-top:2px}
+    .cls-hero-copy small{display:block;color:#557262;font-size:12.5px;line-height:1.4}
+    .cls-cute-pill{display:inline-block;padding:2px 10px;border-radius:999px;background:#e2f5e9;color:#1d6844;font-size:11px;font-weight:800;letter-spacing:.4px}
+    .cls-3d-btn{padding:8px 15px;border-radius:14px;border:0;background:#34765c;color:#fff;font-weight:800;font-size:13px;cursor:pointer;box-shadow:0 4px 0 #21513e;transition:transform .12s ease,box-shadow .12s ease}
+    .cls-3d-btn:hover{transform:translateY(-1px)}
+    .cls-3d-btn:active{transform:translateY(2px);box-shadow:0 2px 0 #21513e}
+    .cls-soft-btn{padding:7px 12px;border-radius:13px;border:1.5px solid #cde2d3;background:#fff;color:#2c5640;font-weight:800;font-size:12px;cursor:pointer;box-shadow:0 3px 0 #dcebe0;transition:transform .12s ease}
+    .cls-soft-btn:hover{transform:translateY(-1px)}
+    .cls-teacher-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .cls-tstat{padding:10px;border-radius:16px;text-align:center;border:1.5px solid #e4efe4}
+    .cls-tstat span{display:block;font-size:11.5px;font-weight:700;color:#4f685a}
+    .cls-tstat b{font-size:20px;color:#224533}
+    .cls-tstat.is-mint{background:#eaf8f0;border-color:#c9ebd8}
+    .cls-tstat.is-butter{background:#fff8e1;border-color:#f4dfa0}
+    .cls-tstat.is-pink{background:#fff0f6;border-color:#f6cadb}
+    .cls-star-bar{display:flex;align-items:center;gap:10px;font-size:12px;font-weight:800;color:#2d5a42}
+    .cls-star-track{flex:1;height:10px;border-radius:999px;background:#e3efe6;overflow:hidden}
+    .cls-star-track i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#37b24d,#fab005);transition:width .3s ease}
+    .cls-cute-task{display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:18px;background:#fff;border:1.5px solid #d9ebdf;box-shadow:0 3px 0 #e5f1e9}
+    .cls-cute-task.is-done{background:#f7fbf8;opacity:.9}
+    .cls-task-icon{width:42px;height:42px;border-radius:14px;background:#fff4d6;display:grid;place-items:center;font-size:22px;flex:none}
+    .cls-task-info{flex:1;min-width:0}
+    .cls-task-info b{display:block;font-size:14px;color:#244835}
+    .cls-task-info small{display:block;font-size:12px;color:#5a7566}
+    .cls-reward-tag{display:inline-block;padding:1px 7px;border-radius:999px;background:#fff3cf;color:#995c00;font-weight:800}
+    .cls-podium{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;align-items:end;margin:12px 0 6px;padding:10px 8px 0;background:linear-gradient(180deg,#fff9e6,#f4fbf6);border-radius:18px;border:1.5px solid #e6eedb}
+    .cls-podium-slot{display:flex;flex-direction:column;align-items:center;padding:8px 6px;border-radius:14px 14px 0 0;text-align:center}
+    .cls-podium-slot.rank-1{background:#fff1b8;min-height:132px;border:1.5px solid #f0c94d}
+    .cls-podium-slot.rank-2{background:#eef4f8;min-height:112px;border:1.5px solid #cfdce6}
+    .cls-podium-slot.rank-3{background:#fceee4;min-height:102px;border:1.5px solid #ebc7ad}
+    .cls-podium-crown{font-size:20px;line-height:1}
+    .cls-podium-avatar .animal{width:44px;height:44px}
+    .cls-podium-slot b{font-size:12.5px;margin-top:2px;color:#244835;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .cls-podium-slot span{font-size:11px;font-weight:800;color:#2b8a3e}
+    .cls-mini-avatar{width:30px;height:30px;flex:none;display:grid;place-items:center}
+    .cls-mini-avatar .animal{width:30px;height:30px}
     .cls-head-actions,.cls-row-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-    .cls-mini-btn{padding:4px 9px;font-size:12px;min-height:28px;border-radius:8px}
+    .cls-mini-btn{padding:4px 9px;font-size:12px;min-height:28px;border-radius:10px}
     .cls-del-btn{color:#c92a2a}
     .student-asg-list{display:grid;gap:8px}
     .classroom-grid{display:grid;gap:14px;margin-top:14px}
     .classroom-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
     .join-code-pill{background:#eaf5ee;color:#1e6244;padding:2px 8px;border-radius:6px;font-weight:800;letter-spacing:1px}
     .assignment-list{display:grid;gap:8px}
-    .assignment-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:12px;background:#f7faf7;border:1px solid #e4efe4;flex-wrap:wrap}
+    .assignment-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:14px;background:#f7faf7;border:1.5px solid #e4efe4;flex-wrap:wrap}
     .assignment-row b{display:block;font-size:14px}
     .assignment-row small{color:#5f7466;font-size:12px}
-    .cls-board-list{display:grid;gap:8px;max-height:280px;overflow-y:auto;margin-top:10px}
-    .cls-board-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-radius:10px;background:#f7faf7;border:1px solid #e4efe4}
-    .cls-rank{font-size:18px;width:30px;text-align:center;flex:none}
+    .cls-board-list{display:grid;gap:8px;max-height:240px;overflow-y:auto;margin-top:10px}
+    .cls-board-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-radius:14px;background:#f7faf7;border:1.5px solid #e4efe4}
+    .cls-rank{font-size:18px;width:28px;text-align:center;flex:none}
     .cls-board-user{flex:1;min-width:0}
     .cls-board-user b{display:block;font-size:14px}
     .cls-board-user small{display:block;color:#5f7466;font-size:12px}
     .cls-score{color:#1e6244;font-size:14px}
-    .cls-completed-wrap summary{cursor:pointer;font-size:12px;font-weight:700;color:#4a7758}
-    body.dark-mode .student-classroom-box,body.dark-mode .assignment-row,body.dark-mode .cls-board-row{background:#1c2620;border-color:#2f4036}
-    body.dark-mode .cls-score{color:#6ee7b7}
+    .cls-completed-wrap summary{cursor:pointer;font-size:12.5px;font-weight:800;color:#4a7758}
+    body.dark-mode .student-classroom-box.cls-cute-card{background:linear-gradient(145deg,#1b2821,#20241b);border-color:#324c3d;box-shadow:0 5px 0 #101813}
+    body.dark-mode .cls-hero-copy b,body.dark-mode .cls-task-info b,body.dark-mode .cls-tstat b,body.dark-mode .cls-star-bar{color:#e6f4ea}
+    body.dark-mode .cls-hero-copy small,body.dark-mode .cls-task-info small,body.dark-mode .cls-tstat span{color:#a8bfb0}
+    body.dark-mode .cls-cute-task,body.dark-mode .cls-soft-btn,body.dark-mode .assignment-row,body.dark-mode .cls-board-row{background:#1c2620;border-color:#2f4036;color:#e6f4ea;box-shadow:none}
+    body.dark-mode .cls-tstat.is-mint,body.dark-mode .cls-tstat.is-butter,body.dark-mode .cls-tstat.is-pink{background:#1f2d25;border-color:#2f4036}
+    body.dark-mode .cls-podium{background:#19231d;border-color:#2f4036}
+    body.dark-mode .cls-podium-slot.rank-1,body.dark-mode .cls-podium-slot.rank-2,body.dark-mode .cls-podium-slot.rank-3{background:#233128;border-color:#3a5243}
+    body.dark-mode .cls-podium-slot b,body.dark-mode .cls-score{color:#6ee7b7}
   `;
   document.head.append(style);
 
