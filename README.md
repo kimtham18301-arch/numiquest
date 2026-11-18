@@ -1,30 +1,23 @@
-# NumiQuick — bản cập nhật 1.0.1
+# NumiQuick — bản cập nhật 2.2.0
 
-Web luyện tính nhẩm vui cho học sinh tiểu học và THCS, chạy tĩnh trên GitHub Pages.
+Web luyện tính nhẩm vui cho học sinh tiểu học & THCS (Lớp 1–9 theo chuẩn GDPT 2018), chạy tĩnh trên GitHub Pages.
 
 ## Tính năng chính
 
-- Chọn nhiều phép tính, loại số, chữ số, thời lượng và số câu luyện.
-- Luyện số tự nhiên, số âm, số thập phân, phân số, chia có dư và biểu thức nhiều phép tính. Chế độ số tự nhiên không tạo kết quả âm; phép chia tránh chia cho 1.
-- Câu sai hiện đáp án xanh, câu chọn sai đỏ; bài khó có lời giải ngắn rồi tự chuyển câu. Có thể xóa danh sách câu sai cũ để làm bài mới.
-- Ôn câu sai bằng cách chạm một chậu rồi chạm hoa đáp án. Trên điện thoại, khung hoa có cuộn riêng để thanh điều hướng không che nội dung.
-- Mỗi câu đúng nhận một viên trân châu. Size S cần 30 câu đúng, M cần 50, L cần 70.
-- Trang Thành tích có biểu đồ đường độ chính xác theo từng ngày trong 7 ngày gần nhất.
-- Có thể đổi màu giao diện, sửa tên và chọn một trong bốn avatar con vật cho bạn đồng hành. Tên và ảnh được đồng bộ trên mọi màn hình, gồm trang chủ, chọn bài, mục tiêu và các màn chơi; hồ sơ lưu trên thiết bị đang mở web.
-- Khi chia sẻ link, trang có tiêu đề và ảnh xem trước NumiQuick.
+- **Tự học theo Lớp 1–9 & Tùy chỉnh:** Hỗ trợ số tự nhiên, số nguyên âm, số thập phân, phân số, chia có dư, tính thuận tiện, biểu thức nhiều phép tính, điền số còn thiếu (`?`) và toán đố ngắn.
+- **Lộ trình thích ứng & Thi đấu 60 giây:** Tự động điều chỉnh độ khó theo chuỗi trả lời đúng/sai, kèm chế độ Thi đấu tốc độ 60s và 3 Nhiệm vụ hằng ngày.
+- **Vườn hoa ôn câu sai & Minh họa trực quan:** Tự động lưu câu sai để ghép chậu – hoa theo lịch nhắc lại (Spaced Repetition), kèm trục số / thanh phân số SVG và nút đọc đề bằng giọng nói.
+- **Mục tiêu Trà sữa Trân châu & Bạn đồng hành:** Mỗi câu đúng nhận 1 viên trân châu để làm ly Size S (30), M (50), L (70) và nhận thưởng XP; dùng XP mở khóa phụ kiện (Kính, Nơ, Mũ, Vương miện) cho bạn đồng hành.
+- **Giao bài trực tiếp cho học sinh cụ thể (Admin):** Tài khoản quản trị (`admin`) theo dõi biểu đồ 7 ngày, bấm phụ đạo 1 chạm hoặc tích chọn riêng từng học sinh để giao bài tập và chia sẻ qua link 1 chạm (`#hw=...`).
 
 ## Chạy thử
 
-Mở `index.html` trong trình duyệt để chạy trên máy tính. Một số tính năng đồng bộ/tài khoản cần cấu hình dịch vụ riêng.
+Mở `index.html` trong trình duyệt để chạy trên máy tính. Dữ liệu được lưu cục bộ trên trình duyệt (hỗ trợ xuất/nhập bản sao lưu JSON toàn hệ thống).
 
-## Cập nhật GitHub Pages
+## Kiểm thử tự động
 
-1. Giải nén ZIP.
-2. Tải toàn bộ file và thư mục bên trong `NumiQuick` lên thư mục gốc repository, giữ nguyên cấu trúc thư mục `assets`. Bao gồm `og-image.png`.
-3. Commit changes, chờ GitHub Pages triển khai xong rồi mở lại đường dẫn.
-
-Ảnh xem trước link nằm ở `og-image.png` và được khai báo trong thẻ Open Graph của `index.html`. Một số ứng dụng chat lưu ảnh cũ trong bộ nhớ đệm; sau khi cập nhật có thể cần một thời gian để ảnh mới hiện khi chia sẻ.
-
-## Lưu dữ liệu
-
-Tiến độ và hồ sơ bạn đồng hành lưu trong trình duyệt hiện tại. Để chuyển thiết bị, dùng mục sao lưu trong Thành tích. Đăng nhập đồng bộ và cây thống kê người dùng cần cấu hình backend/Apps Script trước khi thu thập dữ liệu thật.
+Chạy kiểm tra cú pháp và bộ unit test bằng Node.js (v20+):
+```bash
+for f in *.js tests/*.js; do node --check "$f"; done
+node --test tests/core.test.js
+```

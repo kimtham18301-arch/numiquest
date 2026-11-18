@@ -1,15 +1,11 @@
 'use strict';
 
-const CACHE_NAME = 'numiquick-v1.0.8';
+const CACHE_NAME = 'numiquick-v2.2.0';
 const STATIC_ASSETS = [
   './',
   './index.html',
   './style.css',
   './app.js',
-  './geo-data.js',
-  './discovery.js',
-  './challenge.js',
-  './farm.js',
   './milktea.js',
   './cloud-config.js',
   './cloud.js',
@@ -19,11 +15,18 @@ const STATIC_ASSETS = [
   './refresh.js',
   './analytics.js',
   './review-exit.js',
+  './adaptive-sprint.js',
+  './pedagogy.js',
+  './engagement.js',
+  './admin-dashboard.js',
   './nunito-400.woff',
   './nunito-500.woff',
   './nunito-600.woff',
   './nunito-700.woff',
   './nunito-800.woff',
+  './icon.svg',
+  './icon-192.png',
+  './icon-512.png',
   './play-race.svg',
   './play-school.svg',
   './play-world.svg',
@@ -59,20 +62,19 @@ self.addEventListener('fetch', event => {
   }
 
   event.respondWith(
-    caches.match(req, { ignoreSearch: true }).then(cached => {
-      const networkFetch = fetch(req).then(res => {
-        if (res && res.status === 200 && res.type === 'basic') {
-          const copy = res.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
-        }
-        return res;
-      }).catch(() => {
+    fetch(req, { cache: 'no-cache' }).then(res => {
+      if (res && res.status === 200 && res.type === 'basic') {
+        const copy = res.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
+      }
+      return res;
+    }).catch(() => {
+      return caches.match(req, { ignoreSearch: true }).then(cached => {
         if (cached) return cached;
         if (req.headers.get('accept')?.includes('text/html')) {
           return caches.match('./index.html', { ignoreSearch: true });
         }
       });
-      return cached || networkFetch;
     })
   );
 });
