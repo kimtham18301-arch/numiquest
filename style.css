@@ -2214,3 +2214,10 @@ body.dark-mode .challenge-rules {
   background: #1c2b21;
   border-color: #284434;
 }
+
+[hidden]{display:none !important;}
+.home-v2-mascot>span{max-width:100%;overflow-wrap:anywhere;text-align:center;}
+body.dark-mode .home-v2-hero{background:linear-gradient(135deg,#1d3328,#18241e 72%);border-color:#2f4d3d;box-shadow:0 8px 0 #0f1713;}
+body.dark-mode .home-v2-goal,body.dark-mode .numi-theme-picker{background:#1c2620;border-color:#2f4036;}
+body.dark-mode .home-v2-links button{background:#1f2d25;border-color:#2f4036;}
+body.dark-mode .home-v2-links button:nth-child(2){background:#272a1f;}
