@@ -2,6 +2,7 @@
 // Classroom & Weekly Assignments (Cloud-first with Supabase RLS + Local Storage fallback)
 (() => {
   const CLASSROOM_LOCAL_KEY = 'numi-classrooms-v1';
+  const CLASSROOM_SEED_FLAG = 'numi-sample-classroom-seeded-v1';
   let activeAssignmentId = null;
 
   function isCloudReadyForClassroom() {
@@ -26,6 +27,88 @@
 
   function saveLocalClassStore(store) {
     try { localStorage.setItem(CLASSROOM_LOCAL_KEY, JSON.stringify(store)); } catch {}
+  }
+
+  function seedSampleClassroomIfNeeded() {
+    if (isCloudReadyForClassroom()) return;
+    try {
+      if (localStorage.getItem(CLASSROOM_SEED_FLAG)) return;
+      const rawUsers = JSON.parse(localStorage.getItem('numi-local-users-v1') || '{}') || {};
+      if (!rawUsers['minhkhoi']) return;
+      const store = loadLocalClassStore();
+      if (store.classrooms.length > 0) {
+        localStorage.setItem(CLASSROOM_SEED_FLAG, '1');
+        return;
+      }
+
+      const roomId = 'room_sample_4a';
+      const asg1 = 'asg_sample_w1';
+      const asg2 = 'asg_sample_w2';
+      const now = Date.now();
+      const due = new Date(now + 86400000 * 5).toISOString().slice(0, 10);
+
+      store.classrooms.push({
+        id: roomId,
+        teacher_id: 'admin',
+        name: 'Lớp 4A - Toán Tư Duy',
+        grade: 4,
+        join_code: 'LP4A26',
+        created_at: new Date(now - 86400000 * 3).toISOString()
+      });
+
+      for (const sid of ['minhkhoi', 'baoan', 'haidang']) {
+        if (rawUsers[sid]) {
+          store.enrollments.push({
+            classroom_id: roomId,
+            student_id: sid,
+            joined_at: new Date(now - 86400000 * 2).toISOString()
+          });
+        }
+      }
+
+      store.assignments.push(
+        {
+          id: asg1,
+          classroom_id: roomId,
+          title: 'Tuần 1: Cộng trừ nhanh 2 chữ số',
+          due_date: due,
+          config: { type: 'natural', types: ['natural'], ops: ['+', '-'], digits: [1, 2], questionStyle: 'normal', count: 10, seconds: 20, grade: 4 },
+          created_at: new Date(now - 86400000 * 2).toISOString()
+        },
+        {
+          id: asg2,
+          classroom_id: roomId,
+          title: 'Tuần 2: Tìm số còn thiếu (?)',
+          due_date: due,
+          config: { type: 'natural', types: ['natural'], ops: ['+', '-', '*'], digits: [1, 2], questionStyle: 'missing', count: 10, seconds: 25, grade: 4 },
+          created_at: new Date(now - 86400000).toISOString()
+        }
+      );
+
+      store.submissions.push(
+        {
+          id: 'sub_sample_1',
+          assignment_id: asg1,
+          student_id: 'minhkhoi',
+          correct: 9,
+          total: 10,
+          avg_time: 4.8,
+          completed_at: new Date(now - 3600000 * 5).toISOString()
+        },
+        {
+          id: 'sub_sample_2',
+          assignment_id: asg1,
+          student_id: 'haidang',
+          correct: 10,
+          total: 10,
+          avg_time: 3.9,
+          completed_at: new Date(now - 3600000 * 3).toISOString()
+        }
+      );
+
+      saveLocalClassStore(store);
+      localStorage.setItem(CLASSROOM_SEED_FLAG, '1');
+    } catch {}
   }
 
   function generateJoinCode() {
@@ -123,6 +206,22 @@
     return item;
   }
 
+  async function deleteAssignment(assignmentId) {
+    if (!assignmentId) return false;
+    if (isCloudReadyForClassroom()) {
+      await cloudRefresh();
+      await cloudRequest(`/rest/v1/numi_assignments?id=eq.${encodeURIComponent(assignmentId)}`, 'DELETE');
+      return true;
+    }
+
+    const store = loadLocalClassStore();
+    const before = store.assignments.length;
+    store.assignments = store.assignments.filter(a => a.id !== assignmentId);
+    store.submissions = store.submissions.filter(s => s.assignment_id !== assignmentId);
+    saveLocalClassStore(store);
+    return store.assignments.length < before;
+  }
+
   async function submitAssignmentResult(assignmentId, correct, total, avgTime) {
     if (!assignmentId || !(total > 0)) return null;
     const payload = {
@@ -154,28 +253,35 @@
   }
 
   async function fetchTeacherOverview() {
+    seedSampleClassroomIfNeeded();
     if (isCloudReadyForClassroom()) {
       await cloudRefresh();
       const uid = encodeURIComponent(cloudSession.user.id);
       const classrooms = await cloudRequest(`/rest/v1/numi_classrooms?teacher_id=eq.${uid}&order=created_at.desc`);
+      const cids = classrooms.map(c => c.id).join(',');
+      const enrollments = classrooms.length
+        ? await cloudRequest(`/rest/v1/numi_enrollments?classroom_id=in.(${cids})`)
+        : [];
       const assignments = classrooms.length
-        ? await cloudRequest(`/rest/v1/numi_assignments?classroom_id=in.(${classrooms.map(c => c.id).join(',')})&order=created_at.desc`)
+        ? await cloudRequest(`/rest/v1/numi_assignments?classroom_id=in.(${cids})&order=created_at.desc`)
         : [];
       const submissions = assignments.length
         ? await cloudRequest(`/rest/v1/numi_submissions?assignment_id=in.(${assignments.map(a => a.id).join(',')})`)
         : [];
-      return { classrooms, assignments, submissions };
+      return { classrooms, enrollments, assignments, submissions };
     }
 
     const store = loadLocalClassStore();
     return {
       classrooms: [...store.classrooms].reverse(),
+      enrollments: store.enrollments,
       assignments: [...store.assignments].reverse(),
       submissions: store.submissions
     };
   }
 
   async function fetchStudentAssignments() {
+    seedSampleClassroomIfNeeded();
     if (isCloudReadyForClassroom()) {
       await cloudRefresh();
       const uid = encodeURIComponent(cloudSession.user.id);
@@ -196,6 +302,108 @@
     const assignments = store.assignments.filter(a => myRoomIds.has(a.classroom_id)).reverse();
     const submissions = store.submissions.filter(s => s.student_id === sid);
     return { classrooms, assignments, submissions };
+  }
+
+  function resolveStudentMeta(studentId) {
+    const users = typeof getLocalUsers === 'function' ? getLocalUsers() : {};
+    const u = users[studentId];
+    return {
+      name: u?.name || studentId,
+      avatar: u?.avatar || 'bunny'
+    };
+  }
+
+  function getClassroomLeaderboard(classroomId, storeOverride = null) {
+    const store = storeOverride || loadLocalClassStore();
+    const enrolled = (store.enrollments || []).filter(e => e.classroom_id === classroomId);
+    const asgIds = new Set((store.assignments || []).filter(a => a.classroom_id === classroomId).map(a => a.id));
+    const subs = (store.submissions || []).filter(s => asgIds.has(s.assignment_id));
+
+    const statsByStudent = new Map();
+    for (const e of enrolled) {
+      statsByStudent.set(e.student_id, {
+        student_id: e.student_id,
+        ...resolveStudentMeta(e.student_id),
+        completedCount: 0,
+        totalCorrect: 0,
+        totalQuestions: 0
+      });
+    }
+
+    for (const s of subs) {
+      const entry = statsByStudent.get(s.student_id) || {
+        student_id: s.student_id,
+        ...resolveStudentMeta(s.student_id),
+        completedCount: 0,
+        totalCorrect: 0,
+        totalQuestions: 0
+      };
+      entry.completedCount++;
+      entry.totalCorrect += Number(s.correct) || 0;
+      entry.totalQuestions += Number(s.total) || 0;
+      statsByStudent.set(s.student_id, entry);
+    }
+
+    return Array.from(statsByStudent.values())
+      .map(item => ({
+        ...item,
+        accuracy: item.totalQuestions > 0 ? Math.round((item.totalCorrect / item.totalQuestions) * 100) : 0
+      }))
+      .sort((a, b) => (b.totalCorrect - a.totalCorrect) || (b.accuracy - a.accuracy) || a.name.localeCompare(b.name));
+  }
+
+  function openClassroomLeaderboardModal(classroomId, dataOverride = null) {
+    const store = dataOverride || loadLocalClassStore();
+    const room = (store.classrooms || []).find(c => c.id === classroomId);
+    const board = getClassroomLeaderboard(classroomId, store);
+
+    modal(`<h2>🏆 ${t('Bảng thi đua', 'Leaderboard')}${room ? ` · ${esc(room.name)}` : ''}</h2>
+    <p class="muted">${t('Xếp hạng theo tổng số câu làm đúng và độ chính xác của các bài tập được giao.', 'Ranked by total correct answers and accuracy across assignments.')}</p>
+    ${board.length === 0
+      ? `<p class="muted" style="text-align:center;padding:18px 0">${t('Chưa có học sinh nào trong lớp.', 'No students enrolled yet.')}</p>`
+      : `<div class="cls-board-list">${board.map((row, idx) => `<div class="cls-board-row">
+          <span class="cls-rank">${idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}</span>
+          <div class="cls-board-user">
+            <b>${esc(row.name)}</b>
+            <small>${row.completedCount} ${t('bài đã nộp', 'completed')} · ${row.accuracy}%</small>
+          </div>
+          <strong class="cls-score">${row.totalCorrect} ${t('đúng', 'pts')}</strong>
+        </div>`).join('')}</div>`}
+    <div class="actions" style="margin-top:14px">
+      <button type="button" class="primary" onclick="$('#modal').close()">${t('Đóng', 'Close')}</button>
+    </div>`);
+  }
+
+  function openAssignmentSubmissionsModal(assignmentId, data) {
+    const asg = data.assignments.find(a => a.id === assignmentId);
+    if (!asg) return;
+    const room = data.classrooms.find(c => c.id === asg.classroom_id);
+    const enrolledIds = (data.enrollments || []).filter(e => e.classroom_id === asg.classroom_id).map(e => e.student_id);
+    const subs = data.submissions.filter(s => s.assignment_id === assignmentId);
+    const subByStudent = new Map(subs.map(s => [s.student_id, s]));
+    const allStudentIds = Array.from(new Set([...enrolledIds, ...subs.map(s => s.student_id)]));
+
+    modal(`<h2>📋 ${esc(asg.title)}</h2>
+    <p class="muted">${room ? esc(room.name) + ' · ' : ''}${subs.length}/${allStudentIds.length} ${t('học sinh đã nộp bài', 'students submitted')}</p>
+    ${allStudentIds.length === 0
+      ? `<p class="muted" style="text-align:center;padding:18px 0">${t('Lớp chưa có học sinh tham gia.', 'No students in this classroom yet.')}</p>`
+      : `<div class="cls-board-list">${allStudentIds.map(sid => {
+          const meta = resolveStudentMeta(sid);
+          const sub = subByStudent.get(sid);
+          const pct = sub && sub.total > 0 ? Math.round((sub.correct / sub.total) * 100) : 0;
+          return `<div class="cls-board-row">
+            <div class="cls-board-user">
+              <b>${esc(meta.name)}</b>
+              <small>@${esc(sid)} ${sub ? `· ${sub.avg_time || 0}s/${t('câu', 'q')}` : ''}</small>
+            </div>
+            ${sub
+              ? `<span class="acc-pill ${pct >= 80 ? 'acc-high' : pct >= 60 ? 'acc-med' : 'acc-low'}">${sub.correct}/${sub.total} (${pct}%)</span>`
+              : `<span class="mistake-pill">${t('Chưa nộp', 'Pending')}</span>`}
+          </div>`;
+        }).join('')}</div>`}
+    <div class="actions" style="margin-top:14px">
+      <button type="button" class="primary" onclick="$('#modal').close()">${t('Đóng', 'Close')}</button>
+    </div>`);
   }
 
   function startAssignedLesson(assignment) {
@@ -234,7 +442,7 @@
     $('#app').innerHTML = `<section class="narrow card"><p class="muted">${t('Đang tải dữ liệu lớp học...', 'Loading classrooms...')}</p></section>`;
 
     let data;
-    try { data = await fetchTeacherOverview(); } catch { data = { classrooms: [], assignments: [], submissions: [] }; }
+    try { data = await fetchTeacherOverview(); } catch { data = { classrooms: [], enrollments: [], assignments: [], submissions: [] }; }
 
     $('#app').innerHTML = `<section class="admin-view classroom-view">
       <div class="card admin-header-card">
@@ -256,13 +464,17 @@
       <div class="classroom-grid">
         ${data.classrooms.map(room => {
           const roomAsgs = data.assignments.filter(a => a.classroom_id === room.id);
+          const studentCount = (data.enrollments || []).filter(e => e.classroom_id === room.id).length;
           return `<div class="card classroom-card">
             <div class="classroom-card-head">
               <div>
                 <h3>${esc(room.name)}</h3>
-                <small class="muted">${t('Khối lớp', 'Grade')} ${room.grade} · ${t('Mã lớp:', 'Code:')} <code class="join-code-pill">${esc(room.join_code)}</code></small>
+                <small class="muted">${t('Khối lớp', 'Grade')} ${room.grade} · ${studentCount} ${t('học sinh', 'students')} · ${t('Mã lớp:', 'Code:')} <code class="join-code-pill">${esc(room.join_code)}</code> <button type="button" class="ghost cls-mini-btn" data-copy-code="${esc(room.join_code)}">📋 ${t('Sao chép', 'Copy')}</button></small>
               </div>
-              <button type="button" class="primary" data-assign-room="${esc(room.id)}" data-assign-grade="${room.grade}">+ ${t('Giao bài', 'Assign')}</button>
+              <div class="cls-head-actions">
+                <button type="button" class="ghost" data-room-board="${esc(room.id)}">🏆 ${t('Thi đua', 'Rank')}</button>
+                <button type="button" class="primary" data-assign-room="${esc(room.id)}" data-assign-grade="${room.grade}">+ ${t('Giao bài', 'Assign')}</button>
+              </div>
             </div>
             <div class="assignment-list">
               ${roomAsgs.length === 0 ? `<p class="muted">${t('Chưa giao bài tập nào cho lớp này.', 'No assignments yet.')}</p>` : roomAsgs.map(a => {
@@ -270,9 +482,13 @@
                 return `<div class="assignment-row">
                   <div>
                     <b>${esc(a.title)}</b>
-                    <small>${a.due_date ? t('Hạn nộp: ', 'Due: ') + esc(a.due_date) + ' · ' : ''}${a.config?.count || 10} ${t('câu', 'qs')} · ${subs.length} ${t('bài đã nộp', 'submissions')}</small>
+                    <small>${a.due_date ? t('Hạn nộp: ', 'Due: ') + esc(a.due_date) + ' · ' : ''}${a.config?.count || 10} ${t('câu', 'qs')} · ${subs.length}/${Math.max(studentCount, subs.length)} ${t('đã nộp', 'submitted')}</small>
                   </div>
-                  ${subs.length ? `<span class="acc-pill acc-high">${Math.round(subs.reduce((acc, s) => acc + (s.correct / s.total) * 100, 0) / subs.length)}% TB</span>` : ''}
+                  <div class="cls-row-actions">
+                    ${subs.length ? `<span class="acc-pill acc-high">${Math.round(subs.reduce((acc, s) => acc + (s.correct / s.total) * 100, 0) / subs.length)}% TB</span>` : ''}
+                    <button type="button" class="ghost cls-mini-btn" data-view-subs="${esc(a.id)}">${t('Chi tiết', 'Details')}</button>
+                    <button type="button" class="ghost cls-mini-btn cls-del-btn" data-del-asg="${esc(a.id)}">${t('Xóa', 'Del')}</button>
+                  </div>
                 </div>`;
               }).join('')}
             </div>
@@ -309,29 +525,78 @@
       };
     };
 
+    $$('[data-copy-code]').forEach(btn => {
+      btn.onclick = () => {
+        const code = btn.dataset.copyCode;
+        navigator.clipboard?.writeText(code)
+          .then(() => toast(t('Đã sao chép mã lớp: ' + code, 'Copied join code: ' + code)))
+          .catch(() => toast(t('Mã lớp: ' + code, 'Join code: ' + code)));
+      };
+    });
+
+    $$('[data-room-board]').forEach(btn => {
+      btn.onclick = () => openClassroomLeaderboardModal(btn.dataset.roomBoard, data);
+    });
+
+    $$('[data-view-subs]').forEach(btn => {
+      btn.onclick = () => openAssignmentSubmissionsModal(btn.dataset.viewSubs, data);
+    });
+
+    $$('[data-del-asg]').forEach(btn => {
+      btn.onclick = async () => {
+        if (!confirm(t('Xóa bài tập này khỏi lớp?', 'Delete this assignment?'))) return;
+        await deleteAssignment(btn.dataset.delAsg);
+        toast(t('Đã xóa bài tập.', 'Assignment deleted.'));
+        renderClassroomManager();
+      };
+    });
+
     $$('[data-assign-room]').forEach(btn => {
       btn.onclick = () => {
         const roomId = btn.dataset.assignRoom;
         const g = Number(btn.dataset.assignGrade) || 1;
         modal(`<h2>${t('Giao bài tập mới', 'New Assignment')}</h2>
-        <form id="newAssignForm" style="display:grid;gap:12px;margin-top:12px">
+        <form id="newAssignForm" style="display:grid;gap:10px;margin-top:12px">
           <label>${t('Tiêu đề bài tập / Tuần học', 'Assignment title')}
             <input name="title" maxlength="120" required placeholder="${t('VD: Tuần 12 - Phép nhân 2 chữ số', 'e.g. Week 12 - Multiplication')}">
           </label>
-          <label>${t('Hạn nộp', 'Due date')}
-            <input name="dueDate" type="date">
-          </label>
-          <label>${t('Loại số', 'Number type')}
-            <select name="type">
-              <option value="natural">${t('Số tự nhiên', 'Whole numbers')}</option>
-              <option value="fraction">${t('Phân số', 'Fractions')}</option>
-              <option value="decimal">${t('Số thập phân', 'Decimals')}</option>
-              <option value="negative">${t('Số nguyên âm', 'Negative integers')}</option>
-            </select>
-          </label>
-          <label>${t('Số câu hỏi', 'Question count')}
-            <select name="count"><option value="10">10</option><option value="15">15</option><option value="20">20</option></select>
-          </label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <label>${t('Hạn nộp', 'Due date')}
+              <input name="dueDate" type="date">
+            </label>
+            <label>${t('Loại số', 'Number type')}
+              <select name="type">
+                <option value="natural">${t('Số tự nhiên', 'Whole numbers')}</option>
+                <option value="fraction">${t('Phân số', 'Fractions')}</option>
+                <option value="decimal">${t('Số thập phân', 'Decimals')}</option>
+                <option value="negative">${t('Số nguyên âm', 'Negative integers')}</option>
+              </select>
+            </label>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <label>${t('Dạng bài', 'Style')}
+              <select name="questionStyle">
+                <option value="normal">${t('Tính nhẩm chuẩn', 'Standard')}</option>
+                <option value="convenient">${t('Tính thuận tiện', 'Regrouping')}</option>
+                <option value="expression">${t('Biểu thức nhiều phép', 'Expressions')}</option>
+                <option value="missing">${t('Tìm số còn thiếu (?)', 'Missing number (?)')}</option>
+                <option value="word">${t('Toán đố ngắn', 'Short word problems')}</option>
+              </select>
+            </label>
+            <label>${t('Số câu & Thời gian', 'Count & Seconds')}
+              <select name="count">
+                <option value="10">10 ${t('câu', 'qs')} (20s)</option>
+                <option value="15">15 ${t('câu', 'qs')} (20s)</option>
+                <option value="20">20 ${t('câu', 'qs')} (25s)</option>
+              </select>
+            </label>
+          </div>
+          <div>
+            <small class="muted">${t('Phép tính áp dụng:', 'Operations:')}</small>
+            <div style="display:flex;gap:12px;margin-top:4px">
+              ${[['+','+'],['-','−'],['*','×'],['/','÷']].map(([v,lbl])=>`<label style="display:inline-flex;align-items:center;gap:4px"><input type="checkbox" name="ops" value="${v}" checked> ${lbl}</label>`).join('')}
+            </div>
+          </div>
           <div class="actions">
             <button type="submit" class="primary">${t('Giao bài ngay', 'Assign Now')}</button>
             <button type="button" onclick="$('#modal').close()">${t('Hủy', 'Cancel')}</button>
@@ -341,16 +606,19 @@
           e.preventDefault();
           const f = new FormData(e.target);
           const type = String(f.get('type') || 'natural');
+          const ops = f.getAll('ops');
+          const count = Number(f.get('count')) || 10;
           try {
             await createAssignment(roomId, f.get('title'), f.get('dueDate'), {
               ...defaults,
               grade: g,
               type,
               types: [type],
-              ops: ['+', '-', '*', '/'],
+              ops: ops.length ? ops : ['+', '-'],
+              questionStyle: String(f.get('questionStyle') || 'normal'),
               digits: g >= 4 ? [1, 2] : [1],
-              count: Number(f.get('count')) || 10,
-              seconds: 20
+              count,
+              seconds: count >= 20 ? 25 : 20
             });
             $('#modal').close();
             toast(t('Đã giao bài tập cho cả lớp!', 'Assignment posted to classroom!'));
@@ -397,18 +665,42 @@
     const host = $('.home-v2') || $('.simple-home');
     if (!host || host.querySelector('.student-classroom-box')) return;
 
+    seedSampleClassroomIfNeeded();
+
     const box = document.createElement('section');
     box.className = 'student-classroom-box';
     const anchor = host.querySelector('.home-v2-links') || host.querySelector('.home-v2-local');
     if (anchor) anchor.before(box);
     else host.append(box);
 
+    const u = typeof currentAuthUser === 'function' ? currentAuthUser() : null;
+    const isAdmin = u && (u.role === 'admin' || u.username === 'admin');
+
+    if (isAdmin) {
+      let tData;
+      try { tData = await fetchTeacherOverview(); } catch { tData = { classrooms: [], enrollments: [], assignments: [], submissions: [] }; }
+      if (!box.isConnected || view !== 'home') return;
+      box.innerHTML = `
+        <div class="classroom-student-head">
+          <div>
+            <b>🏫 ${t('Quản lý Lớp học & Giao bài', 'Classroom & Assignment Hub')}</b>
+            <small>${tData.classrooms.length} ${t('lớp học', 'classrooms')} · ${tData.assignments.length} ${t('bài đã giao', 'assignments')} · ${tData.submissions.length} ${t('lượt đã nộp', 'submissions')}</small>
+          </div>
+          <button type="button" id="openTeacherClassBtn" class="dq-claim-btn">${t('Quản lý lớp', 'Manage')} →</button>
+        </div>
+      `;
+      $('#openTeacherClassBtn').onclick = renderClassroomManager;
+      return;
+    }
+
     let data;
     try { data = await fetchStudentAssignments(); } catch { data = { classrooms: [], assignments: [], submissions: [] }; }
     if (!box.isConnected || view !== 'home') return;
 
-    const doneIds = new Set(data.submissions.map(s => s.assignment_id));
-    const pending = data.assignments.filter(a => !doneIds.has(a.id));
+    const subByAsg = new Map(data.submissions.map(s => [s.assignment_id, s]));
+    const pending = data.assignments.filter(a => !subByAsg.has(a.id));
+    const completed = data.assignments.filter(a => subByAsg.has(a.id));
+    const primaryRoom = data.classrooms[0];
 
     box.innerHTML = `
       <div class="classroom-student-head">
@@ -416,18 +708,32 @@
           <b>🏫 ${t('Lớp học & Bài tập được giao', 'My Classroom & Assignments')}</b>
           <small>${data.classrooms.length ? data.classrooms.map(c => esc(c.name)).join(', ') : t('Chưa tham gia lớp nào', 'Not enrolled in a classroom yet')}</small>
         </div>
-        <button type="button" id="joinClassBtn" class="ghost">${t('+ Nhập mã lớp', '+ Join Code')}</button>
+        <div class="cls-head-actions">
+          ${primaryRoom ? `<button type="button" id="studentClassRankBtn" class="ghost">🏆 ${t('Thi đua', 'Rank')}</button>` : ''}
+          <button type="button" id="joinClassBtn" class="ghost">${t('+ Nhập mã lớp', '+ Join Code')}</button>
+        </div>
       </div>
       ${pending.length ? `<div class="student-asg-list">${pending.slice(0, 3).map(a => `<div class="dq-item">
         <div><b>${esc(a.title)}</b><small>${a.config?.count || 10} ${t('câu', 'qs')}${a.due_date ? ' · ' + t('Hạn: ', 'Due: ') + esc(a.due_date) : ''}</small></div>
         <button type="button" class="dq-claim-btn" data-start-asg="${esc(a.id)}">${t('Làm bài', 'Start')} →</button>
-      </div>`).join('')}</div>` : ''}
+      </div>`).join('')}</div>` : (data.classrooms.length ? `<small class="muted">✓ ${t('Em đã hoàn thành hết bài tập được giao!', 'All assigned lessons completed!')}</small>` : '')}
+      ${completed.length ? `<details class="cls-completed-wrap"><summary>${t('Bài đã hoàn thành', 'Completed assignments')} (${completed.length})</summary><div class="student-asg-list" style="margin-top:8px">${completed.slice(0, 3).map(a => {
+        const sub = subByAsg.get(a.id);
+        return `<div class="dq-item is-done">
+          <div><b>${esc(a.title)}</b><small>${t('Điểm:', 'Score:')} ${sub.correct}/${sub.total} · ${sub.avg_time || 0}s/${t('câu', 'q')}</small></div>
+          <button type="button" class="ghost cls-mini-btn" data-redo-asg="${esc(a.id)}">${t('Làm lại', 'Retry')}</button>
+        </div>`;
+      }).join('')}</div></details>` : ''}
     `;
+
+    if (primaryRoom && $('#studentClassRankBtn')) {
+      $('#studentClassRankBtn').onclick = () => openClassroomLeaderboardModal(primaryRoom.id);
+    }
 
     $('#joinClassBtn').onclick = () => {
       modal(`<h2>${t('Tham gia lớp học', 'Join Classroom')}</h2>
       <p class="muted">${t('Nhập mã lớp 6 ký tự do thầy cô hoặc phụ huynh cung cấp:', 'Enter the 6-character classroom code:')}</p>
-      <input id="joinCodeInput" maxlength="6" placeholder="ABC123" style="width:100%;font-size:22px;text-align:center;text-transform:uppercase;letter-spacing:4px;padding:10px;margin:12px 0">
+      <input id="joinCodeInput" maxlength="6" placeholder="LP4A26" style="width:100%;font-size:22px;text-align:center;text-transform:uppercase;letter-spacing:4px;padding:10px;margin:12px 0">
       <div class="actions">
         <button type="button" class="primary" id="confirmJoinClassBtn">${t('Tham gia', 'Join')}</button>
         <button type="button" onclick="$('#modal').close()">${t('Hủy', 'Cancel')}</button>
@@ -450,6 +756,12 @@
         if (asg) startAssignedLesson(asg);
       };
     });
+    $$('[data-redo-asg]').forEach(btn => {
+      btn.onclick = () => {
+        const asg = completed.find(x => x.id === btn.dataset.redoAsg);
+        if (asg) startAssignedLesson(asg);
+      };
+    });
   }
 
   const homeBeforeClassroom = typeof home === 'function' ? home : null;
@@ -463,18 +775,30 @@
   const style = document.createElement('style');
   style.textContent = `
     .student-classroom-box{padding:14px 16px;border-radius:16px;background:rgba(255,255,255,.78);border:1.5px solid #dce8dc;margin:12px 0;display:grid;gap:10px}
-    .classroom-student-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .classroom-student-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
     .classroom-student-head b{display:block;font-size:15px}
     .classroom-student-head small{display:block;color:#5f7466;font-size:12px}
+    .cls-head-actions,.cls-row-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+    .cls-mini-btn{padding:4px 9px;font-size:12px;min-height:28px;border-radius:8px}
+    .cls-del-btn{color:#c92a2a}
     .student-asg-list{display:grid;gap:8px}
     .classroom-grid{display:grid;gap:14px;margin-top:14px}
-    .classroom-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+    .classroom-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
     .join-code-pill{background:#eaf5ee;color:#1e6244;padding:2px 8px;border-radius:6px;font-weight:800;letter-spacing:1px}
     .assignment-list{display:grid;gap:8px}
-    .assignment-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:12px;background:#f7faf7;border:1px solid #e4efe4}
+    .assignment-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:12px;background:#f7faf7;border:1px solid #e4efe4;flex-wrap:wrap}
     .assignment-row b{display:block;font-size:14px}
     .assignment-row small{color:#5f7466;font-size:12px}
-    body.dark-mode .student-classroom-box,body.dark-mode .assignment-row{background:#1c2620;border-color:#2f4036}
+    .cls-board-list{display:grid;gap:8px;max-height:280px;overflow-y:auto;margin-top:10px}
+    .cls-board-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-radius:10px;background:#f7faf7;border:1px solid #e4efe4}
+    .cls-rank{font-size:18px;width:30px;text-align:center;flex:none}
+    .cls-board-user{flex:1;min-width:0}
+    .cls-board-user b{display:block;font-size:14px}
+    .cls-board-user small{display:block;color:#5f7466;font-size:12px}
+    .cls-score{color:#1e6244;font-size:14px}
+    .cls-completed-wrap summary{cursor:pointer;font-size:12px;font-weight:700;color:#4a7758}
+    body.dark-mode .student-classroom-box,body.dark-mode .assignment-row,body.dark-mode .cls-board-row{background:#1c2620;border-color:#2f4036}
+    body.dark-mode .cls-score{color:#6ee7b7}
   `;
   document.head.append(style);
 
@@ -482,18 +806,26 @@
     window.createClassroom = createClassroom;
     window.joinClassroomByCode = joinClassroomByCode;
     window.createAssignment = createAssignment;
+    window.deleteAssignment = deleteAssignment;
     window.submitAssignmentResult = submitAssignmentResult;
     window.fetchTeacherOverview = fetchTeacherOverview;
     window.fetchStudentAssignments = fetchStudentAssignments;
+    window.getClassroomLeaderboard = getClassroomLeaderboard;
+    window.openClassroomLeaderboardModal = openClassroomLeaderboardModal;
+    window.openAssignmentSubmissionsModal = openAssignmentSubmissionsModal;
     window.renderClassroomManager = renderClassroomManager;
   }
   if (typeof global !== 'undefined') {
     global.createClassroom = createClassroom;
     global.joinClassroomByCode = joinClassroomByCode;
     global.createAssignment = createAssignment;
+    global.deleteAssignment = deleteAssignment;
     global.submitAssignmentResult = submitAssignmentResult;
     global.fetchTeacherOverview = fetchTeacherOverview;
     global.fetchStudentAssignments = fetchStudentAssignments;
+    global.getClassroomLeaderboard = getClassroomLeaderboard;
+    global.openClassroomLeaderboardModal = openClassroomLeaderboardModal;
+    global.openAssignmentSubmissionsModal = openAssignmentSubmissionsModal;
     global.renderClassroomManager = renderClassroomManager;
   }
   if (view === 'home') injectStudentClassroomBox();

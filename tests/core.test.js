@@ -276,6 +276,16 @@ test('classroom workflow supports creating rooms, joining by code, assigning, an
   assert.equal(studentView.assignments.length, 1);
   assert.equal(studentView.submissions.length, 1);
   assert.equal(studentView.submissions[0].correct, 9);
+
+  const board = ctx.getClassroomLeaderboard(room.id);
+  assert.equal(board.length, 1);
+  assert.equal(board[0].totalCorrect, 9);
+  assert.equal(board[0].accuracy, 90);
+
+  const deleted = await ctx.deleteAssignment(asg.id);
+  assert.equal(deleted, true);
+  const afterDel = await ctx.fetchStudentAssignments();
+  assert.equal(afterDel.assignments.length, 0);
 });
 
 test('pedagogy generators (missing, word), visual math SVG, and spaced repetition work', () => {
