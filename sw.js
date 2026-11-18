@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_NAME = 'numiquick-v1.5.0';
+const CACHE_NAME = 'numiquick-v1.6.0';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -22,6 +22,7 @@ const STATIC_ASSETS = [
   './classroom.js',
   './pedagogy.js',
   './engagement.js',
+  './teacher-tools.js',
   './nunito-400.woff',
   './nunito-500.woff',
   './nunito-600.woff',

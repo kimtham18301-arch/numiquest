@@ -151,7 +151,8 @@ function loadAppContext() {
     'adaptive-sprint.js',
     'classroom.js',
     'pedagogy.js',
-    'engagement.js'
+    'engagement.js',
+    'teacher-tools.js'
   ];
   for (const file of scripts) {
     const code = fs.readFileSync(path.join(rootDir, file), 'utf8');
@@ -317,4 +318,28 @@ test('engagement accessories, seeded friend challenge, and speech formatting wor
   assert.deepEqual(q1.map(x => x.q), q2.map(x => x.q));
 
   assert.equal(ctx.formatMathForSpeech('3 + 4 = ?', 'vi'), '3 cộng 4 bằng mấy');
+});
+
+test('teacher tools analyze common mistakes and build classroom CSV safely', () => {
+  const ctx = loadAppContext();
+  ctx.localStorage.setItem('numi-local-users-v1', JSON.stringify({
+    hs1: { username: 'hs1', name: 'Bé A', role: 'student', grade: 4 }
+  }));
+  ctx.localStorage.setItem('numi-user-state-hs1', JSON.stringify({
+    mistakes: [
+      { id: 'm1', q: '1/2 + 1/3', skill: 'fraction:+' },
+      { id: 'm2', q: '2/5 + 1/5', skill: 'fraction:+' }
+    ]
+  }));
+  const common = ctx.analyzeCommonMistakes(4);
+  assert.equal(common[0].skill, 'fraction:+');
+  assert.equal(common[0].mistakeCount, 2);
+  assert.equal(common[0].studentCount, 1);
+
+  const csv = ctx.buildClassroomWeeklyCsv(
+    { id: 'r1', name: 'Lớp 4A', grade: 4 },
+    [{ id: 'a1', classroom_id: 'r1', title: 'Tuần 12', due_date: '2026-12-01' }],
+    [{ assignment_id: 'a1', student_id: 'hs1', correct: 9, total: 10, avg_time: 4.2 }]
+  );
+  assert.ok(csv.includes('Lớp 4A') && csv.includes('Tuần 12') && csv.includes('90%'));
 });

@@ -21,14 +21,14 @@ Tài liệu lưu lại định hướng nâng cấp dài hạn cho **NumiQuick**
 
 ---
 
-## Nhóm 3: Công cụ cho Giáo viên & Phụ huynh
-- [ ] **Phân tích "Lỗi sai phổ biến nhất của lớp":** Tổng hợp từ `numi_submissions` và `mistakes` để giáo viên biết dạng bài nào cả lớp đang hay sai nhất.
-- [ ] **Xuất báo cáo tuần theo Lớp học:** Tải bảng tổng hợp điểm và tiến độ từng bài tập tuần của cả lớp ra CSV/Excel hoặc bản in gửi phụ huynh.
-- [ ] **Phiếu bài tập giấy có mã QR:** Gắn mã QR trên phiếu in PDF (`renderWorksheet`) dẫn thẳng tới đáp án hoặc chế độ luyện lại dạng bài tương ứng.
+## Nhóm 3: Công cụ cho Giáo viên & Phụ huynh *(Đã triển khai)*
+- [x] **Phân tích "Lỗi sai phổ biến nhất của lớp":** Tổng hợp từ `mistakes` của học sinh để giáo viên biết dạng bài nào cả lớp đang hay sai nhất (`analyzeCommonMistakes`).
+- [x] **Xuất báo cáo tuần theo Lớp học:** Tải bảng tổng hợp điểm và tiến độ từng bài tập tuần của cả lớp ra file CSV (`buildClassroomWeeklyCsv`).
+- [x] **Phiếu bài tập giấy có mã QR:** Gắn mã QR trên phiếu in PDF (`renderWorksheet`) dẫn thẳng tới phần luyện tập trực tuyến.
 
 ---
 
 ## Nhóm 4: Tối ưu Kỹ thuật & Vận hành
-- [ ] **Kết nối Supabase thật (`cloud-config.js`):** Chạy `cloud-setup.sql` trên Supabase và cấu hình `url` + `publishableKey` (cùng Google OAuth nếu cần) để đồng bộ đa thiết bị.
-- [ ] **Tối ưu `geo-data.js` (1,7 MB):** Tách ảnh base64 sang file ảnh/JSON tải theo nhu cầu để giảm thời gian parse JS.
-- [ ] **GitHub Actions CI:** Tự động chạy `node --check` và `node --test tests/core.test.js` trên mỗi Pull Request trước khi merge vào `main`.
+- [ ] **Kết nối Supabase thật (`cloud-config.js`):** Người dùng chạy `cloud-setup.sql` trên project Supabase cá nhân và điền `url` + `publishableKey` để đồng bộ đa thiết bị.
+- [x] **Tối ưu `geo-data.js` (1,7 MB):** Đã loại khỏi precache Service Worker (`sw.js`) và chỉ lazy-load khi người dùng mở Bản đồ.
+- [x] **GitHub Actions CI:** Đã thêm `.github/workflows/ci.yml` tự động chạy `node --check` và `node --test tests/core.test.js` trên mỗi Push / Pull Request.
