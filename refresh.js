@@ -114,7 +114,7 @@ finishPractice=function(){
 const numiOldNav=nav;nav=function(destination){if(destination==='login'){openAccount('login');return}if(destination==='home'){numiOldNav('home');return}if(destination==='profile'||destination==='account'){view=destination;if(typeof window!=='undefined')window.view=destination;if(typeof global!=='undefined')global.view=destination;renderProfile();return}if(destination==='guide'){view='guide';if(typeof window!=='undefined')window.view='guide';if(typeof global!=='undefined')global.view='guide';renderGuide();return}if(!currentAuthUser()){toast(t('Vui lòng đăng nhập để bắt đầu học.','Please sign in to start learning.'));openAccount('login');return}numiOldNav(destination)};
 // Make the controls concise; the help button explains which question types are included.
 const numiOldSetup=setup;setup=function(){numiOldSetup();const form=$('#config');if(!form)return;
- const advanced=form.querySelector('.advanced-picks');if(advanced){const hints=advanced.querySelectorAll('.settings-hint');hints.forEach((x,i)=>{if(i===0){x.hidden=true;const d=document.createElement('details');d.className='advanced-help';d.innerHTML=`<summary>${t('Giải thích ngắn','Quick help')}</summary><p>${t('“Tính thuận tiện” giúp ghép số cho dễ tính. “Biểu thức” có nhiều phép tính và có thể dùng ngoặc. Chỉ chọn loại số bé đã học.','Regrouping makes sums easier. Expressions combine operations and may use brackets. Choose only number types already learned.')}</p>`;x.insertAdjacentElement('afterend',d)}else x.hidden=true});const labs=advanced.querySelectorAll('label');if(labs[0])labs[0].firstChild.textContent=t('Dạng bài','Mode');if(labs[1])labs[1].firstChild.textContent=t('Số phép tính','Number of terms');if(labs[2])labs[2].firstChild.textContent=t('Dấu ngoặc','Brackets')}};
+ const advanced=form.querySelector('.advanced-picks');if(advanced){const hints=advanced.querySelectorAll('.settings-hint');hints.forEach((x,i)=>{if(i===0){x.hidden=true;const d=document.createElement('details');d.className='advanced-help';d.innerHTML=`<summary>${t('Giải thích ngắn','Quick help')}</summary><p>${t('“Tính thuận tiện” giúp ghép số cho dễ tính. “Biểu thức” có nhiều phép tính và có thể dùng ngoặc. Chỉ chọn loại số bé đã học.','Regrouping makes sums easier. Expressions combine operations and may use brackets. Choose only number types already learned.')}</p>`;x.insertAdjacentElement('afterend',d)}else x.hidden=true});const labs=advanced.querySelectorAll('label');if(labs[0])labs[0].firstChild.textContent=t('Dạng bài','Mode');if(labs[1])labs[1].firstChild.textContent=t('Số phép tính','Number of terms')}};
 // A missed problem returns as a fresh equivalent question so the learner cannot rely on the old answer.
 function numiReviewVariant(old){
  const skill=String(old.skill||''),parts=skill.split(':'),type=parts[0]||old.config?.type||'natural';let op=parts[1]||'+',c={...(old.config||config)};
@@ -183,7 +183,7 @@ const numiAnimalOriginal=animal;
 function numiBuddyPrefs(){
  let saved={};try{saved=JSON.parse(localStorage.getItem(NUMI_BUDDY_KEY)||'{}')||{}}catch{}
  const f=typeof farmState==='function'?farmState():{};
- const name=String(saved.name||f.name||'Numi').trim().slice(0,16)||'Numi';
+ const name=String(saved.name||f.name||'Numi').trim().slice(0,24)||'Numi';
  const avatar=['bunny','panda','fox','lion'].includes(saved.avatar)?saved.avatar:'bunny';
  if(f&&f.name!==name){f.name=name;try{save()}catch{}}
  return {name,avatar};
@@ -199,8 +199,6 @@ function numiCustomizeBuddy(){
  $('#numiBuddySave').onclick=()=>{const name=$('#numiBuddyName').value.trim().slice(0,16)||'Numi';try{localStorage.setItem(NUMI_BUDDY_KEY,JSON.stringify({name,avatar}))}catch{}const f=farmState();f.name=name;state.buddy=avatar;try{save()}catch{}$('#modal').close();if(!currentAuthUser()){openAccount('login')}else if(view==='home'){home()}else if(view==='quiz')showQuiz();else if(view==='garden')gardenRender();else if(view==='setup')setup();else if(view==='stats')stats();else home()};
 }
 farmRename=numiCustomizeBuddy;
-const numiOriginalStats=stats;
-stats=function(){numiOriginalStats();const chart=$('.chart');if(!chart)return;const history=state.history||[],days=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(6-i));const key=d.toISOString().slice(0,10),items=history.filter(x=>String(x.date).slice(0,10)===key),total=items.reduce((a,x)=>a+x.total,0),correct=items.reduce((a,x)=>a+x.correct,0);return {key,label:new Date(key+'T12:00:00').toLocaleDateString(lang==='vi'?'vi-VN':'en-US',{weekday:'short'}),value:total?Math.round(correct/total*100):null,total}});const active=days.map((d,i)=>d.value===null?null:i).filter(x=>x!==null);if(!active.length){chart.innerHTML=`<p class="chart-empty">${t('Làm bài mỗi ngày để xem đường tiến bộ của em.','Practice each day to see your progress line.')}</p>`;return}const points=days.map((d,i)=>{const x=38+i*92,y=d.value===null?170:170-d.value*1.35;return d.value===null?null:`${x},${y}`}).filter(Boolean).join(' ');chart.innerHTML=`<svg class="daily-line-chart" viewBox="0 0 600 225" role="img" aria-label="${t('Biểu đồ độ chính xác mỗi ngày trong 7 ngày','Daily accuracy chart for the last 7 days')}"><line x1="30" y1="35" x2="585" y2="35"/><line x1="30" y1="102" x2="585" y2="102"/><line x1="30" y1="170" x2="585" y2="170"/><text x="0" y="40">100%</text><text x="8" y="107">50%</text><text x="20" y="175">0%</text><polyline points="${points}"/>${days.map((d,i)=>{const x=38+i*92,y=d.value===null?170:170-d.value*1.35;return `<g><circle cx="${x}" cy="${y}" r="${d.value===null?3:6}"/><text x="${x}" y="204">${d.label}</text>${d.value===null?'':`<text class="chart-value" x="${x}" y="${y-12}">${d.value}%</text>`}</g>`}).join('')}</svg>`};
 // Remove obsolete harvest messaging and use the agreed tap-to-match instruction.
 const numiSetupBeforeFinal=setup;
 setup=function(){numiSetupBeforeFinal();$('.farm-settings-reward')?.remove();if(state.mistakes.length){const host=$('.narrow.card');if(host&&!$('#clearMistakesPractice'))host.insertAdjacentHTML('beforeend',`<button id="clearMistakesPractice" class="wide">${t('Xóa câu sai cũ và làm bài mới','Clear old mistakes and start a new lesson')}</button>`);const b=$('#clearMistakesPractice');if(b)b.onclick=()=>{state.mistakes=[];save();setup()}}};
@@ -214,16 +212,23 @@ const numiBrand=$('.brand');if(numiBrand)numiBrand.innerHTML=`<span class="brand
 const numiShowQuizBeforeFinal=showQuiz;showQuiz=function(){numiShowQuizBeforeFinal();if(view!=='quiz'||!session||session.done)return;const box=$('.quiz-companion span');if(box)box.textContent=t('Cố lên '+numiBuddyPrefs().name+'! Mỗi câu đúng nhận 1 viên trân châu.','You can do it, '+numiBuddyPrefs().name+'! Each correct answer earns 1 pearl.');};
 
 // Keep the selected companion face and name consistent after every app screen render.
+function numiAnimalEl(avatar,cls){
+ const tpl=document.createElement('template');
+ tpl.innerHTML=numiAnimalOriginal(avatar,cls).trim();
+ return tpl.content.firstElementChild;
+}
 function numiSyncBuddyIdentity(root=document.querySelector('#app')){
  if(!root)return;const prefs=numiBuddyPrefs(),avatar=prefs.avatar,name=prefs.name;
  root.querySelectorAll('.farm-rabbit').forEach(old=>{
   if(old.dataset.buddySync===avatar)return;
-  const replacement=numiAnimalOriginal(avatar);replacement.setAttribute('class',(old.getAttribute('class')||'farm-rabbit')+' animal');replacement.dataset.buddySync=avatar;old.replaceWith(replacement);
+  const replacement=numiAnimalEl(avatar);if(!replacement)return;
+  replacement.setAttribute('class',(old.getAttribute('class')||'farm-rabbit')+' animal');replacement.dataset.buddySync=avatar;old.replaceWith(replacement);
  });
  root.querySelectorAll('.animal').forEach(old=>{
   if(old.closest('.buddy-choices,.buddy-picker,.play-buddies'))return;
   if(old.dataset.buddySync===avatar)return;
-  const replacement=numiAnimalOriginal(avatar);replacement.setAttribute('class',old.getAttribute('class')||'animal');replacement.dataset.buddySync=avatar;old.replaceWith(replacement);
+  const replacement=numiAnimalEl(avatar);if(!replacement)return;
+  replacement.setAttribute('class',old.getAttribute('class')||'animal');replacement.dataset.buddySync=avatar;old.replaceWith(replacement);
  });
  const homeMark=root.querySelector('.home-v2-wordmark>span');if(homeMark)homeMark.textContent=name;
  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let node;const nodes=[];

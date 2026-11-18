@@ -25,6 +25,15 @@ Mở `index.html` trong trình duyệt để chạy trên máy tính. Một số
 
 Ảnh xem trước link nằm ở `og-image.png` và được khai báo trong thẻ Open Graph của `index.html`. Một số ứng dụng chat lưu ảnh cũ trong bộ nhớ đệm; sau khi cập nhật có thể cần một thời gian để ảnh mới hiện khi chia sẻ.
 
-## Lưu dữ liệu
+## Lưu dữ liệu & Đồng bộ Supabase
 
-Tiến độ và hồ sơ bạn đồng hành lưu trong trình duyệt hiện tại. Để chuyển thiết bị, dùng mục sao lưu trong Thành tích. Đăng nhập đồng bộ và cây thống kê người dùng cần cấu hình backend/Apps Script trước khi thu thập dữ liệu thật.
+Tiến độ và hồ sơ bạn đồng hành lưu trong trình duyệt hiện tại. Để đồng bộ đa thiết bị và bật Lớp học trực tuyến:
+1. Tạo project tại Supabase và chạy toàn bộ nội dung file `cloud-setup.sql` trong **SQL Editor**.
+2. Mở `cloud-config.js`, điền `url` và `publishableKey` của project Supabase.
+
+## Kiểm thử tự động
+
+Chạy kiểm tra cú pháp và bộ unit test bằng Node.js (v20+):
+```bash
+node --test tests/core.test.js
+```
