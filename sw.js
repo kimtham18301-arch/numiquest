@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_NAME = 'numiquick-v2.0.0';
+const CACHE_NAME = 'numiquick-v2.0.1';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -68,20 +68,19 @@ self.addEventListener('fetch', event => {
   }
 
   event.respondWith(
-    caches.match(req, { ignoreSearch: true }).then(cached => {
-      const networkFetch = fetch(req).then(res => {
-        if (res && res.status === 200 && res.type === 'basic') {
-          const copy = res.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
-        }
-        return res;
-      }).catch(() => {
+    fetch(req).then(res => {
+      if (res && res.status === 200 && res.type === 'basic') {
+        const copy = res.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
+      }
+      return res;
+    }).catch(() => {
+      return caches.match(req, { ignoreSearch: true }).then(cached => {
         if (cached) return cached;
         if (req.headers.get('accept')?.includes('text/html')) {
           return caches.match('./index.html', { ignoreSearch: true });
         }
       });
-      return cached || networkFetch;
     })
   );
 });
