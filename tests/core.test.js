@@ -148,7 +148,8 @@ function loadAppContext() {
     'refresh.js',
     'analytics.js',
     'review-exit.js',
-    'adaptive-sprint.js'
+    'adaptive-sprint.js',
+    'classroom.js'
   ];
   for (const file of scripts) {
     const code = fs.readFileSync(path.join(rootDir, file), 'utf8');
@@ -252,4 +253,24 @@ test('daily quests track today progress and prevent duplicate claims', () => {
   // Duplicate claim should not grant XP again
   ctx.claimDailyQuest('q_warm');
   assert.equal(ctx.state.xp, xpBefore + 20);
+});
+
+test('classroom workflow supports creating rooms, joining by code, assigning, and submitting', async () => {
+  const ctx = loadAppContext();
+  const room = await ctx.createClassroom('Lớp 4A', 4);
+  assert.ok(room && room.id && room.join_code.length === 6);
+
+  await assert.rejects(() => ctx.joinClassroomByCode('XXXXXX'));
+  const joinedId = await ctx.joinClassroomByCode(room.join_code);
+  assert.equal(joinedId, room.id);
+
+  const asg = await ctx.createAssignment(room.id, 'Tuần 12 - Phép nhân', '2026-12-01', { type: 'natural', count: 10 });
+  assert.ok(asg && asg.id);
+
+  await ctx.submitAssignmentResult(asg.id, 9, 10, 4.5);
+  const studentView = await ctx.fetchStudentAssignments();
+  assert.equal(studentView.classrooms.length, 1);
+  assert.equal(studentView.assignments.length, 1);
+  assert.equal(studentView.submissions.length, 1);
+  assert.equal(studentView.submissions[0].correct, 9);
 });
