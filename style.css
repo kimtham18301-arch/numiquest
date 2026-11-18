@@ -2229,3 +2229,23 @@ body.dark-mode .sprint-banner b,body.dark-mode .daily-quests-box h3{color:#e6f4e
 body.dark-mode .sprint-banner,body.dark-mode .daily-quests-box{box-shadow:0 5px 0 #101813;}
 body.dark-mode .dq-item.is-done{background:#1b3124;border-color:#345e45;}
 body.dark-mode .dq-reward{background:#233128;color:#a8bfb0;}
+
+.account-button{overflow:hidden;text-overflow:ellipsis;max-width:150px;}
+.account-button b,.account-btn-label{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;}
+@media(max-width:700px){
+  header{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;}
+  header .brand{margin-right:auto;min-width:0;flex-shrink:1;}
+  .account-button{max-width:96px !important;padding:5px 8px !important;font-size:11px !important;flex-shrink:0;}
+  #themeModeBtn,#lang{flex-shrink:0;}
+  .level-seg-control{display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr)) !important;gap:4px !important;overflow-x:visible !important;}
+  .level-seg-btn{min-width:0 !important;padding:7px 4px !important;font-size:11.5px !important;white-space:normal !important;text-align:center !important;line-height:1.2 !important;}
+  body.is-admin-mode nav{grid-template-columns:repeat(4,1fr) !important;}
+  body.is-admin-mode nav button[data-view="home"],
+  body.is-admin-mode nav button[data-view="setup"],
+  body.is-admin-mode nav button[data-view="atlas"],
+  body.is-admin-mode nav button[data-view="stats"]{display:none !important;}
+  body.is-admin-mode nav button[data-view="admin"],
+  body.is-admin-mode nav button[data-view="classroom"],
+  body.is-admin-mode nav button[data-view="profile"],
+  body.is-admin-mode #navMoreBtn{display:flex !important;}
+}

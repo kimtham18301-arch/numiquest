@@ -853,6 +853,19 @@ if (homeBeforeAdminOnly) {
   if (typeof global !== 'undefined') global.home = home;
 }
 
+const setupBeforeAdminOnly = typeof setup === 'function' ? setup : null;
+if (setupBeforeAdminOnly) {
+  setup = function () {
+    if (isCurrentUserAdmin()) {
+      renderAdmin();
+      return;
+    }
+    setupBeforeAdminOnly();
+  };
+  if (typeof window !== 'undefined') window.setup = setup;
+  if (typeof global !== 'undefined') global.setup = setup;
+}
+
 if (typeof window !== 'undefined') {
   window.renderAdmin = renderAdmin;
   window.isCurrentUserAdmin = isCurrentUserAdmin;

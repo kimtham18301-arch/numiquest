@@ -218,8 +218,9 @@ function cloudBadge(){
   if(sheetAtlas)sheetAtlas.style.display=isAdmin?'none':'';
   if(!button)return;
   if(u){
-    button.innerHTML=`<b>${esc(u.name)}</b>`;
-    button.title=t('Tài khoản của em','Your account');
+    const shortLabel=isAdmin?t('Quản trị','Admin'):u.name;
+    button.innerHTML=`<b class="account-btn-label">${esc(shortLabel)}</b>`;
+    button.title=u.name;
     button.classList.add('is-logged-in');
     button.dataset.status=cloudSession?cloudStatus:'local';
   }else{

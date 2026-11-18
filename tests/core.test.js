@@ -77,6 +77,7 @@ function loadAppContext() {
     },
     querySelector(sel) {
       if (sel === '#app') return rootEl;
+      if (sel === '#config' && !String(rootEl.innerHTML || '').includes('id="config"')) return null;
       if (!this._els) this._els = new Map();
       if (!this._els.has(sel)) this._els.set(sel, createMockElement('div'));
       return this._els.get(sel);
@@ -422,5 +423,7 @@ test('admin account stays in admin workspace and is excluded from student direct
   ctx.nav('home');
   assert.equal(ctx.view, 'admin');
   ctx.home();
+  assert.equal(ctx.view, 'admin');
+  ctx.setup();
   assert.equal(ctx.view, 'admin');
 });
