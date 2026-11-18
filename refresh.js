@@ -219,22 +219,26 @@ function numiAnimalEl(avatar,cls){
  return tpl.content.firstElementChild;
 }
 function numiSyncBuddyIdentity(root=document.querySelector('#app')){
- if(!root)return;const prefs=numiBuddyPrefs(),avatar=prefs.avatar,name=prefs.name;
+ if(!root)return;
+ if((typeof isCurrentUserAdmin==='function'&&isCurrentUserAdmin())||(typeof view!=='undefined'&&(view==='admin'||view==='classroom')))return;
+ const prefs=numiBuddyPrefs(),avatar=prefs.avatar,name=prefs.name;
  root.querySelectorAll('.farm-rabbit').forEach(old=>{
   if(old.dataset.buddySync===avatar)return;
   const replacement=numiAnimalEl(avatar);if(!replacement)return;
   replacement.setAttribute('class',(old.getAttribute('class')||'farm-rabbit')+' animal');replacement.dataset.buddySync=avatar;old.replaceWith(replacement);
  });
  root.querySelectorAll('.animal').forEach(old=>{
-  if(old.closest('.buddy-choices,.buddy-picker,.play-buddies'))return;
+  if(old.closest('.buddy-choices,.buddy-picker,.play-buddies,.student-avatar,.cls-podium-avatar,.cls-mini-avatar'))return;
   if(old.dataset.buddySync===avatar)return;
   const replacement=numiAnimalEl(avatar);if(!replacement)return;
   replacement.setAttribute('class',old.getAttribute('class')||'animal');replacement.dataset.buddySync=avatar;old.replaceWith(replacement);
  });
  const homeMark=root.querySelector('.home-v2-wordmark>span');if(homeMark)homeMark.textContent=name;
- const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let node;const nodes=[];
- while(node=walker.nextNode()){if(node.parentElement?.closest('script,style,.brand,.buddy-choices,.buddy-picker,.play-buddies'))continue;if(/\bNumi\b/.test(node.nodeValue))nodes.push(node)}
- for(const item of nodes)item.nodeValue=item.nodeValue.replace(/\bNumi\b/g,()=>name);
+ if(name&&name!=='Numi'&&!/\bNumi\b/.test(name)){
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let node;const nodes=[];
+  while(node=walker.nextNode()){if(node.parentElement?.closest('script,style,.brand,.buddy-choices,.buddy-picker,.play-buddies'))continue;if(/\bNumi\b/.test(node.nodeValue))nodes.push(node)}
+  for(const item of nodes){const next=item.nodeValue.replace(/\bNumi\b/g,()=>name);if(next!==item.nodeValue)item.nodeValue=next;}
+ }
 }
 numiSyncBuddyIdentity();
 const numiIdentityObserver=new MutationObserver(()=>numiSyncBuddyIdentity());

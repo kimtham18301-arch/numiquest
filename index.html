@@ -103,19 +103,11 @@
 if('serviceWorker' in navigator){
   window.addEventListener('load',async()=>{
     try{
-      if(!sessionStorage.getItem('numi_sw_v210')&&window.caches){
+      if(window.caches){
         const keys=await caches.keys();
-        if(keys.some(k=>k!=='numiquick-v2.1.0')){
-          await Promise.all(keys.map(k=>caches.delete(k)));
-          const regs=await navigator.serviceWorker.getRegistrations();
-          await Promise.all(regs.map(r=>r.unregister()));
-          sessionStorage.setItem('numi_sw_v210','1');
-          location.reload();
-          return;
-        }
-        sessionStorage.setItem('numi_sw_v210','1');
+        await Promise.all(keys.filter(k=>k!=='numiquick-v2.1.1').map(k=>caches.delete(k)));
       }
-      navigator.serviceWorker.register('./sw.js?v=2.1.0').then(r=>r.update()).catch(()=>{});
+      navigator.serviceWorker.register('./sw.js?v=2.1.1').then(r=>r.update()).catch(()=>{});
     }catch{}
   });
 }
