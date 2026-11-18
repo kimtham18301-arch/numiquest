@@ -1,12 +1,11 @@
 'use strict';
 
-const CACHE_NAME = 'numiquick-v1.0.8';
+const CACHE_NAME = 'numiquick-v1.9.2';
 const STATIC_ASSETS = [
   './',
   './index.html',
   './style.css',
   './app.js',
-  './geo-data.js',
   './discovery.js',
   './challenge.js',
   './farm.js',
@@ -19,11 +18,20 @@ const STATIC_ASSETS = [
   './refresh.js',
   './analytics.js',
   './review-exit.js',
+  './adaptive-sprint.js',
+  './classroom.js',
+  './pedagogy.js',
+  './engagement.js',
+  './teacher-tools.js',
+  './azota-features.js',
   './nunito-400.woff',
   './nunito-500.woff',
   './nunito-600.woff',
   './nunito-700.woff',
   './nunito-800.woff',
+  './icon.svg',
+  './icon-192.png',
+  './icon-512.png',
   './play-race.svg',
   './play-school.svg',
   './play-world.svg',

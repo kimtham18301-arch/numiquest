@@ -1,0 +1,28 @@
+name: NumiQuick CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check JavaScript syntax
+        run: |
+          for f in *.js tests/*.js; do
+            node --check "$f"
+          done
+
+      - name: Run unit tests
+        run: node --test tests/core.test.js

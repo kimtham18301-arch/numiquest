@@ -71,7 +71,7 @@ function getStudentsSummary() {
 }
 
 function getFilteredStudents() {
-  let list = getStudentsSummary();
+  let list = getStudentsSummary().filter(s => s.role !== 'admin' && s.username !== 'admin');
   if (adminGradeFilter !== 'all') {
     const g = Number(adminGradeFilter);
     list = list.filter(s => s.grade === g);
@@ -186,12 +186,12 @@ function renderAdmin() {
     <div class="card admin-filter-bar">
       <div class="admin-search-wrap">
         <input type="text" id="adminSearchInput" placeholder="${t('Tìm kiếm theo tên học sinh hoặc @username...','Search by name or @username...')}" value="${esc(adminSearchQuery)}" style="padding-left:14px">
-        ${adminSearchQuery ? `<button type="button" id="adminClearSearchBtn" class="clear-search-btn">✕</button>` : ''}
+        <button type="button" id="adminClearSearchBtn" class="clear-search-btn" ${adminSearchQuery ? '' : 'hidden'}>✕</button>
       </div>
       <div class="admin-grade-chips-scroll">
-        <button type="button" class="admin-grade-chip ${adminGradeFilter==='all'?'active':''}" data-admin-grade="all">${t('Tất cả','All')} (${allSummary.length})</button>
+        <button type="button" class="admin-grade-chip ${adminGradeFilter==='all'?'active':''}" data-admin-grade="all">${t('Tất cả','All')} (${studentOnly.length})</button>
         ${[1,2,3,4,5,6,7,8,9].map(g=>{
-          const count = allSummary.filter(s=>s.grade===g).length;
+          const count = studentOnly.filter(s=>s.grade===g).length;
           return `<button type="button" class="admin-grade-chip ${adminGradeFilter===String(g)?'active':''}" data-admin-grade="${g}">Lớp ${g} <span class="chip-count">(${count})</span></button>`;
         }).join('')}
       </div>
@@ -211,10 +211,10 @@ function renderAdmin() {
       </div>
     </div>
 
-    <div class="card admin-table-card">
+    <div class="card admin-table-card" id="adminTableCard">
       <div class="admin-table-header-row">
         <div>
-          <h3>${t('Danh sách học sinh & Tiến độ','Student Directory & Progress')} (${filteredList.length})</h3>
+          <h3>${t('Danh sách học sinh & Tiến độ','Student Directory & Progress')} (<span id="adminResultCount">${filteredList.length}</span>)</h3>
           <small class="muted">${t('Theo dõi thời gian đăng nhập thực tế, số câu đúng/sai và hỗ trợ đổi mã PIN cho bé.','Track real login times, accuracy rates, and reset PINs when requested.')}</small>
         </div>
       </div>
@@ -349,19 +349,77 @@ function renderAdmin() {
   $('#adminExportBtn')?.addEventListener('click', () => adminExportCSV(studentOnly));
   $('#adminRefreshBtn')?.addEventListener('click', () => renderAdmin());
 
+  const bindRowActions = () => {
+    $$('#adminTableCard [data-action="view"]').forEach(b => {
+      b.onclick = () => adminViewDetailModal(b.dataset.user);
+    });
+    $$('#adminTableCard [data-action="pin"]').forEach(b => {
+      b.onclick = () => adminResetPinModal(b.dataset.user);
+    });
+    $$('#adminTableCard [data-action="switch"]').forEach(b => {
+      b.onclick = () => adminSwitchToStudent(b.dataset.user);
+    });
+    $$('#adminTableCard [data-action="delete"]').forEach(b => {
+      b.onclick = () => adminDeleteStudent(b.dataset.user);
+    });
+  };
+
+  const applySearchFilter = () => {
+    const nextList = getFilteredStudents();
+    const countEl = $('#adminResultCount');
+    if (countEl) countEl.textContent = String(nextList.length);
+    const clearBtn = $('#adminClearSearchBtn');
+    if (clearBtn) clearBtn.hidden = !adminSearchQuery;
+    const tbody = $('#adminTableCard tbody');
+    const cardsWrap = $('#adminTableCard .admin-cards-list');
+    if (!tbody || !cardsWrap) { renderAdmin(); return; }
+    tbody.innerHTML = nextList.length === 0
+      ? `<tr><td colspan="5" style="text-align:center;padding:36px;color:#718e76">${t('Không tìm thấy học sinh nào phù hợp với bộ lọc.','No students found matching your filter.')}</td></tr>`
+      : nextList.map(s => {
+          const gradeInfo = typeof NUMI_GRADES !== 'undefined' && NUMI_GRADES[s.grade];
+          const gradeLabel = gradeInfo ? (currentLang() === 'vi' ? gradeInfo.name : gradeInfo.enName) : `Lớp ${s.grade}`;
+          const isAdminUser = s.role === 'admin' || s.username === 'admin';
+          const accClass = s.accuracy >= 80 ? 'acc-high' : s.accuracy >= 65 ? 'acc-med' : 'acc-low';
+          return `<tr class="${isAdminUser ? 'admin-user-row' : ''}">
+            <td><div class="student-cell"><div class="student-avatar">${animal(s.avatar)}</div><div class="student-meta"><b class="student-name">${esc(s.name)}</b><span class="student-uname">@${esc(s.username)}</span>${isAdminUser ? `<span class="role-badge admin-badge">${t('Quản trị viên','Admin')}</span>` : `<span class="role-badge student-badge">${t('Học sinh','Student')}</span>`}</div></div></td>
+            <td><span class="grade-tag"><b>${gradeLabel}</b></span></td>
+            <td><div class="login-info-cell"><b>${formatAdminTime(s.lastLogin)}</b><small>${s.loginCount > 0 ? `${s.loginCount} ${t('lần đăng nhập','logins')}` : t('Chưa đăng nhập','Never')}</small></div></td>
+            <td><div class="progress-cell"><div class="progress-top"><span class="acc-pill ${accClass}">${s.accuracy}%</span><span class="xp-badge">Lv.${s.userLevel} · ${s.xp} XP</span></div><small>${s.totalSessions} ${t('bài','lessons')} · ${s.totalAnswered} ${t('câu','qs')} ${s.mistakesCount > 0 ? `· <span class="mistake-pill">${s.mistakesCount} ${t('lỗi tồn','mistakes')}</span>` : ''}</small></div></td>
+            <td><div class="admin-actions-col"><button type="button" class="admin-act-btn btn-view" data-action="view" data-user="${esc(s.username)}" title="${t('Xem chi tiết','View details')}">${t('Chi tiết','Details')}</button><button type="button" class="admin-act-btn btn-pin" data-action="pin" data-user="${esc(s.username)}" title="${t('Đổi mã PIN','Reset PIN')}">${t('Đổi PIN','PIN')}</button>${!isAdminUser ? `<button type="button" class="admin-act-btn btn-switch" data-action="switch" data-user="${esc(s.username)}" title="${t('Đăng nhập vào tài khoản học sinh','Switch to student profile')}">${t('Vào học','Open')}</button>` : ''}${!isAdminUser ? `<button type="button" class="admin-act-btn btn-del" data-action="delete" data-user="${esc(s.username)}" title="${t('Xóa tài khoản','Delete account')}">${t('Xóa','Delete')}</button>` : ''}</div></td>
+          </tr>`;
+        }).join('');
+    cardsWrap.innerHTML = nextList.length === 0
+      ? `<div class="admin-empty-card">${t('Không tìm thấy học sinh nào phù hợp với bộ lọc.','No students found matching your filter.')}</div>`
+      : nextList.map(s => {
+          const gradeInfo = typeof NUMI_GRADES !== 'undefined' && NUMI_GRADES[s.grade];
+          const gradeLabel = gradeInfo ? (currentLang() === 'vi' ? gradeInfo.name : gradeInfo.enName) : `Lớp ${s.grade}`;
+          const isAdminUser = s.role === 'admin' || s.username === 'admin';
+          const accClass = s.accuracy >= 80 ? 'acc-high' : s.accuracy >= 65 ? 'acc-med' : 'acc-low';
+          return `<div class="admin-student-card ${isAdminUser ? 'admin-user-card' : ''}"><div class="admin-card-top"><div class="student-cell"><div class="student-avatar">${animal(s.avatar)}</div><div class="student-meta"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><b class="student-name">${esc(s.name)}</b>${isAdminUser ? `<span class="role-badge admin-badge">Admin</span>` : `<span class="role-badge student-badge">HS</span>`}</div><span class="student-uname">@${esc(s.username)}</span></div></div><span class="grade-tag"><b>${gradeLabel}</b></span></div><div class="admin-card-stats-grid"><div class="admin-card-stat"><small>${t('Chính xác','Accuracy')}</small><span class="acc-pill ${accClass}">${s.accuracy}%</span></div><div class="admin-card-stat"><small>${t('Cấp độ & XP','Level & XP')}</small><strong>Lv.${s.userLevel} <span class="stat-meta-note">(${s.xp} XP)</span></strong></div><div class="admin-card-stat"><small>${t('Đăng nhập','Last Login')}</small><span class="stat-line-text">${formatAdminTime(s.lastLogin)}</span><span class="stat-meta-note">${s.loginCount > 0 ? `${s.loginCount} ${t('lần vào học','logins')}` : t('Chưa vào','Never')}</span></div><div class="admin-card-stat"><small>${t('Bài làm & Lỗi','Lessons & Errors')}</small><span class="stat-line-text">${s.totalSessions} ${t('bài','lessons')} (${s.totalAnswered} ${t('câu','qs')})</span>${s.mistakesCount > 0 ? `<span class="mistake-pill" style="margin-top:2px;display:inline-block">${s.mistakesCount} ${t('câu sai','mistakes')}</span>` : `<span class="stat-meta-note" style="color:#4a7758">0 ${t('lỗi tồn','errors')}</span>`}</div></div><div class="admin-card-actions"><button type="button" class="admin-act-btn btn-view" data-action="view" data-user="${esc(s.username)}">${t('Chi tiết','Details')}</button><button type="button" class="admin-act-btn btn-pin" data-action="pin" data-user="${esc(s.username)}">${t('Mã PIN','PIN')}</button>${!isAdminUser ? `<button type="button" class="admin-act-btn btn-switch" data-action="switch" data-user="${esc(s.username)}">${t('Vào học','Open')}</button>` : ''}${!isAdminUser ? `<button type="button" class="admin-act-btn btn-del" data-action="delete" data-user="${esc(s.username)}">${t('Xóa','Del')}</button>` : ''}</div></div>`;
+        }).join('');
+    bindRowActions();
+  };
+
   const searchInput = $('#adminSearchInput');
   if (searchInput) {
-    searchInput.oninput = () => {
+    let isComposing = false;
+    searchInput.addEventListener('compositionstart', () => { isComposing = true; });
+    searchInput.addEventListener('compositionend', () => {
+      isComposing = false;
       adminSearchQuery = searchInput.value;
-      renderAdmin();
-      const el = $('#adminSearchInput');
-      if (el) { el.focus(); el.selectionStart = el.selectionEnd = el.value.length; }
+      applySearchFilter();
+    });
+    searchInput.oninput = () => {
+      if (isComposing) return;
+      adminSearchQuery = searchInput.value;
+      applySearchFilter();
     };
   }
 
   $('#adminClearSearchBtn')?.addEventListener('click', () => {
     adminSearchQuery = '';
-    renderAdmin();
+    if (searchInput) { searchInput.value = ''; searchInput.focus(); }
+    applySearchFilter();
   });
 
   const gradeSelect = $('#adminGradeSelect');
@@ -387,19 +445,7 @@ function renderAdmin() {
     };
   }
 
-  // Row action buttons
-  $$('[data-action="view"]').forEach(b => {
-    b.onclick = () => adminViewDetailModal(b.dataset.user);
-  });
-  $$('[data-action="pin"]').forEach(b => {
-    b.onclick = () => adminResetPinModal(b.dataset.user);
-  });
-  $$('[data-action="switch"]').forEach(b => {
-    b.onclick = () => adminSwitchToStudent(b.dataset.user);
-  });
-  $$('[data-action="delete"]').forEach(b => {
-    b.onclick = () => adminDeleteStudent(b.dataset.user);
-  });
+  bindRowActions();
 }
 
 function adminExportCSV(students) {
@@ -407,7 +453,7 @@ function adminExportCSV(students) {
     'STT',
     'Họ và tên',
     'Tên đăng nhập (@username)',
-    'Mật khẩu / PIN',
+    'Trạng thái PIN',
     'Khối lớp',
     'Vai trò',
     'Ngày tạo',
@@ -434,7 +480,7 @@ function adminExportCSV(students) {
     i + 1,
     csvSafe(s.name || ''),
     csvSafe(s.username),
-    csvSafe(s.password || ''),
+    csvSafe(s.hash && s.hash !== '0' ? 'Đã mã hóa' : 'Mặc định'),
     csvSafe(`Lớp ${s.grade}`),
     csvSafe(s.role === 'admin' ? 'Quản trị viên' : 'Học sinh'),
     csvSafe(s.createdAt ? new Date(s.createdAt).toLocaleString('vi-VN') : ''),
@@ -465,11 +511,11 @@ async function adminResetPinModal(username) {
   const users = getLocalUsers(), user = users[username];
   if (!user) return;
 
-  modal(`<h2>${t('Đổi mã PIN cho ' + user.name, 'Reset PIN for ' + user.name)}</h2>
-  <p class="muted">${t('Nhập mã PIN hoặc mật khẩu mới cho học sinh @' + username + ' (tối thiểu 4 ký tự):', 'Enter new PIN or password for student @' + username + ' (min 4 characters):')}</p>
+  modal(`<h2>${t('Đổi mã PIN cho ' + esc(user.name), 'Reset PIN for ' + esc(user.name))}</h2>
+  <p class="muted">${t('Nhập mã PIN hoặc mật khẩu mới cho học sinh @' + esc(username) + ' (tối thiểu 4 ký tự):', 'Enter new PIN or password for student @' + esc(username) + ' (min 4 characters):')}</p>
   <div style="margin:16px 0">
     <label style="display:block;margin-bottom:6px;font-weight:700;font-size:13px;color:#3b5e39">${t('Mật khẩu / Mã PIN mới:','New PIN/Password:')}</label>
-    <input type="text" id="adminNewPinInput" minlength="4" value="${user.password || '1234'}" placeholder="••••" style="width:100%;font-size:20px;padding:10px 14px;border-radius:12px;border:2px solid #b8dca5;text-align:center;font-weight:800;letter-spacing:2px">
+    <input type="text" id="adminNewPinInput" minlength="4" value="" placeholder="${t('Nhập PIN mới (tối thiểu 4 ký tự)','Enter new PIN (min 4 chars)')}" style="width:100%;font-size:18px;padding:10px 14px;border-radius:12px;border:2px solid #b8dca5;text-align:center;font-weight:800;letter-spacing:1px">
   </div>
   <div class="actions">
     <button class="primary" id="confirmResetPinBtn">${t('Lưu mã PIN mới','Save New PIN')}</button>
@@ -483,7 +529,7 @@ async function adminResetPinModal(username) {
       return;
     }
     const hash = await hashPassword(newPin);
-    users[username].password = newPin;
+    delete users[username].password;
     users[username].hash = hash;
     users[username].passwordChanged = true;
     saveLocalUsers(users);
@@ -613,7 +659,6 @@ function adminAddStudentModal() {
       username,
       name,
       hash,
-      password,
       avatar: chosenAvatar,
       grade,
       role: 'student',
@@ -671,8 +716,8 @@ function adminViewDetailModal(username) {
       <div>
         <h2 style="margin:0">${esc(user.name)}</h2>
         <div style="font-size:13px;color:#5a7663;margin-top:2px">
-          @${esc(user.username)} · <b>${gradeLabel}</b> · ${t('Mật khẩu/PIN:','PIN:')} <code id="studentPinCode" data-pin="${esc(user.password || '1234')}" data-masked="1" style="background:#eaf3e3;padding:2px 6px;border-radius:4px;font-weight:700">••••</code>
-          <button type="button" id="togglePinRevealBtn" class="ghost" style="padding:1px 6px;font-size:11px;min-height:auto;margin-left:4px">${t('Hiện','Show')}</button>
+          @${esc(user.username)} · <b>${gradeLabel}</b> · ${t('Bảo mật PIN:','PIN security:')} <code style="background:#eaf3e3;padding:2px 6px;border-radius:4px;font-weight:700">${t('Đã mã hóa','Encrypted')}</code>
+          <button type="button" id="detailResetPinBtn" class="ghost" style="padding:1px 6px;font-size:11px;min-height:auto;margin-left:4px">${t('Đổi PIN','Reset PIN')}</button>
         </div>
       </div>
     </div>
@@ -715,8 +760,8 @@ function adminViewDetailModal(username) {
         <div style="max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:8px">
           ${mistakes.map((m, idx) => `<div class="mistake-item-card">
             <div style="display:flex;justify-content:space-between;align-items:center">
-              <b>${idx+1}. ${typeof mathMarkup==='function'?mathMarkup(m.q):m.q} = ?</b>
-              <span class="acc-pill acc-high">${t('Đáp án:','Answer:')} <b>${m.answer}</b></span>
+              <b>${idx+1}. ${typeof mathMarkup==='function'?mathMarkup(m.q):esc(m.q)} = ?</b>
+              <span class="acc-pill acc-high">${t('Đáp án:','Answer:')} <b>${esc(m.answer)}</b></span>
             </div>
             ${m.explanation ? `<div class="mistake-expl">${esc(m.explanation).replace(/\n/g,'<br>')}</div>` : ''}
           </div>`).join('')}
@@ -730,7 +775,7 @@ function adminViewDetailModal(username) {
           ${Object.entries(mastery).map(([skillKey, arr]) => {
             const pct = Math.round((arr.reduce((a,b)=>a+b,0)/arr.length)*100);
             return `<div style="display:flex;justify-content:space-between;align-items:center;background:#f5f8f3;padding:8px 12px;border-radius:10px">
-              <span><b>${skillKey}</b> (${arr.length} câu)</span>
+              <span><b>${esc(skillKey)}</b> (${arr.length} câu)</span>
               <strong style="color:${pct>=80?'#2b8a3e':pct>=60?'#d97706':'#e03131'}">${pct}%</strong>
             </div>`;
           }).join('')}
@@ -743,14 +788,11 @@ function adminViewDetailModal(username) {
     </div>
   </div>`);
 
-  const pinBtn = $('#togglePinRevealBtn');
-  const pinCode = $('#studentPinCode');
-  if (pinBtn && pinCode) {
-    pinBtn.onclick = () => {
-      const isMasked = pinCode.dataset.masked === '1';
-      pinCode.textContent = isMasked ? pinCode.dataset.pin : '••••';
-      pinCode.dataset.masked = isMasked ? '0' : '1';
-      pinBtn.textContent = isMasked ? t('Ẩn','Hide') : t('Hiện','Show');
+  const detailResetBtn = $('#detailResetPinBtn');
+  if (detailResetBtn) {
+    detailResetBtn.onclick = () => {
+      $('#modal').close();
+      adminResetPinModal(username);
     };
   }
 
@@ -780,8 +822,53 @@ function setAdminFilter({ query, grade, sortBy } = {}) {
   if (sortBy !== undefined) adminSortBy = sortBy;
 }
 
+function isCurrentUserAdmin() {
+  const u = typeof currentAuthUser === 'function' ? currentAuthUser() : null;
+  return Boolean(u && (u.role === 'admin' || u.username === 'admin'));
+}
+
+const navBeforeAdminOnly = typeof nav === 'function' ? nav : null;
+if (navBeforeAdminOnly) {
+  nav = function (dest) {
+    if (isCurrentUserAdmin() && ['home', 'setup', 'atlas', 'stats', 'challenge', 'quiz', 'garden', 'battle', 'battleSetup', 'sprint60'].includes(dest)) {
+      renderAdmin();
+      return;
+    }
+    navBeforeAdminOnly(dest);
+  };
+  if (typeof window !== 'undefined') window.nav = nav;
+  if (typeof global !== 'undefined') global.nav = nav;
+}
+
+const homeBeforeAdminOnly = typeof home === 'function' ? home : null;
+if (homeBeforeAdminOnly) {
+  home = function () {
+    if (isCurrentUserAdmin()) {
+      renderAdmin();
+      return;
+    }
+    homeBeforeAdminOnly();
+  };
+  if (typeof window !== 'undefined') window.home = home;
+  if (typeof global !== 'undefined') global.home = home;
+}
+
+const setupBeforeAdminOnly = typeof setup === 'function' ? setup : null;
+if (setupBeforeAdminOnly) {
+  setup = function () {
+    if (isCurrentUserAdmin()) {
+      renderAdmin();
+      return;
+    }
+    setupBeforeAdminOnly();
+  };
+  if (typeof window !== 'undefined') window.setup = setup;
+  if (typeof global !== 'undefined') global.setup = setup;
+}
+
 if (typeof window !== 'undefined') {
   window.renderAdmin = renderAdmin;
+  window.isCurrentUserAdmin = isCurrentUserAdmin;
   window.formatAdminTime = formatAdminTime;
   window.getFilteredStudents = getFilteredStudents;
   window.getStudentsSummary = getStudentsSummary;
@@ -789,6 +876,7 @@ if (typeof window !== 'undefined') {
 }
 if (typeof global !== 'undefined') {
   global.renderAdmin = renderAdmin;
+  global.isCurrentUserAdmin = isCurrentUserAdmin;
   global.formatAdminTime = formatAdminTime;
   global.getFilteredStudents = getFilteredStudents;
   global.getStudentsSummary = getStudentsSummary;
