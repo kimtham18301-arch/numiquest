@@ -159,7 +159,8 @@ function loadAppContext() {
     'pedagogy.js',
     'engagement.js',
     'teacher-tools.js',
-    'azota-features.js'
+    'azota-features.js',
+    'admin-dashboard.js'
   ];
   for (const file of scripts) {
     const code = fs.readFileSync(path.join(rootDir, file), 'utf8');
@@ -426,4 +427,31 @@ test('admin account stays in admin workspace and is excluded from student direct
   assert.equal(ctx.view, 'admin');
   ctx.setup();
   assert.equal(ctx.view, 'admin');
+});
+
+test('admin dashboard analytics, student edit, batch promotion, remedial assignment, and full backup work', async () => {
+  const ctx = loadAppContext();
+  await ctx.localSignIn('admin', 'admin123');
+  const students = ctx.getFilteredStudents();
+  const analytics = ctx.computeAdminAnalytics(students);
+  assert.equal(analytics.days.length, 7);
+  assert.ok(analytics.atRiskStudents.length >= 1);
+
+  assert.equal(ctx.updateStudentByAdmin('minhkhoi', { name: 'Minh Khôi A+', grade: 5, bonusXp: 50 }), true);
+  assert.equal(ctx.getLocalUsers().minhkhoi.grade, 5);
+
+  const promoted = ctx.batchPromoteGrade(5, 6);
+  assert.ok(promoted >= 1);
+  assert.equal(ctx.getLocalUsers().minhkhoi.grade, 6);
+
+  const rem = await ctx.assignRemedialForStudent('minhkhoi');
+  assert.ok(rem.assignment && rem.assignment.id);
+  assert.equal(rem.assignment.config.type, 'fraction');
+
+  const backup = ctx.buildFullSystemBackup();
+  assert.equal(backup.format, 'numiquick-system-v1');
+  ctx.localStorage.removeItem('numi-classrooms-v1');
+  assert.equal(ctx.restoreFullSystemBackup(backup), true);
+  const restored = ctx.loadLocalClassStore();
+  assert.ok(restored.assignments.some(a => a.id === rem.assignment.id));
 });
