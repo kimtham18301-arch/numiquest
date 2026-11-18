@@ -114,6 +114,9 @@ function loadAppContext() {
     decodeURIComponent,
     btoa,
     atob,
+    crypto: globalThis.crypto,
+    TextEncoder,
+    TextDecoder,
     localStorage: {
       getItem(k) { return storage.has(k) ? storage.get(k) : null; },
       setItem(k, v) { storage.set(k, String(v)); },
@@ -406,4 +409,18 @@ test('azota features: share link, bulk import, matrix, exam shuffle, distributio
   const sub = await ctx.submitAssignmentResult(asg.id, 10, 10, 3.5);
   const okSticker = ctx.giveStickerToSubmission(sub.id, 'star');
   assert.equal(okSticker, true);
+});
+
+test('admin account stays in admin workspace and is excluded from student directory', async () => {
+  const ctx = loadAppContext();
+  await ctx.localSignIn('admin', 'admin123');
+  assert.equal(ctx.isCurrentUserAdmin(), true);
+  assert.equal(ctx.view, 'admin');
+  const students = ctx.getFilteredStudents();
+  assert.equal(students.some(s => s.username === 'admin' || s.role === 'admin'), false);
+  // Calling nav('home') or home() as admin redirects back to admin view
+  ctx.nav('home');
+  assert.equal(ctx.view, 'admin');
+  ctx.home();
+  assert.equal(ctx.view, 'admin');
 });

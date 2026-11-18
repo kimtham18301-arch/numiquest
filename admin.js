@@ -71,7 +71,7 @@ function getStudentsSummary() {
 }
 
 function getFilteredStudents() {
-  let list = getStudentsSummary();
+  let list = getStudentsSummary().filter(s => s.role !== 'admin' && s.username !== 'admin');
   if (adminGradeFilter !== 'all') {
     const g = Number(adminGradeFilter);
     list = list.filter(s => s.grade === g);
@@ -189,9 +189,9 @@ function renderAdmin() {
         <button type="button" id="adminClearSearchBtn" class="clear-search-btn" ${adminSearchQuery ? '' : 'hidden'}>✕</button>
       </div>
       <div class="admin-grade-chips-scroll">
-        <button type="button" class="admin-grade-chip ${adminGradeFilter==='all'?'active':''}" data-admin-grade="all">${t('Tất cả','All')} (${allSummary.length})</button>
+        <button type="button" class="admin-grade-chip ${adminGradeFilter==='all'?'active':''}" data-admin-grade="all">${t('Tất cả','All')} (${studentOnly.length})</button>
         ${[1,2,3,4,5,6,7,8,9].map(g=>{
-          const count = allSummary.filter(s=>s.grade===g).length;
+          const count = studentOnly.filter(s=>s.grade===g).length;
           return `<button type="button" class="admin-grade-chip ${adminGradeFilter===String(g)?'active':''}" data-admin-grade="${g}">Lớp ${g} <span class="chip-count">(${count})</span></button>`;
         }).join('')}
       </div>
@@ -822,8 +822,40 @@ function setAdminFilter({ query, grade, sortBy } = {}) {
   if (sortBy !== undefined) adminSortBy = sortBy;
 }
 
+function isCurrentUserAdmin() {
+  const u = typeof currentAuthUser === 'function' ? currentAuthUser() : null;
+  return Boolean(u && (u.role === 'admin' || u.username === 'admin'));
+}
+
+const navBeforeAdminOnly = typeof nav === 'function' ? nav : null;
+if (navBeforeAdminOnly) {
+  nav = function (dest) {
+    if (isCurrentUserAdmin() && ['home', 'setup', 'atlas', 'stats', 'challenge', 'quiz', 'garden', 'battle', 'battleSetup', 'sprint60'].includes(dest)) {
+      renderAdmin();
+      return;
+    }
+    navBeforeAdminOnly(dest);
+  };
+  if (typeof window !== 'undefined') window.nav = nav;
+  if (typeof global !== 'undefined') global.nav = nav;
+}
+
+const homeBeforeAdminOnly = typeof home === 'function' ? home : null;
+if (homeBeforeAdminOnly) {
+  home = function () {
+    if (isCurrentUserAdmin()) {
+      renderAdmin();
+      return;
+    }
+    homeBeforeAdminOnly();
+  };
+  if (typeof window !== 'undefined') window.home = home;
+  if (typeof global !== 'undefined') global.home = home;
+}
+
 if (typeof window !== 'undefined') {
   window.renderAdmin = renderAdmin;
+  window.isCurrentUserAdmin = isCurrentUserAdmin;
   window.formatAdminTime = formatAdminTime;
   window.getFilteredStudents = getFilteredStudents;
   window.getStudentsSummary = getStudentsSummary;
@@ -831,6 +863,7 @@ if (typeof window !== 'undefined') {
 }
 if (typeof global !== 'undefined') {
   global.renderAdmin = renderAdmin;
+  global.isCurrentUserAdmin = isCurrentUserAdmin;
   global.formatAdminTime = formatAdminTime;
   global.getFilteredStudents = getFilteredStudents;
   global.getStudentsSummary = getStudentsSummary;

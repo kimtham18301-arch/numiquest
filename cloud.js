@@ -128,7 +128,7 @@ async function localSignIn(username,password){
     if(typeof window!=='undefined')window.config=config;if(typeof global!=='undefined')global.config=config;
   }
   cloudBadge();
-  nav('home');
+  nav(role==='admin'?'admin':'home');
   toast(t('Chào mừng '+user.name+' đã trở lại!','Welcome back, '+user.name+'!'));
 }
 
@@ -190,13 +190,32 @@ function cloudBadge(){
   $$('nav button').forEach(b=>{b.disabled=!u&&b.dataset.view!=='guide'&&b.id!=='navMoreBtn'});
   const adminNav=$('#navAdminBtn');
   const sheetAdmin=$('#sheetAdminItem');
-  const isAdmin=u&&(u.role==='admin'||u.username==='admin');
+  const isAdmin=Boolean(u&&(u.role==='admin'||u.username==='admin'));
+  document.body?.classList?.toggle('is-admin-mode',isAdmin);
+  let classNav=$('#navClassroomBtn');
+  if(!classNav&&adminNav&&adminNav.parentElement&&typeof document.createElement==='function'){
+    classNav=document.createElement('button');
+    classNav.id='navClassroomBtn';
+    classNav.dataset.view='classroom';
+    classNav.innerHTML=`<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg><i data-vi="Lớp học" data-en="Classrooms">Lớp học</i>`;
+    classNav.onclick=()=>nav('classroom');
+    adminNav.after(classNav);
+  }
   if(adminNav){
     adminNav.style.display=isAdmin?'':'none';
+  }
+  if(classNav){
+    classNav.style.display=isAdmin?'':'none';
   }
   if(sheetAdmin){
     sheetAdmin.style.display=isAdmin?'flex':'none';
   }
+  ['home','setup','atlas','stats'].forEach(v=>{
+    const navBtn=$(`nav button[data-view="${v}"]`);
+    if(navBtn)navBtn.style.display=isAdmin?'none':'';
+  });
+  const sheetAtlas=$('[data-sheet-view="atlas"]');
+  if(sheetAtlas)sheetAtlas.style.display=isAdmin?'none':'';
   if(!button)return;
   if(u){
     button.innerHTML=`<b>${esc(u.name)}</b>`;
@@ -344,20 +363,20 @@ function renderProfile(){
       <button type="button" class="primary wide" onclick="nav('admin')">${t('Mở Trung tâm Quản trị →','Open Admin Dashboard →')}</button>
     </div>` : ''}
 
-    <div class="profile-bento-grid">
+    <div class="profile-bento-grid" ${isAdmin?'style="grid-template-columns:1fr"':''}>
       <div class="profile-bento-col-left">
         <div class="card profile-header-card">
           <div class="profile-avatar-wrap">
             <div class="profile-avatar">${animal(u.avatar||buddy())}</div>
           </div>
-          <span class="eyebrow">NUMIQUICK · ${t('HỒ SƠ HỌC SINH','STUDENT PROFILE')}</span>
+          <span class="eyebrow">NUMIQUICK · ${isAdmin?t('HỒ SƠ QUẢN TRỊ VIÊN','ADMINISTRATOR PROFILE'):t('HỒ SƠ HỌC SINH','STUDENT PROFILE')}</span>
           <h1 class="profile-name">
             <span id="profileNameText">${esc(u.name)}</span>
             <button type="button" class="profile-edit-name-btn" id="editNameBtn" title="${t('Đổi tên hiển thị','Change display name')}">Sửa</button>
           </h1>
-          <p class="profile-username">@${esc(u.username)} · <span class="profile-joined">${t('Thành viên NumiQuick','NumiQuick Learner')}</span></p>
+          <p class="profile-username">@${esc(u.username)} · <span class="profile-joined">${isAdmin?t('Quản trị viên hệ thống','System Administrator'):t('Thành viên NumiQuick','NumiQuick Learner')}</span></p>
 
-          <div class="profile-field-group">
+          ${isAdmin?'':`<div class="profile-field-group">
             <label class="profile-field-label">${t('Lớp học của em:','Current Grade Level:')}</label>
             <div class="profile-grade-chips">
               ${[1,2,3,4,5,6,7,8,9].map(g=>`<button type="button" class="profile-grade-chip ${curGrade===g?'active':''}" data-set-grade="${g}">${lang==='vi'?NUMI_GRADES[g].name:NUMI_GRADES[g].enName}</button>`).join('')}
@@ -369,7 +388,7 @@ function renderProfile(){
             <div class="profile-buddy-chips">
               ${[['bunny','Thỏ Mimi'],['panda','Gấu Baobao'],['fox','Cáo Kiki'],['lion','Sư tử Leo']].map(([av,lbl])=>`<button type="button" class="profile-buddy-chip ${(u.avatar||'bunny')===av?'active':''}" data-set-avatar="${av}"><div class="buddy-chip-icon">${animal(av)}</div><span>${lbl}</span></button>`).join('')}
             </div>
-          </div>
+          </div>`}
         </div>
 
         <div class="card profile-password-card">
@@ -447,14 +466,19 @@ function renderProfile(){
         </div>`:''}
 
         <div class="profile-bottom-actions card profile-actions-card">
-          <button class="primary wide" onclick="nav('setup')">${t('Vào luyện tập ngay','Start practicing now')} →</button>
-          <button class="wide" onclick="renderWorksheet()" style="margin-top:8px">${t('In phiếu bài tập (PDF)','Print worksheet (PDF)')}</button>
-          <button class="wide" onclick="openAccount('signup')" style="margin-top:8px">${t('Tạo thêm tài khoản bé khác','Add another child profile')}</button>
+          ${isAdmin ? `
+            <button class="primary wide" onclick="nav('admin')">${t('Trung tâm Quản trị Học sinh','Student Admin Center')} →</button>
+            <button class="wide" onclick="nav('classroom')" style="margin-top:8px">${t('Quản lý Lớp học & Giao bài','Classrooms & Assignments')} →</button>
+          ` : `
+            <button class="primary wide" onclick="nav('setup')">${t('Vào luyện tập ngay','Start practicing now')} →</button>
+            <button class="wide" onclick="renderWorksheet()" style="margin-top:8px">${t('In phiếu bài tập (PDF)','Print worksheet (PDF)')}</button>
+            <button class="wide" onclick="openAccount('signup')" style="margin-top:8px">${t('Tạo thêm tài khoản bé khác','Add another child profile')}</button>
+          `}
           <button id="profileSignOutBtn" class="danger wide" style="margin-top:14px">${t('Đăng xuất tài khoản','Sign out')}</button>
         </div>
       </div>
 
-      <div class="profile-bento-col-right">
+      ${isAdmin ? '' : `<div class="profile-bento-col-right">
         <div class="profile-stats-grid">
           <div class="profile-stat-box card">
             <div class="stat-info"><small>${t('Cấp độ','Level')}</small><strong>${level()}</strong></div>
@@ -508,7 +532,7 @@ function renderProfile(){
             ${badgesList.map(b=>`<div class="badge-item ${b.unlocked?'unlocked':'locked'}"><div class="badge-details"><b>${lang==='vi'?b.titleVi:b.titleEn}</b><p>${lang==='vi'?b.descVi:b.descEn}</p><span class="badge-tag ${b.unlocked?'tag-unlocked':'tag-locked'}">${b.unlocked?t('Đã mở khóa','Unlocked'):t('Chưa mở','Locked')}</span></div></div>`).join('')}
           </div>
         </div>
-      </div>
+      </div>`}
     </div>
   </section>`;
 
