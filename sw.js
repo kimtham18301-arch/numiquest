@@ -1,12 +1,11 @@
 'use strict';
 
-const CACHE_NAME = 'numiquick-v1.0.8';
+const CACHE_NAME = 'numiquick-v1.1.0';
 const STATIC_ASSETS = [
   './',
   './index.html',
   './style.css',
   './app.js',
-  './geo-data.js',
   './discovery.js',
   './challenge.js',
   './farm.js',
