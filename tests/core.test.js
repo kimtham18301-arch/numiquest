@@ -112,6 +112,8 @@ function loadAppContext() {
     cancelAnimationFrame() {},
     encodeURIComponent,
     decodeURIComponent,
+    btoa,
+    atob,
     localStorage: {
       getItem(k) { return storage.has(k) ? storage.get(k) : null; },
       setItem(k, v) { storage.set(k, String(v)); },
@@ -152,7 +154,8 @@ function loadAppContext() {
     'classroom.js',
     'pedagogy.js',
     'engagement.js',
-    'teacher-tools.js'
+    'teacher-tools.js',
+    'azota-features.js'
   ];
   for (const file of scripts) {
     const code = fs.readFileSync(path.join(rootDir, file), 'utf8');
@@ -352,4 +355,55 @@ test('teacher tools analyze common mistakes and build classroom CSV safely', () 
     [{ assignment_id: 'a1', student_id: 'hs1', correct: 9, total: 10, avg_time: 4.2 }]
   );
   assert.ok(csv.includes('Lớp 4A') && csv.includes('Tuần 12') && csv.includes('90%'));
+});
+
+test('azota features: share link, bulk import, matrix, exam shuffle, distribution, and stickers work', async () => {
+  const ctx = loadAppContext();
+
+  // 1. 1-Click Share Link encode/decode
+  const link = ctx.buildHomeworkShareLink(
+    { join_code: 'LP4A26', name: 'Lớp 4A', grade: 4 },
+    { id: 'asg1', title: 'Tuần 14', due_date: '2026-12-10', config: { type: 'natural', count: 10 } }
+  );
+  assert.ok(link.includes('#hw='));
+  const parsed = ctx.parseHomeworkShareHash(link.slice(link.indexOf('#')));
+  assert.equal(parsed.c, 'LP4A26');
+  assert.equal(parsed.t, 'Tuần 14');
+
+  // 2. Bulk import student names
+  const room = await ctx.createClassroom('Lớp 5B', 5);
+  const imported = await ctx.bulkImportStudentsToClassroom(room.id, 'Nguyễn Minh An\nTrần Bảo Ngọc');
+  assert.equal(imported.length, 2);
+  assert.equal(imported[0].username, 'nguyenminhan');
+
+  // 3. 3-Tier Cognitive Matrix
+  const matrixQs = ctx.generateMatrixQuestions({ type: 'natural', ops: ['+', '-'] }, 10, 777);
+  assert.equal(matrixQs.length, 10);
+  assert.equal(matrixQs.filter(q => q.matrixTier === 'easy').length, 4);
+  assert.equal(matrixQs.filter(q => q.matrixTier === 'medium').length, 4);
+  assert.equal(matrixQs.filter(q => q.matrixTier === 'hard').length, 2);
+
+  // 4. Exam shuffle preserves answers
+  const sh1 = ctx.shuffleForStudent(matrixQs, 'student_a');
+  const sh2 = ctx.shuffleForStudent(matrixQs, 'student_b');
+  assert.equal(sh1.length, 10);
+  assert.notDeepEqual(sh1.map(q => q.id), sh2.map(q => q.id));
+
+  // 5. Score distribution
+  const dist = ctx.computeScoreDistribution([
+    { correct: 9, total: 10 },
+    { correct: 8, total: 10 },
+    { correct: 6, total: 10 },
+    { correct: 3, total: 10 }
+  ]);
+  assert.equal(dist.excellent, 1);
+  assert.equal(dist.good, 1);
+  assert.equal(dist.average, 1);
+  assert.equal(dist.needsWork, 1);
+
+  // 6. Teacher feedback sticker grants bonus XP
+  const asg = await ctx.createAssignment(room.id, 'Kiểm tra 1', '', { type: 'natural', count: 10 });
+  const sub = await ctx.submitAssignmentResult(asg.id, 10, 10, 3.5);
+  const okSticker = ctx.giveStickerToSubmission(sub.id, 'star');
+  assert.equal(okSticker, true);
 });

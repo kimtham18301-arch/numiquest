@@ -32,3 +32,13 @@ Tài liệu lưu lại định hướng nâng cấp dài hạn cho **NumiQuick**
 - [ ] **Kết nối Supabase thật (`cloud-config.js`):** Người dùng chạy `cloud-setup.sql` trên project Supabase cá nhân và điền `url` + `publishableKey` để đồng bộ đa thiết bị.
 - [x] **Tối ưu `geo-data.js` (1,7 MB):** Đã loại khỏi precache Service Worker (`sw.js`) và chỉ lazy-load khi người dùng mở Bản đồ.
 - [x] **GitHub Actions CI:** Đã thêm `.github/workflows/ci.yml` tự động chạy `node --check` và `node --test tests/core.test.js` trên mỗi Push / Pull Request.
+
+---
+
+## Nhóm 5: Tính năng Lớp học thông minh kiểu Azota *(Đã triển khai)*
+- [x] **Giao bài bằng Link 1 chạm (`#hw=...`):** Giáo viên copy link gửi Zalo/Messenger; học sinh mở link để tự động vào lớp và làm bài ngay (`buildHomeworkShareLink`, `parseHomeworkShareHash`).
+- [x] **Nhập nhanh danh sách học sinh:** Dán danh sách tên từ Excel/Word để tự tạo tài khoản và xếp lớp hàng loạt (`bulkImportStudentsToClassroom`).
+- [x] **Ma trận đề 3 mức độ:** Sinh bộ câu hỏi phân hóa 40% Nhận biết · 40% Thông hiểu · 20% Vận dụng (`generateMatrixQuestions`).
+- [x] **Chế độ Kiểm tra (`examMode`):** Đảo thứ tự câu/đáp án riêng cho từng học sinh, giới hạn nộp 1 lần và đếm số lần rời màn hình (`shuffleForStudent`).
+- [x] **Biểu đồ Phổ điểm lớp & Thống kê câu sai trong đề:** Hiển thị phổ điểm 4 mức và các câu học sinh làm sai nhiều nhất (`computeScoreDistribution`).
+- [x] **Sticker Lời phê của Giáo viên:** Tự động gắn sticker theo điểm và cho phép giáo viên tặng sticker kèm XP thưởng (`giveStickerToSubmission`).

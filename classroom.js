@@ -222,7 +222,7 @@
     return store.assignments.length < before;
   }
 
-  async function submitAssignmentResult(assignmentId, correct, total, avgTime) {
+  async function submitAssignmentResult(assignmentId, correct, total, avgTime, extraMeta = {}) {
     if (!assignmentId || !(total > 0)) return null;
     const payload = {
       assignment_id: assignmentId,
@@ -245,7 +245,12 @@
     const u = typeof currentAuthUser === 'function' ? currentAuthUser() : null;
     const sid = u?.username || 'guest';
     const existingIdx = store.submissions.findIndex(s => s.assignment_id === assignmentId && s.student_id === sid);
-    const row = { id: existingIdx >= 0 ? store.submissions[existingIdx].id : newId('sub'), student_id: sid, ...payload };
+    const row = {
+      id: existingIdx >= 0 ? store.submissions[existingIdx].id : newId('sub'),
+      student_id: sid,
+      ...payload,
+      ...(extraMeta && typeof extraMeta === 'object' ? extraMeta : {})
+    };
     if (existingIdx >= 0) store.submissions[existingIdx] = row;
     else store.submissions.push(row);
     saveLocalClassStore(store);
@@ -458,7 +463,18 @@
         }
         state.xp = (state.xp || 0) + 30;
         save();
-        submitAssignmentResult(aid, correct, total, avgTime)
+        const wrongQuestions = (s.questions || [])
+          .filter((q, idx) => s.results[idx] && !s.results[idx].correct)
+          .map(q => ({ q: q.q, answer: q.answer }));
+        const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+        const extraMeta = {
+          focus_lost: Number(s.focusLostCount) || 0,
+          wrong_questions: wrongQuestions
+        };
+        if (typeof autoStickerForScore === 'function') {
+          extraMeta.sticker = autoStickerForScore(pct);
+        }
+        submitAssignmentResult(aid, correct, total, avgTime, extraMeta)
           .then(() => toast(t('🎉 Đã nộp bài tập! Thưởng +30 XP & +2 trân châu!', '🎉 Submitted! Earned +30 XP & +2 pearls!')))
           .catch(() => {});
       }
@@ -897,6 +913,10 @@
   document.head.append(style);
 
   if (typeof window !== 'undefined') {
+    window.loadLocalClassStore = loadLocalClassStore;
+    window.saveLocalClassStore = saveLocalClassStore;
+    window.resolveStudentMeta = resolveStudentMeta;
+    window.startAssignedLesson = startAssignedLesson;
     window.createClassroom = createClassroom;
     window.joinClassroomByCode = joinClassroomByCode;
     window.createAssignment = createAssignment;
@@ -910,6 +930,10 @@
     window.renderClassroomManager = renderClassroomManager;
   }
   if (typeof global !== 'undefined') {
+    global.loadLocalClassStore = loadLocalClassStore;
+    global.saveLocalClassStore = saveLocalClassStore;
+    global.resolveStudentMeta = resolveStudentMeta;
+    global.startAssignedLesson = startAssignedLesson;
     global.createClassroom = createClassroom;
     global.joinClassroomByCode = joinClassroomByCode;
     global.createAssignment = createAssignment;
