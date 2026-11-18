@@ -355,16 +355,27 @@
       const isAdmin = Boolean(u && (u.role === 'admin' || u.username === 'admin'));
       if (!adminView || !isAdmin) return;
 
-      // 1. Add Batch Promote, System Backup & Restore buttons
+      // 1. Add Batch Promote, System Backup, Restore, Admin PIN, and Sign Out buttons
       const topActions = $('.admin-top-actions');
       if (topActions && !$('#adminBatchPromoteBtn')) {
         topActions.insertAdjacentHTML('beforeend', `
           <button type="button" class="admin-btn" id="adminBatchPromoteBtn">⬆️ ${t('Chuyển khối', 'Promote')}</button>
           <button type="button" class="admin-btn" id="adminSysBackupBtn">💾 ${t('Sao lưu HT', 'Backup All')}</button>
           <button type="button" class="admin-btn" id="adminSysRestoreBtn">📂 ${t('Khôi phục HT', 'Restore All')}</button>
+          <button type="button" class="admin-btn" id="adminSelfPinBtn">🔑 ${t('Đổi MK Admin', 'Admin PIN')}</button>
+          <button type="button" class="admin-btn btn-del" id="adminSignOutBtn">🚪 ${t('Đăng xuất', 'Sign out')}</button>
           <input type="file" id="adminSysRestoreInput" accept="application/json" hidden style="display:none">
         `);
         $('#adminBatchPromoteBtn').onclick = openBatchPromoteModal;
+        $('#adminSelfPinBtn').onclick = () => {
+          if (typeof adminResetPinModal === 'function') adminResetPinModal('admin');
+        };
+        $('#adminSignOutBtn').onclick = () => {
+          if (confirm(t('Đăng xuất khỏi tài khoản Quản trị viên?', 'Sign out from Administrator account?'))) {
+            if (typeof cloudSession !== 'undefined' && cloudSession && typeof cloudSignOut === 'function') cloudSignOut();
+            else if (typeof localSignOut === 'function') localSignOut();
+          }
+        };
         $('#adminSysBackupBtn').onclick = () => {
           const data = buildFullSystemBackup();
           const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -543,5 +554,7 @@
     global.editStudentProfileModal = editStudentProfileModal;
   }
 
-  if (typeof view !== 'undefined' && view === 'admin') renderAdmin();
+  if ((typeof view !== 'undefined' && view === 'admin') || (typeof isCurrentUserAdmin === 'function' && isCurrentUserAdmin())) {
+    renderAdmin();
+  }
 })();

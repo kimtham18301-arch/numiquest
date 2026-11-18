@@ -324,6 +324,10 @@ function renderProfile(){
     return;
   }
 
+  if(u.role==='admin'||u.username==='admin'){
+    if(typeof renderAdmin==='function'){renderAdmin();return;}
+  }
+
   stop();view='profile';document.body.dataset.view='profile';
   $$('nav button').forEach(b=>b.classList.toggle('active',b.dataset.view==='profile'));
 
@@ -787,7 +791,7 @@ async function cloudRestore(){if(!cloudConfigured())return;let fromCallback=fals
 const accountButton=document.createElement('button');
 accountButton.id='accountButton';
 accountButton.className='account-button';
-accountButton.onclick=()=>openAccount();
+accountButton.onclick=()=>{const u=currentAuthUser();if(u&&(u.role==='admin'||u.username==='admin')){if(typeof renderAdmin==='function')renderAdmin();return;}openAccount();};
 $('#lang')?.before(accountButton);
 cloudBadge();
 window.addEventListener('online',()=>{if(cloudReady)cloudQueue();else cloudRestore()});

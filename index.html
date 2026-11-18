@@ -22,7 +22,7 @@
   <meta name="twitter:image" content="https://kimtham18301-arch.github.io/numiquest/og-image.png">
   <meta name="theme-color" content="#34765c">
   <title>NumiQuick · Luyện tính nhẩm vui</title>
-  <link rel="stylesheet" href="style.css?v=2.0.1">
+  <link rel="stylesheet" href="style.css?v=2.1.0">
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
@@ -79,26 +79,46 @@
 </div>
 <dialog id="modal"><div id="modalBody"></div><button id="closeModal" class="primary" data-vi="Tiếp tục" data-en="Continue"></button></dialog>
 <input id="restore" type="file" accept="application/json" hidden style="display:none">
-<script src="app.js?v=2.0.1"></script>
-<script src="discovery.js?v=2.0.1"></script>
-<script src="challenge.js?v=2.0.1"></script>
-<script src="farm.js?v=2.0.1"></script>
-<script src="milktea.js?v=2.0.1"></script>
-<script src="cloud-config.js?v=2.0.1"></script>
-<script src="cloud.js?v=2.0.1"></script>
-<script src="admin.js?v=2.0.1"></script>
-<script src="ui.js?v=2.0.1"></script>
-<script src="advanced.js?v=2.0.1"></script>
-<script src="refresh.js?v=2.0.1"></script>
-<script src="analytics.js?v=2.0.1"></script>
-<script src="review-exit.js?v=2.0.1"></script>
-<script src="adaptive-sprint.js?v=2.0.1"></script>
-<script src="classroom.js?v=2.0.1"></script>
-<script src="pedagogy.js?v=2.0.1"></script>
-<script src="engagement.js?v=2.0.1"></script>
-<script src="teacher-tools.js?v=2.0.1"></script>
-<script src="azota-features.js?v=2.0.1"></script>
-<script src="admin-dashboard.js?v=2.0.1"></script>
-<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').then(r=>r.update()).catch(()=>{}));}</script>
+<script src="app.js?v=2.1.0"></script>
+<script src="discovery.js?v=2.1.0"></script>
+<script src="challenge.js?v=2.1.0"></script>
+<script src="farm.js?v=2.1.0"></script>
+<script src="milktea.js?v=2.1.0"></script>
+<script src="cloud-config.js?v=2.1.0"></script>
+<script src="cloud.js?v=2.1.0"></script>
+<script src="admin.js?v=2.1.0"></script>
+<script src="ui.js?v=2.1.0"></script>
+<script src="advanced.js?v=2.1.0"></script>
+<script src="refresh.js?v=2.1.0"></script>
+<script src="analytics.js?v=2.1.0"></script>
+<script src="review-exit.js?v=2.1.0"></script>
+<script src="adaptive-sprint.js?v=2.1.0"></script>
+<script src="classroom.js?v=2.1.0"></script>
+<script src="pedagogy.js?v=2.1.0"></script>
+<script src="engagement.js?v=2.1.0"></script>
+<script src="teacher-tools.js?v=2.1.0"></script>
+<script src="azota-features.js?v=2.1.0"></script>
+<script src="admin-dashboard.js?v=2.1.0"></script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',async()=>{
+    try{
+      if(!sessionStorage.getItem('numi_sw_v210')&&window.caches){
+        const keys=await caches.keys();
+        if(keys.some(k=>k!=='numiquick-v2.1.0')){
+          await Promise.all(keys.map(k=>caches.delete(k)));
+          const regs=await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(r=>r.unregister()));
+          sessionStorage.setItem('numi_sw_v210','1');
+          location.reload();
+          return;
+        }
+        sessionStorage.setItem('numi_sw_v210','1');
+      }
+      navigator.serviceWorker.register('./sw.js?v=2.1.0').then(r=>r.update()).catch(()=>{});
+    }catch{}
+  });
+}
+</script>
 </body>
 </html>

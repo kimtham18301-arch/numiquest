@@ -110,6 +110,9 @@ function renderAdmin() {
 
   const u = typeof currentAuthUser === 'function' ? currentAuthUser() : null;
   const isAdmin = u && (u.role === 'admin' || u.username === 'admin');
+  if (document.body && document.body.classList) {
+    document.body.classList.toggle('is-admin-mode', Boolean(isAdmin));
+  }
 
   if (!isAdmin) {
     $('#app').innerHTML = `<div class="narrow card admin-gate-card">
@@ -830,7 +833,7 @@ function isCurrentUserAdmin() {
 const navBeforeAdminOnly = typeof nav === 'function' ? nav : null;
 if (navBeforeAdminOnly) {
   nav = function (dest) {
-    if (isCurrentUserAdmin() && ['home', 'setup', 'atlas', 'stats', 'challenge', 'quiz', 'garden', 'battle', 'battleSetup', 'sprint60'].includes(dest)) {
+    if (isCurrentUserAdmin() && dest !== 'admin' && dest !== 'classroom') {
       renderAdmin();
       return;
     }
