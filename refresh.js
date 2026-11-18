@@ -183,7 +183,7 @@ const numiAnimalOriginal=animal;
 function numiBuddyPrefs(){
  let saved={};try{saved=JSON.parse(localStorage.getItem(NUMI_BUDDY_KEY)||'{}')||{}}catch{}
  const f=typeof farmState==='function'?farmState():{};
- const name=String(saved.name||f.name||'Numi').trim().slice(0,16)||'Numi';
+ const name=String(saved.name||f.name||'Numi').trim().slice(0,24)||'Numi';
  const avatar=['bunny','panda','fox','lion'].includes(saved.avatar)?saved.avatar:'bunny';
  if(f&&f.name!==name){f.name=name;try{save()}catch{}}
  return {name,avatar};
