@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_NAME = 'numiquick-v2.1.1';
+const CACHE_NAME = 'numiquick-v2.1.2';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -68,7 +68,7 @@ self.addEventListener('fetch', event => {
   }
 
   event.respondWith(
-    fetch(req).then(res => {
+    fetch(req, { cache: 'no-cache' }).then(res => {
       if (res && res.status === 200 && res.type === 'basic') {
         const copy = res.clone();
         caches.open(CACHE_NAME).then(cache => cache.put(req, copy));

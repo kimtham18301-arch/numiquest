@@ -455,3 +455,117 @@ test('admin dashboard analytics, student edit, batch promotion, remedial assignm
   const restored = ctx.loadLocalClassStore();
   assert.ok(restored.assignments.some(a => a.id === rem.assignment.id));
 });
+
+test('numiAnimalOriginal preserves distinct animal icons regardless of active buddy', () => {
+  const ctx = loadAppContext();
+  ctx.localStorage.setItem('numi-buddy-profile-v1', JSON.stringify({ name: 'Kiki', avatar: 'fox' }));
+  const bunnySvg = ctx.numiAnimalOriginal('bunny');
+  const foxSvg = ctx.numiAnimalOriginal('fox');
+  const activeBuddySvg = ctx.animal('bunny');
+  assert.notEqual(bunnySvg, foxSvg);
+  assert.equal(activeBuddySvg.includes(foxSvg.slice(10, 80)), true);
+});
+
+test('translate targets nav labels without matching body[data-view] and nav syncs body.dataset.view', async () => {
+  const ctx = loadAppContext();
+  await ctx.localSignIn('minhkhoi', '1234');
+  const fakeBodyChild = { textContent: 'KEEP_ME' };
+  const navHomeLabel = { textContent: '' };
+  const navPracticeLabel = { textContent: '' };
+  const origQS = ctx.document.querySelector.bind(ctx.document);
+  ctx.document.querySelector = sel => {
+    if (sel === '[data-view="home"] i') return fakeBodyChild;
+    if (sel === 'nav [data-view="home"] i') return navHomeLabel;
+    if (sel === 'nav [data-view="setup"] i') return navPracticeLabel;
+    return origQS(sel);
+  };
+  ctx.document.body.dataset.view = 'setup';
+  ctx.translate();
+  assert.equal(fakeBodyChild.textContent, 'KEEP_ME');
+  assert.equal(navHomeLabel.textContent, 'Trang chủ');
+  assert.equal(navPracticeLabel.textContent, 'Luyện tập');
+  ctx.nav('stats');
+  assert.equal(ctx.document.body.dataset.view, 'stats');
+});
+
+test('nav("classroom") invokes the wrapped renderClassroomManager chain dynamically', async () => {
+  const ctx = loadAppContext();
+  await ctx.localSignIn('admin', 'admin123');
+  const calls = [];
+  const prevWrapped = ctx.renderClassroomManager;
+  ctx.renderClassroomManager = async function () {
+    calls.push('wrapped');
+    return prevWrapped.apply(this, arguments);
+  };
+  ctx.nav('classroom');
+  assert.equal(calls.length, 1);
+});
+
+test('setup step numbering, stats review button, footer login status, and profile 4 distinct buddy icons work', async () => {
+  const ctx = loadAppContext();
+  await ctx.localSignIn('minhkhoi', '1234');
+
+  // 1. Footer status updated after login
+  const footerLocal = ctx.document.querySelector('footer .local');
+  ctx.cloudBadge();
+  assert.ok(footerLocal.textContent.includes('Minh Khôi'), `Expected logged-in footer, got: ${footerLocal.textContent}`);
+
+  // 2. Profile renders 4 distinct animal SVGs even when active buddy is 'fox'
+  ctx.renderProfile();
+  const profileHtml = ctx.document.querySelector('#app').innerHTML;
+  const chipsStart = profileHtml.indexOf('profile-buddy-chips');
+  assert.ok(chipsStart > -1);
+  const chipsSegment = profileHtml.slice(chipsStart, profileHtml.indexOf('profile-password-card'));
+  const chipSvgs = chipsSegment.match(/<svg[\s\S]*?<\/svg>/g) || [];
+  assert.equal(chipSvgs.length, 4);
+  assert.equal(new Set(chipSvgs).size, 4, 'All 4 buddy choice buttons must render distinct SVGs');
+
+  // 3. Stats renders direct Garden review button when mistakes exist
+  ctx.state.mistakes = [{ id: 'm1', q: '3/4 + 1/2', answer: '5/4', options: ['5/4', '4/6', '3/6', '7/4'], config: { seconds: 20, type: 'fraction' } }];
+  ctx.stats();
+  const statsHtml = ctx.document.querySelector('#app').innerHTML;
+  assert.ok(statsHtml.includes('onclick="startReview()"'), 'Stats should expose direct Garden review button when mistakes exist');
+
+  // 4. Setup renumbers all 6 fieldsets cleanly (1..6) without duplicate step 4
+  ctx.state.mistakes = [];
+  const stepSpans = ['1', '2', '3', '4', '5'].map(n => ({ textContent: n }));
+  const formMock = {
+    className: '',
+    style: {},
+    dataset: {},
+    elements: {
+      questionStyle: { value: 'normal', onchange: null },
+      termCount: { value: 3, disabled: false }
+    },
+    classList: { add() {}, remove() {}, toggle() {}, contains() { return false; } },
+    setAttribute() {},
+    getAttribute() { return null; },
+    addEventListener() {},
+    append() {},
+    insertBefore(newEl) {
+      if (String(newEl?.innerHTML || '').includes('<span>4</span>')) {
+        stepSpans.splice(3, 0, { textContent: '4' });
+      }
+    },
+    querySelector(sel) {
+      if (sel === '.session-size legend span') return stepSpans[4] || null;
+      return null;
+    },
+    querySelectorAll(sel) {
+      if (sel === 'fieldset legend span') return stepSpans;
+      return [];
+    }
+  };
+  ctx.FormData = class {
+    get(k) { return k === 'count' ? '10' : k === 'seconds' ? '15' : 'choices'; }
+    getAll() { return ['1']; }
+  };
+  const origQS = ctx.document.querySelector.bind(ctx.document);
+  const appEl = origQS('#app');
+  ctx.document.querySelector = sel => {
+    if (sel === '#config') return String(appEl.innerHTML || '').includes('id="config"') ? formMock : null;
+    return origQS(sel);
+  };
+  ctx.setup();
+  assert.deepEqual(stepSpans.map(s => s.textContent), ['1', '2', '3', '4', '5', '6']);
+});

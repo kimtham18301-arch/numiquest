@@ -189,8 +189,8 @@ body.not-logged-in .brand{pointer-events:none}
 
 /* Grade Signup Picks */
 .grade-signup-picks{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin-top:6px;margin-bottom:16px}
-.grade-signup-picks label{display:flex;align-items:center;cursor:pointer;position:relative}
-.grade-signup-picks input{position:absolute;opacity:0}
+.grade-signup-picks label{display:flex;align-items:center;cursor:pointer;position:relative;margin:0!important}
+.grade-signup-picks input{position:absolute;opacity:0;inset:0;width:100%!important;height:100%!important;min-height:0!important;margin:0!important;padding:0!important;cursor:pointer;z-index:1}
 .grade-signup-picks span{width:100%;text-align:center;padding:8px 6px;background:#f5f8f3;border:1.5px solid #d4e5cb;border-radius:10px;font-weight:700;font-size:13px;color:#3b5e39;transition:all .15s}
 .grade-signup-picks input:checked+span{background:#34765c;color:#fff;border-color:#2b5633;box-shadow:0 2px 8px rgba(52,118,92,0.2)}
 
@@ -895,7 +895,9 @@ body.not-logged-in .brand{pointer-events:none}
   /* Secondary nav buttons hidden from mobile bottom bar (available in 'More' sheet) */
   nav button[data-view="guide"],
   nav button[data-view="atlas"],
-  nav button[data-view="admin"] {
+  nav button[data-view="admin"],
+  nav button[data-view="classroom"],
+  #navClassroomBtn {
     display: none !important;
   }
   #navMoreBtn {
@@ -2245,4 +2247,73 @@ body.is-admin-mode #navMoreBtn,
 body.is-admin-mode #moreSheet,
 body.is-admin-mode #moreSheetBackdrop {
   display: none !important;
+}
+
+@media (min-width: 701px) {
+  header {
+    max-width: 1360px;
+    padding: 14px 20px;
+    gap: 10px;
+  }
+  header nav {
+    min-width: 0;
+    gap: 2px;
+  }
+  header nav button {
+    padding: 9px 11px;
+    gap: 6px;
+    font-size: 13px;
+  }
+}
+
+@media (min-width: 701px) and (max-width: 1080px) {
+  header nav button {
+    padding: 8px 8px;
+    gap: 4px;
+    font-size: 12px;
+  }
+  header nav button .nav-icon {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+.guide-bubble > div {
+  background: #eaf3e0;
+  border-color: #cde0bc;
+  color: #244731;
+}
+.guide-bubble b {
+  color: #1f422b;
+}
+.guide-bubble p {
+  color: #43624d;
+}
+body.dark-mode .guide-bubble > div {
+  background: #1c2c23;
+  border-color: #345240;
+  color: #e8f5ec;
+}
+body.dark-mode .guide-bubble b {
+  color: #f2fbf5;
+}
+body.dark-mode .guide-bubble p {
+  color: #b5cbbd;
+}
+body.dark-mode .empty-postcard h3 {
+  color: #e8f5ec;
+}
+body.dark-mode .empty-postcard p,
+body.dark-mode .discovery-greeting p {
+  color: #b8cebf;
+}
+body.dark-mode #adminAddStudentForm label,
+body.dark-mode #adminAddStudentForm span {
+  color: #cce2d4 !important;
+}
+body.dark-mode #adminAddStudentForm input,
+body.dark-mode #adminAddStudentForm select {
+  background: #14221a !important;
+  color: #e8f5ec !important;
+  border-color: #2f4e3c !important;
 }

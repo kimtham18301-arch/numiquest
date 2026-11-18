@@ -379,7 +379,7 @@
       const rank = podiumRanks[idx];
       return `<div class="cls-podium-slot rank-${rank}">
         <div class="cls-podium-crown">${rank === 1 ? '👑' : rank === 2 ? '🥈' : '🥉'}</div>
-        <div class="cls-podium-avatar">${typeof animal === 'function' ? animal(row.avatar) : '🐰'}</div>
+        <div class="cls-podium-avatar">${typeof numiAnimalOriginal === 'function' ? numiAnimalOriginal(row.avatar) : (typeof animal === 'function' ? animal(row.avatar) : '🐰')}</div>
         <b>${esc(row.name)}</b>
         <span>${row.totalCorrect} ${t('đúng', 'pts')}</span>
       </div>`;
@@ -392,7 +392,7 @@
       ? `<p class="muted" style="text-align:center;padding:18px 0">${t('Chưa có học sinh nào trong lớp.', 'No students enrolled yet.')}</p>`
       : `<div class="cls-board-list">${board.map((row, idx) => `<div class="cls-board-row">
           <span class="cls-rank">${idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}</span>
-          <span class="cls-mini-avatar">${typeof animal === 'function' ? animal(row.avatar) : '🐰'}</span>
+          <span class="cls-mini-avatar">${typeof numiAnimalOriginal === 'function' ? numiAnimalOriginal(row.avatar) : (typeof animal === 'function' ? animal(row.avatar) : '🐰')}</span>
           <div class="cls-board-user">
             <b>${esc(row.name)}</b>
             <small>${row.completedCount} ${t('bài đã nộp', 'completed')} · ${row.accuracy}%</small>
@@ -482,6 +482,19 @@
   }
 
   // ---------------- Teacher Classroom Management View ----------------
+  function invokeClassroomManager() {
+    const fn = (typeof window !== 'undefined' && window.renderClassroomManager) ||
+               (typeof global !== 'undefined' && global.renderClassroomManager) ||
+               renderClassroomManager;
+    return fn();
+  }
+  function invokeSubmissionsModal(asgId, data) {
+    const fn = (typeof window !== 'undefined' && window.openAssignmentSubmissionsModal) ||
+               (typeof global !== 'undefined' && global.openAssignmentSubmissionsModal) ||
+               openAssignmentSubmissionsModal;
+    return fn(asgId, data);
+  }
+
   async function renderClassroomManager() {
     stop();
     view = 'classroom';
@@ -565,7 +578,7 @@
           const room = await createClassroom(f.get('name'), f.get('grade'));
           $('#modal').close();
           toast(t(`Đã tạo lớp! Mã tham gia: ${room.join_code}`, `Created! Join code: ${room.join_code}`));
-          renderClassroomManager();
+          invokeClassroomManager();
         } catch (err) {
           toast(err.message);
         }
@@ -586,7 +599,7 @@
     });
 
     $$('[data-view-subs]').forEach(btn => {
-      btn.onclick = () => openAssignmentSubmissionsModal(btn.dataset.viewSubs, data);
+      btn.onclick = () => invokeSubmissionsModal(btn.dataset.viewSubs, data);
     });
 
     $$('[data-del-asg]').forEach(btn => {
@@ -594,7 +607,7 @@
         if (!confirm(t('Xóa bài tập này khỏi lớp?', 'Delete this assignment?'))) return;
         await deleteAssignment(btn.dataset.delAsg);
         toast(t('Đã xóa bài tập.', 'Assignment deleted.'));
-        renderClassroomManager();
+        invokeClassroomManager();
       };
     });
 
@@ -669,7 +682,7 @@
             });
             $('#modal').close();
             toast(t('Đã giao bài tập cho cả lớp!', 'Assignment posted to classroom!'));
-            renderClassroomManager();
+            invokeClassroomManager();
           } catch (err) {
             toast(err.message);
           }
@@ -683,7 +696,7 @@
   if (navBeforeClassroom) {
     nav = function (dest) {
       if (dest === 'classroom') {
-        renderClassroomManager();
+        invokeClassroomManager();
         return;
       }
       navBeforeClassroom(dest);
@@ -701,7 +714,7 @@
         btn.id = 'adminClassroomBtn';
         btn.className = 'admin-btn';
         btn.textContent = t('Lớp học & Giao bài', 'Classrooms');
-        btn.onclick = renderClassroomManager;
+        btn.onclick = invokeClassroomManager;
         topActions.prepend(btn);
       }
     };
@@ -744,7 +757,7 @@
           <div class="cls-tstat is-pink"><span>🎉 ${t('Lượt nộp', 'Submissions')}</span><b>${tData.submissions.length}</b></div>
         </div>
       `;
-      $('#openTeacherClassBtn').onclick = renderClassroomManager;
+      $('#openTeacherClassBtn').onclick = invokeClassroomManager;
       return;
     }
 

@@ -160,7 +160,7 @@ if(typeof window!=='undefined')window.generate=generate;
 if(typeof global!=='undefined')global.generate=generate;
 // Load saved theme once and retain it across every screen.
 let numiSavedTheme='candy';try{numiSavedTheme=localStorage.getItem('numi-color-theme')||'candy'}catch{}numiThemeApply(numiSavedTheme);
-const numiOriginalTranslate=translate;translate=function(){numiOriginalTranslate();const homeLabel=$('[data-view="home"] i'),practiceLabel=$('[data-view="setup"] i');if(homeLabel)homeLabel.textContent=t('Trang chủ','Home');if(practiceLabel)practiceLabel.textContent=t('Luyện tập','Practice')};
+const numiOriginalTranslate=translate;translate=function(){numiOriginalTranslate();const homeLabel=$('nav [data-view="home"] i'),practiceLabel=$('nav [data-view="setup"] i');if(homeLabel)homeLabel.textContent=t('Trang chủ','Home');if(practiceLabel)practiceLabel.textContent=t('Luyện tập','Practice')};
 showFarmCertificate=function(){const p=challengeProgress();if(!(state.badges||0)){toast(t('Vượt qua 3 level để nhận huy hiệu đầu tiên nhé!','Clear 3 levels to earn your first badge!'));return}const name=state.name==='Explorer'?t('Bạn học nhỏ','Little learner'):state.name;modal(`<div class="farm-certificate"><span class="farm-kicker">NUMIQUICK · ${t('BẰNG KHEN','CERTIFICATE')}</span><h2>${t('BẰNG KHEN CHINH PHỤC','CHALLENGE CERTIFICATE')}</h2><p>${t('Trao tặng','Awarded to')}</p><h3>${esc(name)}</h3><p>${p.completed} ${t('level đã chinh phục','levels cleared')} · ${state.badges} ${t('huy hiệu','badges')}</p><small>${t('Chăm chỉ mỗi ngày, giỏi lên từng chút.','Practice a little every day and grow your skills.')}</small></div><div class="actions"><button class="primary" id="saveBadgeCertificate">${t('Lưu ảnh bằng khen','Save certificate image')}</button><button id="badgeCertificateDone">${t('Đóng','Close')}</button></div>`);$('#badgeCertificateDone').onclick=()=>$('#modal').close();$('#saveBadgeCertificate').onclick=async()=>{if(document.fonts?.ready)await document.fonts.ready;const c=document.createElement('canvas');c.width=1400;c.height=1050;const x=c.getContext('2d');if(!x){toast(t('Trình duyệt chưa hỗ trợ lưu ảnh.','This browser cannot save the image.'));return}x.fillStyle='#fff9ec';x.fillRect(0,0,1400,1050);x.strokeStyle='#9cb985';x.lineWidth=9;x.strokeRect(36,36,1328,978);x.strokeStyle='#dfbf7c';x.lineWidth=2;x.strokeRect(57,57,1286,936);x.textAlign='center';x.fillStyle='#638761';const text=(txt,y,size=34)=>{x.font=`800 ${size}px NumiNunito, sans-serif`;x.fillText(txt,700,y,1190)};text('NUMIQUICK · '+t('BẰNG KHEN','CERTIFICATE'),160,30);text(t('BẰNG KHEN CHINH PHỤC','CHALLENGE CERTIFICATE'),280,54);text(t('Trao tặng học sinh chăm ngoan','Awarded to our dedicated learner'),365,30);x.fillStyle='#385d43';text(name,490,72);x.fillStyle='#b17e49';text(`${p.completed} ${t('level đã chinh phục','levels cleared')} · ${state.badges} ${t('huy hiệu','badges')}`,620,42);x.fillStyle='#638761';text(t('Chăm chỉ mỗi ngày, giỏi lên từng chút.','Practice a little every day and grow your skills.'),820,28);c.toBlob(blob=>{if(blob)download(blob,'NumiQuick-Bang-Khen-'+p.completed+'.png')},'image/png')}};
 
 // Drag across columns with a tap-to-pair fallback, including when a card is off-screen.
@@ -181,6 +181,8 @@ const numiGardenRender=gardenRender;gardenRender=function(){numiGardenRender();c
 // One companion profile is shared by every screen, not just the home page.
 const NUMI_BUDDY_KEY='numi-buddy-profile-v1';
 const numiAnimalOriginal=animal;
+if(typeof window!=='undefined')window.numiAnimalOriginal=numiAnimalOriginal;
+if(typeof global!=='undefined')global.numiAnimalOriginal=numiAnimalOriginal;
 function numiBuddyPrefs(){
  let saved={};try{saved=JSON.parse(localStorage.getItem(NUMI_BUDDY_KEY)||'{}')||{}}catch{}
  const f=typeof farmState==='function'?farmState():{};
@@ -228,7 +230,7 @@ function numiSyncBuddyIdentity(root=document.querySelector('#app')){
   replacement.setAttribute('class',(old.getAttribute('class')||'farm-rabbit')+' animal');replacement.dataset.buddySync=avatar;old.replaceWith(replacement);
  });
  root.querySelectorAll('.animal').forEach(old=>{
-  if(old.closest('.buddy-choices,.buddy-picker,.play-buddies,.student-avatar,.cls-podium-avatar,.cls-mini-avatar'))return;
+  if(old.closest('.buddy-choices,.buddy-picker,.play-buddies,.student-avatar,.cls-podium-avatar,.cls-mini-avatar,.profile-buddy-chips,.buddy-chip-icon,.family-chip'))return;
   if(old.dataset.buddySync===avatar)return;
   const replacement=numiAnimalEl(avatar);if(!replacement)return;
   replacement.setAttribute('class',old.getAttribute('class')||'animal');replacement.dataset.buddySync=avatar;old.replaceWith(replacement);
@@ -236,7 +238,7 @@ function numiSyncBuddyIdentity(root=document.querySelector('#app')){
  const homeMark=root.querySelector('.home-v2-wordmark>span');if(homeMark)homeMark.textContent=name;
  if(name&&name!=='Numi'&&!/\bNumi\b/.test(name)){
   const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let node;const nodes=[];
-  while(node=walker.nextNode()){if(node.parentElement?.closest('script,style,.brand,.buddy-choices,.buddy-picker,.play-buddies'))continue;if(/\bNumi\b/.test(node.nodeValue))nodes.push(node)}
+  while(node=walker.nextNode()){if(node.parentElement?.closest('script,style,.brand,.buddy-choices,.buddy-picker,.play-buddies,.profile-buddy-chips,.buddy-chip-icon,.family-chip'))continue;if(/\bNumi\b/.test(node.nodeValue))nodes.push(node)}
   for(const item of nodes){const next=item.nodeValue.replace(/\bNumi\b/g,()=>name);if(next!==item.nodeValue)item.nodeValue=next;}
  }
 }

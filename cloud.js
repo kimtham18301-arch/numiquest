@@ -216,6 +216,14 @@ function cloudBadge(){
   });
   const sheetAtlas=$('[data-sheet-view="atlas"]');
   if(sheetAtlas)sheetAtlas.style.display=isAdmin?'none':'';
+  const footerLocal=$('footer .local');
+  if(footerLocal){
+    const viTxt=u?`Đã đăng nhập: ${u.name} · Tiến độ lưu tự động trên thiết bị`:'Lưu trên thiết bị · Đăng nhập để bảo vệ tiến độ học';
+    const enTxt=u?`Signed in: ${u.name} · Progress auto-saved on device`:'Saved on this device · Sign in to save progress';
+    footerLocal.dataset.vi=viTxt;
+    footerLocal.dataset.en=enTxt;
+    footerLocal.textContent=lang==='en'?enTxt:viTxt;
+  }
   if(!button)return;
   if(u){
     const shortLabel=isAdmin?t('Quản trị','Admin'):u.name;
@@ -391,7 +399,7 @@ function renderProfile(){
           <div class="profile-field-group">
             <label class="profile-field-label">${t('Bạn thú đồng hành:','Choose Study Buddy:')}</label>
             <div class="profile-buddy-chips">
-              ${[['bunny','Thỏ Mimi'],['panda','Gấu Baobao'],['fox','Cáo Kiki'],['lion','Sư tử Leo']].map(([av,lbl])=>`<button type="button" class="profile-buddy-chip ${(u.avatar||'bunny')===av?'active':''}" data-set-avatar="${av}"><div class="buddy-chip-icon">${animal(av)}</div><span>${lbl}</span></button>`).join('')}
+              ${[['bunny','Thỏ Mimi'],['panda','Gấu Baobao'],['fox','Cáo Kiki'],['lion','Sư tử Leo']].map(([av,lbl])=>`<button type="button" class="profile-buddy-chip ${(u.avatar||'bunny')===av?'active':''}" data-set-avatar="${av}"><div class="buddy-chip-icon">${(typeof numiAnimalOriginal==='function'?numiAnimalOriginal:animal)(av)}</div><span>${lbl}</span></button>`).join('')}
             </div>
           </div>`}
         </div>
@@ -466,7 +474,7 @@ function renderProfile(){
           <h3>${t('Chuyển sang tài khoản bé khác trong nhà','Switch to another child profile')}</h3>
           <p class="muted">${t('Mỗi bé có bảng điểm, cấp độ và chuỗi ngày riêng biệt.','Each child has their own progress, level, and daily streak.')}</p>
           <div class="family-chips">
-            ${otherUsers.map(uOther=>`<button type="button" class="family-chip" data-switch-user="${esc(uOther.username)}"><span class="family-chip-avatar">${animal(uOther.avatar||'bunny')}</span><span class="family-chip-name">${esc(uOther.name)} (${uOther.grade?(lang==='vi'?'Lớp '+uOther.grade:'Grade '+uOther.grade):'Lớp 1'})</span></button>`).join('')}
+            ${otherUsers.map(uOther=>`<button type="button" class="family-chip" data-switch-user="${esc(uOther.username)}"><span class="family-chip-avatar">${(typeof numiAnimalOriginal==='function'?numiAnimalOriginal:animal)(uOther.avatar||'bunny')}</span><span class="family-chip-name">${esc(uOther.name)} (${uOther.grade?(lang==='vi'?'Lớp '+uOther.grade:'Grade '+uOther.grade):'Lớp 1'})</span></button>`).join('')}
           </div>
         </div>`:''}
 
@@ -705,7 +713,7 @@ function openAccount(mode='login'){
   const signup=mode==='signup',localUsers=getLocalUsers(),usersList=Object.values(localUsers);
   const userChips=usersList.length&&!signup?`<div class="quick-users"><div class="quick-users-label">${t('Tài khoản đã có trên máy này (chạm để chọn):','Accounts on this device (tap to select):')}</div><div class="quick-user-chips">${usersList.map(u=>`<button type="button" class="quick-user-chip" data-quick-user="${esc(u.username)}"><span>${esc(u.name)}</span></button>`).join('')}</div></div>`:'';
   let chosenAvatar='bunny';
-  const companionPicks=signup?`<div class="settings-hint" style="margin-top:14px">${t('Chọn bạn thú đồng hành:','Choose your study buddy:')}</div><div class="buddy-choices">${[['bunny','Thỏ'],['panda','Gấu'],['fox','Cáo'],['lion','Sư tử']].map(([k,label])=>`<button type="button" data-signup-avatar="${k}" class="${k===chosenAvatar?'chosen':''}">${animal(k)}<span>${label}</span></button>`).join('')}</div>`:'';
+  const companionPicks=signup?`<div class="settings-hint" style="margin-top:14px">${t('Chọn bạn thú đồng hành:','Choose your study buddy:')}</div><div class="buddy-choices">${[['bunny','Thỏ'],['panda','Gấu'],['fox','Cáo'],['lion','Sư tử']].map(([k,label])=>`<button type="button" data-signup-avatar="${k}" class="${k===chosenAvatar?'chosen':''}">${(typeof numiAnimalOriginal==='function'?numiAnimalOriginal:animal)(k)}<span>${label}</span></button>`).join('')}</div>`:'';
 
   $('#app').innerHTML=`<div class="narrow card account-card auth-gate-card">
     <div class="intro-animal">${animal('bunny')}</div>

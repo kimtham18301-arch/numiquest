@@ -244,7 +244,7 @@ function renderAdmin() {
               return `<tr class="${isAdminUser ? 'admin-user-row' : ''}">
                 <td>
                   <div class="student-cell">
-                    <div class="student-avatar">${animal(s.avatar)}</div>
+                    <div class="student-avatar">${(typeof numiAnimalOriginal === 'function' ? numiAnimalOriginal : animal)(s.avatar)}</div>
                     <div class="student-meta">
                       <b class="student-name">${esc(s.name)}</b>
                       <span class="student-uname">@${esc(s.username)}</span>
@@ -302,7 +302,7 @@ function renderAdmin() {
           return `<div class="admin-student-card ${isAdminUser ? 'admin-user-card' : ''}">
             <div class="admin-card-top">
               <div class="student-cell">
-                <div class="student-avatar">${animal(s.avatar)}</div>
+                <div class="student-avatar">${(typeof numiAnimalOriginal === 'function' ? numiAnimalOriginal : animal)(s.avatar)}</div>
                 <div class="student-meta">
                   <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
                     <b class="student-name">${esc(s.name)}</b>
@@ -384,7 +384,7 @@ function renderAdmin() {
           const isAdminUser = s.role === 'admin' || s.username === 'admin';
           const accClass = s.accuracy >= 80 ? 'acc-high' : s.accuracy >= 65 ? 'acc-med' : 'acc-low';
           return `<tr class="${isAdminUser ? 'admin-user-row' : ''}">
-            <td><div class="student-cell"><div class="student-avatar">${animal(s.avatar)}</div><div class="student-meta"><b class="student-name">${esc(s.name)}</b><span class="student-uname">@${esc(s.username)}</span>${isAdminUser ? `<span class="role-badge admin-badge">${t('Quản trị viên','Admin')}</span>` : `<span class="role-badge student-badge">${t('Học sinh','Student')}</span>`}</div></div></td>
+            <td><div class="student-cell"><div class="student-avatar">${(typeof numiAnimalOriginal === 'function' ? numiAnimalOriginal : animal)(s.avatar)}</div><div class="student-meta"><b class="student-name">${esc(s.name)}</b><span class="student-uname">@${esc(s.username)}</span>${isAdminUser ? `<span class="role-badge admin-badge">${t('Quản trị viên','Admin')}</span>` : `<span class="role-badge student-badge">${t('Học sinh','Student')}</span>`}</div></div></td>
             <td><span class="grade-tag"><b>${gradeLabel}</b></span></td>
             <td><div class="login-info-cell"><b>${formatAdminTime(s.lastLogin)}</b><small>${s.loginCount > 0 ? `${s.loginCount} ${t('lần đăng nhập','logins')}` : t('Chưa đăng nhập','Never')}</small></div></td>
             <td><div class="progress-cell"><div class="progress-top"><span class="acc-pill ${accClass}">${s.accuracy}%</span><span class="xp-badge">Lv.${s.userLevel} · ${s.xp} XP</span></div><small>${s.totalSessions} ${t('bài','lessons')} · ${s.totalAnswered} ${t('câu','qs')} ${s.mistakesCount > 0 ? `· <span class="mistake-pill">${s.mistakesCount} ${t('lỗi tồn','mistakes')}</span>` : ''}</small></div></td>
@@ -398,7 +398,7 @@ function renderAdmin() {
           const gradeLabel = gradeInfo ? (currentLang() === 'vi' ? gradeInfo.name : gradeInfo.enName) : `Lớp ${s.grade}`;
           const isAdminUser = s.role === 'admin' || s.username === 'admin';
           const accClass = s.accuracy >= 80 ? 'acc-high' : s.accuracy >= 65 ? 'acc-med' : 'acc-low';
-          return `<div class="admin-student-card ${isAdminUser ? 'admin-user-card' : ''}"><div class="admin-card-top"><div class="student-cell"><div class="student-avatar">${animal(s.avatar)}</div><div class="student-meta"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><b class="student-name">${esc(s.name)}</b>${isAdminUser ? `<span class="role-badge admin-badge">Admin</span>` : `<span class="role-badge student-badge">HS</span>`}</div><span class="student-uname">@${esc(s.username)}</span></div></div><span class="grade-tag"><b>${gradeLabel}</b></span></div><div class="admin-card-stats-grid"><div class="admin-card-stat"><small>${t('Chính xác','Accuracy')}</small><span class="acc-pill ${accClass}">${s.accuracy}%</span></div><div class="admin-card-stat"><small>${t('Cấp độ & XP','Level & XP')}</small><strong>Lv.${s.userLevel} <span class="stat-meta-note">(${s.xp} XP)</span></strong></div><div class="admin-card-stat"><small>${t('Đăng nhập','Last Login')}</small><span class="stat-line-text">${formatAdminTime(s.lastLogin)}</span><span class="stat-meta-note">${s.loginCount > 0 ? `${s.loginCount} ${t('lần vào học','logins')}` : t('Chưa vào','Never')}</span></div><div class="admin-card-stat"><small>${t('Bài làm & Lỗi','Lessons & Errors')}</small><span class="stat-line-text">${s.totalSessions} ${t('bài','lessons')} (${s.totalAnswered} ${t('câu','qs')})</span>${s.mistakesCount > 0 ? `<span class="mistake-pill" style="margin-top:2px;display:inline-block">${s.mistakesCount} ${t('câu sai','mistakes')}</span>` : `<span class="stat-meta-note" style="color:#4a7758">0 ${t('lỗi tồn','errors')}</span>`}</div></div><div class="admin-card-actions"><button type="button" class="admin-act-btn btn-view" data-action="view" data-user="${esc(s.username)}">${t('Chi tiết','Details')}</button><button type="button" class="admin-act-btn btn-pin" data-action="pin" data-user="${esc(s.username)}">${t('Mã PIN','PIN')}</button>${!isAdminUser ? `<button type="button" class="admin-act-btn btn-switch" data-action="switch" data-user="${esc(s.username)}">${t('Vào học','Open')}</button>` : ''}${!isAdminUser ? `<button type="button" class="admin-act-btn btn-del" data-action="delete" data-user="${esc(s.username)}">${t('Xóa','Del')}</button>` : ''}</div></div>`;
+          return `<div class="admin-student-card ${isAdminUser ? 'admin-user-card' : ''}"><div class="admin-card-top"><div class="student-cell"><div class="student-avatar">${(typeof numiAnimalOriginal === 'function' ? numiAnimalOriginal : animal)(s.avatar)}</div><div class="student-meta"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><b class="student-name">${esc(s.name)}</b>${isAdminUser ? `<span class="role-badge admin-badge">Admin</span>` : `<span class="role-badge student-badge">HS</span>`}</div><span class="student-uname">@${esc(s.username)}</span></div></div><span class="grade-tag"><b>${gradeLabel}</b></span></div><div class="admin-card-stats-grid"><div class="admin-card-stat"><small>${t('Chính xác','Accuracy')}</small><span class="acc-pill ${accClass}">${s.accuracy}%</span></div><div class="admin-card-stat"><small>${t('Cấp độ & XP','Level & XP')}</small><strong>Lv.${s.userLevel} <span class="stat-meta-note">(${s.xp} XP)</span></strong></div><div class="admin-card-stat"><small>${t('Đăng nhập','Last Login')}</small><span class="stat-line-text">${formatAdminTime(s.lastLogin)}</span><span class="stat-meta-note">${s.loginCount > 0 ? `${s.loginCount} ${t('lần vào học','logins')}` : t('Chưa vào','Never')}</span></div><div class="admin-card-stat"><small>${t('Bài làm & Lỗi','Lessons & Errors')}</small><span class="stat-line-text">${s.totalSessions} ${t('bài','lessons')} (${s.totalAnswered} ${t('câu','qs')})</span>${s.mistakesCount > 0 ? `<span class="mistake-pill" style="margin-top:2px;display:inline-block">${s.mistakesCount} ${t('câu sai','mistakes')}</span>` : `<span class="stat-meta-note" style="color:#4a7758">0 ${t('lỗi tồn','errors')}</span>`}</div></div><div class="admin-card-actions"><button type="button" class="admin-act-btn btn-view" data-action="view" data-user="${esc(s.username)}">${t('Chi tiết','Details')}</button><button type="button" class="admin-act-btn btn-pin" data-action="pin" data-user="${esc(s.username)}">${t('Mã PIN','PIN')}</button>${!isAdminUser ? `<button type="button" class="admin-act-btn btn-switch" data-action="switch" data-user="${esc(s.username)}">${t('Vào học','Open')}</button>` : ''}${!isAdminUser ? `<button type="button" class="admin-act-btn btn-del" data-action="delete" data-user="${esc(s.username)}">${t('Xóa','Del')}</button>` : ''}</div></div>`;
         }).join('');
     bindRowActions();
   };
@@ -613,14 +613,14 @@ function adminAddStudentModal() {
       <input name="password" minlength="4" value="1234" required style="width:100%;font-size:15px;padding:9px 12px;border-radius:10px;border:1.5px solid #c2dfae;margin-top:4px">
     </label>
     <label style="font-weight:700;font-size:13px;color:#3b5e39">${t('Khối lớp hiện tại:','Current Grade Level:')}
-      <select name="grade" style="width:100%;font-size:15px;padding:9px 12px;border-radius:10px;border:1.5px solid #c2dfae;margin-top:4px;background:#fff">
+      <select name="grade" style="width:100%;font-size:15px;padding:9px 12px;border-radius:10px;border:1.5px solid #c2dfae;margin-top:4px">
         ${[1,2,3,4,5,6,7,8,9].map(g => `<option value="${g}">${typeof NUMI_GRADES!=='undefined'&&NUMI_GRADES[g]?(currentLang()==='vi'?NUMI_GRADES[g].name:NUMI_GRADES[g].enName):('Lớp '+g)}</option>`).join('')}
       </select>
     </label>
     <div>
       <span style="font-weight:700;font-size:13px;color:#3b5e39;display:block;margin-bottom:6px">${t('Chọn bạn thú đồng hành:','Choose study buddy:')}</span>
       <div class="buddy-choices">
-        ${[['bunny','Thỏ Mimi'],['panda','Gấu Baobao'],['fox','Cáo Kiki'],['lion','Sư tử Leo']].map(([k,label])=>`<button type="button" data-admin-avatar="${k}" class="${k===chosenAvatar?'chosen':''}">${animal(k)}<span>${label}</span></button>`).join('')}
+        ${[['bunny','Thỏ Mimi'],['panda','Gấu Baobao'],['fox','Cáo Kiki'],['lion','Sư tử Leo']].map(([k,label])=>`<button type="button" data-admin-avatar="${k}" class="${k===chosenAvatar?'chosen':''}">${(typeof numiAnimalOriginal === 'function' ? numiAnimalOriginal : animal)(k)}<span>${label}</span></button>`).join('')}
       </div>
     </div>
     <p id="adminAddError" class="danger" style="margin:4px 0;font-weight:700"></p>
@@ -715,7 +715,7 @@ function adminViewDetailModal(username) {
 
   modal(`<div class="admin-detail-modal">
     <div class="admin-detail-header">
-      <div class="student-avatar" style="width:48px;height:48px">${animal(user.avatar || 'bunny')}</div>
+      <div class="student-avatar" style="width:48px;height:48px">${(typeof numiAnimalOriginal === 'function' ? numiAnimalOriginal : animal)(user.avatar || 'bunny')}</div>
       <div>
         <h2 style="margin:0">${esc(user.name)}</h2>
         <div style="font-size:13px;color:#5a7663;margin-top:2px">
