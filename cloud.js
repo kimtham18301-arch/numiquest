@@ -192,20 +192,8 @@ function cloudBadge(){
   const sheetAdmin=$('#sheetAdminItem');
   const isAdmin=Boolean(u&&(u.role==='admin'||u.username==='admin'));
   document.body?.classList?.toggle('is-admin-mode',isAdmin);
-  let classNav=$('#navClassroomBtn');
-  if(!classNav&&adminNav&&adminNav.parentElement&&typeof document.createElement==='function'){
-    classNav=document.createElement('button');
-    classNav.id='navClassroomBtn';
-    classNav.dataset.view='classroom';
-    classNav.innerHTML=`<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg><i data-vi="Lớp học" data-en="Classrooms">Lớp học</i>`;
-    classNav.onclick=()=>nav('classroom');
-    adminNav.after(classNav);
-  }
   if(adminNav){
     adminNav.style.display=isAdmin?'':'none';
-  }
-  if(classNav){
-    classNav.style.display=isAdmin?'':'none';
   }
   if(sheetAdmin){
     sheetAdmin.style.display=isAdmin?'flex':'none';
@@ -349,7 +337,6 @@ function renderProfile(){
   const accuracy=totalAnswered>0?Math.round((totalCorrect/totalAnswered)*100):100;
   const avgSpeed=h.length>0?(h.reduce((a,b)=>a+(b.time||0),0)/h.length).toFixed(1):'0.0';
   const curGrade=u.grade?Number(u.grade):(config.grade||1);
-  const chProg=typeof challengeProgress==='function'?challengeProgress():{completed:0};
   const allLocalUsers=getLocalUsers();
   const uUser=allLocalUsers[u.username]||{};
   const currentPwd=uUser.password||'';
@@ -360,7 +347,7 @@ function renderProfile(){
     {id:'streak_3',icon:'🔥',titleVi:'Chiến thần kiên trì',titleEn:'Streak Master',descVi:'Học liên tục 3 ngày giữ lửa',descEn:'Keep a 3-day daily streak',unlocked:streak.count>=3},
     {id:'pearl_20',icon:'🧋',titleVi:'Tín đồ trà sữa',titleEn:'Boba Lover',descVi:'Thu thập từ 20 viên trân châu',descEn:'Collect 20+ pearls in your cup',unlocked:tea.pearls>=20},
     {id:'fast_speed',icon:'⚡',titleVi:'Phản xạ thần tốc',titleEn:'Fast Reflexes',descVi:'Tốc độ trung bình dưới 5s/câu',descEn:'Average speed under 5s/question',unlocked:totalSessions>=1&&parseFloat(avgSpeed)>0&&parseFloat(avgSpeed)<=5.0},
-    {id:'challenge_champ',icon:'🏆',titleVi:'Nhà chinh phục',titleEn:'Challenge Champion',descVi:'Vượt qua 3 level Thử thách',descEn:'Clear 3 challenge levels',unlocked:(state.badges||0)>=1||chProg.completed>=3},
+    {id:'cup_champ',icon:'🏆',titleVi:'Vua trà sữa',titleEn:'Milk Tea Master',descVi:'Hoàn thành ly trà sữa đầu tiên',descEn:'Complete your first cup of milk tea',unlocked:typeof teaTotalCups==='function'&&teaTotalCups()>=1},
     {id:'garden_bloom',icon:'🌼',titleVi:'Bác sĩ vườn hoa',titleEn:'Flower Healer',descVi:'Sửa sạch hết câu sai trong Vườn hoa',descEn:'Clear all pending mistakes in Garden',unlocked:totalSessions>=1&&state.mistakes.length===0}
   ];
 
@@ -481,10 +468,8 @@ function renderProfile(){
         <div class="profile-bottom-actions card profile-actions-card">
           ${isAdmin ? `
             <button class="primary wide" onclick="nav('admin')">${t('Trung tâm Quản trị Học sinh','Student Admin Center')} →</button>
-            <button class="wide" onclick="nav('classroom')" style="margin-top:8px">${t('Quản lý Lớp học & Giao bài','Classrooms & Assignments')} →</button>
           ` : `
             <button class="primary wide" onclick="nav('setup')">${t('Vào luyện tập ngay','Start practicing now')} →</button>
-            <button class="wide" onclick="renderWorksheet()" style="margin-top:8px">${t('In phiếu bài tập (PDF)','Print worksheet (PDF)')}</button>
             <button class="wide" onclick="openAccount('signup')" style="margin-top:8px">${t('Tạo thêm tài khoản bé khác','Add another child profile')}</button>
           `}
           <button id="profileSignOutBtn" class="danger wide" style="margin-top:14px">${t('Đăng xuất tài khoản','Sign out')}</button>

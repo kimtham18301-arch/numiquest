@@ -7,9 +7,9 @@ function numiVividFlower(open=false,variant=0){const colors=['#ff5488','#ffbd2e'
 gardenFlower=numiVividFlower;
 function numiWelcome(){
  if(typeof isCurrentUserAdmin==='function'&&isCurrentUserAdmin()){renderAdmin();return;}
- const pending=state.mistakes.length,tea=teaState(),goal=teaSizes[tea.size],p=challengeProgress(),buddyPrefs=numiBuddyPrefs(),streak=getStreak();
+ const pending=state.mistakes.length,tea=teaState(),goal=teaSizes[tea.size],buddyPrefs=numiBuddyPrefs(),streak=getStreak();
  document.body.dataset.view='home';
- $('#app').innerHTML=`<section class="home-v2"><div class="home-v2-top"><div class="home-v2-streak" title="${t('Chuỗi ngày luyện tập liên tục','Daily practice streak')}"><b>${streak.count}</b> <small>${t('ngày liên tiếp','day streak')}</small></div>${numiThemePicker()}</div><section class="home-v2-hero"><button class="home-v2-mascot" type="button" onclick="nav('profile')" aria-label="${t('Hồ sơ học sinh & Bạn đồng hành','Student profile & study buddy')}">${animal('bunny')}<span>${esc(buddyPrefs.name)}</span><small>${t('Chạm xem hồ sơ cá nhân','Tap to view profile')}</small></button><div class="home-v2-copy"><span class="home-v2-eyebrow">${t('MỖI NGÀY GIỎI THÊM MỘT CHÚT','A LITTLE BETTER EVERY DAY')}</span><h1>${t('Cùng '+esc(buddyPrefs.name)+'<br>luyện tính nhanh!','Practice quick<br>maths with '+esc(buddyPrefs.name)+'!')}</h1><p>${t('Chọn bài phù hợp, làm từng câu và gom trân châu cho mục tiêu của em.','Choose a lesson, solve each question and collect pearls for your goal.')}</p><button id="homePracticeStart" type="button" class="home-v2-cta">${pending?t('Ôn '+pending+' câu sai','Review '+pending+' mistakes'):t('Luyện ngay','Practice now')} <span>→</span></button><button class="home-v2-settings" onclick="nav('setup')">${config.grade && typeof NUMI_GRADES!=='undefined' && NUMI_GRADES[config.grade] ? (lang==='vi'?NUMI_GRADES[config.grade].name:NUMI_GRADES[config.grade].enName)+' · ' : ''}${config.count} ${t('câu','questions')} · ${config.seconds}s/${t('câu','question')}</button></div></section>${pending?`<button class="home-v2-review" onclick="startReview()"><b>${t('Có '+pending+' câu cần ôn','You have '+pending+' to review')}</b><span>→</span></button>`:''}<button class="home-v2-goal" onclick="nav('atlas')"><span class="home-v2-cup">${teaIcon(tea.size)}</span><span><b>${t('Mục tiêu trà sữa','Milk tea goal')}</b><small>${Math.min(goal,tea.pearls)}/${goal} ${t('viên trân châu · Size '+tea.size,'pearls · Size '+tea.size)}</small><progress max="${goal}" value="${Math.min(goal,tea.pearls)}"></progress></span><strong>→</strong></button><div class="home-v2-links"><button onclick="nav('profile')"><b>${t('Hồ sơ','Profile')}</b><small>${t('Xem thành tích','View honors')}</small></button><button onclick="nav('guide')"><b>${t('Hướng dẫn','Guide')}</b><small>${t('Cách dùng & mẹo','How-to & tips')}</small></button><button onclick="nav('challenge')"><b>${t('Thử thách','Challenges')}</b><small>${p.completed} ${t('level qua','levels cleared')}</small></button><button onclick="nav('stats')"><b>${t('Tiến bộ','Progress')}</b><small>${t('Xem kết quả học','Learning results')}</small></button></div><p class="home-v2-local">${t('Tiến độ được lưu trên thiết bị này.','Progress is saved on this device.')}</p></section>`;
+ $('#app').innerHTML=`<section class="home-v2"><div class="home-v2-top"><div class="home-v2-streak" title="${t('Chuỗi ngày luyện tập liên tục','Daily practice streak')}"><b>${streak.count}</b> <small>${t('ngày liên tiếp','day streak')}</small></div>${numiThemePicker()}</div><section class="home-v2-hero"><button class="home-v2-mascot" type="button" onclick="nav('profile')" aria-label="${t('Hồ sơ học sinh & Bạn đồng hành','Student profile & study buddy')}">${animal('bunny')}<span>${esc(buddyPrefs.name)}</span><small>${t('Chạm xem hồ sơ cá nhân','Tap to view profile')}</small></button><div class="home-v2-copy"><span class="home-v2-eyebrow">${t('MỖI NGÀY GIỎI THÊM MỘT CHÚT','A LITTLE BETTER EVERY DAY')}</span><h1>${t('Cùng '+esc(buddyPrefs.name)+'<br>luyện tính nhanh!','Practice quick<br>maths with '+esc(buddyPrefs.name)+'!')}</h1><p>${t('Chọn bài phù hợp, làm từng câu và gom trân châu cho mục tiêu của em.','Choose a lesson, solve each question and collect pearls for your goal.')}</p><button id="homePracticeStart" type="button" class="home-v2-cta">${pending?t('Ôn '+pending+' câu sai','Review '+pending+' mistakes'):t('Luyện ngay','Practice now')} <span>→</span></button><button class="home-v2-settings" onclick="nav('setup')">${config.grade && typeof NUMI_GRADES!=='undefined' && NUMI_GRADES[config.grade] ? (lang==='vi'?NUMI_GRADES[config.grade].name:NUMI_GRADES[config.grade].enName)+' · ' : ''}${config.count} ${t('câu','questions')} · ${config.seconds}s/${t('câu','question')}</button></div></section>${pending?`<button class="home-v2-review" onclick="startReview()"><b>${t('Có '+pending+' câu cần ôn','You have '+pending+' to review')}</b><span>→</span></button>`:''}<button class="home-v2-goal" onclick="nav('atlas')"><span class="home-v2-cup">${teaIcon(tea.size)}</span><span><b>${t('Mục tiêu trà sữa','Milk tea goal')}</b><small>${Math.min(goal,tea.pearls)}/${goal} ${t('viên trân châu · Size '+tea.size,'pearls · Size '+tea.size)}</small><progress max="${goal}" value="${Math.min(goal,tea.pearls)}"></progress></span><strong>→</strong></button><div class="home-v2-links"><button type="button" onclick="if(typeof openAccessoryShop==='function')openAccessoryShop()"><b>🛍️ ${t('Cửa hàng phụ kiện','Accessory Shop')}</b><small>${t('Trang trí bạn đồng hành','Customize your buddy')}</small></button><button type="button" onclick="nav('stats')"><b>📊 ${t('Tiến bộ','Progress')}</b><small>${t('Xem kết quả học','Learning results')}</small></button><button type="button" onclick="nav('profile')"><b>👤 ${t('Hồ sơ','Profile')}</b><small>${t('Xem thành tích','View honors')}</small></button><button type="button" onclick="nav('guide')"><b>📖 ${t('Hướng dẫn','Guide')}</b><small>${t('Cách dùng & mẹo','How-to & tips')}</small></button></div><p class="home-v2-local">${t('Tiến độ được lưu trên thiết bị này.','Progress is saved on this device.')}</p></section>`;
  $('#homePracticeStart').onclick=numiStartPractice;$$('[data-numi-theme]').forEach(b=>b.onclick=()=>numiThemeApply(b.dataset.numiTheme));translate();
 }
 function numiStartPractice(){
@@ -161,7 +161,6 @@ if(typeof global!=='undefined')global.generate=generate;
 // Load saved theme once and retain it across every screen.
 let numiSavedTheme='candy';try{numiSavedTheme=localStorage.getItem('numi-color-theme')||'candy'}catch{}numiThemeApply(numiSavedTheme);
 const numiOriginalTranslate=translate;translate=function(){numiOriginalTranslate();const homeLabel=$('nav [data-view="home"] i'),practiceLabel=$('nav [data-view="setup"] i');if(homeLabel)homeLabel.textContent=t('Trang chủ','Home');if(practiceLabel)practiceLabel.textContent=t('Luyện tập','Practice')};
-showFarmCertificate=function(){const p=challengeProgress();if(!(state.badges||0)){toast(t('Vượt qua 3 level để nhận huy hiệu đầu tiên nhé!','Clear 3 levels to earn your first badge!'));return}const name=state.name==='Explorer'?t('Bạn học nhỏ','Little learner'):state.name;modal(`<div class="farm-certificate"><span class="farm-kicker">NUMIQUICK · ${t('BẰNG KHEN','CERTIFICATE')}</span><h2>${t('BẰNG KHEN CHINH PHỤC','CHALLENGE CERTIFICATE')}</h2><p>${t('Trao tặng','Awarded to')}</p><h3>${esc(name)}</h3><p>${p.completed} ${t('level đã chinh phục','levels cleared')} · ${state.badges} ${t('huy hiệu','badges')}</p><small>${t('Chăm chỉ mỗi ngày, giỏi lên từng chút.','Practice a little every day and grow your skills.')}</small></div><div class="actions"><button class="primary" id="saveBadgeCertificate">${t('Lưu ảnh bằng khen','Save certificate image')}</button><button id="badgeCertificateDone">${t('Đóng','Close')}</button></div>`);$('#badgeCertificateDone').onclick=()=>$('#modal').close();$('#saveBadgeCertificate').onclick=async()=>{if(document.fonts?.ready)await document.fonts.ready;const c=document.createElement('canvas');c.width=1400;c.height=1050;const x=c.getContext('2d');if(!x){toast(t('Trình duyệt chưa hỗ trợ lưu ảnh.','This browser cannot save the image.'));return}x.fillStyle='#fff9ec';x.fillRect(0,0,1400,1050);x.strokeStyle='#9cb985';x.lineWidth=9;x.strokeRect(36,36,1328,978);x.strokeStyle='#dfbf7c';x.lineWidth=2;x.strokeRect(57,57,1286,936);x.textAlign='center';x.fillStyle='#638761';const text=(txt,y,size=34)=>{x.font=`800 ${size}px NumiNunito, sans-serif`;x.fillText(txt,700,y,1190)};text('NUMIQUICK · '+t('BẰNG KHEN','CERTIFICATE'),160,30);text(t('BẰNG KHEN CHINH PHỤC','CHALLENGE CERTIFICATE'),280,54);text(t('Trao tặng học sinh chăm ngoan','Awarded to our dedicated learner'),365,30);x.fillStyle='#385d43';text(name,490,72);x.fillStyle='#b17e49';text(`${p.completed} ${t('level đã chinh phục','levels cleared')} · ${state.badges} ${t('huy hiệu','badges')}`,620,42);x.fillStyle='#638761';text(t('Chăm chỉ mỗi ngày, giỏi lên từng chút.','Practice a little every day and grow your skills.'),820,28);c.toBlob(blob=>{if(blob)download(blob,'NumiQuick-Bang-Khen-'+p.completed+'.png')},'image/png')}};
 
 // Drag across columns with a tap-to-pair fallback, including when a card is off-screen.
 function numiGardenPointer(e,card){
@@ -185,10 +184,8 @@ if(typeof window!=='undefined')window.numiAnimalOriginal=numiAnimalOriginal;
 if(typeof global!=='undefined')global.numiAnimalOriginal=numiAnimalOriginal;
 function numiBuddyPrefs(){
  let saved={};try{saved=JSON.parse(localStorage.getItem(NUMI_BUDDY_KEY)||'{}')||{}}catch{}
- const f=typeof farmState==='function'?farmState():{};
- const name=String(saved.name||f.name||'Numi').trim().slice(0,24)||'Numi';
- const avatar=['bunny','panda','fox','lion'].includes(saved.avatar)?saved.avatar:'bunny';
- if(f&&f.name!==name){f.name=name;try{save()}catch{}}
+ const name=String(saved.name||state?.buddyName||'Numi').trim().slice(0,24)||'Numi';
+ const avatar=['bunny','panda','fox','lion'].includes(saved.avatar)?saved.avatar:(['bunny','panda','fox','lion'].includes(state?.buddy)?state.buddy:'bunny');
  return {name,avatar};
 }
 animal=function(kind='lion',cls=''){
@@ -199,12 +196,11 @@ function numiCustomizeBuddy(){
  const current=numiBuddyPrefs(),choices=[['bunny','Thỏ'],['panda','Gấu trúc'],['fox','Cáo'],['lion','Sư tử']];
  modal(`<h2>${t('Tạo bạn đồng hành','Make your study buddy')}</h2><label for="numiBuddyName">${t('Tên bạn ấy','Buddy name')}</label><input id="numiBuddyName" maxlength="16" value="${esc(current.name)}"><p class="buddy-edit-label">${t('Chọn khuôn mặt','Choose an animal')}</p><div class="buddy-choices">${choices.map(([key,label])=>`<button type="button" data-buddy-avatar="${key}" aria-pressed="${current.avatar===key}">${numiAnimalOriginal(key)}<span>${t(label,label)}</span></button>`).join('')}</div><button id="numiBuddySave" class="primary wide">${t('Lưu bạn đồng hành','Save buddy')}</button>`);
  let avatar=current.avatar;$$('[data-buddy-avatar]').forEach(b=>b.onclick=()=>{avatar=b.dataset.buddyAvatar;$$('[data-buddy-avatar]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)))});
- $('#numiBuddySave').onclick=()=>{const name=$('#numiBuddyName').value.trim().slice(0,16)||'Numi';try{localStorage.setItem(NUMI_BUDDY_KEY,JSON.stringify({name,avatar}))}catch{}const f=farmState();f.name=name;state.buddy=avatar;try{save()}catch{}$('#modal').close();if(!currentAuthUser()){openAccount('login')}else if(view==='home'){home()}else if(view==='quiz')showQuiz();else if(view==='garden')gardenRender();else if(view==='setup')setup();else if(view==='stats')stats();else home()};
+ $('#numiBuddySave').onclick=()=>{const name=$('#numiBuddyName').value.trim().slice(0,16)||'Numi';try{localStorage.setItem(NUMI_BUDDY_KEY,JSON.stringify({name,avatar}))}catch{}state.buddy=avatar;state.buddyName=name;try{save()}catch{}$('#modal').close();if(!currentAuthUser()){openAccount('login')}else if(view==='home'){home()}else if(view==='quiz')showQuiz();else if(view==='garden')gardenRender();else if(view==='setup')setup();else if(view==='stats')stats();else home()};
 }
-farmRename=numiCustomizeBuddy;
 // Remove obsolete harvest messaging and use the agreed tap-to-match instruction.
 const numiSetupBeforeFinal=setup;
-setup=function(){numiSetupBeforeFinal();$('.farm-settings-reward')?.remove();if(state.mistakes.length){const host=$('.narrow.card');if(host&&!$('#clearMistakesPractice'))host.insertAdjacentHTML('beforeend',`<button id="clearMistakesPractice" class="wide">${t('Xóa câu sai cũ và làm bài mới','Clear old mistakes and start a new lesson')}</button>`);const b=$('#clearMistakesPractice');if(b)b.onclick=()=>{state.mistakes=[];save();setup()}}};
+setup=function(){numiSetupBeforeFinal();if(state.mistakes.length){const host=$('.narrow.card');if(host&&!$('#clearMistakesPractice'))host.insertAdjacentHTML('beforeend',`<button id="clearMistakesPractice" class="wide">${t('Xóa câu sai cũ và làm bài mới','Clear old mistakes and start a new lesson')}</button>`);const b=$('#clearMistakesPractice');if(b)b.onclick=()=>{state.mistakes=[];save();setup()}}};
 const numiGardenRenderBeforeFinal=gardenRender;
 gardenRender=function(){numiGardenRenderBeforeFinal();const instruction=$('.garden-instruction');if(instruction)instruction.textContent=t('Chạm một chậu, rồi chạm bông hoa để ghép.','Tap a pot, then tap its flower to match.');};
 if(typeof syncUserGradeToConfig==='function')syncUserGradeToConfig();
@@ -217,23 +213,20 @@ const numiShowQuizBeforeFinal=showQuiz;showQuiz=function(){numiShowQuizBeforeFin
 // Keep the selected companion face and name consistent after every app screen render.
 function numiAnimalEl(avatar,cls){
  const tpl=document.createElement('template');
- tpl.innerHTML=numiAnimalOriginal(avatar,cls).trim();
+ const markup=typeof animal==='function'?animal(avatar,cls):numiAnimalOriginal(avatar,cls);
+ tpl.innerHTML=String(markup).trim();
  return tpl.content.firstElementChild;
 }
 function numiSyncBuddyIdentity(root=document.querySelector('#app')){
  if(!root)return;
- if((typeof isCurrentUserAdmin==='function'&&isCurrentUserAdmin())||(typeof view!=='undefined'&&(view==='admin'||view==='classroom')))return;
+ if((typeof isCurrentUserAdmin==='function'&&isCurrentUserAdmin())||(typeof view!=='undefined'&&view==='admin'))return;
  const prefs=numiBuddyPrefs(),avatar=prefs.avatar,name=prefs.name;
- root.querySelectorAll('.farm-rabbit').forEach(old=>{
-  if(old.dataset.buddySync===avatar)return;
-  const replacement=numiAnimalEl(avatar);if(!replacement)return;
-  replacement.setAttribute('class',(old.getAttribute('class')||'farm-rabbit')+' animal');replacement.dataset.buddySync=avatar;old.replaceWith(replacement);
- });
+ const syncKey=`${avatar}:${state?.accessories?.equipped||''}:${typeof buyOrEquipAccessory==='function'?1:0}`;
  root.querySelectorAll('.animal').forEach(old=>{
-  if(old.closest('.buddy-choices,.buddy-picker,.play-buddies,.student-avatar,.cls-podium-avatar,.cls-mini-avatar,.profile-buddy-chips,.buddy-chip-icon,.family-chip'))return;
-  if(old.dataset.buddySync===avatar)return;
+  if(old.closest('.buddy-choices,.buddy-picker,.play-buddies,.student-avatar,.profile-buddy-chips,.buddy-chip-icon,.family-chip'))return;
+  if(old.dataset.buddySync===syncKey)return;
   const replacement=numiAnimalEl(avatar);if(!replacement)return;
-  replacement.setAttribute('class',old.getAttribute('class')||'animal');replacement.dataset.buddySync=avatar;old.replaceWith(replacement);
+  replacement.setAttribute('class',old.getAttribute('class')||'animal');replacement.dataset.buddySync=syncKey;old.replaceWith(replacement);
  });
  const homeMark=root.querySelector('.home-v2-wordmark>span');if(homeMark)homeMark.textContent=name;
  if(name&&name!=='Numi'&&!/\bNumi\b/.test(name)){

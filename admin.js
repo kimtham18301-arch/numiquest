@@ -748,7 +748,7 @@ function adminViewDetailModal(username) {
             <tbody>
               ${history.slice(-15).reverse().map(h => `<tr>
                 <td>${new Date(h.date).toLocaleString(currentLang()==='vi'?'vi-VN':'en-US',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</td>
-                <td>${h.mode==='bot'?t('Đấu máy','Bot match'):h.mode==='challenge'?t('Thử thách','Challenge'):t('Tự luyện','Practice')}</td>
+                <td>${h.mode==='sprint60'?t('Thi đấu 60s','60s Sprint'):h.mode==='assigned'?t('Bài được giao','Assigned'):t('Tự luyện','Practice')}</td>
                 <td><b>${h.correct}</b>/${h.total} (${Math.round((h.correct/h.total)*100)}%)</td>
                 <td>${h.time ? h.time.toFixed(1) + 's' : '-'}</td>
               </tr>`).join('')}
@@ -833,7 +833,7 @@ function isCurrentUserAdmin() {
 const navBeforeAdminOnly = typeof nav === 'function' ? nav : null;
 if (navBeforeAdminOnly) {
   nav = function (dest) {
-    if (isCurrentUserAdmin() && dest !== 'admin' && dest !== 'classroom') {
+    if (isCurrentUserAdmin() && dest !== 'admin') {
       renderAdmin();
       return;
     }

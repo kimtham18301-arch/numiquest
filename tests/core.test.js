@@ -142,9 +142,6 @@ function loadAppContext() {
   const rootDir = path.resolve(__dirname, '..');
   const scripts = [
     'app.js',
-    'discovery.js',
-    'challenge.js',
-    'farm.js',
     'milktea.js',
     'cloud-config.js',
     'cloud.js',
@@ -155,11 +152,8 @@ function loadAppContext() {
     'analytics.js',
     'review-exit.js',
     'adaptive-sprint.js',
-    'classroom.js',
     'pedagogy.js',
     'engagement.js',
-    'teacher-tools.js',
-    'azota-features.js',
     'admin-dashboard.js'
   ];
   for (const file of scripts) {
@@ -266,34 +260,25 @@ test('daily quests track today progress and prevent duplicate claims', () => {
   assert.equal(ctx.state.xp, xpBefore + 20);
 });
 
-test('classroom workflow supports creating rooms, joining by code, assigning, and submitting', async () => {
+test('bubble tea goals earn pearls, claim cups with bonus XP, and render atlas directly', () => {
   const ctx = loadAppContext();
-  const room = await ctx.createClassroom('Lớp 4A', 4);
-  assert.ok(room && room.id && room.join_code.length === 6);
+  const tea = ctx.teaState();
+  assert.equal(tea.size, 'S');
+  assert.equal(tea.pearls, 0);
 
-  await assert.rejects(() => ctx.joinClassroomByCode('XXXXXX'));
-  const joinedId = await ctx.joinClassroomByCode(room.join_code);
-  assert.equal(joinedId, room.id);
+  for (let i = 0; i < 30; i++) ctx.teaEarnPearl();
+  assert.equal(ctx.teaGoal().ready, true);
 
-  const asg = await ctx.createAssignment(room.id, 'Tuần 12 - Phép nhân', '2026-12-01', { type: 'natural', count: 10 });
-  assert.ok(asg && asg.id);
+  const xpBefore = ctx.state.xp;
+  ctx.teaClaimCup();
+  assert.equal(ctx.teaState().pearls, 0);
+  assert.equal(ctx.teaTotalCups(), 1);
+  assert.equal(ctx.state.xp, xpBefore + 20);
 
-  await ctx.submitAssignmentResult(asg.id, 9, 10, 4.5);
-  const studentView = await ctx.fetchStudentAssignments();
-  assert.equal(studentView.classrooms.length, 1);
-  assert.equal(studentView.assignments.length, 1);
-  assert.equal(studentView.submissions.length, 1);
-  assert.equal(studentView.submissions[0].correct, 9);
-
-  const board = ctx.getClassroomLeaderboard(room.id);
-  assert.equal(board.length, 1);
-  assert.equal(board[0].totalCorrect, 9);
-  assert.equal(board[0].accuracy, 90);
-
-  const deleted = await ctx.deleteAssignment(asg.id);
-  assert.equal(deleted, true);
-  const afterDel = await ctx.fetchStudentAssignments();
-  assert.equal(afterDel.assignments.length, 0);
+  ctx.atlas();
+  const html = ctx.document.querySelector('#app').innerHTML;
+  assert.ok(html.includes('tea-goals'));
+  assert.equal(html.includes('goalTabMap'), false);
 });
 
 test('pedagogy generators (missing, word), visual math SVG, and spaced repetition work', () => {
@@ -320,7 +305,7 @@ test('pedagogy generators (missing, word), visual math SVG, and spaced repetitio
   assert.equal(sorted[0].id, 'due');
 });
 
-test('engagement accessories, seeded friend challenge, and speech formatting work', () => {
+test('engagement accessories and speech formatting work', () => {
   const ctx = loadAppContext();
   ctx.state.xp = 100;
   assert.equal(ctx.buyOrEquipAccessory('glasses'), true);
@@ -328,89 +313,40 @@ test('engagement accessories, seeded friend challenge, and speech formatting wor
   assert.equal(ctx.state.accessories.equipped, 'glasses');
   assert.ok(ctx.animal('bunny').includes('buddy-acc'));
 
-  const code = ctx.encodeChallengeCode(12345, 4);
-  const parsed = ctx.decodeChallengeCode(code);
-  assert.equal(parsed.grade, 4);
-  const q1 = ctx.generateSeededQuestions(parsed.seed, { type: 'natural', ops: ['+'], digits: [1] }, 5);
-  const q2 = ctx.generateSeededQuestions(parsed.seed, { type: 'natural', ops: ['+'], digits: [1] }, 5);
-  assert.deepEqual(q1.map(x => x.q), q2.map(x => x.q));
-
   assert.equal(ctx.formatMathForSpeech('3 + 4 = ?', 'vi'), '3 cộng 4 bằng mấy');
 });
 
-test('teacher tools analyze common mistakes and build classroom CSV safely', () => {
+test('targeted assignments target specific students, support share links, and track per-student submissions', () => {
   const ctx = loadAppContext();
-  ctx.localStorage.setItem('numi-local-users-v1', JSON.stringify({
-    hs1: { username: 'hs1', name: 'Bé A', role: 'student', grade: 4 }
-  }));
-  ctx.localStorage.setItem('numi-user-state-hs1', JSON.stringify({
-    mistakes: [
-      { id: 'm1', q: '1/2 + 1/3', skill: 'fraction:+' },
-      { id: 'm2', q: '2/5 + 1/5', skill: 'fraction:+' }
-    ]
-  }));
-  const common = ctx.analyzeCommonMistakes(4);
-  assert.equal(common[0].skill, 'fraction:+');
-  assert.equal(common[0].mistakeCount, 2);
-  assert.equal(common[0].studentCount, 1);
+  const asg = ctx.createTargetedAssignment({
+    title: 'Ôn phân số riêng',
+    dueDate: '2026-12-10',
+    targetStudents: ['hs1', 'hs2'],
+    config: { grade: 4, type: 'fraction', ops: ['+'], count: 10, seconds: 20 }
+  });
+  assert.ok(asg && asg.id);
+  assert.deepEqual(Array.from(asg.targetStudents), ['hs1', 'hs2']);
 
-  const csv = ctx.buildClassroomWeeklyCsv(
-    { id: 'r1', name: 'Lớp 4A', grade: 4 },
-    [{ id: 'a1', classroom_id: 'r1', title: 'Tuần 12', due_date: '2026-12-01' }],
-    [{ assignment_id: 'a1', student_id: 'hs1', correct: 9, total: 10, avg_time: 4.2 }]
-  );
-  assert.ok(csv.includes('Lớp 4A') && csv.includes('Tuần 12') && csv.includes('90%'));
-});
+  assert.equal(ctx.getAssignmentsForStudent('hs1').pending.length, 1);
+  assert.equal(ctx.getAssignmentsForStudent('hs2').pending.length, 1);
+  assert.equal(ctx.getAssignmentsForStudent('hs3').pending.length, 0);
 
-test('azota features: share link, bulk import, matrix, exam shuffle, distribution, and stickers work', async () => {
-  const ctx = loadAppContext();
+  const sub = ctx.submitTargetedAssignment(asg.id, 9, 10, 4.2, 'hs1');
+  assert.equal(sub.correct, 9);
 
-  // 1. 1-Click Share Link encode/decode
-  const link = ctx.buildHomeworkShareLink(
-    { join_code: 'LP4A26', name: 'Lớp 4A', grade: 4 },
-    { id: 'asg1', title: 'Tuần 14', due_date: '2026-12-10', config: { type: 'natural', count: 10 } }
-  );
+  assert.equal(ctx.getAssignmentsForStudent('hs1').pending.length, 0);
+  assert.equal(ctx.getAssignmentsForStudent('hs1').completed.length, 1);
+  assert.equal(ctx.getAssignmentsForStudent('hs2').pending.length, 1);
+
+  const link = ctx.buildHomeworkShareLink(asg);
   assert.ok(link.includes('#hw='));
   const parsed = ctx.parseHomeworkShareHash(link.slice(link.indexOf('#')));
-  assert.equal(parsed.c, 'LP4A26');
-  assert.equal(parsed.t, 'Tuần 14');
+  assert.equal(parsed.id, asg.id);
+  assert.equal(parsed.t, 'Ôn phân số riêng');
+  assert.deepEqual(Array.from(parsed.u), ['hs1', 'hs2']);
 
-  // 2. Bulk import student names
-  const room = await ctx.createClassroom('Lớp 5B', 5);
-  const imported = await ctx.bulkImportStudentsToClassroom(room.id, 'Nguyễn Minh An\nTrần Bảo Ngọc');
-  assert.equal(imported.length, 2);
-  assert.equal(imported[0].username, 'nguyenminhan');
-
-  // 3. 3-Tier Cognitive Matrix
-  const matrixQs = ctx.generateMatrixQuestions({ type: 'natural', ops: ['+', '-'] }, 10, 777);
-  assert.equal(matrixQs.length, 10);
-  assert.equal(matrixQs.filter(q => q.matrixTier === 'easy').length, 4);
-  assert.equal(matrixQs.filter(q => q.matrixTier === 'medium').length, 4);
-  assert.equal(matrixQs.filter(q => q.matrixTier === 'hard').length, 2);
-
-  // 4. Exam shuffle preserves answers
-  const sh1 = ctx.shuffleForStudent(matrixQs, 'student_a');
-  const sh2 = ctx.shuffleForStudent(matrixQs, 'student_b');
-  assert.equal(sh1.length, 10);
-  assert.notDeepEqual(sh1.map(q => q.id), sh2.map(q => q.id));
-
-  // 5. Score distribution
-  const dist = ctx.computeScoreDistribution([
-    { correct: 9, total: 10 },
-    { correct: 8, total: 10 },
-    { correct: 6, total: 10 },
-    { correct: 3, total: 10 }
-  ]);
-  assert.equal(dist.excellent, 1);
-  assert.equal(dist.good, 1);
-  assert.equal(dist.average, 1);
-  assert.equal(dist.needsWork, 1);
-
-  // 6. Teacher feedback sticker grants bonus XP
-  const asg = await ctx.createAssignment(room.id, 'Kiểm tra 1', '', { type: 'natural', count: 10 });
-  const sub = await ctx.submitAssignmentResult(asg.id, 10, 10, 3.5);
-  const okSticker = ctx.giveStickerToSubmission(sub.id, 'star');
-  assert.equal(okSticker, true);
+  assert.equal(ctx.deleteTargetedAssignment(asg.id), true);
+  assert.equal(ctx.getAssignmentsForStudent('hs2').pending.length, 0);
 });
 
 test('admin account stays in admin workspace and is excluded from student directory', async () => {
@@ -447,13 +383,14 @@ test('admin dashboard analytics, student edit, batch promotion, remedial assignm
   const rem = await ctx.assignRemedialForStudent('minhkhoi');
   assert.ok(rem.assignment && rem.assignment.id);
   assert.equal(rem.assignment.config.type, 'fraction');
+  assert.deepEqual(Array.from(rem.assignment.targetStudents), ['minhkhoi']);
 
   const backup = ctx.buildFullSystemBackup();
   assert.equal(backup.format, 'numiquick-system-v1');
-  ctx.localStorage.removeItem('numi-classrooms-v1');
+  ctx.localStorage.removeItem('numi-targeted-assignments-v1');
   assert.equal(ctx.restoreFullSystemBackup(backup), true);
-  const restored = ctx.loadLocalClassStore();
-  assert.ok(restored.assignments.some(a => a.id === rem.assignment.id));
+  const restored = ctx.loadTargetedAssignments();
+  assert.ok(restored.some(a => a.id === rem.assignment.id));
 });
 
 test('numiAnimalOriginal preserves distinct animal icons regardless of active buddy', () => {
@@ -488,17 +425,17 @@ test('translate targets nav labels without matching body[data-view] and nav sync
   assert.equal(ctx.document.body.dataset.view, 'stats');
 });
 
-test('nav("classroom") invokes the wrapped renderClassroomManager chain dynamically', async () => {
+test('student and admin views navigate cleanly without removed feature errors', async () => {
   const ctx = loadAppContext();
+  await ctx.localSignIn('minhkhoi', '1234');
+  for (const v of ['home', 'setup', 'atlas', 'stats', 'profile', 'guide']) {
+    ctx.nav(v);
+    assert.equal(ctx.view, v);
+  }
   await ctx.localSignIn('admin', 'admin123');
-  const calls = [];
-  const prevWrapped = ctx.renderClassroomManager;
-  ctx.renderClassroomManager = async function () {
-    calls.push('wrapped');
-    return prevWrapped.apply(this, arguments);
-  };
-  ctx.nav('classroom');
-  assert.equal(calls.length, 1);
+  assert.equal(ctx.view, 'admin');
+  ctx.nav('home');
+  assert.equal(ctx.view, 'admin');
 });
 
 test('setup step numbering, stats review button, footer login status, and profile 4 distinct buddy icons work', async () => {
