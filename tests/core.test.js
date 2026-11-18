@@ -67,7 +67,7 @@ function loadAppContext() {
     title: '',
     documentElement: { lang: 'vi' },
     head: { append() {} },
-    body: { dataset: {}, classList: { toggle() {}, add() {}, remove() {}, contains() { return false; } } },
+    body: { dataset: {}, append() {}, classList: { toggle() {}, add() {}, remove() {}, contains() { return false; } } },
     fonts: { ready: Promise.resolve() },
     createElement(tag) {
       return tag === 'template' ? makeTemplate() : createMockElement(tag);
@@ -147,7 +147,8 @@ function loadAppContext() {
     'advanced.js',
     'refresh.js',
     'analytics.js',
-    'review-exit.js'
+    'review-exit.js',
+    'adaptive-sprint.js'
   ];
   for (const file of scripts) {
     const code = fs.readFileSync(path.join(rootDir, file), 'utf8');
@@ -221,4 +222,34 @@ test('numiAnimalEl converts SVG markup string into a real Element without throwi
   assert.ok(el, 'Expected Element from numiAnimalEl');
   el.setAttribute('class', 'animal test-cls');
   assert.equal(el.getAttribute('class'), 'animal test-cls');
+});
+
+test('computeAdaptiveConfig scales difficulty up on streak and down on repeated mistakes', () => {
+  const ctx = loadAppContext();
+  const up = ctx.computeAdaptiveConfig({ type: 'natural', digits: [1], adaptive: true }, 4, {});
+  assert.equal(up.levelDelta, 1);
+  assert.deepEqual(Array.from(up.cfg.digits), [1, 2]);
+
+  const down = ctx.computeAdaptiveConfig({ type: 'natural', digits: [2], adaptive: true }, -2, {});
+  assert.equal(down.levelDelta, -1);
+  assert.deepEqual(Array.from(down.cfg.digits), [1]);
+
+  const disabled = ctx.computeAdaptiveConfig({ type: 'natural', digits: [1], adaptive: false }, 5, {});
+  assert.equal(disabled.levelDelta, 0);
+});
+
+test('daily quests track today progress and prevent duplicate claims', () => {
+  const ctx = loadAppContext();
+  const todayIso = new Date().toISOString();
+  ctx.state.history.push({ date: todayIso, mode: 'sprint60', correct: 9, total: 10, time: 6.0 });
+  const quests = ctx.getDailyQuests();
+  assert.equal(quests.length, 3);
+  assert.equal(quests.every(q => q.done), true);
+
+  const xpBefore = ctx.state.xp;
+  ctx.claimDailyQuest('q_warm');
+  assert.equal(ctx.state.xp, xpBefore + 20);
+  // Duplicate claim should not grant XP again
+  ctx.claimDailyQuest('q_warm');
+  assert.equal(ctx.state.xp, xpBefore + 20);
 });

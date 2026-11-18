@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_NAME = 'numiquick-v1.1.0';
+const CACHE_NAME = 'numiquick-v1.2.0';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -18,11 +18,15 @@ const STATIC_ASSETS = [
   './refresh.js',
   './analytics.js',
   './review-exit.js',
+  './adaptive-sprint.js',
   './nunito-400.woff',
   './nunito-500.woff',
   './nunito-600.woff',
   './nunito-700.woff',
   './nunito-800.woff',
+  './icon.svg',
+  './icon-192.png',
+  './icon-512.png',
   './play-race.svg',
   './play-school.svg',
   './play-world.svg',
