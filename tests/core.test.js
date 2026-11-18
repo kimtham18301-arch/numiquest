@@ -149,7 +149,8 @@ function loadAppContext() {
     'analytics.js',
     'review-exit.js',
     'adaptive-sprint.js',
-    'classroom.js'
+    'classroom.js',
+    'pedagogy.js'
   ];
   for (const file of scripts) {
     const code = fs.readFileSync(path.join(rootDir, file), 'utf8');
@@ -273,4 +274,28 @@ test('classroom workflow supports creating rooms, joining by code, assigning, an
   assert.equal(studentView.assignments.length, 1);
   assert.equal(studentView.submissions.length, 1);
   assert.equal(studentView.submissions[0].correct, 9);
+});
+
+test('pedagogy generators (missing, word), visual math SVG, and spaced repetition work', () => {
+  const ctx = loadAppContext();
+  for (const style of ['missing', 'word']) {
+    for (let i = 0; i < 30; i++) {
+      const q = ctx.generate({ type: 'natural', ops: ['+', '-', '*', '/'], digits: [1, 2], questionStyle: style });
+      assert.ok(q && q.q && q.answer, `Missing fields for ${style}`);
+      assert.equal(q.options.length, 4);
+      assert.ok(q.options.some(o => ctx.isAnswerMatch(o, q.answer)));
+      assert.ok(Number(q.answer) >= 0);
+    }
+  }
+  const nl = ctx.buildVisualMathSvg({ q: '-5 + 8' });
+  assert.ok(nl.includes('<svg') && nl.includes('visual-math-svg'));
+  const fb = ctx.buildVisualMathSvg({ q: '3/4 + 1/2' });
+  assert.ok(fb.includes('<svg') && fb.includes('rect'));
+
+  const now = Date.now();
+  const sorted = ctx.prioritizeMistakesByDue([
+    { id: 'future', nextReviewAt: now + 86400000 },
+    { id: 'due', nextReviewAt: now - 1000 }
+  ]);
+  assert.equal(sorted[0].id, 'due');
 });
