@@ -1,4 +1,4 @@
-// Teacher Classrooms & Autonomous Student Coordination (v2.3.0)
+// Teacher Classrooms, Level/Grade Classification, Saved Class Codes & Student Quick-Join (v2.3.1)
 (() => {
   'use strict';
 
@@ -8,12 +8,75 @@
   const DEFAULT_TEACHER_HASH = '77efd557dd7880dfc9b22f85c497f6b76682ed594bb6fe1ac87463a47179272c'; // SHA-256('numi_salt_v1:1234')
 
   let activeTeacherClassId = null;
+  let activeTeacherLevelFilter = 'all'; // 'all' | 'primary' | 'secondary'
+  let lastAuthMode = 'login';
+
+  function levelOfGrade(grade) {
+    return Number(grade) >= 6 ? 'secondary' : 'primary';
+  }
+
+  function levelLabel(levelOrGrade) {
+    const lvl = levelOrGrade === 'primary' || levelOrGrade === 'secondary'
+      ? levelOrGrade
+      : levelOfGrade(levelOrGrade);
+    return lvl === 'secondary'
+      ? t('THCS (Lớp 6–9)', 'Secondary (Gr 6–9)')
+      : t('Tiểu học (Lớp 1–5)', 'Primary (Gr 1–5)');
+  }
+
+  function levelShortBadge(levelOrGrade) {
+    const lvl = levelOrGrade === 'primary' || levelOrGrade === 'secondary'
+      ? levelOrGrade
+      : levelOfGrade(levelOrGrade);
+    return lvl === 'secondary' ? t('Cấp THCS', 'Secondary') : t('Cấp Tiểu học', 'Primary');
+  }
+
+  function gradesForLevel(level) {
+    return level === 'secondary' ? [6, 7, 8, 9] : [1, 2, 3, 4, 5];
+  }
 
   function genClassCode(grade) {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let tail = '';
     for (let i = 0; i < 4; i++) tail += chars[Math.floor(Math.random() * chars.length)];
     return `${Number(grade) || 4}A${tail}`.slice(0, 6);
+  }
+
+  function slugifyVietnameseName(name) {
+    const base = String(name || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'd')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '')
+      .slice(0, 14);
+    return base.length >= 2 ? base : 'hocsinh';
+  }
+
+  function toB64Url(str) {
+    const utf8 = encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (_, p1) => String.fromCharCode(parseInt(p1, 16)));
+    return btoa(utf8).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  function fromB64Url(b64) {
+    let s = String(b64 || '').replace(/-/g, '+').replace(/_/g, '/');
+    while (s.length % 4) s += '=';
+    const bin = atob(s);
+    const escStr = Array.from(bin, ch => '%' + ch.charCodeAt(0).toString(16).padStart(2, '0')).join('');
+    return decodeURIComponent(escStr);
+  }
+
+  function normalizeClass(c) {
+    if (!c || typeof c !== 'object') return null;
+    const grade = Math.min(9, Math.max(1, Number(c.grade) || 4));
+    return {
+      ...c,
+      grade,
+      level: c.level === 'secondary' || c.level === 'primary' ? c.level : levelOfGrade(grade),
+      code: String(c.code || '').trim().toUpperCase(),
+      students: Array.isArray(c.students) ? Array.from(new Set(c.students.map(s => String(s).trim().toLowerCase()).filter(Boolean))) : []
+    };
   }
 
   function ensureDemoTeacherAndClass() {
@@ -47,6 +110,7 @@
           id: 'cls_4a_demo',
           code: '4ANUMI',
           name: 'Lớp 4A',
+          level: 'primary',
           grade: 4,
           teacherUsername: 'colan',
           teacherName: 'Cô Lan',
@@ -63,7 +127,7 @@
     ensureDemoTeacherAndClass();
     try {
       const parsed = JSON.parse(localStorage.getItem(CLASSES_KEY) || '[]');
-      return Array.isArray(parsed) ? parsed : [];
+      return Array.isArray(parsed) ? parsed.map(normalizeClass).filter(Boolean) : [];
     } catch {
       return [];
     }
@@ -71,8 +135,15 @@
 
   function saveClasses(list) {
     try {
-      localStorage.setItem(CLASSES_KEY, JSON.stringify(Array.isArray(list) ? list : []));
+      const normalized = Array.isArray(list) ? list.map(normalizeClass).filter(Boolean) : [];
+      localStorage.setItem(CLASSES_KEY, JSON.stringify(normalized));
     } catch {}
+  }
+
+  function findClassByCode(rawCode) {
+    const code = String(rawCode || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (!code) return null;
+    return loadClasses().find(c => c.code === code) || null;
   }
 
   function isCurrentUserTeacher() {
@@ -86,14 +157,25 @@
     return Object.values(users).filter(u => u && u.role === 'teacher');
   }
 
-  function getClassesForTeacher(teacherUsername) {
+  function getClassesForTeacher(teacherUsername, levelFilter = 'all') {
     const key = String(teacherUsername || '').trim().toLowerCase();
-    return loadClasses().filter(c => String(c.teacherUsername || '').toLowerCase() === key);
+    return loadClasses().filter(c => {
+      if (String(c.teacherUsername || '').toLowerCase() !== key) return false;
+      if (levelFilter === 'primary' || levelFilter === 'secondary') {
+        return c.level === levelFilter;
+      }
+      return true;
+    });
   }
 
   function getClassesForStudent(studentUsername) {
     const key = String(studentUsername || '').trim().toLowerCase();
     return loadClasses().filter(c => Array.isArray(c.students) && c.students.includes(key));
+  }
+
+  function canTeacherManageStudent(teacherUsername, studentUsername) {
+    const sKey = String(studentUsername || '').trim().toLowerCase();
+    return getClassesForTeacher(teacherUsername).some(c => c.students.includes(sKey));
   }
 
   function getStudentsForTeacher(teacherUsername, classId = null) {
@@ -105,12 +187,13 @@
     return allSummary.filter(s => s.role !== 'admin' && s.role !== 'teacher' && unameSet.has(s.username));
   }
 
-  async function createTeacherWithClass({ name, username, password, className, grade = 4, avatar = 'panda' } = {}) {
+  async function createTeacherWithClass({ name, username, password, className, grade = 4, level, code = '', avatar = 'panda', autoSignIn = false } = {}) {
     const cleanName = String(name || '').trim().slice(0, 40);
     const cleanUser = String(username || '').trim().toLowerCase().replace(/\s+/g, '');
     const cleanPwd = String(password || '').trim();
     const cleanClass = String(className || '').trim().slice(0, 40);
     const g = Math.min(9, Math.max(1, Number(grade) || 4));
+    const resolvedLevel = (level === 'primary' || level === 'secondary') ? level : levelOfGrade(g);
 
     if (!cleanName) throw new Error(t('Vui lòng nhập tên Thầy/Cô.', 'Please enter teacher name.'));
     if (cleanUser.length < 2 || !/^[a-z0-9_.-]+$/.test(cleanUser)) {
@@ -137,11 +220,15 @@
     };
     saveLocalUsers(users);
 
-    const cls = createClassForTeacher(cleanUser, { name: cleanClass, grade: g });
+    const cls = createClassForTeacher(cleanUser, { name: cleanClass, grade: g, level: resolvedLevel, code });
+    if (autoSignIn && typeof localSignIn === 'function') {
+      activeTeacherClassId = cls.id;
+      await localSignIn(cleanUser, cleanPwd);
+    }
     return { teacher: users[cleanUser], cls };
   }
 
-  function createClassForTeacher(teacherUsername, { name, grade = 4, code = '' } = {}) {
+  function createClassForTeacher(teacherUsername, { name, grade = 4, level, code = '' } = {}) {
     const key = String(teacherUsername || '').trim().toLowerCase();
     const users = getLocalUsers();
     const teacher = users[key];
@@ -151,10 +238,14 @@
     const cleanName = String(name || '').trim().slice(0, 40);
     if (!cleanName) throw new Error(t('Vui lòng nhập tên lớp học.', 'Please enter a class name.'));
     const g = Math.min(9, Math.max(1, Number(grade) || 4));
+    const resolvedLevel = (level === 'primary' || level === 'secondary') ? level : levelOfGrade(g);
 
     const classes = loadClasses();
-    let finalCode = String(code || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
-    if (!finalCode || classes.some(c => c.code === finalCode)) {
+    let finalCode = String(code || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
+    if (finalCode && classes.some(c => c.code === finalCode)) {
+      throw new Error(t(`Mã lớp "${finalCode}" đã được dùng. Hãy chọn mã khác hoặc để trống để tự tạo!`, `Class code "${finalCode}" is already taken!`));
+    }
+    if (!finalCode) {
       let tries = 0;
       do {
         finalCode = genClassCode(g);
@@ -166,6 +257,7 @@
       id: 'cls_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
       code: finalCode,
       name: cleanName,
+      level: resolvedLevel,
       grade: g,
       teacherUsername: key,
       teacherName: teacher.name,
@@ -215,32 +307,154 @@
   }
 
   function joinClassByCode(rawCode, studentUsername) {
-    const code = String(rawCode || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-    if (!code) throw new Error(t('Vui lòng nhập mã lớp hợp lệ.', 'Please enter a valid class code.'));
-    const classes = loadClasses();
-    const cls = classes.find(c => String(c.code || '').toUpperCase() === code);
-    if (!cls) throw new Error(t('Không tìm thấy lớp học với mã này. Em kiểm tra lại nhé!', 'No class found with this code. Please double-check!'));
+    const cls = findClassByCode(rawCode);
+    if (!cls) throw new Error(t('Không tìm thấy lớp học với mã này. Em kiểm tra lại mã Thầy/Cô phát nhé!', 'No class found with this code. Please double-check with your teacher!'));
     const u = studentUsername ? String(studentUsername).trim().toLowerCase() : (currentAuthUser()?.username || '');
     if (!u) throw new Error(t('Vui lòng đăng nhập tài khoản học sinh trước khi vào lớp.', 'Please sign in as a student first.'));
-    if (!Array.isArray(cls.students)) cls.students = [];
-    const already = cls.students.includes(u);
+    const classes = loadClasses();
+    const target = classes.find(c => c.id === cls.id);
+    if (!target) throw new Error(t('Không tìm thấy lớp học.', 'Class not found.'));
+    const already = target.students.includes(u);
     if (!already) {
-      cls.students.push(u);
+      target.students.push(u);
       saveClasses(classes);
     }
-    return { ok: true, cls, already };
+    return { ok: true, cls: target, already };
   }
 
+  // Student Quick-Join: Enter ONLY Class Code + Name -> auto-creates/re-enters account & joins class!
+  async function studentQuickJoinByCode({ code, name, pin = '1234', avatar = 'bunny' } = {}) {
+    const cleanName = String(name || '').trim().slice(0, 30);
+    const cleanPin = String(pin || '1234').trim() || '1234';
+    const cls = findClassByCode(code);
+    if (!cls) {
+      throw new Error(t('Mã lớp chưa đúng hoặc không tồn tại. Em kiểm tra lại mã Thầy/Cô phát nhé!', 'Invalid class code. Please check the code from your teacher!'));
+    }
+    if (!cleanName || cleanName.length < 2) {
+      throw new Error(t('Em hãy điền họ và tên của mình (ít nhất 2 ký tự) nhé!', 'Please enter your name (at least 2 characters)!'));
+    }
+    if (cleanPin.length < 4) {
+      throw new Error(t('Mã PIN cần ít nhất 4 số/ký tự (hoặc để mặc định 1234).', 'PIN must be at least 4 characters (or keep 1234).'));
+    }
+
+    const users = getLocalUsers();
+    const normName = cleanName.toLowerCase().replace(/\s+/g, ' ');
+    // If a student with the exact same name is already in this class, sign them back in seamlessly
+    const existingInClass = (cls.students || [])
+      .map(un => users[un])
+      .find(u => u && u.role === 'student' && String(u.name || '').trim().toLowerCase().replace(/\s+/g, ' ') === normName);
+
+    if (existingInClass) {
+      const hash = await hashPassword(cleanPin);
+      if (existingInClass.hash === hash) {
+        await localSignIn(existingInClass.username, cleanPin);
+        return { ok: true, cls, username: existingInClass.username, returning: true };
+      }
+    }
+
+    // Create a fresh student account automatically enrolled in cls with cls.grade
+    const baseSlug = slugifyVietnameseName(cleanName);
+    let candidate = baseSlug;
+    let suffix = 2;
+    while (users[candidate]) {
+      candidate = `${baseSlug}${suffix++}`;
+    }
+
+    const hash = await hashPassword(cleanPin);
+    users[candidate] = {
+      username: candidate,
+      name: cleanName,
+      hash,
+      role: 'student',
+      avatar: avatar || 'bunny',
+      grade: cls.grade,
+      createdAt: new Date().toISOString(),
+      lastLoginAt: new Date().toISOString(),
+      loginCount: 1
+    };
+    saveLocalUsers(users);
+    addStudentToClass(cls.id, candidate);
+
+    const activeUser = {
+      id: candidate,
+      username: candidate,
+      name: cleanName,
+      avatar: avatar || 'bunny',
+      grade: cls.grade,
+      role: 'student',
+      type: 'local'
+    };
+    localStorage.setItem('numi-current-user-v1', JSON.stringify(activeUser));
+    try { localStorage.setItem('numi-buddy-profile-v1', JSON.stringify({ name: cleanName, avatar: avatar || 'bunny' })); } catch {}
+    state = { ...fresh(), name: cleanName, buddy: avatar || 'bunny' };
+    if (typeof window !== 'undefined') window.state = state;
+    if (typeof global !== 'undefined') global.state = state;
+    save();
+    try { localStorage.setItem('numi-user-state-' + candidate, JSON.stringify(state)); } catch {}
+    if (typeof NUMI_GRADES !== 'undefined' && NUMI_GRADES[cls.grade]) {
+      const gDef = NUMI_GRADES[cls.grade];
+      config = { ...defaults, ...gDef, grade: gDef.id, ops: [...gDef.ops], types: [...gDef.types], type: gDef.types[0], digits: [...gDef.digits] };
+      if (typeof window !== 'undefined') window.config = config;
+      if (typeof global !== 'undefined') global.config = config;
+    }
+    cloudBadge();
+    nav('home');
+    toast(t(
+      `🎉 Chào mừng ${cleanName} đã vào ${cls.name} (${cls.teacherName})! Tài khoản: @${candidate}`,
+      `🎉 Welcome ${cleanName} to ${cls.name} (${cls.teacherName})! Account: @${candidate}`
+    ));
+    return { ok: true, cls, username: candidate, returning: false };
+  }
+
+  // Share link carries class code + optional metadata payload so cross-device links also register the class code locally
   function buildClassJoinLink(cls) {
     const base = typeof location !== 'undefined' && location.href ? location.href.split('#')[0] : 'https://kimtham18301-arch.github.io/numiquest/';
-    return `${base}#join=${encodeURIComponent(cls.code)}`;
+    const meta = toB64Url(JSON.stringify({
+      c: cls.code,
+      n: cls.name,
+      g: cls.grade,
+      l: cls.level || levelOfGrade(cls.grade),
+      tu: cls.teacherUsername,
+      tn: cls.teacherName
+    }));
+    return `${base}#join=${encodeURIComponent(cls.code)}&cls=${meta}`;
+  }
+
+  function parseIncomingJoinHash(hashStr) {
+    const h = String(hashStr || '');
+    if (!h.startsWith('#join=')) return null;
+    const raw = h.slice(1);
+    const joinMatch = raw.match(/(?:^|&)join=([^&]+)/);
+    const clsMatch = raw.match(/(?:^|&)cls=([^&]+)/);
+    const code = String(joinMatch ? decodeURIComponent(joinMatch[1]) : '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (!code) return null;
+    const clsMeta = clsMatch ? decodeURIComponent(clsMatch[1]) : '';
+    if (clsMeta && !findClassByCode(code)) {
+      try {
+        const obj = JSON.parse(fromB64Url(clsMeta));
+        if (obj && obj.c && obj.n) {
+          const list = loadClasses();
+          list.unshift({
+            id: 'cls_ext_' + Date.now().toString(36),
+            code: String(obj.c).toUpperCase(),
+            name: String(obj.n).slice(0, 40),
+            grade: Math.min(9, Math.max(1, Number(obj.g) || 4)),
+            level: obj.l === 'secondary' ? 'secondary' : levelOfGrade(obj.g || 4),
+            teacherUsername: String(obj.tu || 'teacher').toLowerCase(),
+            teacherName: String(obj.tn || t('Giáo viên', 'Teacher')).slice(0, 40),
+            students: [],
+            createdAt: new Date().toISOString()
+          });
+          saveClasses(list);
+        }
+      } catch {}
+    }
+    return code;
   }
 
   function checkIncomingClassJoinHash() {
     if (typeof location === 'undefined') return;
-    const h = String(location.hash || '');
-    if (!h.startsWith('#join=')) return;
-    const code = decodeURIComponent(h.slice(6)).trim().toUpperCase();
+    const code = parseIncomingJoinHash(location.hash);
     if (!code) return;
     const u = typeof currentAuthUser === 'function' ? currentAuthUser() : null;
     if (u && u.role !== 'admin' && u.role !== 'teacher') {
@@ -248,14 +462,15 @@
         const res = joinClassByCode(code, u.username);
         toast(res.already
           ? t(`Em đã có mặt trong ${res.cls.name} (${res.cls.teacherName})!`, `Already enrolled in ${res.cls.name}!`)
-          : t(`🎉 Đã tham gia ${res.cls.name} của ${res.cls.teacherName}!`, `🎉 Joined ${res.cls.name} (${res.cls.teacherName})!`));
+          : t(`🎉 Đã tham gia ${res.cls.name} của ${res.cls.teacherName}!`, `🎉 Joined ${res.cls.name}!`));
         try { history.replaceState(null, '', location.pathname + location.search); } catch {}
       } catch (err) {
         toast(err.message);
       }
     } else if (!u) {
       try { localStorage.setItem(PENDING_JOIN_KEY, code); } catch {}
-      toast(t(`Đã nhận mã lớp ${code}. Đăng nhập để tự động vào lớp nhé!`, `Class code ${code} saved. Sign in to join automatically!`));
+      try { history.replaceState(null, '', location.pathname + location.search); } catch {}
+      if (typeof openAccount === 'function') openAccount('join-class');
     }
   }
 
@@ -271,6 +486,268 @@
     } catch {}
   }
 
+  // ---------------- Enhanced Auth Gate: Login | Student Join by Code | Teacher Setup | Student Signup ----------------
+  const openAccountBeforeClassGate = typeof openAccount === 'function' ? openAccount : null;
+  if (openAccountBeforeClassGate) {
+    openAccount = function (mode = 'login') {
+      const u = typeof currentAuthUser === 'function' ? currentAuthUser() : null;
+      if (u) {
+        if (u.role === 'teacher') renderTeacherWorkspace();
+        else if (u.role === 'admin' || u.username === 'admin') { if (typeof renderAdmin === 'function') renderAdmin(); }
+        else renderProfile();
+        return;
+      }
+      lastAuthMode = mode || 'login';
+
+      if (mode === 'join-class') {
+        renderStudentJoinByCodeGate();
+        return;
+      }
+      if (mode === 'teacher-setup') {
+        renderTeacherSetupGate();
+        return;
+      }
+
+      // Standard login / signup -> inject quick tabs for Student Join by Code & Teacher Setup
+      openAccountBeforeClassGate(mode);
+      injectExtraAuthTabs(mode);
+    };
+    if (typeof window !== 'undefined') window.openAccount = openAccount;
+    if (typeof global !== 'undefined') global.openAccount = openAccount;
+  }
+
+  function renderAuthTabBar(activeMode) {
+    return `<div class="auth-tabs auth-tabs-v2" role="tablist">
+      <button type="button" class="auth-tab ${activeMode === 'login' ? 'active' : ''}" id="tabLogin">🔑 ${t('Đăng nhập', 'Sign in')}</button>
+      <button type="button" class="auth-tab ${activeMode === 'join-class' ? 'active' : ''}" id="tabJoinClass">🎒 ${t('Vào lớp bằng Mã', 'Join Class')}</button>
+      <button type="button" class="auth-tab ${activeMode === 'teacher-setup' ? 'active' : ''}" id="tabTeacherSetup">👩‍🏫 ${t('Giáo viên tạo lớp', 'Teacher Setup')}</button>
+      <button type="button" class="auth-tab ${activeMode === 'signup' ? 'active' : ''}" id="tabSignup">✨ ${t('Tạo TK tự học', 'Self-study')}</button>
+    </div>`;
+  }
+
+  function bindAuthTabBar() {
+    $('#tabLogin')?.addEventListener('click', () => openAccount('login'));
+    $('#tabJoinClass')?.addEventListener('click', () => openAccount('join-class'));
+    $('#tabTeacherSetup')?.addEventListener('click', () => openAccount('teacher-setup'));
+    $('#tabSignup')?.addEventListener('click', () => openAccount('signup'));
+  }
+
+  function injectExtraAuthTabs(activeMode) {
+    const oldTabs = $('.auth-gate-card .auth-tabs');
+    if (oldTabs) {
+      oldTabs.outerHTML = renderAuthTabBar(activeMode);
+      bindAuthTabBar();
+    }
+    // Add clear role badges to quick-select chips
+    const users = getLocalUsers();
+    $$('[data-quick-user]').forEach(chip => {
+      const uname = chip.dataset.quickUser;
+      const uObj = users[uname];
+      if (!uObj) return;
+      const prefix = uObj.role === 'admin' || uname === 'admin' ? '🛡️ ' : uObj.role === 'teacher' ? '👩‍🏫 ' : '🎒 ';
+      const sp = chip.querySelector('span');
+      if (sp && !sp.textContent.startsWith(prefix)) sp.textContent = prefix + uObj.name;
+    });
+  }
+
+  function renderStudentJoinByCodeGate() {
+    if (typeof stop === 'function') stop();
+    view = 'account';
+    if (typeof window !== 'undefined') window.view = 'account';
+    if (typeof global !== 'undefined') global.view = 'account';
+    if (document.body) document.body.dataset.view = 'account';
+
+    let preCode = '';
+    try { preCode = localStorage.getItem(PENDING_JOIN_KEY) || ''; } catch {}
+    let chosenAvatar = 'bunny';
+    const savedClasses = loadClasses();
+
+    $('#app').innerHTML = `<div class="narrow card account-card auth-gate-card">
+      <div class="intro-animal">${animal('bunny')}</div>
+      <span class="eyebrow">NUMIQUICK · ${t('HỌC SINH VÀO LỚP', 'STUDENT CLASS JOIN')}</span>
+      <h1>🎒 ${t('Nhập Mã lớp để vào học', 'Enter Class Code to Join')}</h1>
+      <p class="muted">${t('Chỉ cần nhập Mã lớp Thầy/Cô phát và điền tên của em — hệ thống sẽ tự động đưa em vào đúng lớp học!', 'Just enter your teacher’s Class Code and your name — you will be placed in the right class automatically!')}</p>
+      ${renderAuthTabBar('join-class')}
+      <form id="quickJoinClassForm" class="auth-form">
+        <label>${t('Mã lớp Thầy/Cô phát', 'Class Code from Teacher')}
+          <input name="code" id="quickJoinCodeInput" maxlength="10" required autocomplete="off" value="${esc(preCode)}" placeholder="${t('Ví dụ: 4ANUMI', 'e.g. 4ANUMI')}" style="text-transform:uppercase;font-weight:800;letter-spacing:1.5px;font-size:17px">
+        </label>
+        <div id="quickJoinPreview" class="join-code-preview" hidden></div>
+        ${savedClasses.length ? `<div class="saved-codes-hint"><span>${t('Mã lớp đã lưu trên máy:', 'Saved class codes:')}</span> ${savedClasses.slice(0, 6).map(c => `<button type="button" class="saved-code-pill" data-fill-code="${esc(c.code)}">${esc(c.code)} · ${esc(c.name)}</button>`).join('')}</div>` : ''}
+        <label>${t('Họ và tên của em', 'Your Full Name')}
+          <input name="name" maxlength="30" required placeholder="${t('Ví dụ: Nguyễn Minh Anh', 'e.g. Minh Anh')}">
+        </label>
+        <label>${t('Mã PIN 4 số của em (dùng để vào lại lần sau)', 'Your 4-digit PIN (for signing back in)')}
+          <input name="pin" minlength="4" maxlength="20" value="1234" required placeholder="1234">
+        </label>
+        <div class="settings-hint" style="margin-top:8px">${t('Chọn bạn thú đồng hành:', 'Choose your study buddy:')}</div>
+        <div class="buddy-choices">
+          ${[['bunny', 'Thỏ'], ['panda', 'Gấu'], ['fox', 'Cáo'], ['lion', 'Sư tử']].map(([k, label]) => `<button type="button" data-join-avatar="${k}" class="${k === chosenAvatar ? 'chosen' : ''}">${(typeof numiAnimalOriginal === 'function' ? numiAnimalOriginal : animal)(k)}<span>${label}</span></button>`).join('')}
+        </div>
+        <p id="quickJoinErr" class="danger" role="status" style="margin:10px 0;font-weight:700"></p>
+        <button type="submit" class="primary wide" id="quickJoinSubmitBtn">🎒 ${t('Vào lớp & Bắt đầu học ngay →', 'Join Class & Start Learning →')}</button>
+      </form>
+    </div>`;
+
+    bindAuthTabBar();
+
+    const codeInput = $('#quickJoinCodeInput');
+    const previewEl = $('#quickJoinPreview');
+    const updatePreview = () => {
+      if (!codeInput || !previewEl) return;
+      const val = codeInput.value.trim().toUpperCase();
+      if (!val) { previewEl.hidden = true; return; }
+      const found = findClassByCode(val);
+      previewEl.hidden = false;
+      if (found) {
+        previewEl.className = 'join-code-preview is-valid';
+        previewEl.innerHTML = `✅ <b>${esc(found.name)}</b> · ${esc(levelShortBadge(found.level))} (${t('Khối', 'Grade')} ${found.grade}) · 👩‍🏫 ${esc(found.teacherName)}`;
+      } else if (val.length >= 4) {
+        previewEl.className = 'join-code-preview is-invalid';
+        previewEl.innerHTML = `⚠️ ${t('Chưa tìm thấy mã lớp này. Em kiểm tra lại mã Thầy/Cô phát nhé!', 'Class code not found yet. Double-check the code!')}`;
+      } else {
+        previewEl.hidden = true;
+      }
+    };
+    if (codeInput) {
+      codeInput.addEventListener('input', updatePreview);
+      updatePreview();
+    }
+    $$('[data-fill-code]').forEach(btn => {
+      btn.onclick = () => {
+        if (codeInput) {
+          codeInput.value = btn.dataset.fillCode;
+          updatePreview();
+        }
+      };
+    });
+    $$('[data-join-avatar]').forEach(btn => {
+      btn.onclick = () => {
+        chosenAvatar = btn.dataset.joinAvatar;
+        $$('[data-join-avatar]').forEach(b => b.classList.toggle('chosen', b.dataset.joinAvatar === chosenAvatar));
+      };
+    });
+
+    const form = $('#quickJoinClassForm');
+    if (form) {
+      form.onsubmit = async e => {
+        e.preventDefault();
+        const fd = new FormData(form);
+        const btn = $('#quickJoinSubmitBtn');
+        const errEl = $('#quickJoinErr');
+        if (btn) btn.disabled = true;
+        if (errEl) errEl.textContent = '';
+        try {
+          try { localStorage.removeItem(PENDING_JOIN_KEY); } catch {}
+          await studentQuickJoinByCode({
+            code: fd.get('code'),
+            name: fd.get('name'),
+            pin: fd.get('pin'),
+            avatar: chosenAvatar
+          });
+        } catch (err) {
+          if (errEl) errEl.textContent = err.message;
+        } finally {
+          if (btn && btn.isConnected) btn.disabled = false;
+        }
+      };
+    }
+    if (typeof translate === 'function') translate();
+  }
+
+  function renderTeacherSetupGate() {
+    if (typeof stop === 'function') stop();
+    view = 'account';
+    if (typeof window !== 'undefined') window.view = 'account';
+    if (typeof global !== 'undefined') global.view = 'account';
+    if (document.body) document.body.dataset.view = 'account';
+
+    $('#app').innerHTML = `<div class="narrow card account-card auth-gate-card">
+      <div class="intro-animal">${animal('panda')}</div>
+      <span class="eyebrow">NUMIQUICK · ${t('THIẾT LẬP TÀI KHOẢN GIÁO VIÊN', 'TEACHER ACCOUNT SETUP')}</span>
+      <h1>👩‍🏫 ${t('Tạo tài khoản Giáo viên & Lớp học', 'Set Up Teacher Account & Class')}</h1>
+      <p class="muted">${t('Tài khoản riêng giúp Thầy/Cô chỉ quản lý đúng các lớp và học sinh của mình, tạo mã lớp phân loại theo cấp học và giao bài tập.', 'Dedicated teacher workspace scoped strictly to your own classes and students, with saved class codes by school level.')}</p>
+      ${renderAuthTabBar('teacher-setup')}
+      <form id="teacherSelfSetupForm" class="auth-form">
+        <label>${t('Họ và tên Thầy/Cô', 'Teacher Name')}
+          <input name="name" maxlength="40" required placeholder="${t('Ví dụ: Cô Hương / Thầy Minh', 'e.g. Ms. Huong')}">
+        </label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <label>${t('Tên đăng nhập', 'Username')}
+            <input name="username" minlength="2" maxlength="20" required autocomplete="username" placeholder="${t('VD: cohuong', 'e.g. mshuong')}">
+          </label>
+          <label>${t('Mật khẩu / Mã PIN (4+ ký tự)', 'Password / PIN (4+ chars)')}
+            <input name="password" type="password" minlength="4" maxlength="24" required autocomplete="new-password" placeholder="••••">
+          </label>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <label>${t('Phân loại Cấp học', 'School Level')}
+            <select name="level" id="tchSetupLevel">
+              <option value="primary">${t('Tiểu học (Lớp 1–5)', 'Primary (Grades 1–5)')}</option>
+              <option value="secondary">${t('THCS (Lớp 6–9)', 'Secondary (Grades 6–9)')}</option>
+            </select>
+          </label>
+          <label>${t('Khối lớp', 'Grade')}
+            <select name="grade" id="tchSetupGrade">
+              ${[1, 2, 3, 4, 5].map(g => `<option value="${g}" ${g === 4 ? 'selected' : ''}>${t('Lớp', 'Grade')} ${g}</option>`).join('')}
+            </select>
+          </label>
+        </div>
+        <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:10px">
+          <label>${t('Tên lớp đầu tiên', 'First Class Name')}
+            <input name="className" maxlength="40" required placeholder="${t('VD: Lớp 4B', 'e.g. Grade 4B')}">
+          </label>
+          <label>${t('Mã lớp (để trống để tự tạo)', 'Class Code (optional)')}
+            <input name="code" maxlength="10" placeholder="${t('VD: 4BHUONG', 'Auto')}" style="text-transform:uppercase">
+          </label>
+        </div>
+        <p id="teacherSetupErr" class="danger" role="status" style="margin:10px 0;font-weight:700"></p>
+        <button type="submit" class="primary wide" id="teacherSetupBtn">👩‍🏫 ${t('Tạo tài khoản & Lưu mã lớp →', 'Create Account & Save Class Code →')}</button>
+      </form>
+    </div>`;
+
+    bindAuthTabBar();
+
+    const levelSel = $('#tchSetupLevel');
+    const gradeSel = $('#tchSetupGrade');
+    if (levelSel && gradeSel) {
+      levelSel.onchange = () => {
+        const list = gradesForLevel(levelSel.value);
+        gradeSel.innerHTML = list.map(g => `<option value="${g}">${t('Lớp', 'Grade')} ${g}</option>`).join('');
+      };
+    }
+
+    const form = $('#teacherSelfSetupForm');
+    if (form) {
+      form.onsubmit = async e => {
+        e.preventDefault();
+        const fd = new FormData(form);
+        const btn = $('#teacherSetupBtn');
+        const errEl = $('#teacherSetupErr');
+        if (btn) btn.disabled = true;
+        if (errEl) errEl.textContent = '';
+        try {
+          const { cls } = await createTeacherWithClass({
+            name: fd.get('name'),
+            username: fd.get('username'),
+            password: fd.get('password'),
+            level: fd.get('level'),
+            grade: fd.get('grade'),
+            className: fd.get('className'),
+            code: fd.get('code'),
+            autoSignIn: true
+          });
+          toast(t(`🎉 Đã tạo ${cls.name} · Mã lớp đã lưu: ${cls.code}!`, `🎉 Created ${cls.name} · Saved code: ${cls.code}!`));
+        } catch (err) {
+          if (errEl) errEl.textContent = err.message;
+        } finally {
+          if (btn && btn.isConnected) btn.disabled = false;
+        }
+      };
+    }
+    if (typeof translate === 'function') translate();
+  }
+
   // Printable Progress Report Card (1-click Print / Save as PDF)
   function openClassPrintReport(cls, students) {
     const todayStr = new Date().toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -282,7 +759,7 @@
     modal(`<div class="cls-report-sheet">
       <div class="cls-report-head">
         <span class="eyebrow">NUMIQUICK · ${t('PHIẾU BÁO CÁO TIẾN ĐỘ LỚP HỌC', 'CLASS PROGRESS REPORT')}</span>
-        <h2 style="margin:4px 0">${esc(cls.name)} (${t('Lớp', 'Grade')} ${cls.grade}) — ${esc(cls.teacherName)}</h2>
+        <h2 style="margin:4px 0">${esc(cls.name)} · ${esc(levelShortBadge(cls.level))} (${t('Khối', 'Grade')} ${cls.grade}) — ${esc(cls.teacherName)}</h2>
         <p class="muted" style="margin:0">${t('Ngày xuất:', 'Date:')} ${todayStr} · ${t('Mã lớp:', 'Class code:')} <b>${esc(cls.code)}</b> · ${students.length} ${t('học sinh', 'students')}</p>
       </div>
       <div class="cls-report-kpis">
@@ -337,14 +814,14 @@
   function openTeacherAssignModal(cls, preselected = []) {
     const students = getStudentsForTeacher(cls.teacherUsername, cls.id);
     if (!students.length) {
-      toast(t('Lớp chưa có học sinh. Thầy/Cô hãy thêm học sinh vào lớp trước nhé!', 'No students in this class yet. Add students first!'));
+      toast(t('Lớp chưa có học sinh. Thầy/Cô hãy gửi Mã lớp để học sinh vào lớp trước nhé!', 'No students in this class yet. Share the Class Code first!'));
       return;
     }
     const preSet = new Set(preselected.length ? preselected : students.map(s => s.username));
     const defaultDue = new Date(Date.now() + 86400000 * 3).toISOString().slice(0, 10);
 
     modal(`<h2>🎯 ${t(`Giao bài cho ${cls.name}`, `Assign Homework to ${cls.name}`)}</h2>
-    <p class="muted" style="margin:4px 0 10px;font-size:13px">${t('Chọn cả lớp hoặc tích riêng từng học sinh cần giao bài. Bài tập sẽ xuất hiện ngay trên Trang chủ của các em.', 'Select the whole class or specific students. Assigned homework appears right on their Home screen.')}</p>
+    <p class="muted" style="margin:4px 0 10px;font-size:13px">${t('Chọn cả lớp hoặc tích riêng từng học sinh trong lớp của Thầy/Cô.', 'Select the whole class or specific students in your class.')}</p>
     <form id="teacherAssignForm" style="display:grid;gap:12px">
       <div>
         <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:6px">
@@ -373,7 +850,7 @@
 
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
         <label>${t('Khối lớp:', 'Grade:')}
-          <select name="grade">${[1,2,3,4,5,6,7,8,9].map(g => `<option value="${g}" ${Number(cls.grade) === g ? 'selected' : ''}>${t('Lớp', 'Gr')} ${g}</option>`).join('')}</select>
+          <select name="grade">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(g => `<option value="${g}" ${Number(cls.grade) === g ? 'selected' : ''}>${t('Lớp', 'Gr')} ${g}</option>`).join('')}</select>
         </label>
         <label>${t('Kiểu câu hỏi:', 'Style:')}
           <select name="questionStyle">
@@ -451,7 +928,6 @@
               seconds: Number(fd.get('seconds')) || 20
             }
           });
-          // Tag assignment with teacher/class metadata for scoping
           const allAsg = loadTargetedAssignments();
           const saved = allAsg.find(a => a.id === asg.id);
           if (saved) {
@@ -486,7 +962,7 @@
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <label>${t('Khối lớp:', 'Grade:')}
-          <select name="grade">${[1,2,3,4,5,6,7,8,9].map(g => `<option value="${g}" ${Number(cls.grade) === g ? 'selected' : ''}>${t('Lớp', 'Grade')} ${g}</option>`).join('')}</select>
+          <select name="grade">${gradesForLevel(cls.level).map(g => `<option value="${g}" ${Number(cls.grade) === g ? 'selected' : ''}>${t('Lớp', 'Grade')} ${g}</option>`).join('')}</select>
         </label>
         <label>${t('Bạn đồng hành:', 'Buddy:')}
           <select name="avatar">
@@ -547,13 +1023,13 @@
     }
   }
 
-  // Modal: Enroll existing students on device into this class
-  function openEnrollExistingModal(cls) {
+  // Admin-only modal: Assign existing students on device into a class
+  function openAdminEnrollStudentsModal(cls) {
     const allSummary = typeof getStudentsSummary === 'function' ? getStudentsSummary() : [];
     const available = allSummary.filter(s => s.role !== 'admin' && s.role !== 'teacher' && !(cls.students || []).includes(s.username));
-    modal(`<h2>📥 ${t(`Nhận học sinh có sẵn vào ${cls.name}`, `Enroll Existing Students in ${cls.name}`)}</h2>
+    modal(`<h2>📥 ${t(`Xếp học sinh vào ${cls.name}`, `Assign Students to ${cls.name}`)}</h2>
     ${available.length === 0
-      ? `<p class="muted" style="margin:10px 0">${t('Tất cả học sinh trên máy đã có trong lớp này. Thầy/Cô có thể bấm "+ Tạo học sinh mới" hoặc gửi Mã lớp để học sinh tự vào.', 'All students on this device are already in this class.')}</p>
+      ? `<p class="muted" style="margin:10px 0">${t('Tất cả học sinh trên máy đã có trong lớp này.', 'All students on this device are already in this class.')}</p>
          <div class="actions"><button type="button" class="primary" onclick="$('#modal').close()">${t('Đóng', 'Close')}</button></div>`
       : `<form id="enrollExistingForm" style="display:grid;gap:12px;margin-top:8px">
           <div class="adm-student-checklist">
@@ -583,40 +1059,74 @@
     }
   }
 
-  // Modal: Create another class for the signed-in teacher
+  // Modal: Create new class with Level (Tiểu học / THCS) + Grade + Saved Code
   function openCreateClassModal(teacherUsername) {
-    modal(`<h2>🏫 ${t('Tạo lớp học mới', 'Create New Class')}</h2>
-    <form id="createClassForm" style="display:grid;gap:10px;margin-top:10px">
-      <label>${t('Tên lớp học:', 'Class Name:')}
-        <input name="name" required maxlength="40" placeholder="${t('VD: Lớp 4B - Tăng cường', 'e.g. Grade 4B')}">
-      </label>
-      <label>${t('Khối lớp:', 'Grade Level:')}
-        <select name="grade">${[1,2,3,4,5,6,7,8,9].map(g => `<option value="${g}" ${g === 4 ? 'selected' : ''}>${t('Lớp', 'Grade')} ${g}</option>`).join('')}</select>
-      </label>
+    modal(`<h2>🏫 ${t('Tạo lớp học mới & Lưu Mã lớp', 'Create New Class & Save Code')}</h2>
+    <p class="muted" style="margin:4px 0 10px;font-size:13px">${t('Phân loại rõ theo Cấp học và Khối lớp. Mã lớp sẽ được lưu tự động để phát cho học sinh vào lớp.', 'Classify by school level and grade. The class code is saved automatically for students to join.')}</p>
+    <form id="createClassForm" style="display:grid;gap:10px;margin-top:6px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <label>${t('Cấp học:', 'School Level:')}
+          <select name="level" id="newClsLevel">
+            <option value="primary">${t('Tiểu học (Lớp 1–5)', 'Primary (Gr 1–5)')}</option>
+            <option value="secondary">${t('THCS (Lớp 6–9)', 'Secondary (Gr 6–9)')}</option>
+          </select>
+        </label>
+        <label>${t('Khối lớp:', 'Grade Level:')}
+          <select name="grade" id="newClsGrade">
+            ${[1, 2, 3, 4, 5].map(g => `<option value="${g}" ${g === 4 ? 'selected' : ''}>${t('Lớp', 'Grade')} ${g}</option>`).join('')}
+          </select>
+        </label>
+      </div>
+      <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:10px">
+        <label>${t('Tên lớp học:', 'Class Name:')}
+          <input name="name" required maxlength="40" placeholder="${t('VD: Lớp 4B / Lớp 7A', 'e.g. Grade 4B')}">
+        </label>
+        <label>${t('Mã lớp (để trống để tự sinh):', 'Code (leave blank to auto):')}
+          <input name="code" maxlength="10" placeholder="${t('VD: 4BLAN', 'Auto')}" style="text-transform:uppercase">
+        </label>
+      </div>
+      <p id="createClsErr" class="danger" style="margin:2px 0;font-weight:700"></p>
       <div class="actions">
-        <button type="submit" class="primary">${t('Tạo lớp ngay', 'Create Class')}</button>
+        <button type="submit" class="primary">💾 ${t('Tạo lớp & Lưu Mã lớp', 'Create & Save Code')}</button>
         <button type="button" onclick="$('#modal').close()">${t('Hủy', 'Cancel')}</button>
       </div>
     </form>`);
+
+    const levelSel = $('#newClsLevel');
+    const gradeSel = $('#newClsGrade');
+    if (levelSel && gradeSel) {
+      levelSel.onchange = () => {
+        const list = gradesForLevel(levelSel.value);
+        gradeSel.innerHTML = list.map(g => `<option value="${g}">${t('Lớp', 'Grade')} ${g}</option>`).join('');
+      };
+    }
+
     const form = $('#createClassForm');
     if (form) {
       form.onsubmit = e => {
         e.preventDefault();
         const fd = new FormData(form);
+        const errEl = $('#createClsErr');
         try {
-          const cls = createClassForTeacher(teacherUsername, { name: fd.get('name'), grade: fd.get('grade') });
+          const cls = createClassForTeacher(teacherUsername, {
+            level: fd.get('level'),
+            grade: fd.get('grade'),
+            name: fd.get('name'),
+            code: fd.get('code')
+          });
+          activeTeacherLevelFilter = 'all';
           activeTeacherClassId = cls.id;
           $('#modal').close();
-          toast(t(`Đã tạo ${cls.name} (Mã lớp: ${cls.code})!`, `Created ${cls.name} (Code: ${cls.code})!`));
+          toast(t(`✅ Đã tạo ${cls.name} (${levelShortBadge(cls.level)}) · Mã lớp đã lưu: ${cls.code}!`, `✅ Created ${cls.name} · Saved code: ${cls.code}!`));
           renderTeacherWorkspace();
         } catch (err) {
-          toast(err.message);
+          if (errEl) errEl.textContent = err.message;
         }
       };
     }
   }
 
-  // Dedicated Teacher Workspace (`view === 'teacher'`)
+  // Dedicated Isolated Teacher Workspace (`view === 'teacher'`)
   function renderTeacherWorkspace() {
     if (typeof stop === 'function') stop();
     view = 'teacher';
@@ -630,16 +1140,20 @@
     if (!u || (u.role !== 'teacher' && u.role !== 'admin')) {
       $('#app').innerHTML = `<div class="narrow card admin-gate-card">
         <h2>👩‍🏫 ${t('Không gian Lớp học Giáo viên', 'Teacher Classroom Space')}</h2>
-        <p class="muted">${t('Vui lòng đăng nhập bằng tài khoản Giáo viên (VD: colan / 1234) để tự quản lý lớp và điều phối học sinh.', 'Please sign in with a Teacher account (e.g. colan / 1234) to manage your classes.')}</p>
+        <p class="muted">${t('Vui lòng đăng nhập bằng tài khoản Giáo viên hoặc bấm "Giáo viên tạo lớp" để thiết lập lớp học riêng của Thầy/Cô.', 'Please sign in as a Teacher or click "Teacher Setup" to create your own classes.')}</p>
         <div class="actions">
           <button class="primary wide" onclick="openAccount('login')">${t('Đăng nhập Giáo viên', 'Sign in as Teacher')}</button>
-          <button class="wide" onclick="nav('home')">${t('Về trang chủ', 'Back to Home')}</button>
+          <button class="wide" onclick="openAccount('teacher-setup')">👩‍🏫 ${t('Thiết lập tài khoản Giáo viên mới', 'Set up New Teacher Account')}</button>
         </div>
       </div>`;
       return;
     }
 
-    const myClasses = getClassesForTeacher(u.username);
+    const allMyClasses = getClassesForTeacher(u.username);
+    const primaryCount = allMyClasses.filter(c => c.level === 'primary').length;
+    const secondaryCount = allMyClasses.filter(c => c.level === 'secondary').length;
+    const myClasses = getClassesForTeacher(u.username, activeTeacherLevelFilter);
+
     if (!activeTeacherClassId || !myClasses.some(c => c.id === activeTeacherClassId)) {
       activeTeacherClassId = myClasses[0]?.id || null;
     }
@@ -656,7 +1170,7 @@
     const studentSet = new Set(students.map(s => s.username));
     const allAsgs = typeof loadTargetedAssignments === 'function' ? loadTargetedAssignments() : [];
     const classAsgs = activeCls
-      ? allAsgs.filter(a => a.classId === activeCls.id || (Array.isArray(a.targetStudents) && a.targetStudents.some(un => studentSet.has(un))))
+      ? allAsgs.filter(a => a.classId === activeCls.id || (a.createdBy === u.username && Array.isArray(a.targetStudents) && a.targetStudents.some(un => studentSet.has(un))))
       : [];
     const usersMap = getLocalUsers();
 
@@ -664,9 +1178,9 @@
       <div class="card admin-header-card teacher-header-card">
         <div class="admin-title-row">
           <div>
-            <span class="eyebrow">NUMIQUICK · ${t('KHÔNG GIAN GIÁO VIÊN', 'TEACHER WORKSPACE')}</span>
+            <span class="eyebrow">NUMIQUICK · ${t('KHÔNG GIAN GIÁO VIÊN (RIÊNG BIỆT)', 'PRIVATE TEACHER WORKSPACE')}</span>
             <h1 class="admin-main-title">👩‍🏫 ${t('Lớp học của', 'Classes of')} ${esc(u.name)}</h1>
-            <p class="muted">${t('Tự điều phối học sinh lớp phụ trách, giao bài tập riêng, theo dõi tiến độ 7 ngày và xuất báo cáo.', 'Manage your enrolled students, assign targeted practice, track 7-day progress, and print reports.')}</p>
+            <p class="muted">${t('Tài khoản riêng — chỉ hiển thị và quản lý đúng các lớp cùng học sinh của Thầy/Cô.', 'Private workspace — strictly scoped to your own classes and enrolled students.')}</p>
           </div>
           <div class="admin-top-actions">
             <button type="button" class="primary admin-btn" id="tchCreateClassBtn">+ ${t('Tạo lớp mới', 'New Class')}</button>
@@ -675,37 +1189,52 @@
           </div>
         </div>
 
+        <div class="teacher-level-filters">
+          <button type="button" class="admin-grade-chip ${activeTeacherLevelFilter === 'all' ? 'active' : ''}" data-tch-lvl="all">${t('Tất cả cấp', 'All Levels')} (${allMyClasses.length})</button>
+          <button type="button" class="admin-grade-chip ${activeTeacherLevelFilter === 'primary' ? 'active' : ''}" data-tch-lvl="primary">🌱 ${t('Tiểu học (Lớp 1–5)', 'Primary (1–5)')} (${primaryCount})</button>
+          <button type="button" class="admin-grade-chip ${activeTeacherLevelFilter === 'secondary' ? 'active' : ''}" data-tch-lvl="secondary">📘 ${t('THCS (Lớp 6–9)', 'Secondary (6–9)')} (${secondaryCount})</button>
+        </div>
+
         <div class="teacher-class-tabs">
           ${myClasses.map(c => `<button type="button" class="teacher-class-tab ${c.id === activeCls?.id ? 'active' : ''}" data-tch-class="${esc(c.id)}">
-            🏫 <b>${esc(c.name)}</b> <small>(${(c.students || []).length} HS)</small>
+            🏫 <b>${esc(c.name)}</b> <span class="tch-lvl-tag">${esc(levelShortBadge(c.level))} · K${c.grade}</span> <small>(${(c.students || []).length} HS)</small>
           </button>`).join('')}
         </div>
       </div>
 
       ${!activeCls ? `<div class="card" style="text-align:center;padding:30px">
-        <h3>${t('Thầy/Cô chưa có lớp học nào', 'No classes created yet')}</h3>
-        <p class="muted">${t('Bấm "+ Tạo lớp mới" để khởi tạo lớp học đầu tiên và nhận Mã lớp mời học sinh.', 'Click "+ New Class" to create your first class and get a join code.')}</p>
-        <button type="button" class="primary" id="tchEmptyCreateBtn">+ ${t('Tạo lớp đầu tiên', 'Create First Class')}</button>
+        <h3>${activeTeacherLevelFilter === 'all' ? t('Thầy/Cô chưa có lớp học nào', 'No classes created yet') : t('Chưa có lớp nào thuộc cấp học này', 'No classes in this level yet')}</h3>
+        <p class="muted">${t('Bấm "+ Tạo lớp mới" để chọn Cấp học, Khối lớp và nhận Mã lớp đã lưu phát cho học sinh.', 'Click "+ New Class" to choose level, grade, and save a class code for students.')}</p>
+        <button type="button" class="primary" id="tchEmptyCreateBtn">+ ${t('Tạo lớp mới ngay', 'Create New Class')}</button>
       </div>` : `
       <div class="card teacher-class-banner">
         <div class="teacher-banner-info">
           <div class="teacher-banner-title">
             <h2>${esc(activeCls.name)}</h2>
+            <span class="badge-level ${activeCls.level}">${esc(levelShortBadge(activeCls.level))}</span>
             <span class="badge-grade">${t('Khối', 'Grade')} ${activeCls.grade}</span>
-            <span class="teacher-code-pill" title="${t('Mã mời học sinh vào lớp', 'Student class join code')}">${t('Mã lớp:', 'Code:')} <b>${esc(activeCls.code)}</b></span>
           </div>
-          <p class="muted" style="margin:4px 0 0;font-size:13px">${t('Gửi Mã lớp hoặc Link mời cho học sinh để các em tự tham gia lớp của Thầy/Cô.', 'Share the Class Code or Invite Link so students can join automatically.')}</p>
+          <div class="saved-code-box">
+            <div>
+              <small>${t('MÃ LỚP ĐÃ LƯU (PHÁT CHO HỌC SINH)', 'SAVED CLASS CODE (SHARE WITH STUDENTS)')}</small>
+              <strong class="saved-code-value">${esc(activeCls.code)}</strong>
+            </div>
+            <div class="saved-code-btns">
+              <button type="button" class="primary" id="tchCopyCodeBtn">📋 ${t('Copy Mã lớp', 'Copy Code')}</button>
+              <button type="button" id="tchCopyJoinBtn">🔗 ${t('Copy Link mời', 'Copy Link')}</button>
+            </div>
+          </div>
+          <p class="muted" style="margin:6px 0 0;font-size:12.5px">💡 ${t(`Học sinh mở web → chọn "Vào lớp bằng Mã" → nhập mã ${activeCls.code} và điền tên là tự động vào lớp!`, `Students open the app → tap "Join Class" → enter ${activeCls.code} + their name to join automatically!`)}</p>
         </div>
         <div class="teacher-banner-actions">
           <button type="button" class="primary" id="tchAssignHwBtn">🎯 ${t('Giao bài cho lớp', 'Assign Homework')}</button>
-          <button type="button" id="tchCopyJoinBtn">🔗 ${t('Copy Link mời HS', 'Copy Invite Link')}</button>
           <button type="button" id="tchPrintReportBtn">🖨️ ${t('In / PDF báo cáo', 'Print / PDF')}</button>
           <button type="button" id="tchExportCsvBtn">↓ ${t('Xuất CSV', 'Export CSV')}</button>
         </div>
       </div>
 
       <div class="admin-kpi-grid" style="margin-bottom:18px">
-        <div class="admin-kpi-card"><div class="kpi-body"><small>${t('Sĩ số lớp', 'Class Size')}</small><strong>${students.length}</strong><span class="kpi-subtext">${esc(activeCls.name)}</span></div></div>
+        <div class="admin-kpi-card"><div class="kpi-body"><small>${t('Sĩ số lớp', 'Class Size')}</small><strong>${students.length}</strong><span class="kpi-subtext">${esc(activeCls.name)} · ${esc(levelShortBadge(activeCls.level))}</span></div></div>
         <div class="admin-kpi-card"><div class="kpi-body"><small>${t('Độ chính xác TB', 'Avg Accuracy')}</small><strong>${avgAcc}%</strong><span class="kpi-subtext">${totalCorrect}/${totalQuestions} ${t('câu đúng', 'correct')}</span></div></div>
         <div class="admin-kpi-card"><div class="kpi-body"><small>${t('Tổng lượt luyện', 'Total Sessions')}</small><strong>${totalSessions}</strong><span class="kpi-subtext">${t('Trong lớp này', 'In this class')}</span></div></div>
         <div class="admin-kpi-card"><div class="kpi-body"><small>${t('Cần chú ý kèm', 'Needs Attention')}</small><strong>${(analytics.atRiskStudents || []).length}</strong><span class="kpi-subtext">${t('Chính xác < 75% hoặc nhiều lỗi', 'Accuracy < 75% or mistakes')}</span></div></div>
@@ -744,16 +1273,15 @@
       <div class="card admin-table-card" style="margin-bottom:18px">
         <div class="row" style="flex-wrap:wrap;margin-bottom:14px">
           <div>
-            <h3 style="margin:0">👥 ${t(`Danh sách & Điều phối học sinh (${students.length})`, `Class Roster & Coordination (${students.length})`)}</h3>
-            <p class="muted" style="margin:2px 0 0;font-size:13px">${t('Thầy/Cô tự thêm học sinh mới, nhận học sinh có sẵn, giao bài riêng hoặc chỉnh sửa thông tin.', 'Add new students, enroll existing ones, assign targeted homework, or edit student info.')}</p>
+            <h3 style="margin:0">👥 ${t(`Học sinh lớp ${activeCls.name} (${students.length})`, `Students in ${activeCls.name} (${students.length})`)}</h3>
+            <p class="muted" style="margin:2px 0 0;font-size:13px">${t('Học sinh tự vào bằng Mã lớp sẽ hiện ngay tại đây, hoặc Thầy/Cô có thể tạo tài khoản mới trực tiếp cho em.', 'Students joining with your Class Code appear here automatically, or add a new student directly.')}</p>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button type="button" class="primary" id="tchAddNewStuBtn">+ ${t('Tạo học sinh mới', 'New Student')}</button>
-            <button type="button" id="tchEnrollExistBtn">📥 ${t('Nhận HS có sẵn', 'Enroll Existing')}</button>
+            <button type="button" class="primary" id="tchAddNewStuBtn">+ ${t('Tạo học sinh mới vào lớp', 'Add New Student')}</button>
           </div>
         </div>
         ${students.length === 0
-          ? `<div class="empty" style="padding:20px;text-align:center">${t('Lớp chưa có học sinh nào. Hãy thêm học sinh mới hoặc chia sẻ Mã lớp', 'No students yet. Add students or share class code')} <b>${esc(activeCls.code)}</b>.</div>`
+          ? `<div class="empty" style="padding:20px;text-align:center">${t('Lớp chưa có học sinh nào. Hãy phát Mã lớp', 'No students yet. Share Class Code')} <b>${esc(activeCls.code)}</b> ${t('để các em nhập tên và tự vào lớp nhé!', 'so students can enter their name and join automatically!')}</div>`
           : `<div class="admin-table-responsive">
               <table class="admin-table">
                 <thead>
@@ -799,7 +1327,7 @@
         <div class="adm-hw-head">
           <div>
             <h3>📚 ${t(`Bài tập đã giao cho ${activeCls.name} (${classAsgs.length})`, `Assignments for ${activeCls.name} (${classAsgs.length})`)}</h3>
-            <p class="muted" style="margin:2px 0 0;font-size:13px">${t('Theo dõi trạng thái nộp bài theo từng học sinh trong lớp.', 'Track per-student completion status.')}</p>
+            <p class="muted" style="margin:2px 0 0;font-size:13px">${t('Theo dõi trạng thái nộp bài của riêng học sinh trong lớp này.', 'Track completion status for students in this class.')}</p>
           </div>
           <button type="button" class="primary" id="tchAssignHwBtn2">+ ${t('Giao bài mới', 'New Assignment')}</button>
         </div>
@@ -842,6 +1370,12 @@
     $('#tchSignOutBtn')?.addEventListener('click', () => {
       if (confirm(t('Thầy/Cô có chắc muốn đăng xuất?', 'Are you sure you want to sign out?'))) localSignOut();
     });
+    $$('[data-tch-lvl]').forEach(btn => {
+      btn.onclick = () => {
+        activeTeacherLevelFilter = btn.dataset.tchLvl;
+        renderTeacherWorkspace();
+      };
+    });
     $$('[data-tch-class]').forEach(btn => {
       btn.onclick = () => {
         activeTeacherClassId = btn.dataset.tchClass;
@@ -853,10 +1387,18 @@
       $('#tchAssignHwBtn')?.addEventListener('click', () => openTeacherAssignModal(activeCls, []));
       $('#tchAssignHwBtn2')?.addEventListener('click', () => openTeacherAssignModal(activeCls, []));
       $('#tchAddNewStuBtn')?.addEventListener('click', () => openTeacherCreateStudentModal(activeCls));
-      $('#tchEnrollExistBtn')?.addEventListener('click', () => openEnrollExistingModal(activeCls));
       $('#tchPrintReportBtn')?.addEventListener('click', () => openClassPrintReport(activeCls, students));
       $('#tchExportCsvBtn')?.addEventListener('click', () => {
         if (typeof adminExportCSV === 'function') adminExportCSV(students);
+      });
+      $('#tchCopyCodeBtn')?.addEventListener('click', () => {
+        if (navigator.clipboard?.writeText) {
+          navigator.clipboard.writeText(activeCls.code)
+            .then(() => toast(t(`Đã copy Mã lớp "${activeCls.code}"! Gửi mã này cho học sinh nhé.`, `Copied Class Code "${activeCls.code}"!`)))
+            .catch(() => modal(`<h3>📋 ${t('Mã lớp học', 'Class Code')}</h3><input readonly value="${esc(activeCls.code)}" style="width:100%;padding:10px;font-size:20px;font-weight:800;text-align:center" onclick="this.select()">`));
+        } else {
+          modal(`<h3>📋 ${t('Mã lớp học', 'Class Code')}</h3><input readonly value="${esc(activeCls.code)}" style="width:100%;padding:10px;font-size:20px;font-weight:800;text-align:center" onclick="this.select()">`);
+        }
       });
       $('#tchCopyJoinBtn')?.addEventListener('click', () => {
         const url = buildClassJoinLink(activeCls);
@@ -874,12 +1416,16 @@
       });
       $$('[data-tch-detail]').forEach(btn => {
         btn.onclick = () => {
-          if (typeof adminViewDetailModal === 'function') adminViewDetailModal(btn.dataset.tchDetail);
+          const uname = btn.dataset.tchDetail;
+          if (!canTeacherManageStudent(u.username, uname)) return;
+          if (typeof adminViewDetailModal === 'function') adminViewDetailModal(uname);
         };
       });
       $$('[data-tch-edit]').forEach(btn => {
         btn.onclick = () => {
-          if (typeof editStudentProfileModal === 'function') editStudentProfileModal(btn.dataset.tchEdit);
+          const uname = btn.dataset.tchEdit;
+          if (!canTeacherManageStudent(u.username, uname)) return;
+          if (typeof editStudentProfileModal === 'function') editStudentProfileModal(uname);
         };
       });
       $$('[data-tch-remove]').forEach(btn => {
@@ -893,8 +1439,10 @@
       });
       $$('[data-tch-remedial]').forEach(btn => {
         btn.onclick = async () => {
+          const uname = btn.dataset.tchRemedial;
+          if (!canTeacherManageStudent(u.username, uname)) return;
           try {
-            const res = await assignRemedialForStudent(btn.dataset.tchRemedial);
+            const res = await assignRemedialForStudent(uname);
             const allAsg = loadTargetedAssignments();
             const saved = allAsg.find(a => a.id === res.assignment.id);
             if (saved) {
@@ -938,7 +1486,7 @@
   // ---------------- Admin Dashboard: Manage Teachers & Classes ----------------
   function openAdminCreateTeacherModal() {
     modal(`<h2>👩‍🏫 ${t('Tạo tài khoản Thầy/Cô & Lớp học', 'Create Teacher Account & Class')}</h2>
-    <p class="muted" style="margin:4px 0 12px;font-size:13px">${t('Thầy/Cô đăng nhập bằng tài khoản này sẽ chỉ quản lý và điều phối riêng học sinh trong lớp của mình.', 'This teacher will log into a dedicated workspace managing only their own classes and students.')}</p>
+    <p class="muted" style="margin:4px 0 12px;font-size:13px">${t('Thầy/Cô đăng nhập bằng tài khoản này sẽ chỉ quản lý và điều phối riêng học sinh trong lớp của mình.', 'This teacher will log into a private workspace managing only their own classes and students.')}</p>
     <form id="adminCreateTeacherForm" style="display:grid;gap:10px">
       <label>${t('Họ tên Thầy/Cô:', 'Teacher Name:')}
         <input name="name" required maxlength="40" placeholder="${t('VD: Thầy Hùng / Cô Mai', 'e.g. Ms. Mai')}">
@@ -951,20 +1499,40 @@
           <input name="password" required minlength="4" maxlength="20" value="1234" autocomplete="off">
         </label>
       </div>
-      <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:10px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <label>${t('Cấp học:', 'School Level:')}
+          <select name="level" id="admTchLevel">
+            <option value="primary">${t('Tiểu học (Lớp 1–5)', 'Primary (Gr 1–5)')}</option>
+            <option value="secondary">${t('THCS (Lớp 6–9)', 'Secondary (Gr 6–9)')}</option>
+          </select>
+        </label>
+        <label>${t('Khối lớp:', 'Grade:')}
+          <select name="grade" id="admTchGrade">${[1, 2, 3, 4, 5].map(g => `<option value="${g}" ${g === 4 ? 'selected' : ''}>${t('Lớp', 'Grade')} ${g}</option>`).join('')}</select>
+        </label>
+      </div>
+      <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:10px">
         <label>${t('Tên lớp phụ trách:', 'Class Name:')}
           <input name="className" required maxlength="40" placeholder="${t('VD: Lớp 5A', 'e.g. Grade 5A')}">
         </label>
-        <label>${t('Khối lớp:', 'Grade:')}
-          <select name="grade">${[1,2,3,4,5,6,7,8,9].map(g => `<option value="${g}" ${g === 4 ? 'selected' : ''}>${t('Lớp', 'Grade')} ${g}</option>`).join('')}</select>
+        <label>${t('Mã lớp (để trống để tự sinh):', 'Code (optional):')}
+          <input name="code" maxlength="10" placeholder="Auto" style="text-transform:uppercase">
         </label>
       </div>
       <p id="admNewTchErr" class="danger" style="margin:2px 0;font-weight:700"></p>
       <div class="actions">
-        <button type="submit" class="primary">${t('Tạo Giáo viên & Lớp', 'Create Teacher & Class')}</button>
+        <button type="submit" class="primary">${t('Tạo Giáo viên & Lưu mã lớp', 'Create Teacher & Save Code')}</button>
         <button type="button" onclick="$('#modal').close()">${t('Hủy', 'Cancel')}</button>
       </div>
     </form>`);
+
+    const levelSel = $('#admTchLevel');
+    const gradeSel = $('#admTchGrade');
+    if (levelSel && gradeSel) {
+      levelSel.onchange = () => {
+        const list = gradesForLevel(levelSel.value);
+        gradeSel.innerHTML = list.map(g => `<option value="${g}">${t('Lớp', 'Grade')} ${g}</option>`).join('');
+      };
+    }
 
     const form = $('#adminCreateTeacherForm');
     if (form) {
@@ -977,8 +1545,10 @@
             name: fd.get('name'),
             username: fd.get('username'),
             password: fd.get('password'),
+            level: fd.get('level'),
+            grade: fd.get('grade'),
             className: fd.get('className'),
-            grade: fd.get('grade')
+            code: fd.get('code')
           });
           $('#modal').close();
           toast(t(`Đã tạo ${teacher.name} (@${teacher.username}) & ${cls.name} (Mã: ${cls.code})!`, `Created ${teacher.name} & ${cls.name}!`));
@@ -1005,7 +1575,7 @@
         <div class="adm-hw-head">
           <div>
             <h3>🏫 ${t(`Quản lý Thầy/Cô & Lớp học (${classes.length} lớp · ${teachers.length} GV)`, `Teachers & Classes (${classes.length} classes · ${teachers.length} teachers)`)}</h3>
-            <p class="muted" style="margin:2px 0 0;font-size:13px">${t('Phân lớp cho từng Thầy/Cô để mỗi giáo viên tự quản lý học sinh và giao bài cho lớp mình.', 'Assign classes to teachers so each teacher coordinates their own students independently.')}</p>
+            <p class="muted" style="margin:2px 0 0;font-size:13px">${t('Phân lớp theo Cấp học (Tiểu học / THCS) cho từng Thầy/Cô và lưu sẵn Mã lớp cho học sinh tự vào.', 'Organize classes by school level for each teacher with saved join codes.')}</p>
           </div>
           <button type="button" class="primary" id="admCreateTeacherBtn">+ ${t('Tạo Thầy/Cô & Lớp', 'Add Teacher & Class')}</button>
         </div>
@@ -1014,8 +1584,8 @@
           : `<div class="teacher-admin-grid">${classes.map(c => `<div class="teacher-admin-item">
               <div class="teacher-admin-top">
                 <div>
-                  <b>🏫 ${esc(c.name)}</b> <span class="badge-grade">${t('Lớp', 'Gr')} ${c.grade}</span>
-                  <div class="muted" style="font-size:12.5px;margin-top:2px">👩‍🏫 ${esc(c.teacherName)} (@${esc(c.teacherUsername)}) · ${t('Mã lớp:', 'Code:')} <b>${esc(c.code)}</b></div>
+                  <b>🏫 ${esc(c.name)}</b> <span class="badge-level ${c.level}">${esc(levelShortBadge(c.level))}</span> <span class="badge-grade">${t('Khối', 'Gr')} ${c.grade}</span>
+                  <div class="muted" style="font-size:12.5px;margin-top:3px">👩‍🏫 ${esc(c.teacherName)} (@${esc(c.teacherUsername)}) · ${t('Mã lớp:', 'Code:')} <b>${esc(c.code)}</b></div>
                 </div>
                 <span class="adm-target-pill is-done">${(c.students || []).length} ${t('học sinh', 'students')}</span>
               </div>
@@ -1034,7 +1604,7 @@
       $$('[data-adm-enroll-cls]').forEach(btn => {
         btn.onclick = () => {
           const cls = loadClasses().find(c => c.id === btn.dataset.admEnrollCls);
-          if (cls) openEnrollExistingModal(cls);
+          if (cls) openAdminEnrollStudentsModal(cls);
         };
       });
       $$('[data-adm-del-cls]').forEach(btn => {
@@ -1083,10 +1653,10 @@
       <h3>🏫 ${t('Lớp học của em', 'My Classroom')}</h3>
       ${myClasses.length
         ? `<div class="student-enrolled-list">${myClasses.map(c => `<div class="student-enrolled-item">
-            <div><b>${esc(c.name)}</b> <small>(${t('Khối', 'Gr')} ${c.grade})</small><div class="muted" style="font-size:12px">👩‍🏫 ${esc(c.teacherName)} · ${t('Mã:', 'Code:')} ${esc(c.code)}</div></div>
+            <div><b>${esc(c.name)}</b> <small>(${esc(levelShortBadge(c.level))} · ${t('Khối', 'Gr')} ${c.grade})</small><div class="muted" style="font-size:12px">👩‍🏫 ${esc(c.teacherName)} · ${t('Mã lớp:', 'Code:')} <b>${esc(c.code)}</b></div></div>
             <span class="adm-target-pill is-done">✓ ${t('Đang học', 'Enrolled')}</span>
           </div>`).join('')}</div>`
-        : `<p class="muted" style="margin:4px 0 10px;font-size:13px">${t('Em chưa tham gia lớp nào. Nhập mã lớp do Thầy/Cô gửi để nhận bài tập trực tiếp nhé!', 'Not in a class yet. Enter your teacher’s class code to receive homework!')}</p>`}
+        : `<p class="muted" style="margin:4px 0 10px;font-size:13px">${t('Em chưa tham gia lớp nào. Nhập mã lớp do Thầy/Cô phát để vào lớp ngay nhé!', 'Not in a class yet. Enter your teacher’s class code to join!')}</p>`}
       <form id="studentJoinClassForm" class="join-class-row">
         <input name="code" maxlength="10" placeholder="${t('Nhập mã lớp (VD: 4ANUMI)', 'Class code (e.g. 4ANUMI)')}" style="text-transform:uppercase">
         <button type="submit" class="primary">${t('Vào lớp', 'Join')}</button>
@@ -1118,6 +1688,10 @@
   const navBeforeTeacher = typeof nav === 'function' ? nav : null;
   if (navBeforeTeacher) {
     nav = function (dest) {
+      if (dest === 'account' && typeof currentAuthUser === 'function' && !currentAuthUser()) {
+        openAccount(lastAuthMode || 'login');
+        return;
+      }
       if (dest === 'teacher') {
         renderTeacherWorkspace();
         return;
@@ -1195,23 +1769,37 @@
       body.is-teacher-mode #moreSheet,
       body.is-teacher-mode #moreSheetBackdrop { display: none !important; }
       body.is-teacher-mode header .brand { margin-right: auto; }
+      .auth-tabs-v2{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin:14px 0 16px}
+      @media(min-width:640px){.auth-tabs-v2{grid-template-columns:repeat(4,1fr)}}
+      .auth-tabs-v2 .auth-tab{font-size:12.5px;padding:9px 8px;min-height:42px;white-space:nowrap}
+      .join-code-preview{margin:8px 0 4px;padding:10px 12px;border-radius:12px;font-size:13px;line-height:1.45}
+      .join-code-preview.is-valid{background:#e8f8ee;border:1.5px solid #96d8ad;color:#185532}
+      .join-code-preview.is-invalid{background:#fff4e6;border:1.5px solid #f0c27b;color:#7a4b0b}
+      .saved-codes-hint{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:6px 0 10px;font-size:12px;color:#5a7262}
+      .saved-code-pill{min-height:28px;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:800;background:#eef6ec;border:1px solid #c9dec4;color:#27523a;cursor:pointer}
+      .saved-code-pill:hover{background:#dff0dc}
+      .teacher-level-filters{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
       .adm-bar-chart{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;align-items:end;height:140px;padding-top:12px}
       .adm-bar-col{display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
       .adm-bar-val{font-size:11px;font-weight:800;color:#2e5b41;min-height:14px}
       .adm-bar-track{width:100%;max-width:30px;height:86px;border-radius:8px;background:#edf5ec;display:flex;align-items:flex-end;overflow:hidden}
       .adm-bar-fill{width:100%;border-radius:8px;background:linear-gradient(180deg,#3f8f6b,#2b6a50);transition:height .25s ease}
       .adm-bar-col small{font-size:11px;color:#5a7262;white-space:nowrap}
-      body.dark-mode .adm-bar-val{color:#b9e8cd}
-      body.dark-mode .adm-bar-track{background:#1c2d23}
-      body.dark-mode .adm-bar-col small{color:#9ab6a5}
-      .teacher-class-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+      .teacher-class-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
       .teacher-class-tab{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;min-height:40px;border-radius:12px;border:1.5px solid #d5e4cc;background:#f7fbf4;color:#274833;font-size:13.5px;cursor:pointer}
-      .teacher-class-tab.active{background:#2d6a51;border-color:#1f4f3c;color:#fff;box-shadow:0 3px 10px rgba(45,106,81,.22)}
-      .teacher-class-tab.active small{color:#d5f2e3}
-      .teacher-class-banner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;padding:18px 20px;margin-bottom:18px;border:2px solid #cfe3c8;background:linear-gradient(135deg,#f4fbf5,#fffdf5)}
+      .teacher-class-tab.active,.teacher-class-tab.active:hover{background:#2d6a51!important;border-color:#1f4f3c!important;color:#fff!important;box-shadow:0 3px 10px rgba(45,106,81,.22)}
+      .teacher-class-tab.active small,.teacher-class-tab.active .tch-lvl-tag{color:#d9f5e6;background:rgba(255,255,255,.16)}
+      .tch-lvl-tag{font-size:11px;font-weight:800;padding:2px 7px;border-radius:999px;background:#e5f2e4;color:#2b593d}
+      .badge-level{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:800}
+      .badge-level.primary{background:#e7f6ea;color:#1e623a;border:1px solid #b8dfc3}
+      .badge-level.secondary{background:#e8f0fe;color:#1e4d8f;border:1px solid #bdd4f8}
+      .teacher-class-banner{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px;padding:18px 20px;margin-bottom:18px;border:2px solid #cfe3c8;background:linear-gradient(135deg,#f4fbf5,#fffdf5)}
       .teacher-banner-title{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
       .teacher-banner-title h2{margin:0;font-size:22px}
-      .teacher-code-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;background:#fff4d6;border:1px solid #ecc97a;color:#6e4b08;font-size:12.5px}
+      .saved-code-box{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:10px;padding:11px 14px;border-radius:14px;background:#fff9e8;border:1.5px dashed #e0b857}
+      .saved-code-box small{display:block;font-size:10.5px;font-weight:800;letter-spacing:.6px;color:#7a5610}
+      .saved-code-value{display:block;font-size:24px;font-weight:900;letter-spacing:2.5px;color:#4f3504;line-height:1.2}
+      .saved-code-btns{display:flex;gap:8px;flex-wrap:wrap}
       .teacher-banner-actions{display:flex;gap:8px;flex-wrap:wrap}
       .teacher-admin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px;margin-top:12px}
       .teacher-admin-item{padding:14px;border-radius:14px;border:1.5px solid #dce8d6;background:#fbfdf9;display:grid;gap:10px}
@@ -1227,10 +1815,21 @@
       .cls-report-kpis>div{padding:10px;border-radius:12px;background:#f4f9f3;border:1px solid #d9e7d6;text-align:center}
       .cls-report-kpis small{display:block;font-size:11.5px;color:#58705e}
       .cls-report-kpis strong{font-size:22px;color:#234e37}
+      body.dark-mode .adm-bar-val{color:#b9e8cd}
+      body.dark-mode .adm-bar-track{background:#1c2d23}
+      body.dark-mode .adm-bar-col small{color:#9ab6a5}
+      body.dark-mode .join-code-preview.is-valid{background:#153423;border-color:#2f6b47;color:#c8f4d9}
+      body.dark-mode .join-code-preview.is-invalid{background:#352512;border-color:#785322;color:#f7d59c}
+      body.dark-mode .saved-code-pill{background:#1a2e23;border-color:#2e4e3d;color:#cde8d8}
+      body.dark-mode .saved-code-box{background:#2d2514;border-color:#6b5422}
+      body.dark-mode .saved-code-box small{color:#e7c878}
+      body.dark-mode .saved-code-value{color:#fff0c2}
       body.dark-mode .teacher-class-tab{background:#18271f;border-color:#2d4a3a;color:#d6ebe0}
       body.dark-mode .teacher-class-tab.active{background:#2d6a51;border-color:#4ba880;color:#fff}
+      body.dark-mode .tch-lvl-tag{background:#22382c;color:#bee6cf}
+      body.dark-mode .badge-level.primary{background:#183625;color:#b2ebd0;border-color:#2f6346}
+      body.dark-mode .badge-level.secondary{background:#192c47;color:#b4d2ff;border-color:#325280}
       body.dark-mode .teacher-class-banner{background:linear-gradient(135deg,#18281f,#20271e);border-color:#2f4c3c}
-      body.dark-mode .teacher-code-pill{background:#342a15;border-color:#6e5624;color:#f7d88b}
       body.dark-mode .teacher-admin-item,body.dark-mode .student-enrolled-item,body.dark-mode .cls-report-kpis>div{background:#17251d;border-color:#2b4637}
       body.dark-mode .student-class-pill{background:#193024;border-color:#315943;color:#bfead2}
       body.dark-mode .cls-report-kpis strong{color:#daf2e4}
@@ -1240,11 +1839,16 @@
 
   // Export APIs
   const exportsMap = {
+    levelOfGrade,
+    levelLabel,
+    gradesForLevel,
     loadClasses,
     saveClasses,
+    findClassByCode,
     getTeachersList,
     getClassesForTeacher,
     getClassesForStudent,
+    canTeacherManageStudent,
     getStudentsForTeacher,
     createTeacherWithClass,
     createClassForTeacher,
@@ -1252,7 +1856,9 @@
     addStudentToClass,
     removeStudentFromClass,
     joinClassByCode,
+    studentQuickJoinByCode,
     buildClassJoinLink,
+    parseIncomingJoinHash,
     checkIncomingClassJoinHash,
     renderTeacherWorkspace,
     isCurrentUserTeacher
@@ -1261,6 +1867,10 @@
   if (typeof global !== 'undefined') Object.assign(global, exportsMap);
 
   ensureDemoTeacherAndClass();
+  // If we are currently on the unauthenticated login gate, upgrade tabs immediately
+  if (typeof view !== 'undefined' && view === 'account' && typeof currentAuthUser === 'function' && !currentAuthUser()) {
+    injectExtraAuthTabs('login');
+  }
   if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
     window.addEventListener('hashchange', checkIncomingClassJoinHash);
     setTimeout(checkIncomingClassJoinHash, 120);

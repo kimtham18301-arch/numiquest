@@ -398,7 +398,7 @@ function renderProfile(){
   const currentPwd=uUser.password||'';
   const isAdmin=u.role==='admin'||u.username==='admin';
   const isTeacher=u.role==='teacher';
-  const otherUsers=Object.values(allLocalUsers).filter(x=>x.username!==u.username&&(isAdmin||(x.role!=='admin'&&x.username!=='admin'&&x.role!=='teacher')));
+  const otherUsers=isTeacher?[]:Object.values(allLocalUsers).filter(x=>x.username!==u.username&&(isAdmin||(x.role!=='admin'&&x.username!=='admin'&&x.role!=='teacher')));
 
   const badgesList=[
     {id:'first_step',icon:'🌱',titleVi:'Khởi đầu tự tin',titleEn:'Confident Start',descVi:'Hoàn thành bài luyện tập đầu tiên',descEn:'Complete your first practice session',unlocked:totalSessions>=1},

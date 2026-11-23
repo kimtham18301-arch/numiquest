@@ -596,3 +596,56 @@ test('teacher classrooms, code join, teacher workspace isolation, and class back
   assert.equal(ctx.restoreFullSystemBackup(backup), true);
   assert.equal(ctx.loadClasses().some(c => c.id === created.cls.id), true);
 });
+
+test('teacher self-setup by level/grade, saved code student quick-join, strict teacher isolation, and share link import work', async () => {
+  const ctx = loadAppContext();
+
+  // Teacher sets up their own account + secondary class with custom saved code
+  const setupRes = await ctx.createTeacherWithClass({
+    name: 'Thầy Nam',
+    username: 'thaynam',
+    password: '4321',
+    level: 'secondary',
+    grade: 7,
+    className: 'Lớp 7B',
+    code: '7BNAM',
+    autoSignIn: true
+  });
+  assert.equal(setupRes.cls.level, 'secondary');
+  assert.equal(setupRes.cls.grade, 7);
+  assert.equal(setupRes.cls.code, '7BNAM');
+  assert.equal(ctx.isCurrentUserTeacher(), true);
+  assert.equal(ctx.view, 'teacher');
+  assert.equal(ctx.getClassesForTeacher('thaynam', 'secondary').length, 1);
+  assert.equal(ctx.getClassesForTeacher('thaynam', 'primary').length, 0);
+
+  // Build invite link with encoded metadata and test cross-device import
+  const inviteUrl = ctx.buildClassJoinLink(setupRes.cls);
+  assert.ok(inviteUrl.includes('#join=7BNAM&cls='));
+
+  // Student joins using ONLY class code + name -> auto-enrolled at grade 7
+  await ctx.localSignOut();
+  const joinRes = await ctx.studentQuickJoinByCode({
+    code: '7bnam',
+    name: 'Nguyễn Minh Anh',
+    pin: '1234',
+    avatar: 'fox'
+  });
+  assert.equal(joinRes.ok, true);
+  assert.equal(joinRes.cls.code, '7BNAM');
+  assert.equal(ctx.currentAuthUser().grade, 7);
+  assert.equal(ctx.getClassesForStudent(joinRes.username).some(c => c.code === '7BNAM'), true);
+
+  // Strict teacher isolation: Thầy Nam manages Minh Anh, Cô Lan does NOT
+  assert.equal(ctx.canTeacherManageStudent('thaynam', joinRes.username), true);
+  assert.equal(ctx.canTeacherManageStudent('colan', joinRes.username), false);
+  assert.equal(ctx.getStudentsForTeacher('colan').some(s => s.username === joinRes.username), false);
+
+  // Cross-device hash import restores class code if missing locally
+  ctx.deleteClassById(setupRes.cls.id);
+  assert.equal(ctx.findClassByCode('7BNAM'), null);
+  const parsedCode = ctx.parseIncomingJoinHash(inviteUrl.slice(inviteUrl.indexOf('#')));
+  assert.equal(parsedCode, '7BNAM');
+  const imported = ctx.findClassByCode('7BNAM');
+  assert.ok(imported && imported.name === 'Lớp 7B' && imported.level === 'secondary' && imported.grade === 7);
+});
