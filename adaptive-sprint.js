@@ -380,7 +380,8 @@
     const host = $('.home-v2') || $('.simple-home');
     if (!host || host.querySelector('.midterm-hub')) return;
 
-    const quests = getDailyQuests();
+    const showDailyQuests = Boolean(typeof NUMI_FEATURE_FLAGS !== 'undefined' && NUMI_FEATURE_FLAGS.dailyQuests);
+    const quests = showDailyQuests ? getDailyQuests() : [];
     const hub = document.createElement('section');
     hub.className = 'midterm-hub';
     const questIcons = { q_warm: '🌅', q_acc: '🎯', q_sprint: '⚡' };
@@ -393,7 +394,7 @@
         </div>
         <button type="button" class="cls-3d-btn" id="startSprint60Btn">🚀 ${t('Chơi ngay', 'Sprint')} →</button>
       </div>
-      <div class="daily-quests-box">
+      ${showDailyQuests ? `<div class="daily-quests-box">
         <h3>✨ ${t('Nhiệm vụ hôm nay', 'Daily Quests')}</h3>
         <div class="daily-quests-list">
           ${quests.map(q => `<div class="dq-item ${q.done ? 'is-done' : ''}">
@@ -409,7 +410,7 @@
                 : `<span class="dq-reward">+${q.xp} XP</span>`}
           </div>`).join('')}
         </div>
-      </div>`;
+      </div>` : ''}`;
 
     const anchor = host.querySelector('.home-v2-links') || host.querySelector('.home-v2-local');
     if (anchor) anchor.before(hub);

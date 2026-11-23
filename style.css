@@ -2335,6 +2335,15 @@ select::picker-icon {
     grid-template-columns: 1.75fr 1fr !important;
   }
 }
+body.numi-booting #app {
+  opacity: 0;
+  visibility: hidden;
+}
+@media (min-width: 701px) {
+  .home-v2-links:has(> button:nth-child(3):last-child) {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
 body.dark-mode select,
 body.dark-mode .admin-select,
 body.dark-mode .advanced-picks select,
