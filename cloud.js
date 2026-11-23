@@ -398,14 +398,11 @@ function renderProfile(){
   const currentPwd=uUser.password||'';
   const isAdmin=u.role==='admin'||u.username==='admin';
   const isTeacher=u.role==='teacher';
-  const otherUsers=isTeacher?[]:Object.values(allLocalUsers).filter(x=>x.username!==u.username&&(isAdmin||(x.role!=='admin'&&x.username!=='admin'&&x.role!=='teacher')));
 
   const badgesList=[
     {id:'first_step',icon:'🌱',titleVi:'Khởi đầu tự tin',titleEn:'Confident Start',descVi:'Hoàn thành bài luyện tập đầu tiên',descEn:'Complete your first practice session',unlocked:totalSessions>=1},
     {id:'streak_3',icon:'🔥',titleVi:'Chiến thần kiên trì',titleEn:'Streak Master',descVi:'Học liên tục 3 ngày giữ lửa',descEn:'Keep a 3-day daily streak',unlocked:streak.count>=3},
-    {id:'pearl_20',icon:'🧋',titleVi:'Tín đồ trà sữa',titleEn:'Boba Lover',descVi:'Thu thập từ 20 viên trân châu',descEn:'Collect 20+ pearls in your cup',unlocked:tea.pearls>=20},
     {id:'fast_speed',icon:'⚡',titleVi:'Phản xạ thần tốc',titleEn:'Fast Reflexes',descVi:'Tốc độ trung bình dưới 5s/câu',descEn:'Average speed under 5s/question',unlocked:totalSessions>=1&&parseFloat(avgSpeed)>0&&parseFloat(avgSpeed)<=5.0},
-    {id:'cup_champ',icon:'🏆',titleVi:'Vua trà sữa',titleEn:'Milk Tea Master',descVi:'Hoàn thành ly trà sữa đầu tiên',descEn:'Complete your first cup of milk tea',unlocked:typeof teaTotalCups==='function'&&teaTotalCups()>=1},
     {id:'garden_bloom',icon:'🌼',titleVi:'Bác sĩ vườn hoa',titleEn:'Flower Healer',descVi:'Sửa sạch hết câu sai trong Vườn hoa',descEn:'Clear all pending mistakes in Garden',unlocked:totalSessions>=1&&state.mistakes.length===0}
   ];
 
@@ -451,7 +448,7 @@ function renderProfile(){
         <div class="card profile-password-card">
           <div class="profile-pwd-header">
             <h3>${t('Mật khẩu & Mã PIN của em','My Password & PIN')}</h3>
-            <p class="muted">${t('Dùng để đăng nhập hoặc đổi tài khoản nhanh khi có nhiều bạn cùng dùng máy.','Use this PIN/Password to sign in or switch profiles on this device.')}</p>
+            <p class="muted">${t('Dùng để đăng nhập và bảo vệ tiến độ học tập của em.','Use this PIN/Password to sign in and protect your learning progress.')}</p>
           </div>
 
           <div class="current-pwd-box">
@@ -514,14 +511,6 @@ function renderProfile(){
           </div>
         </div>
 
-        ${otherUsers.length?`<div class="card profile-family-card">
-          <h3>${t('Chuyển sang tài khoản bé khác trong nhà','Switch to another child profile')}</h3>
-          <p class="muted">${t('Mỗi bé có bảng điểm, cấp độ và chuỗi ngày riêng biệt.','Each child has their own progress, level, and daily streak.')}</p>
-          <div class="family-chips">
-            ${otherUsers.map(uOther=>`<button type="button" class="family-chip" data-switch-user="${esc(uOther.username)}"><span class="family-chip-avatar">${(typeof numiAnimalOriginal==='function'?numiAnimalOriginal:animal)(uOther.avatar||'bunny')}</span><span class="family-chip-name">${esc(uOther.name)} (${uOther.grade?(lang==='vi'?'Lớp '+uOther.grade:'Grade '+uOther.grade):'Lớp 1'})</span></button>`).join('')}
-          </div>
-        </div>`:''}
-
         <div class="profile-bottom-actions card profile-actions-card">
           ${isAdmin ? `
             <button class="primary wide" onclick="nav('admin')">${t('Trung tâm Quản trị Học sinh','Student Admin Center')} →</button>
@@ -529,9 +518,8 @@ function renderProfile(){
             <button class="primary wide" onclick="nav('teacher')">🏫 ${t('Quay lại Lớp học của tôi','Back to My Classroom')} →</button>
           ` : `
             <button class="primary wide" onclick="nav('setup')">${t('Vào luyện tập ngay','Start practicing now')} →</button>
-            <button class="wide" onclick="openAccount('signup')" style="margin-top:8px">${t('Tạo thêm tài khoản bé khác','Add another child profile')}</button>
           `}
-          <button id="profileSignOutBtn" class="danger wide" style="margin-top:14px">${t('Đăng xuất tài khoản','Sign out')}</button>
+          <button id="profileSignOutBtn" class="danger wide" style="margin-top:12px">${t('Đăng xuất tài khoản','Sign out')}</button>
         </div>
       </div>
 
@@ -547,26 +535,8 @@ function renderProfile(){
             <div class="stat-info"><small>${t('Chuỗi ngày','Daily Streak')}</small><strong>${streak.count} ${t('ngày','days')}</strong></div>
           </div>
           <div class="profile-stat-box card">
-            <div class="stat-info"><small>${t('Trân châu','Pearls')}</small><strong>${tea.pearls} ${t('viên','pearls')}</strong></div>
+            <div class="stat-info"><small>${t('Chính xác','Accuracy')}</small><strong>${accuracy}%</strong></div>
           </div>
-        </div>
-
-        <div class="card profile-tea-card">
-          <div class="tea-card-header">
-            <span class="tea-cup-icon">${typeof teaIcon==='function'?teaIcon(tea.size):''}</span>
-            <div>
-              <h3>${t('Mục tiêu Trà Sữa Trân Châu','Milk Tea Boba Goal')} · Size ${tea.size}</h3>
-              <p class="muted">${t('Mỗi câu đúng tích lũy 1 viên trân châu cho ly trà sữa ngọt ngào!','Every correct answer adds 1 chewy boba pearl!')}</p>
-            </div>
-          </div>
-          <div class="tea-progress-wrap">
-            <div class="tea-progress-label">
-              <span><b>${Math.min(goal,tea.pearls)}</b> / ${goal} ${t('viên trân châu','pearls')}</span>
-              <span>${Math.round((Math.min(goal,tea.pearls)/goal)*100)}%</span>
-            </div>
-            <progress class="tea-progress-bar" max="${goal}" value="${Math.min(goal,tea.pearls)}"></progress>
-          </div>
-          <button class="primary wide" onclick="nav('atlas')">${t('Vào quán trà sữa & Nhận thưởng','View Milk Tea Shop & Level Up')} →</button>
         </div>
 
         <div class="card profile-perf-card">
@@ -582,7 +552,7 @@ function renderProfile(){
 
         <div class="card profile-badges-card">
           <div class="badges-header">
-            <h3>${t('Bộ sưu tập Huy hiệu & Danh hiệu','Badges & Milestone Honors')}</h3>
+            <h3>${t('Huy hiệu học tập','Learning Badges')}</h3>
             <span class="badges-count">${badgesList.filter(b=>b.unlocked).length}/${badgesList.length} ${t('đã đạt','unlocked')}</span>
           </div>
           <div class="badges-grid">
