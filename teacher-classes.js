@@ -517,11 +517,15 @@
   }
 
   function renderAuthTabBar(activeMode) {
+    const icKey = '<svg class="auth-tab-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>';
+    const icJoin = '<svg class="auth-tab-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>';
+    const icTeacher = '<svg class="auth-tab-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>';
+    const icSelf = '<svg class="auth-tab-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>';
     return `<div class="auth-tabs auth-tabs-v2" role="tablist">
-      <button type="button" class="auth-tab ${activeMode === 'login' ? 'active' : ''}" id="tabLogin">🔑 ${t('Đăng nhập', 'Sign in')}</button>
-      <button type="button" class="auth-tab ${activeMode === 'join-class' ? 'active' : ''}" id="tabJoinClass">🎒 ${t('Vào lớp bằng Mã', 'Join Class')}</button>
-      <button type="button" class="auth-tab ${activeMode === 'teacher-setup' ? 'active' : ''}" id="tabTeacherSetup">👩‍🏫 ${t('Giáo viên tạo lớp', 'Teacher Setup')}</button>
-      <button type="button" class="auth-tab ${activeMode === 'signup' ? 'active' : ''}" id="tabSignup">✨ ${t('Tạo TK tự học', 'Self-study')}</button>
+      <button type="button" class="auth-tab ${activeMode === 'login' ? 'active' : ''}" id="tabLogin" role="tab" aria-selected="${activeMode === 'login'}">${icKey}<span>${t('Đăng nhập', 'Sign in')}</span></button>
+      <button type="button" class="auth-tab ${activeMode === 'join-class' ? 'active' : ''}" id="tabJoinClass" role="tab" aria-selected="${activeMode === 'join-class'}">${icJoin}<span>${t('Vào lớp bằng Mã', 'Join by Code')}</span></button>
+      <button type="button" class="auth-tab ${activeMode === 'teacher-setup' ? 'active' : ''}" id="tabTeacherSetup" role="tab" aria-selected="${activeMode === 'teacher-setup'}">${icTeacher}<span>${t('Giáo viên tạo lớp', 'Teacher Setup')}</span></button>
+      <button type="button" class="auth-tab ${activeMode === 'signup' ? 'active' : ''}" id="tabSignup" role="tab" aria-selected="${activeMode === 'signup'}">${icSelf}<span>${t('Tạo TK tự học', 'Self-study')}</span></button>
     </div>`;
   }
 
@@ -538,16 +542,6 @@
       oldTabs.outerHTML = renderAuthTabBar(activeMode);
       bindAuthTabBar();
     }
-    // Add clear role badges to quick-select chips
-    const users = getLocalUsers();
-    $$('[data-quick-user]').forEach(chip => {
-      const uname = chip.dataset.quickUser;
-      const uObj = users[uname];
-      if (!uObj) return;
-      const prefix = uObj.role === 'admin' || uname === 'admin' ? '🛡️ ' : uObj.role === 'teacher' ? '👩‍🏫 ' : '🎒 ';
-      const sp = chip.querySelector('span');
-      if (sp && !sp.textContent.startsWith(prefix)) sp.textContent = prefix + uObj.name;
-    });
   }
 
   function renderStudentJoinByCodeGate() {
@@ -560,24 +554,22 @@
     let preCode = '';
     try { preCode = localStorage.getItem(PENDING_JOIN_KEY) || ''; } catch {}
     let chosenAvatar = 'bunny';
-    const savedClasses = loadClasses();
 
     $('#app').innerHTML = `<div class="narrow card account-card auth-gate-card">
       <div class="intro-animal">${animal('bunny')}</div>
       <span class="eyebrow">NUMIQUICK · ${t('HỌC SINH VÀO LỚP', 'STUDENT CLASS JOIN')}</span>
-      <h1>🎒 ${t('Nhập Mã lớp để vào học', 'Enter Class Code to Join')}</h1>
-      <p class="muted">${t('Chỉ cần nhập Mã lớp Thầy/Cô phát và điền tên của em — hệ thống sẽ tự động đưa em vào đúng lớp học!', 'Just enter your teacher’s Class Code and your name — you will be placed in the right class automatically!')}</p>
+      <h1>${t('Nhập Mã lớp để vào học', 'Enter Class Code to Join')}</h1>
+      <p class="muted">${t('Nhập Mã lớp Thầy/Cô phát và điền tên của em để tự động vào đúng lớp học.', 'Enter your teacher’s Class Code and your name to join automatically.')}</p>
       ${renderAuthTabBar('join-class')}
       <form id="quickJoinClassForm" class="auth-form">
         <label>${t('Mã lớp Thầy/Cô phát', 'Class Code from Teacher')}
-          <input name="code" id="quickJoinCodeInput" maxlength="10" required autocomplete="off" value="${esc(preCode)}" placeholder="${t('Ví dụ: 4ANUMI', 'e.g. 4ANUMI')}" style="text-transform:uppercase;font-weight:800;letter-spacing:1.5px;font-size:17px">
+          <input name="code" id="quickJoinCodeInput" maxlength="10" required autocomplete="off" value="${esc(preCode)}" placeholder="${t('Nhập mã lớp (VD: 4ANUMI)', 'Enter class code (e.g. 4ANUMI)')}" style="text-transform:uppercase;font-weight:800;letter-spacing:1.5px;font-size:16px">
         </label>
         <div id="quickJoinPreview" class="join-code-preview" hidden></div>
-        ${savedClasses.length ? `<div class="saved-codes-hint"><span>${t('Mã lớp đã lưu trên máy:', 'Saved class codes:')}</span> ${savedClasses.slice(0, 6).map(c => `<button type="button" class="saved-code-pill" data-fill-code="${esc(c.code)}">${esc(c.code)} · ${esc(c.name)}</button>`).join('')}</div>` : ''}
         <label>${t('Họ và tên của em', 'Your Full Name')}
           <input name="name" maxlength="30" required placeholder="${t('Ví dụ: Nguyễn Minh Anh', 'e.g. Minh Anh')}">
         </label>
-        <label>${t('Mã PIN 4 số của em (dùng để vào lại lần sau)', 'Your 4-digit PIN (for signing back in)')}
+        <label>${t('Mã PIN 4 số của em (dùng để đăng nhập lại lần sau)', 'Your 4-digit PIN (for signing back in)')}
           <input name="pin" minlength="4" maxlength="20" value="1234" required placeholder="1234">
         </label>
         <div class="settings-hint" style="margin-top:8px">${t('Chọn bạn thú đồng hành:', 'Choose your study buddy:')}</div>
@@ -585,7 +577,7 @@
           ${[['bunny', 'Thỏ'], ['panda', 'Gấu'], ['fox', 'Cáo'], ['lion', 'Sư tử']].map(([k, label]) => `<button type="button" data-join-avatar="${k}" class="${k === chosenAvatar ? 'chosen' : ''}">${(typeof numiAnimalOriginal === 'function' ? numiAnimalOriginal : animal)(k)}<span>${label}</span></button>`).join('')}
         </div>
         <p id="quickJoinErr" class="danger" role="status" style="margin:10px 0;font-weight:700"></p>
-        <button type="submit" class="primary wide" id="quickJoinSubmitBtn">🎒 ${t('Vào lớp & Bắt đầu học ngay →', 'Join Class & Start Learning →')}</button>
+        <button type="submit" class="primary wide" id="quickJoinSubmitBtn">${t('Vào lớp & Bắt đầu học ngay →', 'Join Class & Start Learning →')}</button>
       </form>
     </div>`;
 
@@ -665,8 +657,8 @@
     $('#app').innerHTML = `<div class="narrow card account-card auth-gate-card">
       <div class="intro-animal">${animal('panda')}</div>
       <span class="eyebrow">NUMIQUICK · ${t('THIẾT LẬP TÀI KHOẢN GIÁO VIÊN', 'TEACHER ACCOUNT SETUP')}</span>
-      <h1>👩‍🏫 ${t('Tạo tài khoản Giáo viên & Lớp học', 'Set Up Teacher Account & Class')}</h1>
-      <p class="muted">${t('Tài khoản riêng giúp Thầy/Cô chỉ quản lý đúng các lớp và học sinh của mình, tạo mã lớp phân loại theo cấp học và giao bài tập.', 'Dedicated teacher workspace scoped strictly to your own classes and students, with saved class codes by school level.')}</p>
+      <h1>${t('Tạo tài khoản Giáo viên & Lớp học', 'Set Up Teacher Account & Class')}</h1>
+      <p class="muted">${t('Tài khoản riêng giúp Thầy/Cô tự tạo lớp theo cấp học, lưu mã lớp và chỉ quản lý học sinh của mình.', 'Dedicated teacher workspace scoped strictly to your own classes and students.')}</p>
       ${renderAuthTabBar('teacher-setup')}
       <form id="teacherSelfSetupForm" class="auth-form">
         <label>${t('Họ và tên Thầy/Cô', 'Teacher Name')}
@@ -1769,9 +1761,30 @@
       body.is-teacher-mode #moreSheet,
       body.is-teacher-mode #moreSheetBackdrop { display: none !important; }
       body.is-teacher-mode header .brand { margin-right: auto; }
-      .auth-tabs-v2{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin:14px 0 16px}
-      @media(min-width:640px){.auth-tabs-v2{grid-template-columns:repeat(4,1fr)}}
-      .auth-tabs-v2 .auth-tab{font-size:12.5px;padding:9px 8px;min-height:42px;white-space:nowrap}
+      .auth-gate-card{max-width:520px!important;width:100%;margin:18px auto 32px!important;padding:30px 26px 28px!important;border-radius:26px!important;border:1.5px solid #dce8d6!important;box-shadow:0 16px 40px rgba(30,68,47,.08)!important;overflow:hidden}
+      .auth-gate-card .intro-animal{width:76px;height:76px;margin:0 auto 14px;border-radius:50%;background:linear-gradient(145deg,#eef7ea,#fff6e6);border:2px solid #d7e8cf;display:flex;align-items:center;justify-content:center;padding:8px}
+      .auth-gate-card .intro-animal .animal{width:56px;height:56px}
+      .auth-gate-card .eyebrow{display:block!important;text-align:center!important;margin:0 auto 6px!important;letter-spacing:1.2px}
+      .auth-gate-card h1{margin:4px 0 8px!important;font-size:26px!important;line-height:1.25!important;text-align:center!important}
+      .auth-gate-card>p.muted{margin:0 auto 18px!important;max-width:420px;font-size:13.5px!important;line-height:1.55!important;text-align:center!important}
+      .auth-tabs-v2{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;margin:0 0 20px!important;padding:6px!important;border-radius:16px!important;background:#f2f7ef!important;border:1px solid #e1ecdc!important;width:100%!important;box-sizing:border-box!important}
+      .auth-tabs-v2 .auth-tab{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;width:100%!important;min-width:0!important;padding:10px 10px!important;min-height:44px!important;border-radius:12px!important;border:1.5px solid transparent!important;background:transparent!important;color:#4a6553!important;font-size:13px!important;font-weight:800!important;line-height:1.2!important;text-align:center!important;white-space:normal!important;transition:all .16s ease!important}
+      .auth-tabs-v2 .auth-tab:hover:not(.active){background:rgba(255,255,255,.65)!important;color:#244b36!important}
+      .auth-tabs-v2 .auth-tab.active{background:#ffffff!important;border-color:#b8d7c0!important;color:var(--green,#2d6a51)!important;box-shadow:0 3px 10px rgba(34,74,52,.10)!important}
+      .auth-tab-ic{width:16px;height:16px;flex-shrink:0}
+      .auth-gate-card .auth-form{margin-top:4px!important;display:grid;gap:14px}
+      .auth-gate-card .auth-form label{margin:0!important;font-size:13.5px;font-weight:700;color:#2b4736}
+      .auth-gate-card .auth-form input,.auth-gate-card .auth-form select{margin-top:6px!important;border-radius:13px!important;border:1.5px solid #d5e2ce!important;padding:12px 14px!important;font-size:14.5px!important;transition:border-color .15s ease,box-shadow .15s ease!important}
+      .auth-gate-card .auth-form input:focus,.auth-gate-card .auth-form select:focus{border-color:#34765c!important;box-shadow:0 0 0 3px rgba(52,118,92,.14)!important;outline:none!important}
+      .auth-gate-card #authSubmitBtn,.auth-gate-card #quickJoinSubmitBtn,.auth-gate-card #teacherSetupBtn{min-height:50px!important;border-radius:14px!important;font-size:15.5px!important;margin-top:4px!important;box-shadow:0 6px 16px rgba(52,118,92,.22)}
+      body.dark-mode .auth-gate-card{border-color:#2a4536!important;box-shadow:0 16px 40px rgba(0,0,0,.35)!important}
+      body.dark-mode .auth-gate-card .intro-animal{background:linear-gradient(145deg,#1d3327,#27291c);border-color:#335442}
+      body.dark-mode .auth-tabs-v2{background:#121e18!important;border-color:#263f31!important}
+      body.dark-mode .auth-tabs-v2 .auth-tab{color:#9eb9a8!important}
+      body.dark-mode .auth-tabs-v2 .auth-tab:hover:not(.active){background:rgba(255,255,255,.05)!important;color:#dff3e7!important}
+      body.dark-mode .auth-tabs-v2 .auth-tab.active{background:#1d3327!important;border-color:#3d7a5b!important;color:#dff7ea!important}
+      body.dark-mode .auth-gate-card .auth-form label{color:#cfe6d8}
+      @media(max-width:480px){.auth-gate-card{padding:22px 16px!important}.auth-tabs-v2 .auth-tab{font-size:12px!important;padding:9px 6px!important;gap:5px!important}}
       .join-code-preview{margin:8px 0 4px;padding:10px 12px;border-radius:12px;font-size:13px;line-height:1.45}
       .join-code-preview.is-valid{background:#e8f8ee;border:1.5px solid #96d8ad;color:#185532}
       .join-code-preview.is-invalid{background:#fff4e6;border:1.5px solid #f0c27b;color:#7a4b0b}

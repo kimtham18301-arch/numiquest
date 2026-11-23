@@ -753,9 +753,9 @@ function openAccount(mode='login'){
     return;
   }
 
-  // Not logged in -> Render login/register gate wall
-  const signup=mode==='signup',localUsers=getLocalUsers(),usersList=Object.values(localUsers);
-  const userChips=usersList.length&&!signup?`<div class="quick-users"><div class="quick-users-label">${t('Tài khoản đã có trên máy này (chạm để chọn):','Accounts on this device (tap to select):')}</div><div class="quick-user-chips">${usersList.map(u=>`<button type="button" class="quick-user-chip" data-quick-user="${esc(u.username)}"><span>${esc(u.name)}</span></button>`).join('')}</div></div>`:'';
+  // Not logged in -> Render clean private login/register gate wall (never expose other users' accounts publicly)
+  const signup=mode==='signup';
+  const userChips='';
   let chosenAvatar='bunny';
   const companionPicks=signup?`<div class="settings-hint" style="margin-top:14px">${t('Chọn bạn thú đồng hành:','Choose your study buddy:')}</div><div class="buddy-choices">${[['bunny','Thỏ'],['panda','Gấu'],['fox','Cáo'],['lion','Sư tử']].map(([k,label])=>`<button type="button" data-signup-avatar="${k}" class="${k===chosenAvatar?'chosen':''}">${(typeof numiAnimalOriginal==='function'?numiAnimalOriginal:animal)(k)}<span>${label}</span></button>`).join('')}</div>`:'';
 
