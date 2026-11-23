@@ -309,7 +309,7 @@
       return true;
     }
     if (low === 'r') {
-      const speakBtn = $('#speakQuestionBtn');
+      const speakBtn = $('#speakQuizBtn') || $('#speakQuestionBtn');
       if (speakBtn) {
         e.preventDefault();
         speakBtn.click();

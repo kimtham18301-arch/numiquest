@@ -195,7 +195,7 @@
             <strong>${state.sprintBest || 0}</strong>
           </div>
         </div>
-        <div class="sprint-problem">${typeof mathMarkup === 'function' ? mathMarkup(q.q) : esc(q.q)} = ?</div>
+        <div class="sprint-problem">${typeof formatQuestionPrompt === 'function' ? formatQuestionPrompt(q.q) : (typeof mathMarkup === 'function' ? mathMarkup(q.q) : esc(q.q))}</div>
         <div class="choices sprint-choices">
           ${q.options.map((opt, idx) => `<button type="button" class="choice" data-sprint-opt="${idx}">${typeof mathMarkup === 'function' ? mathMarkup(opt) : esc(opt)}</button>`).join('')}
         </div>

@@ -546,6 +546,11 @@ test('keyboard shortcuts (1-4, S, Enter) and scratchpad toggle work in quiz', as
     });
     assert.equal(handledS, true);
     assert.equal(ctx.toggleScratchpad(false), false);
+
+    // formatQuestionPrompt never appends duplicate "= ?" when question already contains "?" or "="
+    assert.equal(ctx.formatQuestionPrompt('44 + ? = 54'), '44 + ? = 54');
+    assert.equal(ctx.formatQuestionPrompt('Lan có 5 táo, thêm 3 táo. Hỏi có mấy táo?'), 'Lan có 5 táo, thêm 3 táo. Hỏi có mấy táo?');
+    assert.equal(ctx.formatQuestionPrompt('44 + 10'), '44 + 10 = ?');
   } finally {
     ctx.stop();
   }

@@ -763,7 +763,7 @@ function adminViewDetailModal(username) {
         <div style="max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:8px">
           ${mistakes.map((m, idx) => `<div class="mistake-item-card">
             <div style="display:flex;justify-content:space-between;align-items:center">
-              <b>${idx+1}. ${typeof mathMarkup==='function'?mathMarkup(m.q):esc(m.q)} = ?</b>
+              <b>${idx+1}. ${typeof formatQuestionPrompt==='function'?formatQuestionPrompt(m.q):(typeof mathMarkup==='function'?mathMarkup(m.q):esc(m.q))}</b>
               <span class="acc-pill acc-high">${t('Đáp án:','Answer:')} <b>${esc(m.answer)}</b></span>
             </div>
             ${m.explanation ? `<div class="mistake-expl">${esc(m.explanation).replace(/\n/g,'<br>')}</div>` : ''}
