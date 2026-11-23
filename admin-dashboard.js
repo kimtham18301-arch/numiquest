@@ -672,7 +672,11 @@
       });
       $('#modal').close();
       toast(t('Đã cập nhật thông tin học sinh!', 'Student profile updated!'));
-      renderAdmin();
+      if (typeof isCurrentUserTeacher === 'function' && isCurrentUserTeacher() && typeof renderTeacherWorkspace === 'function') {
+        renderTeacherWorkspace();
+      } else {
+        renderAdmin();
+      }
     };
   }
 

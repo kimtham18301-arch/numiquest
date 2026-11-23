@@ -109,6 +109,7 @@ function loadAppContext() {
     clearTimeout,
     setInterval,
     clearInterval,
+    performance: { now: () => Date.now() },
     requestAnimationFrame() { return 0; },
     cancelAnimationFrame() {},
     encodeURIComponent,
@@ -154,7 +155,9 @@ function loadAppContext() {
     'adaptive-sprint.js',
     'pedagogy.js',
     'engagement.js',
-    'admin-dashboard.js'
+    'admin-dashboard.js',
+    'scratchpad-kbd.js',
+    'teacher-classes.js'
   ];
   for (const file of scripts) {
     const code = fs.readFileSync(path.join(rootDir, file), 'utf8');
@@ -505,4 +508,91 @@ test('setup step numbering, stats review button, footer login status, and profil
   };
   ctx.setup();
   assert.deepEqual(stepSpans.map(s => s.textContent), ['1', '2', '3', '4', '5', '6']);
+});
+
+test('keyboard shortcuts (1-4, S, Enter) and scratchpad toggle work in quiz', async () => {
+  const ctx = loadAppContext();
+  await ctx.localSignIn('minhkhoi', '1234');
+  ctx.config.inputMode = 'choices';
+  ctx.startQuiz();
+  try {
+    let clickedIdx = -1;
+    const fakeButtons = [0, 1, 2, 3].map(i => ({
+      disabled: false,
+      click() { clickedIdx = i; }
+    }));
+    const origQSA = ctx.document.querySelectorAll.bind(ctx.document);
+    ctx.document.querySelectorAll = sel => {
+      if (sel === '#quizCard [data-answer]') return fakeButtons;
+      return origQSA(sel);
+    };
+
+    let prevented = false;
+    const handledChoice = ctx.handleQuizKeydown({
+      key: '3',
+      target: { tagName: 'BODY' },
+      preventDefault() { prevented = true; }
+    });
+    assert.equal(handledChoice, true);
+    assert.equal(prevented, true);
+    assert.equal(clickedIdx, 2);
+
+    // Toggle scratchpad via S key
+    assert.equal(ctx.toggleScratchpad(false), false);
+    const handledS = ctx.handleQuizKeydown({
+      key: 's',
+      target: { tagName: 'BODY' },
+      preventDefault() {}
+    });
+    assert.equal(handledS, true);
+    assert.equal(ctx.toggleScratchpad(false), false);
+  } finally {
+    ctx.stop();
+  }
+});
+
+test('teacher classrooms, code join, teacher workspace isolation, and class backup/restore work', async () => {
+  const ctx = loadAppContext();
+  const initialClasses = ctx.loadClasses();
+  assert.ok(initialClasses.some(c => c.teacherUsername === 'colan' && c.code === '4ANUMI'));
+
+  // Teachers are excluded from admin student directory
+  await ctx.localSignIn('admin', 'admin123');
+  const adminStudents = ctx.getFilteredStudents();
+  assert.equal(adminStudents.some(s => s.role === 'teacher' || s.username === 'colan'), false);
+
+  // Admin creates a new teacher + class
+  const created = await ctx.createTeacherWithClass({
+    name: 'Thầy Hùng',
+    username: 'thayhung',
+    password: '5678',
+    className: 'Lớp 5B',
+    grade: 5
+  });
+  assert.equal(created.teacher.role, 'teacher');
+  assert.equal(created.cls.teacherUsername, 'thayhung');
+  assert.ok(created.cls.code.length >= 4);
+
+  // Student joins by class code
+  const joined = ctx.joinClassByCode(created.cls.code, 'baoan');
+  assert.equal(joined.ok, true);
+  assert.equal(joined.already, false);
+  assert.equal(ctx.getClassesForStudent('baoan').some(c => c.id === created.cls.id), true);
+
+  // Teacher signs in -> stays in teacher workspace & only sees their own enrolled students
+  await ctx.localSignIn('thayhung', '5678');
+  assert.equal(ctx.isCurrentUserTeacher(), true);
+  assert.equal(ctx.view, 'teacher');
+  const ownStudents = ctx.getStudentsForTeacher('thayhung', created.cls.id);
+  assert.deepEqual(ownStudents.map(s => s.username), ['baoan']);
+  ctx.nav('home');
+  assert.equal(ctx.view, 'teacher');
+
+  // Full backup & restore preserves classes
+  const backup = ctx.buildFullSystemBackup();
+  assert.ok(Array.isArray(backup.classes) && backup.classes.some(c => c.id === created.cls.id));
+  ctx.deleteClassById(created.cls.id);
+  assert.equal(ctx.loadClasses().some(c => c.id === created.cls.id), false);
+  assert.equal(ctx.restoreFullSystemBackup(backup), true);
+  assert.equal(ctx.loadClasses().some(c => c.id === created.cls.id), true);
 });

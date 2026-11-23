@@ -181,7 +181,7 @@ async function localSignIn(username,password){
     if(typeof window!=='undefined')window.config=config;if(typeof global!=='undefined')global.config=config;
   }
   cloudBadge();
-  nav(role==='admin'?'admin':'home');
+  nav(role==='admin'?'admin':role==='teacher'?'teacher':'home');
   toast(t('Chào mừng '+user.name+' đã trở lại!','Welcome back, '+user.name+'!'));
 }
 
@@ -244,7 +244,10 @@ function cloudBadge(){
   const adminNav=$('#navAdminBtn');
   const sheetAdmin=$('#sheetAdminItem');
   const isAdmin=Boolean(u&&(u.role==='admin'||u.username==='admin'));
+  const isTeacher=Boolean(u&&u.role==='teacher');
+  const isManager=isAdmin||isTeacher;
   document.body?.classList?.toggle('is-admin-mode',isAdmin);
+  document.body?.classList?.toggle('is-teacher-mode',isTeacher);
   if(adminNav){
     adminNav.style.display=isAdmin?'':'none';
   }
@@ -253,10 +256,10 @@ function cloudBadge(){
   }
   ['home','setup','atlas','stats'].forEach(v=>{
     const navBtn=$(`nav button[data-view="${v}"]`);
-    if(navBtn)navBtn.style.display=isAdmin?'none':'';
+    if(navBtn)navBtn.style.display=isManager?'none':'';
   });
   const sheetAtlas=$('[data-sheet-view="atlas"]');
-  if(sheetAtlas)sheetAtlas.style.display=isAdmin?'none':'';
+  if(sheetAtlas)sheetAtlas.style.display=isManager?'none':'';
   const footerLocal=$('footer .local');
   if(footerLocal){
     const viTxt=u?`Đã đăng nhập: ${u.name} · Tiến độ lưu tự động trên thiết bị`:'Lưu trên thiết bị · Đăng nhập để bảo vệ tiến độ học';
@@ -267,7 +270,7 @@ function cloudBadge(){
   }
   if(!button)return;
   if(u){
-    const shortLabel=isAdmin?t('Quản trị','Admin'):u.name;
+    const shortLabel=isAdmin?t('Quản trị','Admin'):isTeacher?u.name:u.name;
     button.innerHTML=`<b class="account-btn-label">${esc(shortLabel)}</b>`;
     button.title=u.name;
     button.classList.add('is-logged-in');
@@ -394,7 +397,8 @@ function renderProfile(){
   const uUser=allLocalUsers[u.username]||{};
   const currentPwd=uUser.password||'';
   const isAdmin=u.role==='admin'||u.username==='admin';
-  const otherUsers=Object.values(allLocalUsers).filter(x=>x.username!==u.username&&(isAdmin||(x.role!=='admin'&&x.username!=='admin')));
+  const isTeacher=u.role==='teacher';
+  const otherUsers=Object.values(allLocalUsers).filter(x=>x.username!==u.username&&(isAdmin||(x.role!=='admin'&&x.username!=='admin'&&x.role!=='teacher')));
 
   const badgesList=[
     {id:'first_step',icon:'🌱',titleVi:'Khởi đầu tự tin',titleEn:'Confident Start',descVi:'Hoàn thành bài luyện tập đầu tiên',descEn:'Complete your first practice session',unlocked:totalSessions>=1},
@@ -416,20 +420,20 @@ function renderProfile(){
       <button type="button" class="primary wide" onclick="nav('admin')">${t('Mở Trung tâm Quản trị →','Open Admin Dashboard →')}</button>
     </div>` : ''}
 
-    <div class="profile-bento-grid" ${isAdmin?'style="grid-template-columns:1fr"':''}>
+    <div class="profile-bento-grid" ${(isAdmin||isTeacher)?'style="grid-template-columns:1fr"':''}>
       <div class="profile-bento-col-left">
         <div class="card profile-header-card">
           <div class="profile-avatar-wrap">
             <div class="profile-avatar">${animal(u.avatar||buddy())}</div>
           </div>
-          <span class="eyebrow">NUMIQUICK · ${isAdmin?t('HỒ SƠ QUẢN TRỊ VIÊN','ADMINISTRATOR PROFILE'):t('HỒ SƠ HỌC SINH','STUDENT PROFILE')}</span>
+          <span class="eyebrow">NUMIQUICK · ${isAdmin?t('HỒ SƠ QUẢN TRỊ VIÊN','ADMINISTRATOR PROFILE'):isTeacher?t('HỒ SƠ GIÁO VIÊN','TEACHER PROFILE'):t('HỒ SƠ HỌC SINH','STUDENT PROFILE')}</span>
           <h1 class="profile-name">
             <span id="profileNameText">${esc(u.name)}</span>
             <button type="button" class="profile-edit-name-btn" id="editNameBtn" title="${t('Đổi tên hiển thị','Change display name')}">Sửa</button>
           </h1>
-          <p class="profile-username">@${esc(u.username)} · <span class="profile-joined">${isAdmin?t('Quản trị viên hệ thống','System Administrator'):t('Thành viên NumiQuick','NumiQuick Learner')}</span></p>
+          <p class="profile-username">@${esc(u.username)} · <span class="profile-joined">${isAdmin?t('Quản trị viên hệ thống','System Administrator'):isTeacher?t('Giáo viên phụ trách lớp','Classroom Teacher'):t('Thành viên NumiQuick','NumiQuick Learner')}</span></p>
 
-          ${isAdmin?'':`<div class="profile-field-group">
+          ${(isAdmin||isTeacher)?'':`<div class="profile-field-group">
             <label class="profile-field-label">${t('Lớp học của em:','Current Grade Level:')}</label>
             <div class="profile-grade-chips">
               ${[1,2,3,4,5,6,7,8,9].map(g=>`<button type="button" class="profile-grade-chip ${curGrade===g?'active':''}" data-set-grade="${g}">${lang==='vi'?NUMI_GRADES[g].name:NUMI_GRADES[g].enName}</button>`).join('')}
@@ -521,6 +525,8 @@ function renderProfile(){
         <div class="profile-bottom-actions card profile-actions-card">
           ${isAdmin ? `
             <button class="primary wide" onclick="nav('admin')">${t('Trung tâm Quản trị Học sinh','Student Admin Center')} →</button>
+          ` : isTeacher ? `
+            <button class="primary wide" onclick="nav('teacher')">🏫 ${t('Quay lại Lớp học của tôi','Back to My Classroom')} →</button>
           ` : `
             <button class="primary wide" onclick="nav('setup')">${t('Vào luyện tập ngay','Start practicing now')} →</button>
             <button class="wide" onclick="openAccount('signup')" style="margin-top:8px">${t('Tạo thêm tài khoản bé khác','Add another child profile')}</button>
@@ -529,7 +535,7 @@ function renderProfile(){
         </div>
       </div>
 
-      ${isAdmin ? '' : `<div class="profile-bento-col-right">
+      ${(isAdmin || isTeacher) ? '' : `<div class="profile-bento-col-right">
         <div class="profile-stats-grid">
           <div class="profile-stat-box card">
             <div class="stat-info"><small>${t('Cấp độ','Level')}</small><strong>${level()}</strong></div>
@@ -837,7 +843,7 @@ async function cloudRestore(){if(!cloudConfigured())return;let fromCallback=fals
 const accountButton=document.createElement('button');
 accountButton.id='accountButton';
 accountButton.className='account-button';
-accountButton.onclick=()=>{const u=currentAuthUser();if(u&&(u.role==='admin'||u.username==='admin')){if(typeof renderAdmin==='function')renderAdmin();return;}openAccount();};
+accountButton.onclick=()=>{const u=currentAuthUser();if(u&&(u.role==='admin'||u.username==='admin')){if(typeof renderAdmin==='function')renderAdmin();return;}if(u&&u.role==='teacher'){if(typeof renderTeacherWorkspace==='function')renderTeacherWorkspace();else renderProfile();return;}openAccount();};
 $('#lang')?.before(accountButton);
 cloudBadge();
 window.addEventListener('online',()=>{if(cloudReady)cloudQueue();else cloudRestore()});

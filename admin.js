@@ -71,7 +71,7 @@ function getStudentsSummary() {
 }
 
 function getFilteredStudents() {
-  let list = getStudentsSummary().filter(s => s.role !== 'admin' && s.username !== 'admin');
+  let list = getStudentsSummary().filter(s => s.role !== 'admin' && s.username !== 'admin' && s.role !== 'teacher');
   if (adminGradeFilter !== 'all') {
     const g = Number(adminGradeFilter);
     list = list.filter(s => s.grade === g);
@@ -127,7 +127,7 @@ function renderAdmin() {
   }
 
   const allSummary = getStudentsSummary();
-  const studentOnly = allSummary.filter(s => s.role !== 'admin');
+  const studentOnly = allSummary.filter(s => s.role !== 'admin' && s.role !== 'teacher');
   const filteredList = getFilteredStudents();
 
   const totalStudents = studentOnly.length;
@@ -876,6 +876,8 @@ if (typeof window !== 'undefined') {
   window.getFilteredStudents = getFilteredStudents;
   window.getStudentsSummary = getStudentsSummary;
   window.setAdminFilter = setAdminFilter;
+  window.adminViewDetailModal = adminViewDetailModal;
+  window.adminExportCSV = adminExportCSV;
 }
 if (typeof global !== 'undefined') {
   global.renderAdmin = renderAdmin;
@@ -884,4 +886,6 @@ if (typeof global !== 'undefined') {
   global.getFilteredStudents = getFilteredStudents;
   global.getStudentsSummary = getStudentsSummary;
   global.setAdminFilter = setAdminFilter;
+  global.adminViewDetailModal = adminViewDetailModal;
+  global.adminExportCSV = adminExportCSV;
 }
