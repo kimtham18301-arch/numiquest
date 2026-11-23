@@ -21,7 +21,7 @@
       if (day) { day.correct += Number(entry.correct) || 0; day.total += Number(entry.total) || 0; }
     });
 
-    const left = 40, right = 354, top = 24, bottom = 174;
+    const left = 38, right = 336, top = 24, bottom = 170;
     const x = i => left + (right - left) * i / 6;
     const y = percent => bottom - (bottom - top) * percent / 100;
     const grid = [0, 50, 100].map(percent => `<line class="daily-grid" x1="${left}" y1="${y(percent)}" x2="${right}" y2="${y(percent)}"/><text class="daily-y-label" x="2" y="${y(percent) + 4}">${percent}%</text>`).join('');
@@ -33,15 +33,16 @@
       started = true;
     });
     const points = days.map((day, i) => {
-      const label = day.date.toLocaleDateString(lang === 'vi' ? 'vi-VN' : 'en-US', { weekday: 'short' });
+      const label = day.date.toLocaleDateString(lang === 'vi' ? 'vi-VN' : 'en-US', { weekday: 'short' }).replace(/^Th\s+/i, 'T');
       const dateLabel = day.date.toLocaleDateString(lang === 'vi' ? 'vi-VN' : 'en-US', { day: 'numeric', month: 'numeric' });
       const labelText = `${label} ${dateLabel}`;
-      if (!day.total) return `<text class="daily-day-label" x="${x(i)}" y="204">${labelText}</text>`;
+      const tickLabel = `<text class="daily-day-label" x="${x(i)}" y="194"><tspan x="${x(i)}" dy="0">${label}</tspan><tspan x="${x(i)}" dy="13" class="daily-date-sub">${dateLabel}</tspan></text>`;
+      if (!day.total) return tickLabel;
       const percent = Math.round(day.correct / day.total * 100);
-      return `<circle class="daily-point" cx="${x(i)}" cy="${y(percent)}" r="5"><title>${labelText}: ${percent}% (${day.correct}/${day.total})</title></circle><text class="daily-day-label" x="${x(i)}" y="204">${labelText}</text>`;
+      return `<circle class="daily-point" cx="${x(i)}" cy="${y(percent)}" r="5"><title>${labelText}: ${percent}% (${day.correct}/${day.total})</title></circle>${tickLabel}`;
     }).join('');
     const any = days.some(day => day.total);
-    return `<div class="daily-chart-wrap"><svg class="daily-line-chart" viewBox="0 0 360 220" role="img" aria-label="${t('Tỷ lệ trả lời đúng trong 7 ngày gần nhất','Answer accuracy over the last 7 days')}">${grid}${path ? `<path class="daily-line" d="${path}"/>` : ''}${points}</svg>${any ? '' : `<p class="daily-chart-empty">${t('Chưa có lượt luyện trong 7 ngày qua.','No practice sessions in the last 7 days yet.')}</p>`}</div>`;
+    return `<div class="daily-chart-wrap"><svg class="daily-line-chart" viewBox="0 0 360 222" role="img" aria-label="${t('Tỷ lệ trả lời đúng trong 7 ngày gần nhất','Answer accuracy over the last 7 days')}">${grid}${path ? `<path class="daily-line" d="${path}"/>` : ''}${points}</svg>${any ? '' : `<p class="daily-chart-empty">${t('Chưa có lượt luyện trong 7 ngày qua.','No practice sessions in the last 7 days yet.')}</p>`}</div>`;
   }
 
   stats = function () {

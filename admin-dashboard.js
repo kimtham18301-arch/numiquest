@@ -563,11 +563,11 @@
         </label>
       </div>
 
-      <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:8px;align-items:end">
+      <div style="display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:8px;align-items:end">
         <div>
-          <span style="display:block;font-size:12px;font-weight:700;margin-bottom:4px">${t('Phép tính:', 'Operations:')}</span>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            ${[['+', '+'], ['-', '−'], ['*', '×'], ['/', '÷']].map(([v, lbl]) => `<label style="display:inline-flex;align-items:center;gap:4px;font-size:14px"><input type="checkbox" name="ops" value="${v}" ${v === '+' || v === '-' ? 'checked' : ''}>${lbl}</label>`).join('')}
+          <span style="display:block;font-size:12px;font-weight:700;margin-bottom:6px">${t('Phép tính:', 'Operations:')}</span>
+          <div class="adm-ops-row" style="display:flex;gap:10px;flex-wrap:nowrap;align-items:center;min-height:47px">
+            ${[['+', '+'], ['-', '−'], ['*', '×'], ['/', '÷']].map(([v, lbl]) => `<label style="display:inline-flex;align-items:center;gap:4px;font-size:14px;white-space:nowrap;cursor:pointer"><input type="checkbox" name="ops" value="${v}" style="width:16px;height:16px;min-height:16px;margin:0" ${v === '+' || v === '-' ? 'checked' : ''}>${lbl}</label>`).join('')}
           </div>
         </div>
         <label>${t('Số câu:', 'Questions:')}

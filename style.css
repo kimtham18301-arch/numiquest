@@ -2232,7 +2232,7 @@ body.dark-mode .sprint-banner,body.dark-mode .daily-quests-box{box-shadow:0 5px 
 body.dark-mode .dq-item.is-done{background:#1b3124;border-color:#345e45;}
 body.dark-mode .dq-reward{background:#233128;color:#a8bfb0;}
 
-.account-button{overflow:hidden;text-overflow:ellipsis;max-width:150px;}
+.account-button{overflow:hidden;text-overflow:ellipsis;max-width:170px;flex-shrink:0;}
 .account-button b,.account-btn-label{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;}
 @media(max-width:700px){
   header{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;}
@@ -2240,7 +2240,8 @@ body.dark-mode .dq-reward{background:#233128;color:#a8bfb0;}
   .account-button{max-width:96px !important;padding:5px 8px !important;font-size:11px !important;flex-shrink:0;}
   #themeModeBtn,#lang{flex-shrink:0;}
   .level-seg-control{display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr)) !important;gap:4px !important;overflow-x:visible !important;}
-  .level-seg-btn{min-width:0 !important;padding:7px 4px !important;font-size:11.5px !important;white-space:normal !important;text-align:center !important;line-height:1.2 !important;}
+  .level-seg-btn{min-width:0 !important;padding:7px 3px !important;font-size:11px !important;white-space:normal !important;text-align:center !important;line-height:1.25 !important;flex-direction:column !important;gap:1px !important;}
+  .level-seg-btn .seg-sub{display:block;white-space:nowrap;font-size:10.5px;opacity:.92;}
 }
 body.is-admin-mode header nav,
 body.is-admin-mode #navMoreBtn,
@@ -2248,34 +2249,150 @@ body.is-admin-mode #moreSheet,
 body.is-admin-mode #moreSheetBackdrop {
   display: none !important;
 }
+body.is-admin-mode header .brand,
+body.not-logged-in header .brand {
+  margin-right: auto;
+}
 
 @media (min-width: 701px) {
   header {
     max-width: 1360px;
-    padding: 14px 20px;
-    gap: 10px;
+    padding: 12px 18px;
+    gap: 8px;
+  }
+  header .brand {
+    flex-shrink: 0;
   }
   header nav {
+    flex: 1 1 auto;
+    justify-content: center;
     min-width: 0;
+    margin: 0;
     gap: 2px;
+    overflow-x: auto;
   }
   header nav button {
-    padding: 9px 11px;
-    gap: 6px;
-    font-size: 13px;
+    padding: 8px 9px;
+    gap: 5px;
+    font-size: 12.5px;
+    flex-shrink: 0;
+  }
+  header nav button .nav-icon {
+    width: 16px;
+    height: 16px;
+  }
+  #themeModeBtn, #lang, #accountButton {
+    flex-shrink: 0;
   }
 }
 
-@media (min-width: 701px) and (max-width: 1080px) {
+@media (min-width: 701px) and (max-width: 1120px) {
+  header {
+    padding: 12px 12px;
+    gap: 6px;
+  }
   header nav button {
-    padding: 8px 8px;
+    padding: 7px 6px;
     gap: 4px;
-    font-size: 12px;
+    font-size: 11.5px;
   }
   header nav button .nav-icon {
-    width: 15px;
-    height: 15px;
+    width: 14px;
+    height: 14px;
   }
+  .account-button {
+    max-width: 120px;
+    padding: 6px 8px;
+    font-size: 11.5px;
+  }
+}
+
+/* Fix native select caret wrapping onto a second line across Setup & Admin */
+select,
+.admin-select,
+.advanced-picks select {
+  display: inline-block !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%233c5738' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 10px center !important;
+  background-size: 13px 13px !important;
+  padding: 10px 30px 10px 10px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  line-height: 1.35 !important;
+}
+select::picker-icon {
+  display: none !important;
+}
+.seg-sub {
+  white-space: nowrap;
+}
+@media (max-width: 560px) {
+  .advanced-picks .formgrid {
+    grid-template-columns: 1.75fr 1fr !important;
+  }
+}
+body.dark-mode select,
+body.dark-mode .admin-select,
+body.dark-mode .advanced-picks select,
+body.dark-mode #adminAddStudentForm select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23cde4d6' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") !important;
+}
+
+/* Fix Profile header eyebrow stacking above name instead of beside avatar */
+.profile-avatar-wrap {
+  display: flex !important;
+  margin: 0 auto 12px !important;
+}
+.profile-header-card .eyebrow {
+  display: block;
+  margin: 0 auto 6px;
+}
+
+/* Fix Admin grade chips contrast & desktop wrapping */
+.admin-grade-chip.active,
+.admin-grade-chip.active:hover,
+.admin-grade-chip.active:focus-visible {
+  background: #2b6b51 !important;
+  color: #ffffff !important;
+  border-color: #1f4f3c !important;
+}
+@media (min-width: 701px) {
+  .admin-grade-chips-scroll {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    padding-bottom: 0;
+  }
+}
+
+/* Ensure More Sheet sits cleanly above mobile bottom navigation with full bottom clearance */
+.sheet-backdrop {
+  z-index: 1190 !important;
+}
+.more-sheet {
+  z-index: 1200 !important;
+  max-height: 82dvh;
+  overflow-y: auto;
+  padding-bottom: calc(28px + env(safe-area-inset-bottom)) !important;
+}
+
+/* Prevent sticky focus ring carrying over onto next quiz answer button */
+.answer:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Prevent operator checkboxes in targeted homework modal from stranding ÷ alone */
+.adm-ops-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.adm-ops-row label {
+  white-space: nowrap;
 }
 
 .guide-bubble > div {

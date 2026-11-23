@@ -172,6 +172,9 @@
 
     function renderSprint() {
       if (view !== 'sprint60') { stopSprint(); return; }
+      if (typeof document !== 'undefined' && document.activeElement && typeof document.activeElement.blur === 'function') {
+        document.activeElement.blur();
+      }
       const q = s.current;
       $('#app').innerHTML = `<section class="narrow card sprint-card">
         <div class="sprint-hud">
@@ -456,10 +459,21 @@
     .sprint-stat strong{font-size:20px}
     .sprint-stat strong.is-urgent{color:#d93025}
     .sprint-problem{font-size:34px;font-weight:800;text-align:center;margin:14px 0 18px}
+    .sprint-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0 6px}
+    .sprint-choices .choice{width:100%;min-height:72px;padding:14px 12px;border-radius:16px;border:2px solid #d5e4cc;background:#fffefa;color:var(--ink,#244632);font-size:24px;font-weight:800;display:flex;align-items:center;justify-content:center;text-align:center;box-shadow:0 4px 0 #dde8d6;transition:transform .12s ease,background .15s ease,border-color .15s ease}
+    .sprint-choices .choice:hover:not(:disabled){background:#f2f8ee;border-color:#78a87e;transform:translateY(-1px)}
+    .sprint-choices .choice:focus{outline:none}
+    .sprint-choices .choice:focus-visible{outline:3px solid #9ab889;outline-offset:3px}
+    .sprint-choices .choice.is-correct{background:#e3f7ea!important;border-color:#2f9e5b!important;color:#175a31!important;box-shadow:0 4px 0 #a9e0bc!important}
+    .sprint-choices .choice.is-wrong{background:#fdecec!important;border-color:#e05252!important;color:#8e1e1e!important;box-shadow:0 4px 0 #f4bebe!important}
     .sprint-actions{margin-top:14px;text-align:center}
     body.dark-mode .sprint-banner{background:linear-gradient(135deg,#1f352b,#2d2b1f);border-color:#355243}
     body.dark-mode .sprint-banner small,body.dark-mode .dq-item small{color:#a8bfb0}
     body.dark-mode .daily-quests-box,body.dark-mode .dq-item,body.dark-mode .sprint-stat{background:#1c2620;border-color:#2f4036}
+    body.dark-mode .sprint-choices .choice{background:#1a2820;border-color:#324a3c;color:#e8f5ec;box-shadow:0 4px 0 #101914}
+    body.dark-mode .sprint-choices .choice:hover:not(:disabled){background:#23362b;border-color:#4da378}
+    body.dark-mode .sprint-choices .choice.is-correct{background:#173d28!important;border-color:#42b974!important;color:#c9f7da!important}
+    body.dark-mode .sprint-choices .choice.is-wrong{background:#3e1d1d!important;border-color:#e05252!important;color:#ffd2d2!important}
   `;
   document.head.append(style);
 

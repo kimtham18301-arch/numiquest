@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_NAME = 'numiquick-v2.2.0';
+const CACHE_NAME = 'numiquick-v2.2.1';
 const STATIC_ASSETS = [
   './',
   './index.html',
