@@ -52,21 +52,63 @@ function customGenerate(c){
   }
   if(selectedType!=='natural')return plainGenerate(cfg);
   if(cfg.questionStyle==='convenient'){
-    const factor=ri(2,9),pair=pick([[1,9],[2,8],[3,7],[4,6]]),a=pair[0],b=pair[1];
-    const answer=factor*10, q=`${factor} × (${a} + ${b})`;
-    const naive=factor*a+b;
-    return {id:uid(),q,answer:String(answer),options:generatedOptions(answer,[naive,factor*(a+b-1),factor*(a+b+1)]),skill:'natural:convenient',config:{...cfg,type:'natural'},explanation:`${factor} × ${a} + ${factor} × ${b} = ${factor} × (${a} + ${b}) = ${factor} × 10 = ${answer}`};
+    const g=cfg.grade?Number(cfg.grade):null;
+    // Grade 1-2 (MOET GDPT 2018): No brackets / no distributive multiplication — use regrouping to make 10 or round tens!
+    if(g===1||g===2){
+      const pair=pick([[1,9],[2,8],[3,7],[4,6]]);
+      if(g===1){
+        const a=pair[0],b=pair[1],mid=ri(1,9),answer=10+mid;
+        const q=`${a} + ${mid} + ${b}`;
+        return {id:uid(),q,answer:String(answer),options:generatedOptions(answer,[answer+1,answer-1,answer+10]),skill:'natural:convenient',config:{...cfg,type:'natural'},explanation:`${t('Gộp cặp tròn 10 trước:','Group a pair making 10 first:')}\n(${a} + ${b}) + ${mid} = 10 + ${mid} = ${answer}`};
+      }
+      const tensA=ri(1,3)*10,tensB=ri(1,3)*10,a=tensA+pair[0],b=tensB+pair[1],mid=ri(5,25);
+      const roundSum=a+b,answer=roundSum+mid;
+      const q=`${a} + ${mid} + ${b}`;
+      return {id:uid(),q,answer:String(answer),options:generatedOptions(answer,[answer+10,answer-10,answer+1]),skill:'natural:convenient',config:{...cfg,type:'natural'},explanation:`${t('Gộp hai số có hàng đơn vị cộng thành 10:','Group two numbers whose ones make 10:')}\n(${a} + ${b}) + ${mid} = ${roundSum} + ${mid} = ${answer}`};
+    }
+    // Grade 3: Addition regrouping or 2 × n × 5 = 10 × n
+    if(g===3){
+      if(Math.random()<0.5){
+        const mid=ri(3,9),answer=10*mid,q=`2 × ${mid} × 5`;
+        return {id:uid(),q,answer:String(answer),options:generatedOptions(answer,[answer+10,answer-10,2*mid+5]),skill:'natural:convenient',config:{...cfg,type:'natural'},explanation:`${t('Nhóm 2 × 5 = 10 trước:','Group 2 × 5 = 10 first:')}\n(2 × 5) × ${mid} = 10 × ${mid} = ${answer}`};
+      }
+      const pair=pick([[1,9],[2,8],[3,7],[4,6]]),a=ri(1,4)*10+pair[0],b=ri(1,4)*10+pair[1],mid=ri(12,35);
+      const roundSum=a+b,answer=roundSum+mid,q=`${a} + ${mid} + ${b}`;
+      return {id:uid(),q,answer:String(answer),options:generatedOptions(answer,[answer+10,answer-10,answer+2]),skill:'natural:convenient',config:{...cfg,type:'natural'},explanation:`${t('Gộp thành số tròn chục trước:','Group into a round ten first:')}\n(${a} + ${b}) + ${mid} = ${roundSum} + ${mid} = ${answer}`};
+    }
+    // Grade 4+ / Custom: Real distributive property (a × b + a × c) OR associative (25 × n × 4) OR round-100 sum
+    const variant=pick(['dist','assocMul','assocAdd']);
+    if(variant==='dist'){
+      const factor=ri(2,9),pair=pick([[1,9],[2,8],[3,7],[4,6]]),a=pair[0],b=pair[1];
+      const answer=factor*10,q=`${factor} × ${a} + ${factor} × ${b}`;
+      return {id:uid(),q,answer:String(answer),options:generatedOptions(answer,[factor*(a+b-1),factor*(a+b+1),factor*a+b]),skill:'natural:convenient',config:{...cfg,type:'natural'},explanation:`${t('Áp dụng tính chất phân phối (nhóm thừa số chung):','Apply distributive property (factor out common multiplier):')}\n${factor} × ${a} + ${factor} × ${b} = ${factor} × (${a} + ${b}) = ${factor} × 10 = ${answer}`};
+    }
+    if(variant==='assocMul'){
+      const mid=ri(3,9),answer=100*mid,q=`25 × ${mid} × 4`;
+      return {id:uid(),q,answer:String(answer),options:generatedOptions(answer,[answer+100,answer-100,25*mid+4]),skill:'natural:convenient',config:{...cfg,type:'natural'},explanation:`${t('Áp dụng tính chất giao hoán & kết hợp:','Apply commutative & associative properties:')}\n(25 × 4) × ${mid} = 100 × ${mid} = ${answer}`};
+    }
+    const a=ri(12,78),b=100-a,mid=ri(15,65),answer=100+mid,q=`${a} + ${mid} + ${b}`;
+    return {id:uid(),q,answer:String(answer),options:generatedOptions(answer,[answer+10,answer-10,answer+100]),skill:'natural:convenient',config:{...cfg,type:'natural'},explanation:`${t('Gộp cặp tròn 100 trước:','Group a pair making 100 first:')}\n(${a} + ${b}) + ${mid} = 100 + ${mid} = ${answer}`};
   }
   if(cfg.questionStyle==='expression'){
-    const ops=(cfg.ops||['+','-','*']).filter(op=>['+','-','*','/'].includes(op));
-    const values=Array.from({length:terms},rand), chosen=Array.from({length:terms-1},()=>pick(ops.length?ops:['+','-','*']));
+    const g=cfg.grade?Number(cfg.grade):null;
+    // Grade 1 (MOET GDPT 2018): Two-step +/- from left to right, NO brackets, NO ×/÷, small numbers
+    if(g===1){
+      const a=ri(5,15),b=ri(1,9),c=ri(1,Math.min(9,a+b-1));
+      const op2=pick(['+','-']);
+      const ans=op2==='+'?a+b+c:a+b-c;
+      const q=`${a} + ${b} ${op2==='-'?'−':'+'} ${c}`;
+      return {id:uid(),q,answer:String(ans),options:generatedOptions(ans,[ans+1,ans-1,ans+2]),skill:'natural:expression',config:{...cfg,type:'natural'},explanation:`${t('Tính lần lượt từ trái sang phải:','Calculate from left to right:')}\n${a} + ${b} = ${a+b} → ${a+b} ${op2==='-'?'−':'+'} ${c} = ${ans}`};
+    }
+    const ops=(cfg.ops||['+','-','*']).filter(op=>g===2?['+','-'].includes(op):['+','-','*','/'].includes(op));
+    const values=Array.from({length:terms},()=>g===2?ri(2,20):g===3?ri(2,15):rand()), chosen=Array.from({length:terms-1},()=>pick(ops.length?ops:['+','-']));
     // For division, choose divisible values so young learners see exact answers.
     for(let i=0;i<chosen.length;i++)if(chosen[i]==='/'){const maxDiv=Math.min(hi,Math.floor(values[i]/2));const divisors=[];for(let d=2;d<=maxDiv;d++)if(values[i]%d===0)divisors.push(d);if(divisors.length)values[i+1]=pick(divisors);else{const alternatives=ops.filter(x=>x!=='/');if(alternatives.length)chosen[i]=pick(alternatives);else{values[i]=Math.max(4,values[i]);values[i+1]=2;chosen[i]='/'}}}
     const glyph={'*':'×','/':'÷','+':'+','-':'−'};
     let raw=String(values[0]);for(let i=0;i<chosen.length;i++)raw+=` ${glyph[chosen[i]]} ${values[i+1]}`;
     let readable=raw;
-    // Use one clear grouping around the first operation; avoid redundant nested symbols.
-    if(terms>=3){let grouped=`(${values[0]} ${glyph[chosen[0]]} ${values[1]})`;for(let i=1;i<chosen.length;i++)grouped+=` ${glyph[chosen[i]]} ${values[i+1]}`;readable=grouped}
+    // Brackets are taught starting from Grade 3 in MOET GDPT 2018 (never Grade 1-2)
+    if(terms>=3&&(!g||g>=3)){let grouped=`(${values[0]} ${glyph[chosen[0]]} ${values[1]})`;for(let i=1;i<chosen.length;i++)grouped+=` ${glyph[chosen[i]]} ${values[i+1]}`;readable=grouped}
     const js=readable.replaceAll('−','-').replaceAll('×','*').replaceAll('÷','/').replaceAll('[','(').replaceAll(']',')').replaceAll('{','(').replaceAll('}',')');
     let value;
     try {
@@ -77,7 +119,8 @@ function customGenerate(c){
     if(!Number.isFinite(value)||value<0||Math.abs(value)>999999)return plainGenerate(cfg);
     const answer=typeof fmt==='function'?fmt(value):String(Math.round(value*1000)/1000);
     const left=values.reduce((acc,n,i)=>i?acc+({'+':n,'-':-n,'*':n,'/':1}[chosen[i-1]]||n):n,0);
-    return {id:uid(),q:readable,answer,options:generatedOptions(answer,[Math.round(left),value+1,value-1]),skill:'natural:expression',config:{...cfg,type:'natural'},explanation:`${readable} = ${answer}`};
+    const stepHint=readable.includes('(')?`${t('Tính trong ngoặc trước, sau đó thực hiện nhân/chia trước cộng/trừ:','Calculate inside brackets first, then multiply/divide before add/subtract:')}\n${readable} = ${answer}`:`${readable} = ${answer}`;
+    return {id:uid(),q:readable,answer,options:generatedOptions(answer,[Math.round(left),value+1,value-1]),skill:'natural:expression',config:{...cfg,type:'natural'},explanation:stepHint};
   }
   return plainGenerate(cfg);
 }

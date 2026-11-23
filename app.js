@@ -161,15 +161,15 @@ const totalPieces=()=>Object.values(state.pieces).reduce((a,b)=>a+b,0);const lev
 function getStreak(){if(!state.streak||typeof state.streak!=='object')state.streak={count:0,lastDate:''};return state.streak}
 function updateStreak(){const s=getStreak(),today=new Date().toISOString().slice(0,10);if(s.lastDate===today)return s.count;if(s.lastDate){const last=new Date(s.lastDate+'T00:00:00'),cur=new Date(today+'T00:00:00');const diff=Math.round((cur-last)/86400000);if(diff===1)s.count++;else if(diff>1)s.count=1}else s.count=1;s.lastDate=today;save();return s.count}
 const NUMI_GRADES={
-  1:{id:1,name:'Lớp 1',enName:'Grade 1',icon:'',descVi:'Cộng trừ trong phạm vi 10, 20 & 100 (không số âm, không phân số)',descEn:'Addition & subtraction within 100 (single/double digits)',ops:['+','-'],types:['natural'],digits:[1],seconds:20,count:10,inputMode:'choices'},
-  2:{id:2,name:'Lớp 2',enName:'Grade 2',icon:'',descVi:'Cộng trừ có nhớ đến 100, bảng nhân & chia 2 và 5',descEn:'2-digit add/subtract up to 100, multiplication & division by 2 and 5',ops:['+','-','*','/'],types:['natural'],digits:[1,2],seconds:15,count:10,inputMode:'choices'},
-  3:{id:3,name:'Lớp 3',enName:'Grade 3',icon:'',descVi:'Bảng nhân chia 2–9, cộng trừ đến 1.000, phép chia có dư',descEn:'Times tables 2–9, add/sub within 1,000, division with remainders',ops:['+','-','*','/'],types:['natural','remainder'],digits:[1,2,3],seconds:15,count:10,inputMode:'choices'},
-  4:{id:4,name:'Lớp 4',enName:'Grade 4',icon:'',descVi:'Phép tính nhiều chữ số, cộng trừ nhân chia phân số',descEn:'Multi-digit arithmetic, fractions (+, −, ×, ÷)',ops:['+','-','*','/'],types:['natural','fraction'],digits:[2,3,4],seconds:20,count:15,inputMode:'choices'},
-  5:{id:5,name:'Lớp 5',enName:'Grade 5',icon:'',descVi:'Số thập phân, hỗn số, phân số và tính nhanh biểu thức',descEn:'Decimals, fractions, mixed quick calculations',ops:['+','-','*','/'],types:['natural','fraction','decimal'],digits:[2,3],seconds:20,count:15,inputMode:'choices'},
-  6:{id:6,name:'Lớp 6',enName:'Grade 6',icon:'',descVi:'Tập hợp số nguyên Z (cộng trừ nhân chia số âm), quy tắc dấu ngoặc, phân số & số thập phân',descEn:'Integers Z (signed operations), sign rules, fractions and decimals',ops:['+','-','*','/'],types:['negative','fraction','decimal','natural'],digits:[1,2,3],seconds:15,count:15,inputMode:'choices'},
-  7:{id:7,name:'Lớp 7',enName:'Grade 7',icon:'',descVi:'Tập hợp số hữu tỉ Q, số thập phân âm, quy tắc chuyển vế và tính nhanh biểu thức hợp lý',descEn:'Rational numbers Q, negative decimals, sign rules and quick mental algebra',ops:['+','-','*','/'],types:['negative','fraction','decimal'],digits:[2,3],seconds:15,count:15,inputMode:'choices'},
-  8:{id:8,name:'Lớp 8',enName:'Grade 8',icon:'',descVi:'Phân thức đại số, tính nhanh biểu thức số hữu tỉ, luỹ thừa và số âm nhiều chữ số',descEn:'Algebraic fractions, fast rational calculations, powers and multi-digit integers',ops:['+','-','*','/'],types:['negative','fraction','decimal'],digits:[2,3,4],seconds:15,count:20,inputMode:'choices'},
-  9:{id:9,name:'Lớp 9',enName:'Grade 9',icon:'',descVi:'Căn bậc hai số học, phân số số âm, tính nhẩm thần tốc chuẩn bị thi vào lớp 10',descEn:'Arithmetic square roots, signed fractions/decimals and fast high-school prep',ops:['+','-','*','/'],types:['negative','fraction','decimal'],digits:[2,3,4],seconds:12,count:20,inputMode:'choices'}
+  1:{id:1,name:'Lớp 1',enName:'Grade 1',icon:'',descVi:'Chuẩn GDPT 2018: Cộng, trừ KHÔNG NHỚ trong phạm vi 10, 20 và 100; số tròn chục (chưa có nhân, chia, số âm)',descEn:'MOET Grade 1: No-carry/no-borrow addition & subtraction within 10, 20, 100',ops:['+','-'],types:['natural'],digits:[1,2],seconds:20,count:10,inputMode:'choices'},
+  2:{id:2,name:'Lớp 2',enName:'Grade 2',icon:'',descVi:'Chuẩn GDPT 2018: Cộng, trừ CÓ NHỚ trong phạm vi 100 & 1.000; bảng nhân 2, 5 và bảng chia 2, 5',descEn:'MOET Grade 2: Carry/borrow add & sub within 100 & 1,000; ×2, ×5, ÷2, ÷5 tables',ops:['+','-','*','/'],types:['natural'],digits:[1,2],seconds:18,count:10,inputMode:'choices'},
+  3:{id:3,name:'Lớp 3',enName:'Grade 3',icon:'',descVi:'Chuẩn GDPT 2018: Bảng nhân chia 2–9, nhân/chia số 2–3 chữ số với 1 chữ số, chia có dư & biểu thức có ngoặc',descEn:'MOET Grade 3: Times tables 2–9, 2–3 digit ×/÷ 1 digit, division with remainders & brackets',ops:['+','-','*','/'],types:['natural','remainder'],digits:[1,2,3],seconds:16,count:10,inputMode:'choices'},
+  4:{id:4,name:'Lớp 4',enName:'Grade 4',icon:'',descVi:'Chuẩn GDPT 2018: Số tự nhiên nhiều chữ số, tính bằng cách thuận tiện nhất (phân phối), phép tính phân số',descEn:'MOET Grade 4: Multi-digit natural numbers, distributive mental math & fractions (+, −, ×, ÷)',ops:['+','-','*','/'],types:['natural','fraction'],digits:[2,3],seconds:20,count:15,inputMode:'choices'},
+  5:{id:5,name:'Lớp 5',enName:'Grade 5',icon:'',descVi:'Chuẩn GDPT 2018: Số thập phân (+, −, ×, ÷, nhân chia 10/100), tỉ số phần trăm (%) và ôn phân số',descEn:'MOET Grade 5: Decimals (+, −, ×, ÷, ×10/100), percentages (%) & fraction review',ops:['+','-','*','/'],types:['decimal','fraction','natural'],digits:[1,2],seconds:20,count:15,inputMode:'choices'},
+  6:{id:6,name:'Lớp 6',enName:'Grade 6',icon:'',descVi:'Chuẩn GDPT 2018: Số nguyên âm Z (+, −, ×, ÷), lũy thừa số mũ tự nhiên (aⁿ), phân số & số thập phân',descEn:'MOET Grade 6: Signed integers Z, natural-exponent powers (aⁿ), signed fractions & decimals',ops:['+','-','*','/'],types:['negative','fraction','decimal','natural'],digits:[1,2],seconds:16,count:15,inputMode:'choices'},
+  7:{id:7,name:'Lớp 7',enName:'Grade 7',icon:'',descVi:'Chuẩn GDPT 2018: Số hữu tỉ Q, lũy thừa, căn bậc hai số học (√), giá trị tuyệt đối & tính giá trị biểu thức',descEn:'MOET Grade 7: Rational numbers Q, powers, square roots (√), absolute value & algebraic expressions',ops:['+','-','*','/'],types:['negative','fraction','decimal'],digits:[1,2],seconds:16,count:15,inputMode:'choices'},
+  8:{id:8,name:'Lớp 8',enName:'Grade 8',icon:'',descVi:'Chuẩn GDPT 2018: Tính nhanh bằng 7 Hằng đẳng thức đáng nhớ (a²−b², (a±b)²), đa thức & số hữu tỉ nâng cao',descEn:'MOET Grade 8: Fast identities (a²−b², (a±b)²), polynomials & advanced rational arithmetic',ops:['+','-','*','/'],types:['negative','fraction','decimal'],digits:[2,3],seconds:15,count:15,inputMode:'choices'},
+  9:{id:9,name:'Lớp 9',enName:'Grade 9',icon:'',descVi:'Chuẩn GDPT 2018: Biến đổi căn bậc hai, căn bậc ba (∛), nhẩm nghiệm phương trình bậc 1–2 ôn thi vào 10',descEn:'MOET Grade 9: Square & cube roots (√, ∛), equation roots & grade-10 entrance exam speed prep',ops:['+','-','*','/'],types:['negative','fraction','decimal'],digits:[2,3],seconds:14,count:20,inputMode:'choices'}
 };
 if(typeof window!=='undefined')window.NUMI_GRADES=NUMI_GRADES;
 if(typeof global!=='undefined')global.NUMI_GRADES=NUMI_GRADES;
@@ -1004,36 +1004,139 @@ function generate(c){
   let a=number(d1),b=number(d2);
   let op=type==='remainder'?'/':pick(allowedOps);
 
-  if(grade===8&&Math.random()<0.28){
-    const base=type==='negative'&&Math.random()<0.4?(-ri(2,5)):ri(2,6);
-    const exp=Math.abs(base)>=5?2:ri(2,3);
-    const val=base**exp;
-    const qStr=base<0?`(${base})^${exp}`:`${base}^${exp}`;
-    const ansStr=String(val);
-    const opts=new Set([ansStr,String(base*exp),String(-val),String(val+ri(1,3)),String(val-ri(1,3))]);
-    opts.delete('');
-    const expText=`${qStr} = ${ansStr}\n• ${t('Lũy thừa bậc '+exp+': nhân '+exp+' thừa số '+base+' với nhau.','Power of '+exp+': multiply '+exp+' factors of '+base+' together.')}`;
-    return {id:uid(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'power:^',config:{...cfg,type,grade},explanation:expText};
+  if(grade===5&&Math.random()<0.28){
+    if(Math.random()<0.55){
+      const pct=pick([10,20,25,50,75]);
+      const basePool=pct===25||pct===75?[4,8,12,16,20,40,80,100,120,200]:pct===20?[5,10,15,20,25,50,100,150,200]:[10,20,30,40,50,60,80,100,120,200];
+      const base=pick(basePool);
+      const val=(pct*base)/100;
+      const ansStr=fmt(val);
+      const qStr=t(`${pct}% của ${base}`,`${pct}% of ${base}`);
+      const opts=smartDistractors(pct,base,'*','natural',val,fmt);
+      const expText=`${qStr} = ${ansStr}\n• ${t(`Tính ${pct}% của ${base}: lấy ${base} × ${pct} ÷ 100 = ${ansStr}`,`Find ${pct}% of ${base}: ${base} × ${pct} ÷ 100 = ${ansStr}`)}`;
+      return {id:uid(),q:qStr,answer:ansStr,options:opts,skill:'percent:%',config:{...cfg,type:'decimal',grade},explanation:expText};
+    }else{
+      const dec=Number((ri(1,95)/10).toFixed(1));
+      const mul=pick([10,100]);
+      const val=Math.round(dec*mul*100)/100;
+      const ansStr=fmt(val);
+      const qStr=`${fmt(dec)} × ${mul}`;
+      const opts=smartDistractors(dec,mul,'*','natural',val,fmt);
+      const shifts=mul===10?1:2;
+      const expText=`${qStr} = ${ansStr}\n• ${t(`Nhân nhẩm số thập phân với ${mul}: chuyển dấu phẩy sang phải ${shifts} chữ số.`,`Multiply decimal by ${mul}: shift decimal point ${shifts} place(s) right.`)}`;
+      return {id:uid(),q:qStr,answer:ansStr,options:opts,skill:'decimal:*',config:{...cfg,type:'decimal',grade},explanation:expText};
+    }
   }
-  if(grade===9&&Math.random()<0.28){
-    const root=ri(2,15);
-    const square=root*root;
-    const hasOffset=Math.random()<0.35;
-    const offset=hasOffset?ri(1,20):0;
-    const sign=hasOffset?pick(['+','-']):'+';
-    const val=hasOffset?(sign==='+'?root+offset:root-offset):root;
-    const qStr=hasOffset?`√${square} ${sign} ${offset}`:`√${square}`;
+  if(grade===6&&Math.random()<0.28){
+    const base=ri(2,9);
+    const exp=base<=3?ri(2,4):base<=5?ri(2,3):2;
+    const val=base**exp;
+    const qStr=`${base}^${exp}`;
     const ansStr=String(val);
-    const opts=new Set([ansStr,String(root),String(val+1),String(val-1),String(square+offset)]);
-    const expText=`${qStr} = ${ansStr}\n• ${t('Căn bậc hai số học: √'+square+' = '+root+' (vì '+root+' > 0 và '+root+'² = '+square+')','Arithmetic square root: √'+square+' = '+root+' (since '+root+' > 0 and '+root+'² = '+square+')')}`;
-    return {id:uid(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'sqrt:√',config:{...cfg,type,grade},explanation:expText};
+    const opts=new Set([ansStr,String(base*exp),String(val+base),String(Math.max(1,val-base)),String(val+1)]);
+    const expText=`${qStr} = ${ansStr}\n• ${t(`Lũy thừa bậc ${exp} của ${base}: nhân ${exp} thừa số ${base} với nhau (${Array(exp).fill(base).join(' × ')} = ${ansStr}).`,`${base} to the power of ${exp}: multiply ${exp} factors of ${base} = ${ansStr}.`)}`;
+    return {id:uid(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'power:^',config:{...cfg,type:'natural',grade},explanation:expText};
+  }
+  if(grade===7&&Math.random()<0.3){
+    const kind=pick(['sqrt','abs','alg']);
+    if(kind==='sqrt'){
+      const root=ri(2,12),sq=root*root;
+      const qStr=`√${sq}`,ansStr=String(root);
+      const opts=new Set([ansStr,String(root+1),String(Math.max(1,root-1)),String(Math.round(sq/2)),String(root+2)]);
+      const expText=`${qStr} = ${ansStr}\n• ${t(`Căn bậc hai số học của ${sq} là ${root} (vì ${root} > 0 và ${root}² = ${sq}).`,`Arithmetic square root of ${sq} is ${root} (since ${root}² = ${sq}).`)}`;
+      return {id:uid(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'sqrt:√',config:{...cfg,type:'natural',grade},explanation:expText};
+    }else if(kind==='abs'){
+      const a=-ri(3,25),b=ri(2,15),val=Math.abs(a)+b;
+      const qStr=`|${a}| + ${b}`,ansStr=String(val);
+      const opts=new Set([ansStr,String(a+b),String(Math.abs(a)-b),String(val+2),String(val-1)]);
+      const expText=`${qStr} = ${Math.abs(a)} + ${b} = ${ansStr}\n• ${t(`Giá trị tuyệt đối của số âm là số đối dương: |${a}| = ${Math.abs(a)}.`,`Absolute value makes a negative number positive: |${a}| = ${Math.abs(a)}.`)}`;
+      return {id:uid(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'negative:abs',config:{...cfg,type:'negative',grade},explanation:expText};
+    }else{
+      const k=ri(2,5),c=ri(1,9),xVal=ri(2,8),val=k*xVal+c;
+      const qStr=t(`Tính ${k}x + ${c} khi x = ${xVal}`,`Find ${k}x + ${c} when x = ${xVal}`);
+      const ansStr=String(val);
+      const opts=new Set([ansStr,String(k+xVal+c),String(val+k),String(Math.max(1,val-k)),String(k*(xVal+c))]);
+      const expText=`${k} × ${xVal} + ${c} = ${k*xVal} + ${c} = ${ansStr}\n• ${t(`Thay x = ${xVal} vào biểu thức, thực hiện phép nhân trước rồi cộng.`,`Substitute x = ${xVal}, multiply first then add.`)}`;
+      return {id:uid(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'algebra:eval',config:{...cfg,type:'natural',grade},explanation:expText};
+    }
+  }
+  if(grade===8&&Math.random()<0.34){
+    const kind=pick(['diffSq','sqSum','power']);
+    if(kind==='diffSq'){
+      const b=ri(2,15),diff=pick([10,20]),a=b+diff;
+      const val=a*a-b*b;
+      const qStr=`${a}^2 − ${b}^2`,ansStr=String(val);
+      const opts=new Set([ansStr,String((a-b)*(a-b)),String(val+10),String(val-10),String(a+b)]);
+      const expText=`${a}² − ${b}² = (${a} − ${b}) × (${a} + ${b}) = ${a-b} × ${a+b} = ${ansStr}\n• ${t('Áp dụng Hằng đẳng thức hiệu hai bình phương: a² − b² = (a − b)(a + b).','Difference of squares identity: a² − b² = (a − b)(a + b).')}`;
+      return {id:uid(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'identity:diffSq',config:{...cfg,type:'natural',grade},explanation:expText};
+    }else if(kind==='sqSum'){
+      const base=pick([10,20,30]),d=pick([-1,1,2,-2]),n=base+d,val=n*n;
+      const qStr=`${n}^2`,ansStr=String(val);
+      const opts=new Set([ansStr,String(base*base+d*d),String(val+10),String(val-10),String(n*2)]);
+      const sign=d>0?'+':'−',ad=Math.abs(d);
+      const expText=`${n}² = (${base} ${sign} ${ad})² = ${base}² ${sign} 2×${base}×${ad} + ${ad}² = ${base*base} ${sign} ${2*base*ad} + ${ad*ad} = ${ansStr}\n• ${t('Áp dụng Hằng đẳng thức bình phương của tổng/hiệu.','Apply square of sum/difference identity.')}`;
+      return {id:uid(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'identity:sq',config:{...cfg,type:'natural',grade},explanation:expText};
+    }else{
+      const base=type==='negative'&&Math.random()<0.5?(-ri(2,5)):ri(2,6);
+      const exp=Math.abs(base)>=5?2:ri(2,3);
+      const val=base**exp;
+      const qStr=base<0?`(${base})^${exp}`:`${base}^${exp}`;
+      const ansStr=String(val);
+      const opts=new Set([ansStr,String(base*exp),String(-val),String(val+ri(1,3)),String(val-ri(1,3))]);
+      opts.delete('');
+      const expText=`${qStr} = ${ansStr}\n• ${t('Lũy thừa bậc '+exp+': nhân '+exp+' thừa số '+base+' với nhau.','Power of '+exp+': multiply '+exp+' factors of '+base+' together.')}`;
+      return {id:uid(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'power:^',config:{...cfg,type,grade},explanation:expText};
+    }
+  }
+  if(grade===9&&Math.random()<0.36){
+    const kind=pick(['sqrtCombo','cbrt','eq']);
+    if(kind==='sqrtCombo'){
+      const r1=ri(3,14),r2=ri(2,12),sign=pick(['+','-']);
+      const val=sign==='+'?r1+r2:r1-r2;
+      const qStr=`√${r1*r1} ${sign==='-'?'−':'+'} √${r2*r2}`,ansStr=String(val);
+      const opts=new Set([ansStr,String(r1+r2+(sign==='-'?1:-1)),String(val+2),String(val-2),String(r1*r2)]);
+      const expText=`${qStr} = ${r1} ${sign==='-'?'−':'+'} ${r2} = ${ansStr}\n• ${t(`Khai phương từng căn bậc hai: √${r1*r1} = ${r1} và √${r2*r2} = ${r2}.`,`Evaluate each square root first: √${r1*r1} = ${r1}, √${r2*r2} = ${r2}.`)}`;
+      return {id:uid(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'sqrt:√',config:{...cfg,type:'negative',grade},explanation:expText};
+    }else if(kind==='cbrt'){
+      const r=pick([-4,-3,-2,2,3,4,5]),cube=r*r*r;
+      const qStr=`∛(${cube})`,ansStr=String(r);
+      const opts=new Set([ansStr,String(-r),String(r+1),String(r-1),String(r*r)]);
+      const expText=`∛(${cube}) = ${r}\n• ${t(`Căn bậc ba: vì (${r})³ = ${cube} nên ∛(${cube}) = ${r}.`,`Cube root: since (${r})³ = ${cube}, ∛(${cube}) = ${r}.`)}`;
+      return {id:uid(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'cbrt:∛',config:{...cfg,type:'negative',grade},explanation:expText};
+    }else{
+      const aCoef=ri(2,6),xRoot=ri(-6,9)||3,bConst=ri(2,18),rhs=aCoef*xRoot+bConst;
+      const qStr=t(`Tìm x: ${aCoef}x + ${bConst} = ${rhs}`,`Solve: ${aCoef}x + ${bConst} = ${rhs}`);
+      const ansStr=String(xRoot);
+      const opts=new Set([ansStr,String(xRoot+1),String(xRoot-1),String(-xRoot),String(xRoot+2)]);
+      const expText=`${aCoef}x = ${rhs} − ${bConst} = ${rhs-bConst} → x = ${rhs-bConst} ÷ ${aCoef} = ${xRoot}\n• ${t('Chuyển vế đổi dấu rồi chia hai vế cho hệ số của x.','Isolate x by subtracting the constant, then divide by the coefficient.')}`;
+      return {id:uid(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'equation:x',config:{...cfg,type:'negative',grade},explanation:expText};
+    }
   }
 
   if(grade===1){
     if(op==='+'){
-      a=ri(1,89);b=ri(1,Math.min(99-a,20));
+      const mode1=Math.random();
+      if(mode1<0.3){
+        a=ri(1,9);b=ri(1,10-a);
+      }else if(mode1<0.55){
+        a=ri(1,8)*10;b=ri(1,Math.floor((100-a)/10))*10;
+      }else{
+        const a10=ri(1,8),a1=ri(0,8);
+        const b10=ri(0,9-a10),b1=ri(1,9-a1);
+        a=a10*10+a1;b=b10*10+b1;
+      }
     }else{
-      a=ri(2,99);b=ri(1,a);
+      const mode1=Math.random();
+      if(mode1<0.3){
+        a=ri(2,10);b=ri(1,a);
+      }else if(mode1<0.55){
+        a=ri(2,9)*10;b=ri(1,a/10-1)*10;
+      }else{
+        const a10=ri(1,9),a1=ri(1,9);
+        const b10=ri(0,a10),b1=ri(0,a1);
+        a=a10*10+a1;b=Math.max(1,b10*10+b1);
+        if(b>a)b=a1;
+      }
     }
   }else if(grade===2){
     if(op==='*'){
@@ -1043,16 +1146,32 @@ function generate(c){
       const divisor=pick([2,5]),quotient=ri(1,10);
       a=divisor*quotient;b=divisor;
     }else if(op==='+'){
-      a=ri(1,89);b=ri(1,Math.min(99-a,40));
+      if(Math.random()<0.3){
+        a=ri(1,7)*100+pick([0,10,20,50]);b=ri(1,Math.max(1,Math.floor((950-a)/100)))*100;
+      }else{
+        a=ri(12,84);b=ri(5,Math.min(99-a,45));
+      }
     }else if(op==='-'){
-      a=ri(2,99);b=ri(1,a);
+      if(Math.random()<0.3){
+        a=ri(3,9)*100;b=ri(1,Math.floor(a/100)-1)*100;
+      }else{
+        a=ri(15,99);b=ri(4,a-1);
+      }
     }
   }else if(grade===3){
     if(op==='*'&&type==='natural'){
-      if(Math.random()<0.7){a=ri(2,9);b=ri(1,10);}
+      if(Math.random()<0.6){a=ri(2,9);b=ri(2,10);}
+      else{a=ri(12,250);b=ri(2,9);}
     }else if(op==='/'&&type==='natural'){
-      b=ri(2,9);a=b*ri(1,10);
+      b=ri(2,9);
+      const qMax=Math.random()<0.65?10:50;
+      a=b*ri(2,qMax);
+    }else if((op==='+'||op==='-')&&type==='natural'){
+      a=ri(50,950);b=ri(20,op==='-'?a-10:450);
     }
+  }else if(grade===4&&type==='natural'){
+    if(op==='*'){a=ri(12,180);b=ri(2,25);}
+    else if(op==='/'){b=ri(2,25);a=b*ri(3,45);}
   }
 
   let answer,q,options=[],explanation='';

@@ -35,14 +35,22 @@
   }
 
   function generateMissingNumber(cfg = {}) {
-    const ops = (Array.isArray(cfg.ops) && cfg.ops.length ? cfg.ops : ['+', '-', '*']).filter(op => ['+', '-', '*', '/'].includes(op));
+    const grade = cfg.grade ? Number(cfg.grade) : null;
+    let ops = (Array.isArray(cfg.ops) && cfg.ops.length ? cfg.ops : ['+', '-', '*']).filter(op => ['+', '-', '*', '/'].includes(op));
+    if (grade === 1) ops = ops.filter(op => op === '+' || op === '-');
     const op = pickOne(ops.length ? ops : ['+']);
-    const [lo, hi] = rangeForDigits(cfg.digits);
+    const [lo, hi] = grade === 1 ? [1, 9] : grade === 2 ? [2, 30] : rangeForDigits(cfg.digits);
     const hideFirst = Math.random() < 0.5;
     let q = '', ans = 0, explanation = '';
 
     if (op === '+') {
-      const a = randInt(lo, hi), b = randInt(lo, hi), sum = a + b;
+      let a = randInt(lo, hi), b = randInt(lo, hi);
+      if (grade === 1) {
+        // MOET Grade 1: No carry within 10 or 20/100
+        a = randInt(1, 9);
+        b = randInt(1, Math.max(1, 10 - a));
+      }
+      const sum = a + b;
       if (hideFirst) {
         ans = a;
         q = `? + ${b} = ${sum}`;
@@ -53,7 +61,12 @@
         explanation = `${sum} − ${a} = ${b}`;
       }
     } else if (op === '-') {
-      const b = randInt(lo, hi), diff = randInt(1, hi), a = b + diff;
+      let b = randInt(lo, hi), diff = randInt(1, hi);
+      if (grade === 1) {
+        b = randInt(1, 8);
+        diff = randInt(1, Math.max(1, 10 - b));
+      }
+      const a = b + diff;
       if (hideFirst) {
         ans = a;
         q = `? − ${b} = ${diff}`;
@@ -64,7 +77,9 @@
         explanation = `${a} − ${diff} = ${b}`;
       }
     } else if (op === '*') {
-      const a = randInt(2, Math.min(12, hi)), b = randInt(2, Math.min(12, hi)), prod = a * b;
+      const a = grade === 2 ? pickOne([2, 5]) : randInt(2, grade === 3 ? 9 : Math.min(12, hi));
+      const b = grade === 2 ? randInt(1, 10) : randInt(2, grade === 3 ? 9 : Math.min(12, hi));
+      const prod = a * b;
       if (hideFirst) {
         ans = a;
         q = `? × ${b} = ${prod}`;
@@ -75,7 +90,9 @@
         explanation = `${prod} ÷ ${a} = ${b}`;
       }
     } else {
-      const b = randInt(2, Math.min(12, hi)), quot = randInt(2, Math.min(12, hi)), a = b * quot;
+      const b = grade === 2 ? pickOne([2, 5]) : randInt(2, grade === 3 ? 9 : Math.min(12, hi));
+      const quot = grade === 2 ? randInt(1, 10) : randInt(2, grade === 3 ? 9 : Math.min(12, hi));
+      const a = b * quot;
       if (hideFirst) {
         ans = a;
         q = `? ÷ ${b} = ${quot}`;
@@ -99,9 +116,11 @@
   }
 
   function generateWordProblem(cfg = {}) {
-    const ops = (Array.isArray(cfg.ops) && cfg.ops.length ? cfg.ops : ['+', '-', '*']).filter(op => ['+', '-', '*', '/'].includes(op));
+    const grade = cfg.grade ? Number(cfg.grade) : null;
+    let ops = (Array.isArray(cfg.ops) && cfg.ops.length ? cfg.ops : ['+', '-', '*']).filter(op => ['+', '-', '*', '/'].includes(op));
+    if (grade === 1) ops = ops.filter(op => op === '+' || op === '-');
     const op = pickOne(ops.length ? ops : ['+']);
-    const [lo, hi] = rangeForDigits(cfg.digits);
+    const [lo, hi] = grade === 1 ? [1, 9] : grade === 2 ? [5, 35] : rangeForDigits(cfg.digits);
     const itemsVi = ['viên bi', 'cái kẹo', 'quyển vở', 'bút chì', 'bông hoa'];
     const itemsEn = ['marbles', 'candies', 'notebooks', 'pencils', 'flowers'];
     const idx = randInt(0, itemsVi.length - 1);
@@ -109,7 +128,8 @@
 
     let q = '', ans = 0, explanation = '';
     if (op === '+') {
-      const a = randInt(lo, hi), b = randInt(lo, hi);
+      const a = grade === 1 ? randInt(1, 9) : randInt(lo, hi);
+      const b = grade === 1 ? randInt(1, Math.max(1, 10 - a)) : randInt(lo, hi);
       ans = a + b;
       q = t(
         `Lan có ${a} ${item}, được tặng thêm ${b} ${item}. Hỏi Lan có tất cả bao nhiêu ${item}?`,
@@ -117,15 +137,18 @@
       );
       explanation = `${a} + ${b} = ${ans}`;
     } else if (op === '-') {
-      const b = randInt(lo, hi), ansVal = randInt(1, hi), a = b + ansVal;
+      const b = grade === 1 ? randInt(1, 7) : randInt(lo, hi);
+      const ansVal = grade === 1 ? randInt(1, Math.max(1, 10 - b)) : randInt(1, hi);
+      const a = b + ansVal;
       ans = ansVal;
       q = t(
         `Minh có ${a} ${item}, cho bạn ${b} ${item}. Hỏi Minh còn lại bao nhiêu ${item}?`,
-        `Minh has ${a} ${item} and gives away ${b}. How many ${item} are left?`
+        `Minh has ${a} ${item} and gives away ${b} ${item}. How many ${item} are left?`
       );
       explanation = `${a} − ${b} = ${ans}`;
     } else if (op === '*') {
-      const boxes = randInt(2, 9), each = randInt(2, Math.min(12, hi));
+      const boxes = grade === 2 ? pickOne([2, 5]) : randInt(2, 9);
+      const each = grade === 2 ? randInt(2, 10) : randInt(2, grade === 3 ? 9 : Math.min(12, hi));
       ans = boxes * each;
       q = t(
         `Có ${boxes} hộp, mỗi hộp đựng ${each} ${item}. Hỏi có tất cả bao nhiêu ${item}?`,
@@ -133,7 +156,9 @@
       );
       explanation = `${boxes} × ${each} = ${ans}`;
     } else {
-      const groups = randInt(2, 9), each = randInt(2, Math.min(12, hi)), total = groups * each;
+      const groups = grade === 2 ? pickOne([2, 5]) : randInt(2, 9);
+      const each = grade === 2 ? randInt(2, 10) : randInt(2, grade === 3 ? 9 : Math.min(12, hi));
+      const total = groups * each;
       ans = each;
       q = t(
         `Chia đều ${total} ${item} vào ${groups} phần. Hỏi mỗi phần có bao nhiêu ${item}?`,

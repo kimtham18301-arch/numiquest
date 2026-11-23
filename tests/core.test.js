@@ -654,3 +654,69 @@ test('teacher self-setup by level/grade, saved code student quick-join, strict t
   const imported = ctx.findClassByCode('7BNAM');
   assert.ok(imported && imported.name === 'Lớp 7B' && imported.level === 'secondary' && imported.grade === 7);
 });
+
+test('MOET GDPT 2018 grade-by-grade curriculum rules (Grades 1-9) are enforced accurately', () => {
+  const ctx = loadAppContext();
+
+  // Grade 1: No carry (+), no borrow (-), within 100, no ×/÷/brackets
+  for (let i = 0; i < 60; i++) {
+    const q = ctx.generate({ ...ctx.NUMI_GRADES[1], grade: 1, type: 'natural', questionStyle: 'normal' });
+    assert.ok(!q.q.includes('×') && !q.q.includes('÷') && !q.q.includes('('), `Grade 1 invalid op/bracket: ${q.q}`);
+    const mAdd = q.q.match(/^(\d+) \+ (\d+)$/);
+    if (mAdd) {
+      const a = +mAdd[1], b = +mAdd[2];
+      assert.ok(a + b <= 100, `Grade 1 sum > 100: ${q.q}`);
+      if (a % 10 !== 0 || b % 10 !== 0) {
+        assert.ok((a % 10) + (b % 10) <= 10, `Grade 1 carry exceeded: ${q.q}`);
+      }
+    }
+    const mSub = q.q.match(/^(\d+) − (\d+)$/);
+    if (mSub) {
+      const a = +mSub[1], b = +mSub[2];
+      assert.ok(a <= 100 && a >= b, `Grade 1 sub invalid: ${q.q}`);
+      if (a > 10) assert.ok((a % 10) >= (b % 10), `Grade 1 borrow in ${q.q}`);
+    }
+  }
+
+  // Grade 1-2 convenient mode: no multiplication or brackets in prompt
+  for (const g of [1, 2]) {
+    for (let i = 0; i < 25; i++) {
+      const q = ctx.generate({ ...ctx.NUMI_GRADES[g], grade: g, type: 'natural', questionStyle: 'convenient' });
+      assert.ok(!q.q.includes('×') && !q.q.includes('('), `Grade ${g} convenient must not use × or brackets: ${q.q}`);
+    }
+  }
+
+  // Grade 2: × and ÷ strictly tables 2 and 5
+  for (let i = 0; i < 40; i++) {
+    const qMul = ctx.generate({ ...ctx.NUMI_GRADES[2], grade: 2, ops: ['*'], type: 'natural', questionStyle: 'normal' });
+    const m = qMul.q.match(/^(\d+) × (\d+)$/);
+    assert.ok(m && ([2, 5].includes(+m[1]) || [2, 5].includes(+m[2])), `Grade 2 mul not table 2/5: ${qMul.q}`);
+    const qDiv = ctx.generate({ ...ctx.NUMI_GRADES[2], grade: 2, ops: ['/'], type: 'natural', questionStyle: 'normal' });
+    const md = qDiv.q.match(/^(\d+) ÷ (\d+)$/);
+    assert.ok(md && [2, 5].includes(+md[2]), `Grade 2 div not table 2/5: ${qDiv.q}`);
+  }
+
+  // Grade 4 convenient mode: distributive prompt is a×b + a×c (not already factored a×(b+c))
+  for (let i = 0; i < 40; i++) {
+    const q = ctx.generate({ ...ctx.NUMI_GRADES[4], grade: 4, type: 'natural', questionStyle: 'convenient' });
+    assert.ok(!q.q.includes('('), `Grade 4 convenient prompt should not be pre-factored: ${q.q}`);
+    assert.ok(q.options.some(opt => ctx.isAnswerMatch(opt, q.answer)));
+  }
+
+  // Grades 5-9 generate valid grade-specific skills (%, powers, sqrt/abs/alg, identities, cbrt/equations)
+  for (const g of [5, 6, 7, 8, 9]) {
+    const skills = new Set();
+    for (let i = 0; i < 80; i++) {
+      const q = ctx.generate({ ...ctx.NUMI_GRADES[g], grade: g, type: ctx.NUMI_GRADES[g].types[0], questionStyle: 'normal' });
+      assert.ok(q && q.q && q.answer !== undefined);
+      assert.equal(q.options.length, 4, `Grade ${g} expected 4 options for ${q.q}`);
+      assert.ok(q.options.some(opt => ctx.isAnswerMatch(opt, q.answer)), `Grade ${g} missing answer ${q.answer} for ${q.q}`);
+      skills.add(q.skill);
+    }
+    if (g === 5) assert.ok(skills.has('percent:%'), 'Grade 5 should include percentage mental math');
+    if (g === 6) assert.ok(skills.has('power:^'), 'Grade 6 should include natural-exponent powers');
+    if (g === 7) assert.ok(skills.has('sqrt:√') || skills.has('negative:abs') || skills.has('algebra:eval'), 'Grade 7 should include sqrt/abs/algebra');
+    if (g === 8) assert.ok(skills.has('identity:diffSq') || skills.has('identity:sq'), 'Grade 8 should include algebraic identities');
+    if (g === 9) assert.ok(skills.has('cbrt:∛') || skills.has('equation:x') || skills.has('sqrt:√'), 'Grade 9 should include roots/equations');
+  }
+});
