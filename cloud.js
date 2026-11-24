@@ -3,6 +3,13 @@ let cloudSession=null,cloudReady=false,cloudRevision=null,cloudDirty=false,cloud
 const CLOUD_SESSION_KEY='numi-cloud-session-v1',CLOUD_OWNER_KEY='numi-cloud-owner-v1';
 
 function currentAuthUser(){
+  if(cloudSession&&cloudSession.user){
+    // Username accounts linked to cloud keep their local profile (name, role, grade) as the identity.
+    try{
+      const saved=JSON.parse(localStorage.getItem('numi-current-user-v1')||'null');
+      if(saved&&saved.username&&String(cloudSession.user.email||'').toLowerCase()===saved.username+'@numiquick.app')return saved;
+    }catch{}
+  }
   if(cloudSession&&cloudSession.user)return {type:'cloud',id:cloudSession.user.id,name:cloudSession.user.email,username:cloudSession.user.email,email:cloudSession.user.email,avatar:state.buddy||'bunny'};
   try{
     const saved=JSON.parse(localStorage.getItem('numi-current-user-v1')||'null');
@@ -779,8 +786,27 @@ function openAccount(mode='login'){
     try{
       if(signup){
         await localSignUp(f.get('name'),f.get('username'),f.get('password'),chosenAvatar,f.get('signupGrade'));
+        if(cloudConfigured()){
+          const nu=currentAuthUser();
+          try{await cloudSignUpUser(nu,String(f.get('password')||''))}
+          catch(cloudErr){
+            console.log('Cloud sign up failed:',cloudErr);
+            toast(cloudErr.status===409||cloudErr.status===422?t('Tên này đã có trên mạng nên tài khoản chỉ lưu trên máy này. Em hãy chọn tên khác để lưu trực tuyến.','This name is already used online, so the account is saved on this device only. Pick another name to sync online.'):t('Chưa lưu được trực tuyến. Tài khoản vẫn dùng được trên máy này.','Could not save online. Your account still works on this device.'));
+          }
+        }
       }else{
         const uVal=String(f.get('username')||'').trim(),pVal=String(f.get('password')||'');
+        if(cloudConfigured()&&!uVal.includes('@')&&uVal.toLowerCase()!=='admin'){
+          const key=uVal.toLowerCase().replace(/\s+/g,'');
+          const hadLocal=!!localStorage.getItem('numi-user-state-'+key);
+          let cloudOk=false;
+          try{await cloudSignInUser(key,pVal);cloudOk=true}catch(cloudErr){console.log('Cloud username sign in failed, trying local:',cloudErr)}
+          try{await localSignIn(uVal,pVal)}catch(localErr){if(cloudOk)cloudStoreSession(null);throw localErr}
+          const lu=currentAuthUser();
+          if(cloudOk)await cloudAfterSignIn(key,hadLocal);
+          else if(lu&&lu.role!=='teacher'&&lu.role!=='admin')cloudSignUpUser(lu,pVal).catch(e=>console.log('Cloud upgrade skipped:',e));
+          return;
+        }
         if(cloudConfigured()&&uVal.includes('@')){
           try{
             const data=await cloudRequest('/auth/v1/token?grant_type=password','POST',{email:uVal,password:pVal},false);
@@ -806,6 +832,41 @@ function openAccount(mode='login'){
 
 async function cloudChooseSave(){if(cloudBusy){toast(t('Đang lưu, chờ một chút nhé.','Saving. Please wait a moment.'));return}clearTimeout(cloudTimer);cloudReady=false;try{const row=await cloudGetRow();if(row&&!validBackup(row.payload))throw Error(t('Bản lưu chưa đúng định dạng. Tiến độ trên máy vẫn được giữ.','The online save has an unsupported format. Local progress is unchanged.'));cloudRevision=row?.revision??null;view='account';document.body.dataset.view='account';$('#app').innerHTML=`<div class="narrow card account-card"><div class="intro-animal">${animal('panda')}</div><h1>${t('Em muốn tiếp tục bản nào?','Which journey shall we continue?')}</h1><p>${row?t('Đã tìm thấy bản lưu của tài khoản này. Chọn rõ một bản để không ghi đè ngoài ý muốn.','An account save was found. Choose a version to avoid accidental overwrites.'):t('Tài khoản chưa có bản lưu. Em có thể mang kết quả trên máy này vào hoặc bắt đầu mới.','This account has no save yet. Bring this device’s progress or start fresh.')}</p><div class="save-choices">${row?`<button id="useRemote"><b>${t('Bản đã lưu trực tuyến','Online save')}</b><small>${row.payload.history.length} ${t('lượt học','sessions')} · ${Object.values(row.payload.pieces).reduce((a,b)=>a+b,0)} ${t('mảnh','pieces')}</small></button>`:''}<button id="useLocal"><b>${t('Bản trên máy này','This device’s progress')}</b><small>${state.history.length} ${t('lượt học','sessions')} · ${totalPieces()} ${t('mảnh','pieces')}</small></button>${!row?`<button id="useFresh">${t('Bắt đầu mới cho tài khoản này','Start fresh for this account')}</button>`:''}</div><p id="cloudChoiceStatus" role="status"></p></div>`;const choose=async payload=>{const guest=localStorage.getItem(CLOUD_OWNER_KEY);if(!guest)localStorage.setItem('numi-guest-snapshot',JSON.stringify(state));if(payload){state={...fresh(),...payload};lang=state.lang==='en'?'en':'vi'}cloudReady=true;localStorage.setItem(CLOUD_OWNER_KEY,JSON.stringify({uid:cloudSession.user.id,revision:cloudRevision}));saveBeforeCloud();cloudDirty=true;await cloudPush();if(typeof syncUserGradeToConfig==='function')syncUserGradeToConfig();openAccount()};if($('#useRemote'))$('#useRemote').onclick=()=>choose(row.payload);$('#useLocal').onclick=()=>choose(null);if($('#useFresh'))$('#useFresh').onclick=()=>choose(fresh());translate()}catch(error){cloudStatus='offline';cloudBadge();toast(error.message||t('Chưa tải được bản lưu.','Could not load your save.'));openAccount()}}
 
+function cloudEmail(username){return String(username||'').trim().toLowerCase()+'@numiquick.app'}
+function cloudPassword(p){return 'nq-'+String(p||'')} // Supabase needs >= 6 chars; app PIN may be 4
+async function cloudSignUpUser(user,password){
+  // Supabase rejects made-up email domains on public signup, so a tiny Edge Function creates the user with admin rights.
+  await cloudRequest('/functions/v1/numi-signup','POST',{username:user.username,password:cloudPassword(password),name:user.name,avatar:user.avatar||'bunny',grade:user.grade||1},false);
+  const data=await cloudRequest('/auth/v1/token?grant_type=password','POST',{email:cloudEmail(user.username),password:cloudPassword(password)},false);
+  cloudStoreSession(data);cloudRevision=null;cloudReady=true;cloudDirty=true;
+  await cloudPush();
+}
+async function cloudSignInUser(username,password){
+  const data=await cloudRequest('/auth/v1/token?grant_type=password','POST',{email:cloudEmail(username),password:cloudPassword(password)},false);
+  cloudStoreSession(data);
+  const users=getLocalUsers(),meta=data.user?.user_metadata||{};
+  if(!users[username]){
+    users[username]={username,name:meta.name||username,hash:await hashPassword(password),avatar:meta.avatar||'bunny',grade:Number(meta.grade)||1,role:'student',createdAt:new Date().toISOString()};
+    saveLocalUsers(users);
+  }
+}
+async function cloudAfterSignIn(username,hadLocal){
+  cloudReady=false;
+  try{
+    const row=await cloudGetRow();
+    if(!row){cloudRevision=null;cloudReady=true;cloudDirty=true;await cloudPush();return}
+    if(!hadLocal&&validBackup(row.payload)){
+      cloudRevision=row.revision;
+      state={...fresh(),...row.payload};lang=state.lang==='en'?'en':'vi';
+      if(typeof window!=='undefined')window.state=state;
+      cloudReady=true;
+      localStorage.setItem(CLOUD_OWNER_KEY,JSON.stringify({uid:cloudSession.user.id,revision:cloudRevision}));
+      save();cloudStatus='saved';cloudBadge();translate();
+      return;
+    }
+    await cloudChooseSave();
+  }catch(e){cloudStatus='offline';cloudBadge()}
+}
 async function cloudSignOut(){clearTimeout(cloudTimer);if(cloudBusy){toast(t('Đang lưu, chờ một chút nhé.','Saving. Please wait a moment.'));return}if(cloudDirty){if(cloudReady)await cloudPush();if(cloudStatus!=='saved'&&!confirm(t('Chưa lưu lên mạng. Vẫn đăng xuất? Bản trên máy sẽ được giữ riêng.','Not saved online. Sign out anyway? A local account copy will be kept.')))return}const old=cloudSession;localStorage.setItem('numi-account-cache-'+old.user.id,JSON.stringify(state));try{await cloudRequest('/auth/v1/logout','POST',{})}catch{}cloudReady=false;cloudRevision=null;cloudDirty=false;cloudStatus='local';cloudStoreSession(null);localStorage.removeItem(CLOUD_OWNER_KEY);let guest;try{guest=JSON.parse(localStorage.getItem('numi-guest-snapshot')||'null')}catch{}state=guest&&validBackup(guest)?guest:fresh();lang=state.lang==='en'?'en':'vi';saveBeforeCloud();nav('home')}
 
 async function cloudRestore(){if(!cloudConfigured())return;let fromCallback=false;try{let saved=JSON.parse(localStorage.getItem(CLOUD_SESSION_KEY)||'null');const hash=new URLSearchParams(location.hash.slice(1));if(hash.has('access_token')){fromCallback=true;saved={access_token:hash.get('access_token'),refresh_token:hash.get('refresh_token'),expires_in:+hash.get('expires_in')||3600};cloudRecovering=hash.get('type')==='recovery';history.replaceState(null,'',location.pathname+location.search)}if(!saved?.access_token||!saved.refresh_token)return;cloudStoreSession(saved);await cloudRefresh();const user=await cloudRequest('/auth/v1/user');cloudSession.user=user;cloudStoreSession(cloudSession);const owner=JSON.parse(localStorage.getItem(CLOUD_OWNER_KEY)||'null'),row=await cloudGetRow();if(owner?.uid===user.id&&owner.revision===row?.revision){cloudRevision=row.revision;cloudReady=true;cloudStatus='saved'}else{cloudReady=false;cloudStatus='conflict'}cloudBadge();if(fromCallback)await cloudChooseSave()}catch{cloudStatus='offline';cloudBadge()}}
