@@ -30,4 +30,6 @@ Tài liệu lưu lại định hướng tinh gọn và phát triển cho **NumiQ
 ## Nhóm 4: Tối ưu Kỹ thuật & Vận hành
 - [x] **Tinh gọn kiến trúc:** Gỡ bỏ hoàn toàn các module chồng chéo (Bản đồ 1,7 MB, Nông trại cũ, Level thử thách cũ, Phòng học & Thi cử phức tạp), giảm còn 14 script cốt lõi và cập nhật Service Worker `numiquick-v2.2.0`.
 - [x] **GitHub Actions CI:** Tự động chạy `node --check` và `node --test tests/core.test.js` trên mỗi Push / Pull Request.
-- [ ] **Kết nối Supabase thật (`cloud-config.js`):** Tuỳ chọn điền `url` và `publishableKey` nếu muốn đồng bộ tài khoản đám mây đa thiết bị.
+- [x] **Kết nối Supabase thật (v2.5):** Đăng ký/đăng nhập bằng tên + PIN (Edge Function `numi-signup`), đồng bộ tiến độ, lớp học, mã lớp, danh sách học sinh, giao bài và nộp kết quả đa thiết bị (`cloud-classes.js`, `cloud-setup.sql`).
+- [ ] **Giới hạn tần suất cho `numi-signup`** và nâng PIN tối thiểu lên 6 ký tự.
+- [ ] **Test tự động cho `cloud-classes.js`** (hiện chỉ kiểm thử tay hai thiết bị).

@@ -6,6 +6,10 @@
   const CLASSES_KEY = 'numi-classes-v1';
   const PUSHED_KEY = 'numi-cloud-pushed-classes-v1'; // local class ids this device has pushed (so deletes are intentional)
   const JOINED_KEY = 'numi-cloud-joined-v1';          // { username: [codes already enrolled in cloud] }
+  const ASG_KEY = 'numi-targeted-assignments-v1';
+  const ASG_PUSHED_KEY = 'numi-cloud-pushed-asg-v1';   // local assignment ids already pushed (so deletes are intentional)
+  const SUB_PUSHED_KEY = 'numi-cloud-pushed-subs-v1';  // "username:assignmentId" submissions already pushed
+  const uidToUser = new Map();                          // cloud user id -> username (filled while pulling the roster)
   const STATS_MS = 4000;
 
   let busy = false, again = false, mirroring = false, statsTimer = null, syncTimer = null;
@@ -134,6 +138,7 @@
       rest('numi_profiles?user_id=in.(' + sids + ')&select=user_id,username,display_name,grade,avatar') || [],
       rest('numi_student_stats?user_id=in.(' + sids + ')&select=user_id,username,display_name,grade,summary,updated_at') || []
     ]);
+    profiles.forEach(p => { if (p.username) uidToUser.set(p.user_id, String(p.username).toLowerCase()); });
     const sig = JSON.stringify([enr, profiles, stats.map(s => s.updated_at)]);
     if (sig === lastRosterSig) return false;
     lastRosterSig = sig;
@@ -228,6 +233,112 @@
     }, 'resolution=merge-duplicates');
   }
 
+  // ---------- Assignments (teacher -> students) and submissions (student -> teacher) ----------
+  const readAsg = () => { const a = j(ASG_KEY, []); return Array.isArray(a) ? a : []; };
+  function writeAsg(list) { mirroring = true; try { setJ(ASG_KEY, list); } finally { mirroring = false; } }
+
+  async function syncTeacherAssignments(u) {
+    const classes = readClasses().filter(c => c.teacherUsername === u.username && c.cloudId);
+    if (!classes.length) return false;
+    const ids = classes.map(c => c.cloudId).join(',');
+    let list = readAsg();
+    const pushed = new Set(j(ASG_PUSHED_KEY, []));
+    let changed = false;
+
+    // 1) Remote rows this device deleted locally -> delete; unknown rows (made on another device) -> import.
+    let remote = await rest('numi_assignments?classroom_id=in.(' + ids + ')&select=*') || [];
+    const localIds = new Set(list.map(a => a.id));
+    for (const r of remote) {
+      if (pushed.has(r.local_id) && !localIds.has(r.local_id)) {
+        await rest('numi_assignments?id=eq.' + r.id, 'DELETE');
+      } else if (!localIds.has(r.local_id) && !pushed.has(r.local_id) && r.local_id) {
+        list.unshift({ id: r.local_id, title: r.title, due_date: r.due_date || '', targetStudents: r.target_students || [],
+          config: r.config || {}, created_at: r.created_at, submissions: {} });
+        localIds.add(r.local_id); changed = true;
+      }
+    }
+
+    // 2) Push local assignments, one row per class that holds at least one target student.
+    const rows = [];
+    for (const a of list) {
+      const t = Array.isArray(a.targetStudents) ? a.targetStudents : [];
+      for (const c of classes) {
+        if (t.some(s => c.students.includes(s))) {
+          rows.push({ classroom_id: c.cloudId, local_id: a.id, title: String(a.title || '').slice(0, 120) || '—',
+            due_date: a.due_date || null, config: a.config || {}, target_students: t });
+        }
+      }
+    }
+    if (rows.length) {
+      await rest('numi_assignments?on_conflict=classroom_id,local_id', 'POST', rows, 'resolution=merge-duplicates');
+      rows.forEach(r => pushed.add(r.local_id));
+    }
+    setJ(ASG_PUSHED_KEY, [...pushed]);
+
+    // 3) Pull submissions into local assignment objects (teacher dashboards read them from there).
+    remote = await rest('numi_assignments?classroom_id=in.(' + ids + ')&select=id,local_id') || [];
+    const aidToLocal = new Map(remote.map(r => [r.id, r.local_id]));
+    if (aidToLocal.size) {
+      const subs = await rest('numi_submissions?assignment_id=in.(' + [...aidToLocal.keys()].join(',') + ')&select=assignment_id,student_id,correct,total,avg_time,completed_at') || [];
+      for (const s of subs) {
+        const a = list.find(x => x.id === aidToLocal.get(s.assignment_id));
+        const uname = uidToUser.get(s.student_id);
+        if (!a || !uname) continue;
+        a.submissions = a.submissions || {};
+        const prev = a.submissions[uname];
+        if (!prev || prev.correct !== s.correct || prev.total !== s.total) {
+          a.submissions[uname] = { correct: s.correct, total: s.total, avg_time: Number(s.avg_time) || 0, submitted_at: s.completed_at };
+          changed = true;
+        }
+      }
+    }
+    if (changed) writeAsg(list);
+    return changed;
+  }
+
+  async function syncStudentAssignments(u) {
+    const rem = await rest('numi_assignments?select=*') || []; // RLS: only classes the student is enrolled in
+    const mine = rem.filter(r => (r.target_students || []).includes(u.username));
+    const list = readAsg();
+    let changed = false;
+    for (const r of mine) {
+      const a = list.find(x => x.id === r.local_id);
+      if (!a) {
+        list.unshift({ id: r.local_id, title: r.title, due_date: r.due_date || '', targetStudents: r.target_students,
+          config: r.config || {}, created_at: r.created_at, submissions: {} });
+        changed = true;
+      }
+    }
+    const subs = await rest('numi_submissions?student_id=eq.' + u.uid + '&select=assignment_id,correct,total,avg_time,completed_at') || [];
+    for (const s of subs) {
+      const r = mine.find(x => x.id === s.assignment_id);
+      const a = r && list.find(x => x.id === r.local_id);
+      if (a && !(a.submissions && a.submissions[u.username])) {
+        a.submissions = a.submissions || {};
+        a.submissions[u.username] = { correct: s.correct, total: s.total, avg_time: Number(s.avg_time) || 0, submitted_at: s.completed_at };
+        changed = true;
+      }
+    }
+    const pushed = new Set(j(SUB_PUSHED_KEY, []));
+    const up = [];
+    for (const a of list) {
+      const sub = a.submissions && a.submissions[u.username];
+      const r = mine.find(x => x.local_id === a.id);
+      const key = u.username + ':' + a.id;
+      if (sub && r && !pushed.has(key)) {
+        up.push({ key, row: { assignment_id: r.id, student_id: u.uid, correct: Math.max(0, sub.correct | 0),
+          total: Math.max(1, sub.total | 0), avg_time: Number(sub.avg_time) || 0, completed_at: sub.submitted_at || new Date().toISOString() } });
+      }
+    }
+    if (up.length) {
+      await rest('numi_submissions?on_conflict=assignment_id,student_id', 'POST', up.map(x => x.row), 'resolution=merge-duplicates');
+      up.forEach(x => pushed.add(x.key));
+      setJ(SUB_PUSHED_KEY, [...pushed]);
+    }
+    if (changed) writeAsg(list);
+    return changed;
+  }
+
   // ---------- Orchestration ----------
   async function sync() {
     if (busy) { again = true; return; }
@@ -240,10 +351,14 @@
         const remote = await pullTeacherClasses(u);
         await pushTeacherClasses(u, remote);
         rosterChanged = await pullRoster(u);
+        if (await syncTeacherAssignments(u)) rosterChanged = true;
       } else {
         await pullStudentClasses(u);
         await joinPending(u);
         await pushMyStats(u);
+        if (await syncStudentAssignments(u) && typeof view !== 'undefined' && view === 'home' && typeof window.home === 'function') {
+          try { window.home(); } catch {}
+        }
       }
     } catch (e) {
       console.log('Cloud class sync skipped:', e && e.message);
@@ -262,7 +377,7 @@
   const origSetItem = Storage.prototype.setItem;
   Storage.prototype.setItem = function (k, v) {
     const r = origSetItem.apply(this, arguments);
-    if (k === CLASSES_KEY && !mirroring) schedule();
+    if ((k === CLASSES_KEY || k === ASG_KEY) && !mirroring) schedule();
     return r;
   };
 
