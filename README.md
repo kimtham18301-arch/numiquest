@@ -1,4 +1,4 @@
-# NumiQuick — bản cập nhật 2.5.3
+# NumiQuick — bản cập nhật 2.8.0
 
 Web luyện tính nhẩm vui cho học sinh tiểu học & THCS (Lớp 1–9 theo chuẩn GDPT 2018), chạy tĩnh trên GitHub Pages.
 

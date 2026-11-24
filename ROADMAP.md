@@ -55,3 +55,12 @@ Tài liệu lưu lại định hướng tinh gọn và phát triển cho **NumiQ
 - [x] **Sửa lỗi có sẵn:** nút Sao lưu/Khôi phục trong Admin Center trước đây bỏ sót danh sách lớp học.
 - [ ] **Chưa làm:** `app.js` (1.264 dòng, viết nén, 62 hàm toàn cục) – nên định dạng lại trước rồi mới tách.
 - [ ] **Chưa làm:** kiểm tra đầu-cuối với Supabase thật trên hai máy (cần dự án Supabase thử nghiệm riêng).
+
+---
+
+## Nhóm 7: Chất lượng nội dung bài tập *(v2.8.0)*
+- [x] **Đề đúng chương trình GDPT 2018 từng lớp:** lớp 2 chia trong bảng 2, 5; lớp 4 cộng/trừ phân số chỉ khi mẫu này chia hết mẫu kia; bỏ phép chia `x ÷ x = 1`; lớp 5–9 giữ số vừa sức tính nhẩm; phân số luôn tối giản; cân lại tỉ lệ dạng bài (lớp 3, 6, 7).
+- [x] **Dạng bài mới:** lũy thừa số hữu tỉ (lớp 7), phương trình bậc nhất (lớp 8), đưa thừa số ra ngoài dấu căn và nhẩm nghiệm Vi-ét (lớp 9).
+- [x] **Đáp án nhiễu chống mẹo đoán:** cùng chữ số hàng đơn vị, cùng số chữ số thập phân, cùng mẫu số với đáp án; vị trí đáp án ngẫu nhiên (trước đây lớp 1–5 đáp án là số nhỏ thứ hai 86–99% số câu).
+- [x] **Test** khóa các tiêu chí trên cho cả 9 lớp (đã thử cố ý làm hỏng code để chắc test bắt lỗi).
+- [ ] **Chưa làm:** soát kỹ nội dung kiểu đề "điền số", "toán đố", "biểu thức" theo từng lớp.
