@@ -205,39 +205,67 @@ if(typeof window!=='undefined'){window.defaults=defaults;window.config=config;wi
 if(typeof global!=='undefined'){global.defaults=defaults;global.config=config;global.syncUserGradeToConfig=syncUserGradeToConfig;}
 syncUserGradeToConfig();
 const ri=(a,b)=>Math.floor(Math.random()*(b-a+1))+a, pick=a=>a[ri(0,a.length-1)],shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=ri(0,i);[a[i],a[j]]=[a[j],a[i]]}return a};const gcd=(a,b)=>b?gcd(b,a%b):Math.abs(a);function frac(n,d){if(d<0){n=-n;d=-d}let g=gcd(n,d);return d/g===1?String(n/g):`${n/g}/${d/g}`}const fmt=n=>String(Math.round(n*10000)/10000).replace('.',lang==='vi'?',':'.');
-function smartDistractors(a,b,op,type,val,displayFn){
-  const opts=new Set([displayFn(val)]);
-  const addOpt=(v)=>{if(v!==undefined&&v!==null&&!isNaN(v)){const s=displayFn(v);if(s&&!opts.has(s)&&(type!=='natural'||(!s.startsWith('-')&&Number(s)>=0)))opts.add(s)}};
-  if(type==='natural'||type==='negative'){
-    if(type==='negative'){
-      addOpt(-val);
-      if(op==='+'||op==='-'){
-        addOpt(Math.abs(a)+Math.abs(b));
-        addOpt(-(Math.abs(a)+Math.abs(b)));
-        addOpt(Math.abs(a)-Math.abs(b));
-        addOpt(-(Math.abs(a)-Math.abs(b)));
-      }else if(op==='*'||op==='/'){
-        addOpt(-val);
-        addOpt(val>0?-val:Math.abs(val));
-      }
-    }
-    if(op==='+'){
-      if((a%10)+(b%10)>=10)addOpt(val-10);
-      addOpt(val+10);addOpt(val+1);addOpt(val-1);addOpt(val+2);
-    }else if(op==='-'){
-      if((a%10)<(b%10)){const tensDiff=Math.abs(Math.floor(a/10)-Math.floor(b/10)),onesDiff=Math.abs((a%10)-(b%10));addOpt(tensDiff*10+onesDiff)}
-      addOpt(val+10);addOpt(val-10);addOpt(val+1);addOpt(val-1);
-    }else if(op==='*'){
-      addOpt(val+a);addOpt(val-a);addOpt(val+b);addOpt(val-b);addOpt((a+1)*b);addOpt((a-1)*b);
-    }else if(op==='/'){
-      addOpt(val+1);addOpt(val-1);addOpt(val+2);
-    }
-  }else if(type==='decimal'){
-    addOpt(val+0.1);addOpt(val-0.1);addOpt(val+1);addOpt(val-1);
+// Anti-guessing options. Distractors are built so a child cannot pick the answer without solving:
+//  • same last digit as the answer (for |answer| ≥ 20 or decimals) → working out only the units digit does not help
+//  • same number of decimal places, same denominator for fractions
+//  • the answer's position among the 4 sorted values is random → "pick the 2nd smallest" does not work
+// cands = likely mistakes (forgot carry, sign error...) — used only when they don't give the answer away.
+function antiTrickOptions(answer,cands=[],o={}){
+  const ans=String(answer);
+  const pickRanked=(v,pool,pref)=>{
+    const B=pool.filter(x=>x<v).sort((x,y)=>y-x),A=pool.filter(x=>x>v).sort((x,y)=>x-y);
+    const ranks=[0,1,2,3].filter(r=>r<=B.length&&3-r<=A.length);
+    if(!ranks.length)return shuffle([...B,...A]).slice(0,3);
+    const r=pick(ranks),out=[];   // r = how many options are smaller than the answer
+    const fits=shuffle(pref.filter(x=>(x<v&&r>0)||(x>v&&r<3)));
+    if(fits.length&&Math.random()<0.7)out.push(fits[0]);
+    const take=(arr,k)=>shuffle(arr.filter(x=>!out.includes(x)).slice(0,k+2)).slice(0,k);
+    const nb=r-out.filter(x=>x<v).length,na=3-r-out.filter(x=>x>v).length;
+    out.push(...take(B,nb),...take(A,na));
+    return out;
+  };
+  const fm=ans.match(/^(-?\d+)\/(\d+)$/);
+  if(fm){
+    const n=+fm[1],d=+fm[2],key=x=>x,seen=new Set();
+    const okN=m=>m!==n&&m!==0&&gcd(Math.abs(m),d)===1&&(n<0||o.allowNegative||m>0);
+    const pref=[];
+    for(const c of cands){const cm=String(c).match(/^(-?\d+)\/(\d+)$/);if(cm&&+cm[2]===d&&okN(+cm[1])&&!seen.has(+cm[1])){seen.add(+cm[1]);pref.push(+cm[1])}}
+    const pool=[...pref];
+    for(let k=1;k<=12;k++)for(const m of [n+k,n-k])if(okN(m)&&!seen.has(m)){seen.add(m);pool.push(m)}
+    const nums=pickRanked(n,pool,pref);
+    if(nums.length===3)return shuffle([ans,...nums.map(m=>`${m}/${d}`)]);
   }
-  let step=type==='decimal'?0.1:1,d=1;
-  while(opts.size<4&&d<100){addOpt(val+d*step);addOpt(val-d*step);d++}
-  return shuffle([...opts].slice(0,4));
+  const sep=ans.includes(',')?',':'.';
+  if(!/^-?\d+([.,]\d+)?$/.test(ans)){
+    const set=new Set([ans]);
+    for(const c of cands){if(c!=null&&String(c))set.add(String(c));if(set.size>=4)break}
+    return shuffle([...set].slice(0,4));
+  }
+  const v=Number(ans.replace(',','.')),dp=(ans.split(/[.,]/)[1]||'').length,scale=10**dp;
+  const toS=x=>{const s=(Math.round(x*scale)/scale).toFixed(dp);return sep===','?s.replace('.',','):s};
+  const allowNeg=o.allowNegative||v<0;
+  const lastDigit=x=>Math.abs(Math.round(x*scale))%10;
+  const big=dp>0||Math.abs(v)>=20;
+  const map=new Map();
+  const ok=x=>Number.isFinite(x)&&(allowNeg||x>=0)&&toS(x)!==ans&&(!big||lastDigit(x)===lastDigit(v));
+  const add=x=>{if(ok(x)){x=Math.round(x*scale)/scale;if(!map.has(toS(x)))map.set(toS(x),x);return true}return false};
+  const pref=[];
+  for(const c of cands){const x=Number(String(c).replace(',','.'));if(add(x)&&!pref.includes(Math.round(x*scale)/scale))pref.push(Math.round(x*scale)/scale)}
+  const step=big?10/scale:1;
+  for(const k of [1,2,3,4,5,6,10])add(v+k*step),add(v-k*step);
+  if(dp===0&&Math.abs(v)>=200)for(const k of [100,200])add(v+k),add(v-k);
+  const nums=pickRanked(v,[...map.values()],pref);
+  return shuffle([ans,...nums.map(toS)]);
+}
+if(typeof window!=='undefined')window.antiTrickOptions=antiTrickOptions;
+if(typeof global!=='undefined')global.antiTrickOptions=antiTrickOptions;
+function smartDistractors(a,b,op,type,val,displayFn){
+  const cands=[];
+  if(type==='negative'){cands.push(-val);if(op==='+'||op==='-')cands.push(Math.abs(a)+Math.abs(b),-(Math.abs(a)+Math.abs(b)),Math.abs(a)-Math.abs(b),-(Math.abs(a)-Math.abs(b)));}
+  if(op==='+')cands.push(val-10,val+10);       // forgot / added a carry
+  else if(op==='-')cands.push(val+10,val-10);  // forgot to borrow
+  else if(op==='*')cands.push(val+10,val-10,val+20);  // carry slips in the tens (same units digit, close in size)
+  return antiTrickOptions(displayFn(val),cands.map(x=>displayFn(x)),{allowNegative:type==='negative'});
 }
 function detailedExplanation(q,a,b,op,type,val,sym){
   if(type==='fraction'){
@@ -980,14 +1008,8 @@ function setup(){
   refresh();
 }
 
-// Always return 4 distinct options: answer + candidates, then answer±k as filler (no negatives when answer ≥ 0).
-function opts4(answer,cands){
-  const a=String(answer),set=new Set([a]);
-  for(const c of cands){const s=String(c);if(s&&s!=='NaN'&&s!=='undefined')set.add(s);if(set.size>=4)break;}
-  const n=Number(a);
-  for(let k=1;set.size<4&&k<60&&Number.isFinite(n);k++){set.add(String(n+k));if(set.size<4&&(n<0||n-k>=0))set.add(String(n-k));}
-  return shuffle([...set].slice(0,4));
-}
+// 4 distinct anti-guessing options for the special question kinds
+function opts4(answer,cands,allowNegative){return antiTrickOptions(answer,cands,{allowNegative:!!allowNegative})}
 // Grade 4 (GDPT 2018): add/subtract fractions only when one denominator divides the other.
 function pickGrade4Denominator(da){
   // ~35% same denominator (learned first), the rest need one-step common denominator
@@ -1055,7 +1077,7 @@ function generate(c){
     const ansStr=String(val);
     const opts=new Set([ansStr,String(base*exp),String(val+base),String(Math.max(1,val-base)),String(val+1)]);
     const expText=`${qStr} = ${ansStr}\n• ${t(`Lũy thừa bậc ${exp} của ${base}: nhân ${exp} thừa số ${base} với nhau (${Array(exp).fill(base).join(' × ')} = ${ansStr}).`,`${base} to the power of ${exp}: multiply ${exp} factors of ${base} = ${ansStr}.`)}`;
-    return {id:uid(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'power:^',config:{...cfg,type:'natural',grade},explanation:expText};
+    return {id:uid(),q:qStr,answer:ansStr,options:opts4(ansStr,[...opts],grade>=6),skill:'power:^',config:{...cfg,type:'natural',grade},explanation:expText};
   }
   if(grade===7&&Math.random()<0.3){
     const kind=pick(['sqrt','abs','alg','ratpow']);
@@ -1064,7 +1086,7 @@ function generate(c){
       const e=Math.abs(n)<=2&&d<=3&&Math.random()<0.5?3:2;
       const ansStr=frac(n**e,d**e);
       const qStr=`(${n}/${d})^${e}`;
-      const opts=opts4(ansStr,[frac(n**e,d),frac(n,d**e),frac(-(n**e),d**e),frac(n*e,d*e),frac(n**e,d*e),frac(d**e,n**e),frac(n**e,d**e+1)]);
+      const opts=opts4(ansStr,[frac(n**e,d),frac(n,d**e),frac(-(n**e),d**e),frac(n*e,d*e),frac(n**e,d*e),frac(d**e,n**e),frac(n**e,d**e+1)],true);
       const expText=`${qStr} = ${n<0?`(${n})`:n}^${e} / ${d}^${e} = ${ansStr}\n• ${t('Lũy thừa của một thương: (a/b)ⁿ = aⁿ/bⁿ. Số âm mũ chẵn ra dương, mũ lẻ ra âm.','Power of a quotient: (a/b)ⁿ = aⁿ/bⁿ. A negative base gives + for even powers, − for odd.')}`;
       return {id:uid(),q:qStr,answer:ansStr,options:opts,skill:'power:rational',config:{...cfg,type:'fraction',grade},explanation:expText};
     }
@@ -1073,13 +1095,13 @@ function generate(c){
       const qStr=`√${sq}`,ansStr=String(root);
       const opts=new Set([ansStr,String(root+1),String(Math.max(1,root-1)),String(Math.round(sq/2)),String(root+2)]);
       const expText=`${qStr} = ${ansStr}\n• ${t(`Căn bậc hai số học của ${sq} là ${root} (vì ${root} > 0 và ${root}² = ${sq}).`,`Arithmetic square root of ${sq} is ${root} (since ${root}² = ${sq}).`)}`;
-      return {id:uid(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'sqrt:√',config:{...cfg,type:'natural',grade},explanation:expText};
+      return {id:uid(),q:qStr,answer:ansStr,options:opts4(ansStr,[...opts],grade>=6),skill:'sqrt:√',config:{...cfg,type:'natural',grade},explanation:expText};
     }else if(kind==='abs'){
       const a=-ri(3,25),b=ri(2,15),val=Math.abs(a)+b;
       const qStr=`|${a}| + ${b}`,ansStr=String(val);
       const opts=new Set([ansStr,String(a+b),String(Math.abs(a)-b),String(val+2),String(val-1)]);
       const expText=`${qStr} = ${Math.abs(a)} + ${b} = ${ansStr}\n• ${t(`Giá trị tuyệt đối của số âm là số đối dương: |${a}| = ${Math.abs(a)}.`,`Absolute value makes a negative number positive: |${a}| = ${Math.abs(a)}.`)}`;
-      return {id:uid(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'negative:abs',config:{...cfg,type:'negative',grade},explanation:expText};
+      return {id:uid(),q:qStr,answer:ansStr,options:opts4(ansStr,[...opts],grade>=6),skill:'negative:abs',config:{...cfg,type:'negative',grade},explanation:expText};
     }else{
       const k=ri(2,5),c=ri(1,9),xVal=ri(2,8),val=k*xVal+c;
       const qStr=t(`Tính ${k}x + ${c} khi x = ${xVal}`,`Find ${k}x + ${c} when x = ${xVal}`);
@@ -1096,7 +1118,7 @@ function generate(c){
       const aCoef=ri(2,6),xRoot=ri(-6,9)||3,bConst=ri(2,18),rhs=aCoef*xRoot+bConst;
       const qStr=t(`Tìm x: ${aCoef}x + ${bConst} = ${rhs}`,`Solve: ${aCoef}x + ${bConst} = ${rhs}`);
       const ansStr=String(xRoot);
-      const opts=opts4(ansStr,[xRoot+1,xRoot-1,-xRoot,xRoot+2]);
+      const opts=opts4(ansStr,[xRoot+1,xRoot-1,-xRoot,xRoot+2],true);
       const expText=`${aCoef}x = ${rhs} − ${bConst} = ${rhs-bConst} → x = ${rhs-bConst} ÷ ${aCoef} = ${xRoot}\n• ${t('Chuyển vế đổi dấu rồi chia hai vế cho hệ số của x.','Isolate x by subtracting the constant, then divide by the coefficient.')}`;
       return {id:uid(),q:qStr,answer:ansStr,options:opts,skill:'equation:x',config:{...cfg,type:'negative',grade},explanation:expText};
     }
@@ -1106,14 +1128,14 @@ function generate(c){
       const qStr=`${a}^2 − ${b}^2`,ansStr=String(val);
       const opts=new Set([ansStr,String((a-b)*(a-b)),String(val+10),String(val-10),String(a+b)]);
       const expText=`${a}² − ${b}² = (${a} − ${b}) × (${a} + ${b}) = ${a-b} × ${a+b} = ${ansStr}\n• ${t('Áp dụng Hằng đẳng thức hiệu hai bình phương: a² − b² = (a − b)(a + b).','Difference of squares identity: a² − b² = (a − b)(a + b).')}`;
-      return {id:uid(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'identity:diffSq',config:{...cfg,type:'natural',grade},explanation:expText};
+      return {id:uid(),q:qStr,answer:ansStr,options:opts4(ansStr,[...opts],grade>=6),skill:'identity:diffSq',config:{...cfg,type:'natural',grade},explanation:expText};
     }else if(kind==='sqSum'){
       const base=pick([20,30,40,50]),d=pick([-1,1,2,-2]),n=base+d,val=n*n;
       const qStr=`${n}^2`,ansStr=String(val);
       const opts=new Set([ansStr,String(base*base+d*d),String(val+10),String(val-10),String(n*2)]);
       const sign=d>0?'+':'−',ad=Math.abs(d);
       const expText=`${n}² = (${base} ${sign} ${ad})² = ${base}² ${sign} 2×${base}×${ad} + ${ad}² = ${base*base} ${sign} ${2*base*ad} + ${ad*ad} = ${ansStr}\n• ${t('Áp dụng Hằng đẳng thức bình phương của tổng/hiệu.','Apply square of sum/difference identity.')}`;
-      return {id:uid(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'identity:sq',config:{...cfg,type:'natural',grade},explanation:expText};
+      return {id:uid(),q:qStr,answer:ansStr,options:opts4(ansStr,[...opts],grade>=6),skill:'identity:sq',config:{...cfg,type:'natural',grade},explanation:expText};
     }else{
       const base=type==='negative'&&Math.random()<0.5?(-ri(2,5)):ri(2,6);
       const exp=Math.abs(base)>=5?2:ri(2,3);
@@ -1123,7 +1145,7 @@ function generate(c){
       const opts=new Set([ansStr,String(base*exp),String(-val),String(val+ri(1,3)),String(val-ri(1,3))]);
       opts.delete('');
       const expText=`${qStr} = ${ansStr}\n• ${t('Lũy thừa bậc '+exp+': nhân '+exp+' thừa số '+base+' với nhau.','Power of '+exp+': multiply '+exp+' factors of '+base+' together.')}`;
-      return {id:uid(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'power:^',config:{...cfg,type,grade},explanation:expText};
+      return {id:uid(),q:qStr,answer:ansStr,options:opts4(ansStr,[...opts],grade>=6),skill:'power:^',config:{...cfg,type,grade},explanation:expText};
     }
   }
   if(grade===9&&Math.random()<0.36){
@@ -1144,7 +1166,7 @@ function generate(c){
       const eq=`x²${sx}${sp} = 0`;
       const qStr=t(`${eq} có một nghiệm x = ${x1}. Nghiệm còn lại?`,`${eq} has a root x = ${x1}. Find the other root.`);
       const ansStr=String(x2);
-      const opts=opts4(ansStr,[-x2,S,P,x2+1]);
+      const opts=opts4(ansStr,[-x2,S,P,x2+1],true);
       const expText=`${t('Vi-ét','Vieta')}: x₁ + x₂ = ${S} → x₂ = ${S} − (${x1}) = ${x2}\n• ${t('Với x² + bx + c = 0: tổng hai nghiệm = −b, tích = c.','For x² + bx + c = 0: sum of roots = −b, product = c.')}`;
       return {id:uid(),q:qStr,answer:ansStr,options:opts,skill:'equation:quad',config:{...cfg,type:'negative',grade},explanation:expText};
     }
@@ -1154,13 +1176,13 @@ function generate(c){
       const qStr=`√${r1*r1} ${sign==='-'?'−':'+'} √${r2*r2}`,ansStr=String(val);
       const opts=new Set([ansStr,String(r1+r2+(sign==='-'?1:-1)),String(val+2),String(val-2),String(r1*r2)]);
       const expText=`${qStr} = ${r1} ${sign==='-'?'−':'+'} ${r2} = ${ansStr}\n• ${t(`Khai phương từng căn bậc hai: √${r1*r1} = ${r1} và √${r2*r2} = ${r2}.`,`Evaluate each square root first: √${r1*r1} = ${r1}, √${r2*r2} = ${r2}.`)}`;
-      return {id:uid(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'sqrt:√',config:{...cfg,type:'negative',grade},explanation:expText};
+      return {id:uid(),q:qStr,answer:ansStr,options:opts4(ansStr,[...opts],grade>=6),skill:'sqrt:√',config:{...cfg,type:'negative',grade},explanation:expText};
     }else if(kind==='cbrt'){
       const r=pick([-4,-3,-2,2,3,4,5]),cube=r*r*r;
       const qStr=`∛(${cube})`,ansStr=String(r);
       const opts=new Set([ansStr,String(-r),String(r+1),String(r-1),String(r*r)]);
       const expText=`∛(${cube}) = ${r}\n• ${t(`Căn bậc ba: vì (${r})³ = ${cube} nên ∛(${cube}) = ${r}.`,`Cube root: since (${r})³ = ${cube}, ∛(${cube}) = ${r}.`)}`;
-      return {id:uid(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'cbrt:∛',config:{...cfg,type:'negative',grade},explanation:expText};
+      return {id:uid(),q:qStr,answer:ansStr,options:opts4(ansStr,[...opts],grade>=6),skill:'cbrt:∛',config:{...cfg,type:'negative',grade},explanation:expText};
     }
   }
 
@@ -1264,7 +1286,6 @@ function generate(c){
     const opB=nb<0?`(${nb}/${db})`:`${nb}/${db}`;
     q=`${opA} ${sym} ${opB}`;
     const opts=new Set([answer]);
-    if(op==='+'&&da+db>0)opts.add(frac(na+nb,da+db));
     if(op==='-'&&Math.abs(da-db)>0)opts.add(frac(na-nb,Math.abs(da-db)));
     if(op==='*'&&da*nb>0)opts.add(frac(na*db,da*nb));
     opts.add(frac(n+1,d));opts.add(frac(n-1,d));opts.add(frac(n+d,d));opts.add(frac(Math.abs(n-d),d));
@@ -1272,7 +1293,7 @@ function generate(c){
       opts.add(frac(n+i,d));
       opts.add(frac(n-i,d));
     }
-    options=[...opts].slice(0,4);
+    options=antiTrickOptions(answer,[...opts],{allowNegative:grade>=6});
     explanation=detailedExplanation(q,na,nb,op,type,answer,sym);
   }else if(type==='remainder'){
     const divisor=ri(2,9);
@@ -1283,12 +1304,12 @@ function generate(c){
     b=divisor;
     answer=`${quotient} ${t('dư','r')} ${r}`;
     q=`${a} ÷ ${b}`;
-    options=[
-      answer,
-      `${quotient+1} ${t('dư','r')} ${r}`,
-      `${quotient} ${t('dư','r')} ${r===1?r+1:r-1}`,
-      `${quotient+1} ${t('dư','r')} 0`
-    ];
+    // Every option keeps a valid remainder (< divisor) and shares parts with the answer, so none can be ruled out at a glance
+    const R=(qq,rr)=>`${qq} ${t('dư','r')} ${rr}`;
+    const otherR=[];for(let x=1;x<divisor;x++)if(x!==r)otherR.push(x);
+    const pool=[R(quotient+1,r),R(quotient-1,r),R(quotient+10,r),R(quotient-10,r)].filter(s=>!/^-|^0 /.test(s));
+    if(otherR.length)pool.push(R(quotient,pick(otherR)),R(quotient+1,pick(otherR)),R(quotient-1,pick(otherR)));
+    options=[answer,...shuffle(pool.filter(s=>!/^-|^0 /.test(s))).filter((s,i,a)=>a.indexOf(s)===i&&s!==answer).slice(0,3)];
     explanation=detailedExplanation(q,a,b,op,type,answer,sym);
   }else{
     // Grades 5–9: keep numbers mental-math sized (× by a 1-digit factor, decimals ≤ 2 integer digits)

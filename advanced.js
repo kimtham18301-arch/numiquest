@@ -2,11 +2,7 @@
 // Add child-friendly regrouping and multi-term expression practice to the existing settings.
 const plainGenerate=generate;
 function generatedOptions(answer, near=[]){
-  const out=[String(answer)];
-  const fraction=String(answer).match(/^(-?\d+)\/(\d+)$/);if(fraction){const n=+fraction[1],d=+fraction[2];for(const v of [frac(n+1,d),frac(n,d+1),frac(n-1,d)])if(!out.includes(v))out.push(v);return shuffle(out.slice(0,4))}
-  for(const n of near)if(Number.isFinite(n)&&!out.includes(String(n)))out.push(String(n));
-  for(let d=1;out.length<4;d++)for(const n of [Number(answer)+d,Number(answer)-d])if(Number.isFinite(n)&&!out.includes(String(n)))out.push(String(Math.round(n*1000)/1000));
-  return shuffle(out.slice(0,4));
+  return antiTrickOptions(answer, near);
 }
 function safeEvalMath(expr) {
   const tokens = expr.match(/\d+(\.\d+)?|[+\-*/()]/g);

@@ -17,6 +17,7 @@
   }
 
   function uniqueOptions(answer, candidates) {
+    if (typeof antiTrickOptions === 'function') return antiTrickOptions(answer, candidates);
     const ansStr = String(answer);
     const set = new Set([ansStr]);
     for (const c of candidates) {

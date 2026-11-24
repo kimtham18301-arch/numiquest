@@ -644,3 +644,30 @@ test('grade presets (GDPT 2018) keep questions in curriculum and mental-math siz
     }
   }
 });
+
+test('distractors cannot be eliminated by units digit, denominator, or answer position', () => {
+  const ctx = loadAppContext();
+  const num = s => (/^-?\d+([.,]\d+)?$/.test(String(s)) ? Number(String(s).replace(',', '.')) : null);
+  const last = s => String(s).replace(/\D/g, '').slice(-1);
+  const rank = [0, 0, 0, 0];
+  for (let g = 1; g <= 9; g++) {
+    const gr = ctx.NUMI_GRADES[g];
+    for (const style of g <= 5 ? ['normal', 'convenient', 'expression', 'missing', 'word'] : ['normal']) {
+      const cfg = { ...ctx.defaults, ops: gr.ops, types: gr.types, type: gr.types[0], digits: gr.digits, grade: g, questionStyle: style, termCount: 3 };
+      for (let i = 0; i < 300; i++) {
+        const q = ctx.generate(cfg);
+        const tag = `Lớp ${g} ${style}: "${q.q}" = ${q.answer} [${q.options}]`;
+        const fa = String(q.answer).match(/^-?\d+\/(\d+)$/);
+        if (fa) assert.ok(q.options.every(o => String(o).endsWith('/' + fa[1])), `${tag} denominator gives the answer away`);
+        const v = num(q.answer);
+        if (v === null || !q.options.every(o => num(o) !== null)) continue;
+        if (Math.abs(v) >= 20 || /[.,]/.test(q.answer)) {
+          assert.ok(q.options.every(o => last(o) === last(q.answer)), `${tag} units digit gives the answer away`);
+        }
+        rank[q.options.map(num).sort((x, y) => x - y).indexOf(v)]++;
+      }
+    }
+  }
+  const total = rank.reduce((a, b) => a + b, 0);
+  for (const r of rank) assert.ok(r / total > 0.17 && r / total < 0.33, `answer position is predictable: ${rank}`);
+});
