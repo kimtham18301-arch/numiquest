@@ -31,5 +31,6 @@ Tài liệu lưu lại định hướng tinh gọn và phát triển cho **NumiQ
 - [x] **Tinh gọn kiến trúc:** Gỡ bỏ hoàn toàn các module chồng chéo (Bản đồ 1,7 MB, Nông trại cũ, Level thử thách cũ, Phòng học & Thi cử phức tạp), giảm còn 14 script cốt lõi và cập nhật Service Worker `numiquick-v2.2.0`.
 - [x] **GitHub Actions CI:** Tự động chạy `node --check` và `node --test tests/core.test.js` trên mỗi Push / Pull Request.
 - [x] **Kết nối Supabase thật (v2.5):** Đăng ký/đăng nhập bằng tên + PIN (Edge Function `numi-signup`), đồng bộ tiến độ, lớp học, mã lớp, danh sách học sinh, giao bài và nộp kết quả đa thiết bị (`cloud-classes.js`, `cloud-setup.sql`).
-- [ ] **Giới hạn tần suất cho `numi-signup`** và nâng PIN tối thiểu lên 6 ký tự.
-- [ ] **Test tự động cho `cloud-classes.js`** (hiện chỉ kiểm thử tay hai thiết bị).
+- [x] **Giới hạn tần suất `numi-signup`** (40 lượt/IP/giờ, trong bộ nhớ) và chặn tên đăng nhập `admin`.
+- [ ] **Nâng PIN tối thiểu lên 6 ký tự** (đang 4; cần đổi cả quick-join mặc định `1234`).
+- [x] **Test tự động cho `cloud-classes.js`** (`tests/cloud-classes.test.js`, giả lập Supabase trong bộ nhớ, nhiều thiết bị).

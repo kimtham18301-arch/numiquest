@@ -25,4 +25,4 @@ jobs:
           done
 
       - name: Run unit tests
-        run: node --test tests/core.test.js
+        run: node --test tests/*.test.js

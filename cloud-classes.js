@@ -10,6 +10,7 @@
   const ASG_PUSHED_KEY = 'numi-cloud-pushed-asg-v1';   // local assignment ids already pushed (so deletes are intentional)
   const SUB_PUSHED_KEY = 'numi-cloud-pushed-subs-v1';  // "username:assignmentId" submissions already pushed
   const uidToUser = new Map();                          // cloud user id -> username (filled while pulling the roster)
+  const DEMO_ACCOUNTS = new Set(['colan', 'minhkhoi', 'baoan', 'haidang']); // seeded in cloud.js / teacher-classes.js
   const STATS_MS = 4000;
 
   let busy = false, again = false, mirroring = false, statsTimer = null, syncTimer = null;
@@ -73,9 +74,11 @@
   async function pullTeacherClasses(u) {
     const remote = await rest('numi_classrooms?teacher_id=eq.' + u.uid + '&select=*') || [];
     const local = readClasses();
+    const pushed = new Set(j(PUSHED_KEY, []));
     let changed = false;
     for (const r of remote) {
       let cls = local.find(c => (r.local_id && c.id === r.local_id) || c.code === String(r.join_code).toUpperCase());
+      if (!cls && r.local_id && pushed.has(r.local_id)) continue; // deleted on this device: pushTeacherClasses removes it from the cloud
       if (!cls) {
         local.unshift(remoteToLocal(r, { teacherUsername: u.username }));
         changed = true;
@@ -252,8 +255,10 @@
       if (pushed.has(r.local_id) && !localIds.has(r.local_id)) {
         await rest('numi_assignments?id=eq.' + r.id, 'DELETE');
       } else if (!localIds.has(r.local_id) && !pushed.has(r.local_id) && r.local_id) {
+        // classId + createdBy are what the teacher workspace filters its "assignments of this class" list on
+        const cls = classes.find(c => c.cloudId === r.classroom_id);
         list.unshift({ id: r.local_id, title: r.title, due_date: r.due_date || '', targetStudents: r.target_students || [],
-          config: r.config || {}, created_at: r.created_at, submissions: {} });
+          config: r.config || {}, created_at: r.created_at, submissions: {}, classId: cls ? cls.id : undefined, createdBy: u.username });
         localIds.add(r.local_id); changed = true;
       }
     }
@@ -374,12 +379,14 @@
   function scheduleStats() { if (statsTimer) return; statsTimer = setTimeout(() => { statsTimer = null; sync(); }, STATS_MS); }
 
   // Mirror whenever the classes list is written by the existing UI code.
-  const origSetItem = Storage.prototype.setItem;
-  Storage.prototype.setItem = function (k, v) {
-    const r = origSetItem.apply(this, arguments);
-    if ((k === CLASSES_KEY || k === ASG_KEY) && !mirroring) schedule();
-    return r;
-  };
+  if (typeof Storage !== 'undefined') {
+    const origSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, v) {
+      const r = origSetItem.apply(this, arguments);
+      if ((k === CLASSES_KEY || k === ASG_KEY) && !mirroring) schedule();
+      return r;
+    };
+  }
 
   // Sign-in / sign-out signal: cloud.js stores the session through cloudStoreSession.
   if (typeof cloudStoreSession === 'function') {
@@ -400,6 +407,7 @@
   async function linkAccount(username, pin, hadLocal = false) {
     if (typeof cloudConfigured !== 'function' || !cloudConfigured()) return false;
     const key = String(username || '').toLowerCase();
+    if (DEMO_ACCOUNTS.has(key)) return false; // seeded demo accounts share a public PIN: keep them on-device only
     if (typeof cloudSession !== 'undefined' && cloudSession && cloudSession.user && cloudSession.user.email === key + '@numiquick.app') return true;
     try {
       await cloudSignInUser(key, pin);
