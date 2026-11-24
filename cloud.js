@@ -2,6 +2,7 @@
 let cloudSession=null,cloudReady=false,cloudRevision=null,cloudDirty=false,cloudTimer=null,cloudBusy=false,cloudRecovering=false,cloudStatus='local';
 const CLOUD_SESSION_KEY='numi-cloud-session-v1',CLOUD_OWNER_KEY='numi-cloud-owner-v1';
 
+const NUMI_MIN_PIN=6; // shortest PIN/password accepted when creating or changing one
 function currentAuthUser(){
   if(cloudSession&&cloudSession.user){
     // Username accounts linked to cloud keep their local profile (name, role, grade) as the identity.
@@ -198,7 +199,7 @@ async function localSignUp(name,username,password,avatar='bunny',grade=1){
   username=String(username||'').trim().toLowerCase().replace(/\s+/g,'');
   if(!username||username.length<2)throw Error(t('Tên đăng nhập cần ít nhất 2 ký tự.','Username must be at least 2 characters.'));
   if(!/^[a-z0-9_.-]+$/.test(username))throw Error(t('Tên đăng nhập chỉ gồm chữ cái không dấu, số hoặc dấu gạch.','Username can only contain letters, numbers, or dashes.'));
-  if(!password||password.length<4)throw Error(t('Mật khẩu cần ít nhất 4 ký tự hoặc 4 số.','Password must be at least 4 characters.'));
+  if(!password||password.length<NUMI_MIN_PIN)throw Error(t('Mật khẩu / PIN cần ít nhất 6 ký tự.','Password / PIN must be at least 6 characters.'));
   grade=Number(grade)||1;
   const users=getLocalUsers();
   if(users[username])throw Error(t('Tên đăng nhập này đã có bạn dùng rồi. Hãy chọn tên khác nhé!','This username is already taken. Please choose another!'));
@@ -352,7 +353,7 @@ async function updateUserPassword(newPassword){
   const u=currentAuthUser();
   if(!u)throw Error(t('Chưa đăng nhập.','Not signed in.'));
   const pwd=String(newPassword||'').trim();
-  if(!pwd||pwd.length<4)throw Error(t('Mật khẩu / Mã PIN cần ít nhất 4 ký tự hoặc 4 số.','Password / PIN must be at least 4 characters.'));
+  if(!pwd||pwd.length<NUMI_MIN_PIN)throw Error(t('Mật khẩu / Mã PIN cần ít nhất 6 ký tự.','Password / PIN must be at least 6 characters.'));
   const users=getLocalUsers(),username=u.username;
   if(!users[username])throw Error(t('Không tìm thấy tài khoản.','Account not found.'));
   const hash=await hashPassword(pwd);
@@ -482,15 +483,15 @@ function renderProfile(){
             </h4>
             <form id="changePinForm" class="profile-pin-form">
               <div class="profile-pwd-fields-grid">
-                <label>${t('Mật khẩu mới (tối thiểu 4 số/ký tự)','New password (min 4 characters)')}
+                <label>${t('Mật khẩu mới (tối thiểu 6 ký tự)','New password (min 6 characters)')}
                   <div class="pwd-input-wrap">
-                    <input type="password" id="newPinInput" minlength="4" required placeholder="${t('Ví dụ: 1234 hoặc bông hoa','e.g. 1234 or flower')}">
+                    <input type="password" id="newPinInput" minlength="6" required placeholder="${t('Ví dụ: 123456 hoặc bonghoa','e.g. 123456 or flower')}">
                     <button type="button" class="pwd-eye-btn" data-toggle-eye="newPinInput" title="${t('Hiện/ẩn mật khẩu','Toggle visibility')}">${t('Hiện','Show')}</button>
                   </div>
                 </label>
                 <label>${t('Nhập lại mật khẩu mới','Confirm new password')}
                   <div class="pwd-input-wrap">
-                    <input type="password" id="confirmPinInput" minlength="4" required placeholder="${t('Nhập lại mật khẩu mới','Confirm new password')}">
+                    <input type="password" id="confirmPinInput" minlength="6" required placeholder="${t('Nhập lại mật khẩu mới','Confirm new password')}">
                     <button type="button" class="pwd-eye-btn" data-toggle-eye="confirmPinInput" title="${t('Hiện/ẩn mật khẩu','Toggle visibility')}">${t('Hiện','Show')}</button>
                   </div>
                 </label>
@@ -653,7 +654,7 @@ function renderProfile(){
       const p2=$('#confirmPinInput')?.value.trim();
       const msg=$('#pinMessage');
       if(msg)msg.textContent='';
-      if(!p1||p1.length<4){if(msg)msg.textContent=t('Mật khẩu cần ít nhất 4 ký tự hoặc 4 số.','Password must be at least 4 characters.');return}
+      if(!p1||p1.length<NUMI_MIN_PIN){if(msg)msg.textContent=t('Mật khẩu cần ít nhất 6 ký tự.','Password must be at least 6 characters.');return}
       if(p1!==p2){if(msg)msg.textContent=t('Mật khẩu xác nhận chưa khớp. Vui lòng kiểm tra lại.','Confirmation password does not match.');return}
       try{
         await updateUserPassword(p1);
@@ -750,7 +751,7 @@ function openAccount(mode='login'){
     <form id="authForm" class="auth-form">
       ${signup?`<label>${t('Tên của em (Ví dụ: Minh Khôi, Bảo An)','Your name (e.g. Alex, Emily)')}<input name="name" maxlength="30" placeholder="${t('Nhập tên của em','Enter your name')}" required value="${state.name&&state.name!=='Explorer'?esc(state.name):''}"></label>`:''}
       <label>${t('Tên đăng nhập','Username')}<input name="username" maxlength="50" autocomplete="username" placeholder="${t('Ví dụ: khoi123','e.g. alex123')}" required></label>
-      <label>${t('Mật khẩu / Mã PIN (tối thiểu 4 ký tự)','Password / PIN (min 4 characters)')}<input name="password" type="password" autocomplete="${signup?'new-password':'current-password'}" minlength="4" required placeholder="••••"></label>
+      <label>${t('Mật khẩu / Mã PIN (tối thiểu 6 ký tự)','Password / PIN (min 6 characters)')}<input name="password" type="password" autocomplete="${signup?'new-password':'current-password'}" ${signup?'minlength="6"':''} required placeholder="••••"></label>
       ${signup?`<label>${t('Em đang học lớp mấy?','Which grade are you in?')}</label><div class="grade-signup-picks">${[1,2,3,4,5,6,7,8,9].map(g=>`<label><input type="radio" name="signupGrade" value="${g}" ${g===1?'checked':''}><span>${(typeof NUMI_GRADES!=='undefined'&&NUMI_GRADES[g])?(lang==='vi'?NUMI_GRADES[g].name:NUMI_GRADES[g].enName):('Lớp '+g)}</span></label>`).join('')}</div>`:''}
       ${companionPicks}
       <p id="authMessage" class="danger" role="status" style="margin:12px 0;font-weight:700"></p>

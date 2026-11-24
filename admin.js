@@ -515,10 +515,10 @@ async function adminResetPinModal(username) {
   if (!user) return;
 
   modal(`<h2>${t('Đổi mã PIN cho ' + esc(user.name), 'Reset PIN for ' + esc(user.name))}</h2>
-  <p class="muted">${t('Nhập mã PIN hoặc mật khẩu mới cho học sinh @' + esc(username) + ' (tối thiểu 4 ký tự):', 'Enter new PIN or password for student @' + esc(username) + ' (min 4 characters):')}</p>
+  <p class="muted">${t('Nhập mã PIN hoặc mật khẩu mới cho học sinh @' + esc(username) + ' (tối thiểu 6 ký tự):', 'Enter new PIN or password for student @' + esc(username) + ' (min 6 characters):')}</p>
   <div style="margin:16px 0">
     <label style="display:block;margin-bottom:6px;font-weight:700;font-size:13px;color:#3b5e39">${t('Mật khẩu / Mã PIN mới:','New PIN/Password:')}</label>
-    <input type="text" id="adminNewPinInput" minlength="4" value="" placeholder="${t('Nhập PIN mới (tối thiểu 4 ký tự)','Enter new PIN (min 4 chars)')}" style="width:100%;font-size:18px;padding:10px 14px;border-radius:12px;border:2px solid #b8dca5;text-align:center;font-weight:800;letter-spacing:1px">
+    <input type="text" id="adminNewPinInput" minlength="6" value="" placeholder="${t('Nhập PIN mới (tối thiểu 6 ký tự)','Enter new PIN (min 6 chars)')}" style="width:100%;font-size:18px;padding:10px 14px;border-radius:12px;border:2px solid #b8dca5;text-align:center;font-weight:800;letter-spacing:1px">
   </div>
   <div class="actions">
     <button class="primary" id="confirmResetPinBtn">${t('Lưu mã PIN mới','Save New PIN')}</button>
@@ -527,8 +527,8 @@ async function adminResetPinModal(username) {
 
   $('#confirmResetPinBtn').onclick = async () => {
     const newPin = String($('#adminNewPinInput').value || '').trim();
-    if (!newPin || newPin.length < 4) {
-      toast(t('Mã PIN cần ít nhất 4 ký tự.', 'PIN must be at least 4 characters.'));
+    if (!newPin || newPin.length < NUMI_MIN_PIN) {
+      toast(t('Mã PIN cần ít nhất 6 ký tự.', 'PIN must be at least 6 characters.'));
       return;
     }
     const hash = await hashPassword(newPin);
@@ -609,8 +609,8 @@ function adminAddStudentModal() {
     <label style="font-weight:700;font-size:13px;color:#3b5e39">${t('Tên đăng nhập (@username không dấu):','Username (no spaces):')}
       <input name="username" maxlength="50" placeholder="${t('Ví dụ: minhkhoi4a','e.g. minhkhoi4a')}" required style="width:100%;font-size:15px;padding:9px 12px;border-radius:10px;border:1.5px solid #c2dfae;margin-top:4px">
     </label>
-    <label style="font-weight:700;font-size:13px;color:#3b5e39">${t('Mật khẩu / Mã PIN (tối thiểu 4 số/ký tự):','PIN / Password (min 4 chars):')}
-      <input name="password" minlength="4" value="1234" required style="width:100%;font-size:15px;padding:9px 12px;border-radius:10px;border:1.5px solid #c2dfae;margin-top:4px">
+    <label style="font-weight:700;font-size:13px;color:#3b5e39">${t('Mật khẩu / Mã PIN (tối thiểu 6 ký tự):','PIN / Password (min 6 chars):')}
+      <input name="password" minlength="6" value="123456" required style="width:100%;font-size:15px;padding:9px 12px;border-radius:10px;border:1.5px solid #c2dfae;margin-top:4px">
     </label>
     <label style="font-weight:700;font-size:13px;color:#3b5e39">${t('Khối lớp hiện tại:','Current Grade Level:')}
       <select name="grade" style="width:100%;font-size:15px;padding:9px 12px;border-radius:10px;border:1.5px solid #c2dfae;margin-top:4px">
@@ -649,7 +649,7 @@ function adminAddStudentModal() {
     if (!name) { errEl.textContent = t('Vui lòng nhập tên học sinh.', 'Please enter student name.'); return; }
     if (!username || username.length < 2) { errEl.textContent = t('Tên đăng nhập cần ít nhất 2 ký tự.', 'Username must be at least 2 chars.'); return; }
     if (!/^[a-z0-9_.-]+$/.test(username)) { errEl.textContent = t('Tên đăng nhập chỉ gồm chữ cái không dấu, số hoặc dấu gạch.', 'Invalid username format.'); return; }
-    if (!password || password.length < 4) { errEl.textContent = t('Mật khẩu cần ít nhất 4 ký tự.', 'Password must be at least 4 chars.'); return; }
+    if (!password || password.length < NUMI_MIN_PIN) { errEl.textContent = t('Mật khẩu cần ít nhất 6 ký tự.', 'Password must be at least 6 chars.'); return; }
 
     const users = getLocalUsers();
     if (users[username]) {

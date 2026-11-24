@@ -32,5 +32,5 @@ Tài liệu lưu lại định hướng tinh gọn và phát triển cho **NumiQ
 - [x] **GitHub Actions CI:** Tự động chạy `node --check` và `node --test tests/core.test.js` trên mỗi Push / Pull Request.
 - [x] **Kết nối Supabase thật (v2.5):** Đăng ký/đăng nhập bằng tên + PIN (Edge Function `numi-signup`), đồng bộ tiến độ, lớp học, mã lớp, danh sách học sinh, giao bài và nộp kết quả đa thiết bị (`cloud-classes.js`, `cloud-setup.sql`).
 - [x] **Giới hạn tần suất `numi-signup`** (40 lượt/IP/giờ, trong bộ nhớ) và chặn tên đăng nhập `admin`.
-- [ ] **Nâng PIN tối thiểu lên 6 ký tự** (đang 4; cần đổi cả quick-join mặc định `1234`).
+- [x] **PIN/mật khẩu tối thiểu 6 ký tự** khi tạo hoặc đổi (hằng `NUMI_MIN_PIN` trong `cloud.js`; quick-join mặc định `123456`). Tài khoản cũ và tài khoản mẫu có PIN 4 số vẫn đăng nhập được.
 - [x] **Test tự động cho `cloud-classes.js`** (`tests/cloud-classes.test.js`, giả lập Supabase trong bộ nhớ, nhiều thiết bị).

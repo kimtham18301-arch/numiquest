@@ -570,7 +570,7 @@ test('teacher classrooms, code join, teacher workspace isolation, and class back
   const created = await ctx.createTeacherWithClass({
     name: 'Thầy Hùng',
     username: 'thayhung',
-    password: '5678',
+    password: '567890',
     className: 'Lớp 5B',
     grade: 5
   });
@@ -585,7 +585,7 @@ test('teacher classrooms, code join, teacher workspace isolation, and class back
   assert.equal(ctx.getClassesForStudent('baoan').some(c => c.id === created.cls.id), true);
 
   // Teacher signs in -> stays in teacher workspace & only sees their own enrolled students
-  await ctx.localSignIn('thayhung', '5678');
+  await ctx.localSignIn('thayhung', '567890');
   assert.equal(ctx.isCurrentUserTeacher(), true);
   assert.equal(ctx.view, 'teacher');
   const ownStudents = ctx.getStudentsForTeacher('thayhung', created.cls.id);
@@ -609,7 +609,7 @@ test('teacher self-setup by level/grade, saved code student quick-join, strict t
   const setupRes = await ctx.createTeacherWithClass({
     name: 'Thầy Nam',
     username: 'thaynam',
-    password: '4321',
+    password: '432100',
     level: 'secondary',
     grade: 7,
     className: 'Lớp 7B',
@@ -633,7 +633,7 @@ test('teacher self-setup by level/grade, saved code student quick-join, strict t
   const joinRes = await ctx.studentQuickJoinByCode({
     code: '7bnam',
     name: 'Nguyễn Minh Anh',
-    pin: '1234',
+    pin: '123456',
     avatar: 'fox'
   });
   assert.equal(joinRes.ok, true);
@@ -719,4 +719,29 @@ test('MOET GDPT 2018 grade-by-grade curriculum rules (Grades 1-9) are enforced a
     if (g === 8) assert.ok(skills.has('identity:diffSq') || skills.has('identity:sq'), 'Grade 8 should include algebraic identities');
     if (g === 9) assert.ok(skills.has('cbrt:∛') || skills.has('equation:x') || skills.has('sqrt:√'), 'Grade 9 should include roots/equations');
   }
+});
+
+test('new PINs/passwords must have at least 6 characters, but existing short PINs can still sign in', async () => {
+  const ctx = loadAppContext();
+  await assert.rejects(() => ctx.localSignUp('Be An', 'bean', '1234', 'fox', 2), /6/);
+  await assert.rejects(() => ctx.createTeacherWithClass({ name: 'Co A', username: 'coa', password: '12345', className: 'Lop 3A', grade: 3 }), /6/);
+  await ctx.localSignUp('Be An', 'bean', '123456', 'fox', 2);
+  assert.equal(ctx.currentAuthUser().username, 'bean');
+  await ctx.localSignOut();
+  // seeded demo accounts keep their legacy 4-digit PIN and must still work
+  await ctx.localSignIn('minhkhoi', '1234');
+  assert.equal(ctx.currentAuthUser().username, 'minhkhoi');
+  await ctx.localSignOut();
+  await ctx.localSignIn('colan', '1234');
+  assert.equal(ctx.currentAuthUser().role, 'teacher');
+});
+
+test('quick-join rejects short PINs and defaults to a 6-character PIN', async () => {
+  const ctx = loadAppContext();
+  await assert.rejects(() => ctx.studentQuickJoinByCode({ code: '4ANUMI', name: 'Be Lan', pin: '1234' }), /6/);
+  const ok = await ctx.studentQuickJoinByCode({ code: '4ANUMI', name: 'Be Lan' });
+  assert.equal(ok.ok, true);
+  await ctx.localSignOut();
+  await ctx.localSignIn(ok.username, '123456');
+  assert.equal(ctx.currentAuthUser().username, ok.username);
 });

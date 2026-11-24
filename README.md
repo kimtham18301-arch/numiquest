@@ -1,4 +1,4 @@
-# NumiQuick — bản cập nhật 2.5.2
+# NumiQuick — bản cập nhật 2.5.3
 
 Web luyện tính nhẩm vui cho học sinh tiểu học & THCS (Lớp 1–9 theo chuẩn GDPT 2018), chạy tĩnh trên GitHub Pages.
 
@@ -30,7 +30,7 @@ Cài đặt một lần:
 3. Edge Functions → tạo hàm `numi-signup` (mã nằm trong mục dưới), để mặc định, deploy.
 4. Điền `url` và `publishableKey` (`sb_publishable_...`) vào `cloud-config.js`. **Không** đưa `secret`/`service_role` vào repo.
 
-Lưu ý: PIN tối thiểu 4 ký tự khá yếu cho dữ liệu thật; hàm `numi-signup` giới hạn tạm 40 lượt/IP/giờ (trong bộ nhớ). Dữ liệu ở bản thử nghiệm nên xóa trước khi dùng thật.
+Lưu ý: PIN/mật khẩu mới tối thiểu 6 ký tự (tài khoản cũ có PIN ngắn hơn vẫn đăng nhập được cho đến khi đổi); hàm `numi-signup` giới hạn tạm 40 lượt/IP/giờ (trong bộ nhớ). Dữ liệu ở bản thử nghiệm nên xóa trước khi dùng thật.
 
 <details><summary>Mã Edge Function <code>numi-signup</code></summary>
 

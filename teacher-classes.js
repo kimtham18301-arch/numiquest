@@ -199,7 +199,7 @@
     if (cleanUser.length < 2 || !/^[a-z0-9_.-]+$/.test(cleanUser)) {
       throw new Error(t('Tên đăng nhập chỉ gồm chữ không dấu, số (ít nhất 2 ký tự).', 'Username must be at least 2 alphanumeric characters.'));
     }
-    if (cleanPwd.length < 4) throw new Error(t('Mã PIN / Mật khẩu cần ít nhất 4 ký tự.', 'PIN / Password must be at least 4 characters.'));
+    if (cleanPwd.length < NUMI_MIN_PIN) throw new Error(t('Mã PIN / Mật khẩu cần ít nhất 6 ký tự.', 'PIN / Password must be at least 6 characters.'));
     if (!cleanClass) throw new Error(t('Vui lòng nhập tên lớp học (VD: Lớp 5B).', 'Please enter a class name (e.g. Grade 5B).'));
 
     const users = getLocalUsers();
@@ -323,9 +323,9 @@
   }
 
   // Student Quick-Join: Enter ONLY Class Code + Name -> auto-creates/re-enters account & joins class!
-  async function studentQuickJoinByCode({ code, name, pin = '1234', avatar = 'bunny' } = {}) {
+  async function studentQuickJoinByCode({ code, name, pin = '123456', avatar = 'bunny' } = {}) {
     const cleanName = String(name || '').trim().slice(0, 30);
-    const cleanPin = String(pin || '1234').trim() || '1234';
+    const cleanPin = String(pin || '123456').trim() || '123456';
     const cls = findClassByCode(code);
     if (!cls) {
       throw new Error(t('Mã lớp chưa đúng hoặc không tồn tại. Em kiểm tra lại mã Thầy/Cô phát nhé!', 'Invalid class code. Please check the code from your teacher!'));
@@ -333,8 +333,8 @@
     if (!cleanName || cleanName.length < 2) {
       throw new Error(t('Em hãy điền họ và tên của mình (ít nhất 2 ký tự) nhé!', 'Please enter your name (at least 2 characters)!'));
     }
-    if (cleanPin.length < 4) {
-      throw new Error(t('Mã PIN cần ít nhất 4 số/ký tự (hoặc để mặc định 1234).', 'PIN must be at least 4 characters (or keep 1234).'));
+    if (cleanPin.length < NUMI_MIN_PIN) {
+      throw new Error(t('Mã PIN cần ít nhất 6 số/ký tự (hoặc để mặc định 123456).', 'PIN must be at least 6 characters (or keep 123456).'));
     }
 
     const users = getLocalUsers();
@@ -571,8 +571,8 @@
         <label>${t('Họ và tên của em', 'Your Full Name')}
           <input name="name" maxlength="30" required placeholder="${t('Ví dụ: Nguyễn Minh Anh', 'e.g. Minh Anh')}">
         </label>
-        <label>${t('Mã PIN 4 số của em (dùng để đăng nhập lại lần sau)', 'Your 4-digit PIN (for signing back in)')}
-          <input name="pin" minlength="4" maxlength="20" value="1234" required placeholder="1234">
+        <label>${t('Mã PIN từ 6 ký tự của em (dùng để đăng nhập lại lần sau)', 'Your PIN, 6+ characters (for signing back in)')}
+          <input name="pin" minlength="6" maxlength="20" value="123456" required placeholder="123456">
         </label>
         <div class="settings-hint" style="margin-top:8px">${t('Chọn bạn thú đồng hành:', 'Choose your study buddy:')}</div>
         <div class="buddy-choices">
@@ -641,7 +641,7 @@
             pin: fd.get('pin'),
             avatar: chosenAvatar
           });
-          if (cloudCls && joined && joined.username) await cloudCls.linkAccount(joined.username, String(fd.get('pin') || '1234').trim() || '1234');
+          if (cloudCls && joined && joined.username) await cloudCls.linkAccount(joined.username, String(fd.get('pin') || '123456').trim() || '123456');
         } catch (err) {
           if (errEl) errEl.textContent = err.message;
         } finally {
@@ -674,7 +674,7 @@
             <input name="username" minlength="2" maxlength="20" required autocomplete="username" placeholder="${t('VD: cohuong', 'e.g. mshuong')}">
           </label>
           <label>${t('Mật khẩu / Mã PIN (4+ ký tự)', 'Password / PIN (4+ chars)')}
-            <input name="password" type="password" minlength="4" maxlength="24" required autocomplete="new-password" placeholder="••••">
+            <input name="password" type="password" minlength="6" maxlength="24" required autocomplete="new-password" placeholder="••••">
           </label>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -954,7 +954,7 @@
           <input name="username" required minlength="2" maxlength="20" placeholder="giahan" autocomplete="off">
         </label>
         <label>${t('Mã PIN (4+ số):', 'PIN (4+ chars):')}
-          <input name="password" required minlength="4" maxlength="20" value="1234" autocomplete="off">
+          <input name="password" required minlength="6" maxlength="20" value="123456" autocomplete="off">
         </label>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -993,7 +993,7 @@
           if (username.length < 2 || !/^[a-z0-9_.-]+$/.test(username)) {
             throw new Error(t('Tên đăng nhập chỉ gồm chữ không dấu và số.', 'Alphanumeric username only.'));
           }
-          if (password.length < 4) throw new Error(t('Mã PIN cần ít nhất 4 ký tự.', 'PIN needs 4+ characters.'));
+          if (password.length < NUMI_MIN_PIN) throw new Error(t('Mã PIN cần ít nhất 6 ký tự.', 'PIN needs 6+ characters.'));
           const users = getLocalUsers();
           if (users[username]) throw new Error(t('Tên đăng nhập này đã tồn tại!', 'Username already exists!'));
           const hash = await hashPassword(password);
@@ -1493,7 +1493,7 @@
           <input name="username" required minlength="2" maxlength="20" placeholder="thayhung" autocomplete="off">
         </label>
         <label>${t('Mã PIN / Mật khẩu:', 'PIN / Password:')}
-          <input name="password" required minlength="4" maxlength="20" value="1234" autocomplete="off">
+          <input name="password" required minlength="6" maxlength="20" value="123456" autocomplete="off">
         </label>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
