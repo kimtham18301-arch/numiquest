@@ -673,8 +673,8 @@
           <label>${t('Tên đăng nhập', 'Username')}
             <input name="username" minlength="2" maxlength="20" required autocomplete="username" placeholder="${t('VD: cohuong', 'e.g. mshuong')}">
           </label>
-          <label>${t('Mật khẩu / Mã PIN (4+ ký tự)', 'Password / PIN (4+ chars)')}
-            <input name="password" type="password" minlength="6" maxlength="24" required autocomplete="new-password" placeholder="••••">
+          <label>${t('Mật khẩu / Mã PIN (6+ ký tự)', 'Password / PIN (6+ chars)')}
+            <input name="password" type="password" minlength="6" maxlength="24" required autocomplete="new-password" placeholder="••••••">
           </label>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -953,7 +953,7 @@
         <label>${t('Tên đăng nhập:', 'Username:')}
           <input name="username" required minlength="2" maxlength="20" placeholder="giahan" autocomplete="off">
         </label>
-        <label>${t('Mã PIN (4+ số):', 'PIN (4+ chars):')}
+        <label>${t('Mã PIN (6+ ký tự):', 'PIN (6+ chars):')}
           <input name="password" required minlength="6" maxlength="20" value="123456" autocomplete="off">
         </label>
       </div>

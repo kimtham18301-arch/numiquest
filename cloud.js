@@ -751,7 +751,7 @@ function openAccount(mode='login'){
     <form id="authForm" class="auth-form">
       ${signup?`<label>${t('Tên của em (Ví dụ: Minh Khôi, Bảo An)','Your name (e.g. Alex, Emily)')}<input name="name" maxlength="30" placeholder="${t('Nhập tên của em','Enter your name')}" required value="${state.name&&state.name!=='Explorer'?esc(state.name):''}"></label>`:''}
       <label>${t('Tên đăng nhập','Username')}<input name="username" maxlength="50" autocomplete="username" placeholder="${t('Ví dụ: khoi123','e.g. alex123')}" required></label>
-      <label>${t('Mật khẩu / Mã PIN (tối thiểu 6 ký tự)','Password / PIN (min 6 characters)')}<input name="password" type="password" autocomplete="${signup?'new-password':'current-password'}" ${signup?'minlength="6"':''} required placeholder="••••"></label>
+      <label>${t('Mật khẩu / Mã PIN (tối thiểu 6 ký tự)','Password / PIN (min 6 characters)')}<input name="password" type="password" autocomplete="${signup?'new-password':'current-password'}" ${signup?'minlength="6"':''} required placeholder="••••••"></label>
       ${signup?`<label>${t('Em đang học lớp mấy?','Which grade are you in?')}</label><div class="grade-signup-picks">${[1,2,3,4,5,6,7,8,9].map(g=>`<label><input type="radio" name="signupGrade" value="${g}" ${g===1?'checked':''}><span>${(typeof NUMI_GRADES!=='undefined'&&NUMI_GRADES[g])?(lang==='vi'?NUMI_GRADES[g].name:NUMI_GRADES[g].enName):('Lớp '+g)}</span></label>`).join('')}</div>`:''}
       ${companionPicks}
       <p id="authMessage" class="danger" role="status" style="margin:12px 0;font-weight:700"></p>
