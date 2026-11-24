@@ -38,6 +38,6 @@ Mã Edge Function `numi-signup` nằm ở [`supabase/functions/numi-signup/index
 
 Chạy kiểm tra cú pháp và bộ unit test bằng Node.js (v20+):
 ```bash
-for f in *.js tests/*.js; do node --check "$f"; done
+for f in *.js tests/*.js tests/helpers/*.js; do node --check "$f"; done
 node --test tests/*.test.js
 ```

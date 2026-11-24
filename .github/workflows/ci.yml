@@ -20,7 +20,7 @@ jobs:
 
       - name: Check JavaScript syntax
         run: |
-          for f in *.js tests/*.js; do
+          for f in *.js tests/*.js tests/helpers/*.js; do
             node --check "$f"
           done
 

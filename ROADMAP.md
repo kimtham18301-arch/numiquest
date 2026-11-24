@@ -44,3 +44,14 @@ Tài liệu lưu lại định hướng tinh gọn và phát triển cho **NumiQ
 - [x] **Không lưu/hiện mật khẩu dạng chữ thường:** bỏ ô "Mật khẩu hiện tại" (Hiện/Chép) ở Hồ sơ và cột mật khẩu trong dữ liệu Admin.
 - [x] **Script dọn dữ liệu thử nghiệm:** `cloud-reset-test-data.sql` (xem trước số dòng, rồi mới xóa).
 - [ ] **Còn lại:** Thầy/Cô hoặc Admin đặt lại PIN cho học sinh mới chỉ đổi trên máy đó, chưa đổi mật khẩu trên Supabase (cần thêm Edge Function có quyền admin).
+
+---
+
+## Nhóm 6: Kiểm thử & Dễ bảo trì *(v2.7.0)*
+- [x] **Test cho `cloud.js`** (`tests/cloud.test.js`, Supabase giả lập trong bộ nhớ, nhiều thiết bị): lưu theo revision, phát hiện xung đột không ghi đè, mất mạng vẫn giữ tiến độ, đổi PIN đồng bộ lên mạng (lỗi thì giữ PIN cũ), đăng xuất. Đã kiểm tra bằng cách cố ý làm hỏng code (mutation) để chắc test bắt được lỗi.
+- [x] **Bộ nạp test dùng chung** (`tests/helpers/app-context.js`): đọc danh sách script từ `index.html`, nên tách/đổi tên file không phải sửa test.
+- [x] **Tách `teacher-classes.js` (1.900 dòng)** thành `teacher-classes.js` (dữ liệu), `teacher-auth-gate.js` (màn đăng nhập), `teacher-workspace.js` (trang giáo viên), `teacher-integration.js` (Admin quản lý giáo viên, gắn lớp vào trang học sinh, điều hướng). Dùng chung qua `window.NumiClasses`; CSS nhúng chuyển vào `style.css`.
+- [x] **Tách `admin-dashboard.js`** thành `admin-assignments.js` (giao bài, link #hw, thống kê, sao lưu; `window.NumiAdminData`) và `admin-dashboard.js` (giao diện).
+- [x] **Sửa lỗi có sẵn:** nút Sao lưu/Khôi phục trong Admin Center trước đây bỏ sót danh sách lớp học.
+- [ ] **Chưa làm:** `app.js` (1.264 dòng, viết nén, 62 hàm toàn cục) – nên định dạng lại trước rồi mới tách.
+- [ ] **Chưa làm:** kiểm tra đầu-cuối với Supabase thật trên hai máy (cần dự án Supabase thử nghiệm riêng).
