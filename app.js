@@ -168,8 +168,8 @@ const NUMI_GRADES={
   5:{id:5,name:'Lớp 5',enName:'Grade 5',icon:'',descVi:'Chuẩn GDPT 2018: Số thập phân (+, −, ×, ÷, nhân chia 10/100), tỉ số phần trăm (%) và ôn phân số',descEn:'MOET Grade 5: Decimals (+, −, ×, ÷, ×10/100), percentages (%) & fraction review',ops:['+','-','*','/'],types:['decimal','fraction','natural'],digits:[1,2],seconds:20,count:15,inputMode:'choices'},
   6:{id:6,name:'Lớp 6',enName:'Grade 6',icon:'',descVi:'Chuẩn GDPT 2018: Số nguyên âm Z (+, −, ×, ÷), lũy thừa số mũ tự nhiên (aⁿ), phân số & số thập phân',descEn:'MOET Grade 6: Signed integers Z, natural-exponent powers (aⁿ), signed fractions & decimals',ops:['+','-','*','/'],types:['negative','fraction','decimal','natural'],digits:[1,2],seconds:16,count:15,inputMode:'choices'},
   7:{id:7,name:'Lớp 7',enName:'Grade 7',icon:'',descVi:'Chuẩn GDPT 2018: Số hữu tỉ Q, lũy thừa, căn bậc hai số học (√), giá trị tuyệt đối & tính giá trị biểu thức',descEn:'MOET Grade 7: Rational numbers Q, powers, square roots (√), absolute value & algebraic expressions',ops:['+','-','*','/'],types:['negative','fraction','decimal'],digits:[1,2],seconds:16,count:15,inputMode:'choices'},
-  8:{id:8,name:'Lớp 8',enName:'Grade 8',icon:'',descVi:'Chuẩn GDPT 2018: Tính nhanh bằng 7 Hằng đẳng thức đáng nhớ (a²−b², (a±b)²), đa thức & số hữu tỉ nâng cao',descEn:'MOET Grade 8: Fast identities (a²−b², (a±b)²), polynomials & advanced rational arithmetic',ops:['+','-','*','/'],types:['negative','fraction','decimal'],digits:[2,3],seconds:15,count:15,inputMode:'choices'},
-  9:{id:9,name:'Lớp 9',enName:'Grade 9',icon:'',descVi:'Chuẩn GDPT 2018: Biến đổi căn bậc hai, căn bậc ba (∛), nhẩm nghiệm phương trình bậc 1–2 ôn thi vào 10',descEn:'MOET Grade 9: Square & cube roots (√, ∛), equation roots & grade-10 entrance exam speed prep',ops:['+','-','*','/'],types:['negative','fraction','decimal'],digits:[2,3],seconds:14,count:20,inputMode:'choices'}
+  8:{id:8,name:'Lớp 8',enName:'Grade 8',icon:'',descVi:'Chuẩn GDPT 2018: Tính nhanh bằng Hằng đẳng thức đáng nhớ (a²−b², (a±b)²), lũy thừa, phương trình bậc nhất một ẩn & ôn số hữu tỉ',descEn:'MOET Grade 8: Fast identities (a²−b², (a±b)²), powers, linear equations & rational review',ops:['+','-','*','/'],types:['negative','fraction','decimal'],digits:[2,3],seconds:15,count:15,inputMode:'choices'},
+  9:{id:9,name:'Lớp 9',enName:'Grade 9',icon:'',descVi:'Chuẩn GDPT 2018: Biến đổi căn bậc hai (đưa thừa số ra ngoài dấu căn), căn bậc ba (∛), nhẩm nghiệm phương trình bậc hai (Vi-ét) ôn thi vào 10',descEn:'MOET Grade 9: Simplifying square roots, cube roots (∛), quadratic roots via Vieta & grade-10 entrance prep',ops:['+','-','*','/'],types:['negative','fraction','decimal'],digits:[2,3],seconds:14,count:20,inputMode:'choices'}
 };
 if(typeof window!=='undefined')window.NUMI_GRADES=NUMI_GRADES;
 if(typeof global!=='undefined')global.NUMI_GRADES=NUMI_GRADES;
@@ -980,6 +980,23 @@ function setup(){
   refresh();
 }
 
+// Always return 4 distinct options: answer + candidates, then answer±k as filler (no negatives when answer ≥ 0).
+function opts4(answer,cands){
+  const a=String(answer),set=new Set([a]);
+  for(const c of cands){const s=String(c);if(s&&s!=='NaN'&&s!=='undefined')set.add(s);if(set.size>=4)break;}
+  const n=Number(a);
+  for(let k=1;set.size<4&&k<60&&Number.isFinite(n);k++){set.add(String(n+k));if(set.size<4&&(n<0||n-k>=0))set.add(String(n-k));}
+  return shuffle([...set].slice(0,4));
+}
+// Grade 4 (GDPT 2018): add/subtract fractions only when one denominator divides the other.
+function pickGrade4Denominator(da){
+  // ~35% same denominator (learned first), the rest need one-step common denominator
+  if(Math.random()<0.35)return da;
+  const cands=[];
+  for(let k=2;da*k<=24;k++)cands.push(da*k);          // multiples: 1/3 + 5/6
+  for(let d=2;d<da;d++)if(da%d===0)cands.push(d);      // divisors: 5/6 + 1/3
+  return cands.length?pick(cands):da;
+}
 function generate(c){
   const cfg=c||(typeof window!=='undefined'&&window.config)||config;
   const grade=cfg.grade?Number(cfg.grade):null;
@@ -994,7 +1011,10 @@ function generate(c){
   if(!allowedTypes.length)allowedTypes=['natural'];
 
   let type=pick(allowedTypes);
-  if(grade>=6&&allowedTypes.includes('negative')&&Math.random()<0.45){
+  // Grade 3: division with remainder ~20–25% instead of 50%
+  if(grade===3&&type==='remainder'&&Math.random()<0.55)type='natural';
+  // Integers are the core of Grade 6 only; Grades 7–9 keep them as review
+  if(grade===6&&allowedTypes.includes('negative')&&Math.random()<0.45){
     type='negative';
   }
   const digits=cfg.digits?.length?cfg.digits:null;
@@ -1027,7 +1047,7 @@ function generate(c){
       return {id:uid(),q:qStr,answer:ansStr,options:opts,skill:'decimal:*',config:{...cfg,type:'decimal',grade},explanation:expText};
     }
   }
-  if(grade===6&&Math.random()<0.28){
+  if(grade===6&&Math.random()<0.15){
     const base=ri(2,9);
     const exp=base<=3?ri(2,4):base<=5?ri(2,3):2;
     const val=base**exp;
@@ -1038,7 +1058,16 @@ function generate(c){
     return {id:uid(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'power:^',config:{...cfg,type:'natural',grade},explanation:expText};
   }
   if(grade===7&&Math.random()<0.3){
-    const kind=pick(['sqrt','abs','alg']);
+    const kind=pick(['sqrt','abs','alg','ratpow']);
+    if(kind==='ratpow'){
+      const [n,d]=pick([[1,2],[-1,2],[2,3],[-2,3],[1,3],[3,2],[3,4],[-3,4],[-1,3]]);
+      const e=Math.abs(n)<=2&&d<=3&&Math.random()<0.5?3:2;
+      const ansStr=frac(n**e,d**e);
+      const qStr=`(${n}/${d})^${e}`;
+      const opts=opts4(ansStr,[frac(n**e,d),frac(n,d**e),frac(-(n**e),d**e),frac(n*e,d*e),frac(n**e,d*e),frac(d**e,n**e),frac(n**e,d**e+1)]);
+      const expText=`${qStr} = ${n<0?`(${n})`:n}^${e} / ${d}^${e} = ${ansStr}\n• ${t('Lũy thừa của một thương: (a/b)ⁿ = aⁿ/bⁿ. Số âm mũ chẵn ra dương, mũ lẻ ra âm.','Power of a quotient: (a/b)ⁿ = aⁿ/bⁿ. A negative base gives + for even powers, − for odd.')}`;
+      return {id:uid(),q:qStr,answer:ansStr,options:opts,skill:'power:rational',config:{...cfg,type:'fraction',grade},explanation:expText};
+    }
     if(kind==='sqrt'){
       const root=ri(2,12),sq=root*root;
       const qStr=`√${sq}`,ansStr=String(root);
@@ -1055,13 +1084,22 @@ function generate(c){
       const k=ri(2,5),c=ri(1,9),xVal=ri(2,8),val=k*xVal+c;
       const qStr=t(`Tính ${k}x + ${c} khi x = ${xVal}`,`Find ${k}x + ${c} when x = ${xVal}`);
       const ansStr=String(val);
-      const opts=new Set([ansStr,String(k+xVal+c),String(val+k),String(Math.max(1,val-k)),String(k*(xVal+c))]);
+      const opts=opts4(ansStr,[k+xVal+c,val+k,Math.max(1,val-k),k*(xVal+c)]);
       const expText=`${k} × ${xVal} + ${c} = ${k*xVal} + ${c} = ${ansStr}\n• ${t(`Thay x = ${xVal} vào biểu thức, thực hiện phép nhân trước rồi cộng.`,`Substitute x = ${xVal}, multiply first then add.`)}`;
-      return {id:uid(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'algebra:eval',config:{...cfg,type:'natural',grade},explanation:expText};
+      return {id:uid(),q:qStr,answer:ansStr,options:opts,skill:'algebra:eval',config:{...cfg,type:'natural',grade},explanation:expText};
     }
   }
-  if(grade===8&&Math.random()<0.34){
-    const kind=pick(['diffSq','sqSum','power']);
+  if(grade===8&&Math.random()<0.4){
+    const kind=pick(['diffSq','sqSum','power','linEq']);
+    if(kind==='linEq'){
+      // GDPT 2018: phương trình bậc nhất một ẩn học ở Lớp 8
+      const aCoef=ri(2,6),xRoot=ri(-6,9)||3,bConst=ri(2,18),rhs=aCoef*xRoot+bConst;
+      const qStr=t(`Tìm x: ${aCoef}x + ${bConst} = ${rhs}`,`Solve: ${aCoef}x + ${bConst} = ${rhs}`);
+      const ansStr=String(xRoot);
+      const opts=opts4(ansStr,[xRoot+1,xRoot-1,-xRoot,xRoot+2]);
+      const expText=`${aCoef}x = ${rhs} − ${bConst} = ${rhs-bConst} → x = ${rhs-bConst} ÷ ${aCoef} = ${xRoot}\n• ${t('Chuyển vế đổi dấu rồi chia hai vế cho hệ số của x.','Isolate x by subtracting the constant, then divide by the coefficient.')}`;
+      return {id:uid(),q:qStr,answer:ansStr,options:opts,skill:'equation:x',config:{...cfg,type:'negative',grade},explanation:expText};
+    }
     if(kind==='diffSq'){
       const b=ri(2,15),diff=pick([10,20]),a=b+diff;
       const val=a*a-b*b;
@@ -1070,7 +1108,7 @@ function generate(c){
       const expText=`${a}² − ${b}² = (${a} − ${b}) × (${a} + ${b}) = ${a-b} × ${a+b} = ${ansStr}\n• ${t('Áp dụng Hằng đẳng thức hiệu hai bình phương: a² − b² = (a − b)(a + b).','Difference of squares identity: a² − b² = (a − b)(a + b).')}`;
       return {id:uid(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'identity:diffSq',config:{...cfg,type:'natural',grade},explanation:expText};
     }else if(kind==='sqSum'){
-      const base=pick([10,20,30]),d=pick([-1,1,2,-2]),n=base+d,val=n*n;
+      const base=pick([20,30,40,50]),d=pick([-1,1,2,-2]),n=base+d,val=n*n;
       const qStr=`${n}^2`,ansStr=String(val);
       const opts=new Set([ansStr,String(base*base+d*d),String(val+10),String(val-10),String(n*2)]);
       const sign=d>0?'+':'−',ad=Math.abs(d);
@@ -1089,7 +1127,27 @@ function generate(c){
     }
   }
   if(grade===9&&Math.random()<0.36){
-    const kind=pick(['sqrtCombo','cbrt','eq']);
+    const kind=pick(['sqrtCombo','simplify','cbrt','quad']);
+    if(kind==='simplify'){
+      const k=ri(2,6),m=pick([2,3,5,6,7]),inside=k*k*m;
+      const qStr=t(`√${inside} = a√${m}. Tìm a`,`√${inside} = a√${m}. Find a`),ansStr=String(k);
+      const opts=opts4(ansStr,[k+1,k*k,Math.max(2,k-1),m]);
+      const expText=`√${inside} = √(${k*k} × ${m}) = ${k}√${m}\n• ${t('Đưa thừa số ra ngoài dấu căn: √(A²B) = A√B (A ≥ 0).','Take a factor out of the root: √(A²B) = A√B (A ≥ 0).')}`;
+      return {id:uid(),q:qStr,answer:ansStr,options:opts,skill:'sqrt:simplify',config:{...cfg,type:'natural',grade},explanation:expText};
+    }
+    if(kind==='quad'){
+      // Nhẩm nghiệm bằng Vi-ét: biết một nghiệm, tìm nghiệm còn lại
+      let x1=ri(-5,9)||2,x2=ri(-5,9)||3;if(x1===x2)x2=x1+1;
+      const S=x1+x2,P=x1*x2;
+      const sx=S===0?'':S>0?` − ${S===1?'':S}x`:` + ${S===-1?'':-S}x`;
+      const sp=P===0?'':P>0?` + ${P}`:` − ${-P}`;
+      const eq=`x²${sx}${sp} = 0`;
+      const qStr=t(`${eq} có một nghiệm x = ${x1}. Nghiệm còn lại?`,`${eq} has a root x = ${x1}. Find the other root.`);
+      const ansStr=String(x2);
+      const opts=opts4(ansStr,[-x2,S,P,x2+1]);
+      const expText=`${t('Vi-ét','Vieta')}: x₁ + x₂ = ${S} → x₂ = ${S} − (${x1}) = ${x2}\n• ${t('Với x² + bx + c = 0: tổng hai nghiệm = −b, tích = c.','For x² + bx + c = 0: sum of roots = −b, product = c.')}`;
+      return {id:uid(),q:qStr,answer:ansStr,options:opts,skill:'equation:quad',config:{...cfg,type:'negative',grade},explanation:expText};
+    }
     if(kind==='sqrtCombo'){
       const r1=ri(3,14),r2=ri(2,12),sign=pick(['+','-']);
       const val=sign==='+'?r1+r2:r1-r2;
@@ -1103,13 +1161,6 @@ function generate(c){
       const opts=new Set([ansStr,String(-r),String(r+1),String(r-1),String(r*r)]);
       const expText=`∛(${cube}) = ${r}\n• ${t(`Căn bậc ba: vì (${r})³ = ${cube} nên ∛(${cube}) = ${r}.`,`Cube root: since (${r})³ = ${cube}, ∛(${cube}) = ${r}.`)}`;
       return {id:uid(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'cbrt:∛',config:{...cfg,type:'negative',grade},explanation:expText};
-    }else{
-      const aCoef=ri(2,6),xRoot=ri(-6,9)||3,bConst=ri(2,18),rhs=aCoef*xRoot+bConst;
-      const qStr=t(`Tìm x: ${aCoef}x + ${bConst} = ${rhs}`,`Solve: ${aCoef}x + ${bConst} = ${rhs}`);
-      const ansStr=String(xRoot);
-      const opts=new Set([ansStr,String(xRoot+1),String(xRoot-1),String(-xRoot),String(xRoot+2)]);
-      const expText=`${aCoef}x = ${rhs} − ${bConst} = ${rhs-bConst} → x = ${rhs-bConst} ÷ ${aCoef} = ${xRoot}\n• ${t('Chuyển vế đổi dấu rồi chia hai vế cho hệ số của x.','Isolate x by subtracting the constant, then divide by the coefficient.')}`;
-      return {id:uid(),q:qStr,answer:ansStr,options:shuffle([...opts].slice(0,4)),skill:'equation:x',config:{...cfg,type:'negative',grade},explanation:expText};
     }
   }
 
@@ -1170,15 +1221,28 @@ function generate(c){
       a=ri(50,950);b=ri(20,op==='-'?a-10:450);
     }
   }else if(grade===4&&type==='natural'){
-    if(op==='*'){a=ri(12,180);b=ri(2,25);}
-    else if(op==='/'){b=ri(2,25);a=b*ri(3,45);}
+    if(op==='*'){a=ri(12,180);b=Math.random()<0.7?ri(2,9):pick([10,11,20,25,50]);}
+    else if(op==='/'){b=Math.random()<0.7?ri(2,9):pick([10,11,12,15,20,25]);a=b*ri(3,45);}
+  }else if(grade===5&&type==='natural'){
+    // Grade 5 natural numbers: review at 3-digit level, × with "nice" factors
+    if(op==='+'){a=ri(120,980);b=ri(110,890);}
+    else if(op==='-'){a=ri(300,999);b=ri(110,a-50);}
+    else if(op==='*'){a=ri(12,99);b=pick([2,3,4,5,6,7,8,9,10,11,25,100]);}
   }
+  // Values set above by the grade blocks must not be re-randomised further down
+  const preset=type==='natural'&&(
+    grade===2||grade===3||
+    (grade===4&&(op==='*'||op==='/'))||
+    (grade===5&&op!=='/'));
 
   let answer,q,options=[],explanation='';
   const sym={'+':'+','-':'−','*':'×','/':'÷'}[op];
   if(type==='fraction'){
     let da=ri(2,12),db=ri(2,12);
-    let na=ri(1,9),nb=ri(1,9);
+    if(grade===4&&(op==='+'||op==='-'))db=pickGrade4Denominator(da);
+    // Operands are always in lowest terms (no 8/2, 5/5 ...)
+    const lowest=d=>{let n;do{n=ri(1,9)}while(gcd(n,d)>1);return n};
+    let na=lowest(da),nb=lowest(db);
     if(grade>=6&&Math.random()<0.4)na=-na;
     if(grade>=6&&Math.random()<0.3)nb=-nb;
     if((grade===4||grade===5||!grade)&&op==='-'){
@@ -1227,19 +1291,31 @@ function generate(c){
     ];
     explanation=detailedExplanation(q,a,b,op,type,answer,sym);
   }else{
-    if(op==='/'){
+    // Grades 5–9: keep numbers mental-math sized (× by a 1-digit factor, decimals ≤ 2 integer digits)
+    if(grade>=5&&!preset){
+      if(op==='*'){d1=Math.min(d1,2);d2=1;a=number(d1);b=Math.max(2,number(1));}
+      else if(type==='decimal'){d1=Math.min(d1,2);d2=Math.min(d2,2);a=number(d1);b=number(d2);}
+    }
+    if(op==='/'&&!preset){
+      // Dividend has more digits than divisor and quotient ≥ 2, so no trivial x ÷ x = 1
       if(d1<d2)[d1,d2]=[d2,d1];
+      if(grade)d2=Math.min(d2,2);
+      if(d1===d2)d1=Math.min(6,d2+1);
       const [lo,hi]=range(d1);
-      b=b||number(d2);if(b===0)b=1;
-      const low=Math.max(1,Math.ceil(lo/b)),high=Math.max(low,Math.floor(hi/b));
+      b=Math.max(2,number(d2));
+      const low=Math.max(2,Math.ceil(lo/b));
+      let high=Math.max(low,Math.floor(hi/b));
+      if(grade)high=Math.max(low,Math.min(high,25));
       a=b*ri(low,high);
       if(type==='decimal'){
         b=pick([2,4,5,10]);
-        const cleanQuotient=ri(10,250)/10;
+        const cleanQuotient=ri(11,250)/10;
         a=Number((cleanQuotient*b).toFixed(2));
       }
     }else if(type==='decimal'){
       a+=ri(1,9)/10;b+=ri(1,9)/10;
+      // decimal × decimal of two 2-digit numbers is too heavy: multiply by a whole digit or by 0,x
+      if(op==='*'&&grade>=5)b=Math.random()<0.7?ri(2,9):ri(1,9)/10;
     }
     if(type==='negative'){
       a=-a;if(Math.random()<.5)b=-b;

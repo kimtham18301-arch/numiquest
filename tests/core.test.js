@@ -615,3 +615,32 @@ test('full system backup includes classes and restoring brings them back (split 
   assert.equal(typeof ctx.renderTeacherWorkspace, 'function');
   assert.equal(typeof ctx.NumiAdminData.loadTargetedAssignments, 'function');
 });
+
+test('grade presets (GDPT 2018) keep questions in curriculum and mental-math sized', () => {
+  const ctx = loadAppContext();
+  const gcd = (a, b) => b ? gcd(b, a % b) : Math.abs(a);
+  for (let g = 1; g <= 9; g++) {
+    const gr = ctx.NUMI_GRADES[g];
+    const cfg = { ...ctx.defaults, ops: gr.ops, types: gr.types, type: gr.types[0], digits: gr.digits, grade: g, questionStyle: 'normal' };
+    for (let i = 0; i < 1500; i++) {
+      const q = ctx.generate(cfg);
+      const tag = `Lớp ${g}: "${q.q}" = ${q.answer}`;
+      assert.equal(new Set(q.options).size, 4, `${tag} needs 4 distinct options [${q.options}]`);
+      assert.ok(q.options.includes(q.answer), `${tag} options miss the answer`);
+      const div = q.q.match(/^\(?(-?[\d,]+)\)? ÷ \(?(-?[\d,]+)\)?$/);
+      if (div && q.skill.endsWith(':/') && !q.skill.startsWith('remainder')) {
+        const [a, b] = [Math.abs(+div[1].replace(',', '.')), Math.abs(+div[2].replace(',', '.'))];
+        if (g >= 3) assert.notEqual(a, b, `${tag} trivial x ÷ x`);
+        if (g === 2) assert.ok([2, 5].includes(b) && a / b <= 10, `${tag} outside the ×2/×5 tables`);
+      }
+      const num = Number(String(q.answer).replace(',', '.'));
+      if (g >= 5 && Number.isFinite(num)) assert.ok(Math.abs(num) < 10000, `${tag} too large for mental math`);
+      const fr = [...q.q.matchAll(/(-?\d+)\/(\d+)/g)];
+      if (fr.length === 2 && q.skill.startsWith('fraction')) {
+        for (const f of fr) assert.equal(gcd(Math.abs(+f[1]), +f[2]), 1, `${tag} operand not in lowest terms`);
+        const [d1, d2] = [+fr[0][2], +fr[1][2]];
+        if (g === 4 && /:[+-]$/.test(q.skill)) assert.ok(d1 % d2 === 0 || d2 % d1 === 0, `${tag} Grade 4 denominators must divide`);
+      }
+    }
+  }
+});
