@@ -34,3 +34,13 @@ Tài liệu lưu lại định hướng tinh gọn và phát triển cho **NumiQ
 - [x] **Giới hạn tần suất `numi-signup`** (40 lượt/IP/giờ, trong bộ nhớ) và chặn tên đăng nhập `admin`.
 - [x] **PIN/mật khẩu tối thiểu 6 ký tự** khi tạo hoặc đổi (hằng `NUMI_MIN_PIN` trong `cloud.js`; quick-join mặc định `123456`). Tài khoản cũ và tài khoản mẫu có PIN 4 số vẫn đăng nhập được.
 - [x] **Test tự động cho `cloud-classes.js`** (`tests/cloud-classes.test.js`, giả lập Supabase trong bộ nhớ, nhiều thiết bị).
+
+---
+
+## Nhóm 5: An toàn trước khi dùng thật *(v2.6.0)*
+- [x] **Giới hạn tần suất bền vững:** bộ đếm `numi-signup` chuyển từ bộ nhớ sang bảng `numi_signup_hits` (hàm `numi_signup_allowed`, chỉ `service_role` gọi được, chỉ lưu mã băm IP, tự xóa sau 1 giờ). Mã Edge Function tách ra `supabase/functions/numi-signup/index.ts`.
+- [x] **Bắt đổi PIN cũ:** đăng nhập bằng PIN ngắn hơn 6 ký tự sẽ phải đổi PIN ngay (cờ `weakPin`, tải lại trang không bỏ qua được; có nút Đăng xuất).
+- [x] **Đổi PIN đồng bộ lên mạng:** em tự đổi PIN thì mật khẩu Supabase cũng đổi theo (đổi trên mạng trước, lỗi thì giữ PIN cũ).
+- [x] **Không lưu/hiện mật khẩu dạng chữ thường:** bỏ ô "Mật khẩu hiện tại" (Hiện/Chép) ở Hồ sơ và cột mật khẩu trong dữ liệu Admin.
+- [x] **Script dọn dữ liệu thử nghiệm:** `cloud-reset-test-data.sql` (xem trước số dòng, rồi mới xóa).
+- [ ] **Còn lại:** Thầy/Cô hoặc Admin đặt lại PIN cho học sinh mới chỉ đổi trên máy đó, chưa đổi mật khẩu trên Supabase (cần thêm Edge Function có quyền admin).

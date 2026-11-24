@@ -282,16 +282,6 @@ body.not-logged-in .brand{pointer-events:none}
 
 .profile-password-card{padding:20px;border-radius:20px;background:var(--card-bg,#fff);border:1.5px solid #e5ede0;margin-bottom:18px}
 .profile-pwd-header h3{margin:0 0 4px;font-size:16px;font-weight:800;color:#284632}
-.current-pwd-box{background:#f4f9ef;border:1.5px solid #cce2c0;border-radius:14px;padding:14px 16px;margin:12px 0 16px}
-.current-pwd-label-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px}
-.current-pwd-label{font-weight:800;font-size:13px;color:#234c2b;display:inline-flex;align-items:center;gap:4px}
-.current-pwd-hint{font-size:12px;color:#637a5f}
-.current-pwd-field{display:flex;gap:8px;align-items:center}
-.current-pwd-input{flex:1;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:18px;font-weight:800;letter-spacing:1.5px;color:#1b3d22;background:#fff;border:1.5px solid #b7d6a5;border-radius:10px;padding:9px 12px;outline:none}
-.current-pwd-btns{display:flex;gap:6px}
-.pwd-action-btn{display:inline-flex;align-items:center;gap:4px;padding:9px 12px;border-radius:10px;border:1.5px solid #b7d6a5;background:#fff;font-weight:700;font-size:13px;color:#234c2b;cursor:pointer;transition:all .15s ease}
-.pwd-action-btn:hover{background:#eaf4e2;border-color:#8fb875}
-.change-pwd-divider{height:1px;background:#e5ede0;margin:16px 0}
 .change-pwd-box h4{margin:0 0 10px;font-size:14px;color:#284632;font-weight:800}
 .profile-pwd-fields-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media (max-width:600px){.profile-pwd-fields-grid{grid-template-columns:1fr}}
@@ -1981,27 +1971,6 @@ body.dark-mode .badge-details b {
 }
 body.dark-mode .badge-details p {
   color: #9ab0a1;
-}
-body.dark-mode .current-pwd-box {
-  background: #131e17;
-  border-color: #284232;
-}
-body.dark-mode .current-pwd-label {
-  color: #8be0a7;
-}
-body.dark-mode .current-pwd-input {
-  background: #0d1510;
-  border-color: #284232;
-  color: #7ee0a4;
-}
-body.dark-mode .pwd-action-btn {
-  background: #1a2a20;
-  border-color: #2c4a37;
-  color: #e6f3eb;
-}
-body.dark-mode .pwd-action-btn:hover {
-  background: #223a2c;
-  border-color: #3f6e52;
 }
 body.dark-mode .family-chip {
   background: #16241c;

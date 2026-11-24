@@ -273,3 +273,27 @@ create policy numi_profiles_teacher_read on public.numi_profiles for select to a
 drop policy if exists numi_stats_teacher_read on public.numi_student_stats;
 create policy numi_stats_teacher_read on public.numi_student_stats for select to authenticated
   using (public.numi_teacher_of_student(user_id));
+
+-- ---------------- v2.6: persistent rate limit for the numi-signup Edge Function ----------------
+-- The old in-memory counter reset whenever Supabase restarted or scaled the function.
+-- Only a SHA-256 hash of the caller IP is stored, and rows older than 1 hour are purged.
+create table if not exists public.numi_signup_hits (
+  ip_hash text not null,
+  hit_at  timestamptz not null default now()
+);
+create index if not exists numi_signup_hits_ip_time on public.numi_signup_hits (ip_hash, hit_at);
+alter table public.numi_signup_hits enable row level security; -- no policies: clients cannot read or write it
+
+create or replace function public.numi_signup_allowed(p_ip_hash text, p_max int default 40)
+returns boolean language plpgsql security definer set search_path = public as $$
+declare n int;
+begin
+  perform pg_advisory_xact_lock(hashtext(p_ip_hash)); -- two requests from one IP cannot both slip through
+  delete from public.numi_signup_hits where hit_at < now() - interval '1 hour';
+  select count(*) into n from public.numi_signup_hits where ip_hash = p_ip_hash;
+  if n >= p_max then return false; end if;
+  insert into public.numi_signup_hits (ip_hash) values (p_ip_hash);
+  return true;
+end $$;
+revoke all on function public.numi_signup_allowed(text, int) from public, anon, authenticated;
+grant execute on function public.numi_signup_allowed(text, int) to service_role;

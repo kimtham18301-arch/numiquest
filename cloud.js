@@ -164,6 +164,7 @@ async function localSignIn(username,password){
   user.hash=hash;
   user.lastLoginAt=new Date().toISOString();
   user.loginCount=(user.loginCount||0)+1;
+  if(String(password||'').length<NUMI_MIN_PIN)user.weakPin=true; // remembered so a page reload cannot skip the change
   saveLocalUsers(users);
   const role=user.role||(user.username==='admin'?'admin':'student');
   const activeUser={id:user.username,username:user.username,name:user.name,avatar:user.avatar||'bunny',grade:user.grade||1,role,type:'local'};
@@ -191,6 +192,33 @@ async function localSignIn(username,password){
   cloudBadge();
   nav(role==='admin'?'admin':role==='teacher'?'teacher':'home');
   toast(t('Chào mừng '+user.name+' đã trở lại!','Welcome back, '+user.name+'!'));
+  if(user.weakPin)forcePinChange();
+}
+
+// Accounts made before v2.5.3 may still have a 4-digit PIN: they must pick a 6+ character one before studying.
+function forcePinChange(){
+  if(typeof document==='undefined'||!$('#modal'))return;
+  modal(`<h2>${t('Đổi mã PIN mới','Choose a new PIN')}</h2>
+    <p class="muted">${t('Mã PIN của em đang quá ngắn. Hãy đặt mã mới có ít nhất 6 ký tự để bảo vệ tiến độ học tập nhé!','Your PIN is too short. Please choose a new one with at least 6 characters to protect your progress!')}</p>
+    <form id="forcePinForm">
+      <input type="password" id="forcePin1" minlength="6" required autocomplete="new-password" placeholder="${t('Mã PIN mới','New PIN')}" style="width:100%;font-size:17px;padding:10px;margin:8px 0;border-radius:10px;border:1.5px solid #d5e4c7">
+      <input type="password" id="forcePin2" minlength="6" required autocomplete="new-password" placeholder="${t('Nhập lại mã PIN','Repeat PIN')}" style="width:100%;font-size:17px;padding:10px;margin:8px 0;border-radius:10px;border:1.5px solid #d5e4c7">
+      <p id="forcePinMsg" class="danger" role="status" style="margin:6px 0;font-weight:700"></p>
+      <div class="actions"><button type="submit" class="primary">${t('Lưu mã PIN','Save PIN')}</button><button type="button" id="forcePinSignOut">${t('Đăng xuất','Sign out')}</button></div>
+    </form>`);
+  $('#forcePinSignOut').onclick=()=>{$('#modal').close();localSignOut()};
+  $('#forcePinForm').onsubmit=async e=>{
+    e.preventDefault();
+    const p1=$('#forcePin1').value.trim(),p2=$('#forcePin2').value.trim(),msg=$('#forcePinMsg');
+    if(p1.length<NUMI_MIN_PIN){msg.textContent=t('Mã PIN cần ít nhất 6 ký tự.','PIN must be at least 6 characters.');return}
+    if(p1!==p2){msg.textContent=t('Hai mã PIN chưa khớp.','The two PINs do not match.');return}
+    try{await updateUserPassword(p1);$('#modal').close();toast(t('Đã đổi mã PIN. Nhớ mã mới nhé!','PIN changed. Remember your new PIN!'))}
+    catch(err){msg.textContent=err.message||t('Chưa đổi được mã PIN. Thử lại nhé.','Could not change the PIN. Please try again.')}
+  };
+}
+function checkWeakPinOnLoad(){
+  const u=currentAuthUser();
+  if(u&&getLocalUsers()[u.username]?.weakPin)forcePinChange();
 }
 
 async function localSignUp(name,username,password,avatar='bunny',grade=1){
@@ -356,10 +384,15 @@ async function updateUserPassword(newPassword){
   if(!pwd||pwd.length<NUMI_MIN_PIN)throw Error(t('Mật khẩu / Mã PIN cần ít nhất 6 ký tự.','Password / PIN must be at least 6 characters.'));
   const users=getLocalUsers(),username=u.username;
   if(!users[username])throw Error(t('Không tìm thấy tài khoản.','Account not found.'));
-  const hash=await hashPassword(pwd);
-  users[username].hash=hash;
-  users[username].password=pwd;
+  // Change the online password first: if that fails, keep the old PIN everywhere so devices stay in step.
+  if(cloudSession&&String(cloudSession.user?.email||'').toLowerCase()===cloudEmail(username)){
+    await cloudRefresh();
+    await cloudRequest('/auth/v1/user','PUT',{password:cloudPassword(pwd)});
+  }
+  users[username].hash=await hashPassword(pwd);
+  delete users[username].password; // never keep the PIN as plain text on the device
   users[username].passwordChanged=true;
+  delete users[username].weakPin;
   saveLocalUsers(users);
   return true;
 }
@@ -403,8 +436,6 @@ function renderProfile(){
   const avgSpeed=h.length>0?(h.reduce((a,b)=>a+(b.time||0),0)/h.length).toFixed(1):'0.0';
   const curGrade=u.grade?Number(u.grade):(config.grade||1);
   const allLocalUsers=getLocalUsers();
-  const uUser=allLocalUsers[u.username]||{};
-  const currentPwd=uUser.password||'';
   const isAdmin=u.role==='admin'||u.username==='admin';
   const isTeacher=u.role==='teacher';
 
@@ -460,22 +491,7 @@ function renderProfile(){
             <p class="muted">${t('Dùng để đăng nhập và bảo vệ tiến độ học tập của em.','Use this PIN/Password to sign in and protect your learning progress.')}</p>
           </div>
 
-          <div class="current-pwd-box">
-            <div class="current-pwd-label-row">
-              <span class="current-pwd-label">${t('Mật khẩu hiện tại:','Current Password:')}</span>
-              <span class="current-pwd-hint">${t('(Bấm Ẩn/Hiện để xem)','(Click Hide/Show to toggle)')}</span>
-            </div>
-            <div class="current-pwd-field">
-              <input type="text" id="currentPwdDisplay" readonly value="${esc(currentPwd || (uUser.hash ? '••••••••' : '1234'))}" class="current-pwd-input" spellcheck="false" autocomplete="off" aria-label="${t('Mật khẩu hiện tại','Current password')}">
-              <div class="current-pwd-btns">
-                <button type="button" id="toggleCurrentPwdBtn" class="pwd-action-btn" title="${t('Ẩn / Hiện mật khẩu','Hide / Show password')}"><span class="btn-text">${t('Ẩn','Hide')}</span></button>
-                <button type="button" id="copyCurrentPwdBtn" class="pwd-action-btn" title="${t('Sao chép mật khẩu','Copy password')}"><span class="btn-text">${t('Chép','Copy')}</span></button>
-              </div>
-            </div>
-            ${!currentPwd && uUser.hash ? `<p class="muted" style="margin:6px 0 0;font-size:12px">${t('Mật khẩu trước đây đã được mã hóa bảo mật. Em có thể nhập mật khẩu mới bên dưới để đặt lại nhé!','Your earlier password was encrypted. You can enter a new password below to reset it!')}</p>` : ''}
-          </div>
-
-          <div class="change-pwd-divider"></div>
+          <p class="muted" style="margin:8px 0 14px;font-size:12px">${t('Mật khẩu được mã hóa nên không xem lại được. Quên mật khẩu thì nhờ Thầy/Cô hoặc bố mẹ đặt lại giúp em nhé.','Your password is encrypted and cannot be shown. If you forget it, ask your teacher or parent to reset it.')}</p>
 
           <div class="change-pwd-box">
             <h4 style="margin:0 0 10px;font-size:14px;color:#284632;font-weight:800">
@@ -603,35 +619,6 @@ function renderProfile(){
         renderProfile();
         toast(t('Đã cập nhật tên thành '+val+'!','Name updated to '+val+'!'));
       };
-    };
-  }
-
-  const toggleCurrentPwdBtn=$('#toggleCurrentPwdBtn');
-  if(toggleCurrentPwdBtn){
-    toggleCurrentPwdBtn.onclick=()=>{
-      const inp=$('#currentPwdDisplay');
-      if(!inp)return;
-      const isText=inp.type==='text';
-      inp.type=isText?'password':'text';
-      const label=toggleCurrentPwdBtn.querySelector('.btn-text');
-      if(label)label.textContent=isText?t('Hiện','Show'):t('Ẩn','Hide');
-    };
-  }
-
-  const copyCurrentPwdBtn=$('#copyCurrentPwdBtn');
-  if(copyCurrentPwdBtn){
-    copyCurrentPwdBtn.onclick=()=>{
-      const val=$('#currentPwdDisplay')?.value;
-      if(!val||val==='••••••••'){toast(t('Chưa có mật khẩu để sao chép.','No password to copy.'));return;}
-      if(navigator.clipboard&&navigator.clipboard.writeText){
-        navigator.clipboard.writeText(val).then(()=>{
-          toast(t('Đã sao chép mật khẩu!','Copied password!'));
-        }).catch(()=>{
-          toast(t('Mật khẩu của em là: ','Your password is: ')+val);
-        });
-      }else{
-        toast(t('Mật khẩu của em là: ','Your password is: ')+val);
-      }
     };
   }
 
@@ -882,7 +869,7 @@ accountButton.onclick=()=>{const u=currentAuthUser();if(u&&(u.role==='admin'||u.
 $('#lang')?.before(accountButton);
 cloudBadge();
 window.addEventListener('online',()=>{if(cloudReady)cloudQueue();else cloudRestore()});
-cloudRestore();
+cloudRestore().finally(()=>setTimeout(checkWeakPinOnLoad,300)); // after restore so a PIN change also reaches the cloud
 
 const translateBeforeCloud=translate;
 translate=function(){translateBeforeCloud();cloudBadge()};

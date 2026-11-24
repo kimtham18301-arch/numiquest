@@ -48,7 +48,6 @@ function getStudentsSummary() {
     return {
       username: user.username,
       name: user.name,
-      password: user.password || '',
       avatar: user.avatar || 'bunny',
       grade: user.grade || 1,
       role,

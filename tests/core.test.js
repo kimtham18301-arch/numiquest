@@ -736,6 +736,22 @@ test('new PINs/passwords must have at least 6 characters, but existing short PIN
   assert.equal(ctx.currentAuthUser().role, 'teacher');
 });
 
+test('signing in with a short PIN forces a change, and PINs are never stored as plain text', async () => {
+  const ctx = loadAppContext();
+  await ctx.localSignIn('minhkhoi', '1234');
+  assert.equal(ctx.getLocalUsers().minhkhoi.weakPin, true);
+  await assert.rejects(() => ctx.updateUserPassword('12345'), /6/);
+  await ctx.updateUserPassword('bonghoa1');
+  const saved = ctx.getLocalUsers().minhkhoi;
+  assert.equal(saved.weakPin, undefined);
+  assert.equal(saved.password, undefined);
+  assert.equal(saved.hash, await ctx.hashPassword('bonghoa1'));
+  await ctx.localSignOut();
+  await assert.rejects(() => ctx.localSignIn('minhkhoi', '1234'));
+  await ctx.localSignIn('minhkhoi', 'bonghoa1');
+  assert.equal(ctx.getLocalUsers().minhkhoi.weakPin, undefined);
+});
+
 test('quick-join rejects short PINs and defaults to a 6-character PIN', async () => {
   const ctx = loadAppContext();
   await assert.rejects(() => ctx.studentQuickJoinByCode({ code: '4ANUMI', name: 'Be Lan', pin: '1234' }), /6/);

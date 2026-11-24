@@ -27,67 +27,12 @@ Khi `cloud-config.js` có `url` + `publishableKey`, app đồng bộ nền lên 
 Cài đặt một lần:
 1. Tạo project Supabase, chạy toàn bộ `cloud-setup.sql` trong SQL Editor (chạy lại an toàn).
 2. Authentication → Sign In / Providers → Email: tắt **Confirm email**.
-3. Edge Functions → tạo hàm `numi-signup` (mã nằm trong mục dưới), để mặc định, deploy.
+3. Edge Functions → tạo hàm `numi-signup` (mã ở `supabase/functions/numi-signup/index.ts`), để mặc định, deploy.
 4. Điền `url` và `publishableKey` (`sb_publishable_...`) vào `cloud-config.js`. **Không** đưa `secret`/`service_role` vào repo.
 
-Lưu ý: PIN/mật khẩu mới tối thiểu 6 ký tự (tài khoản cũ có PIN ngắn hơn vẫn đăng nhập được cho đến khi đổi); hàm `numi-signup` giới hạn tạm 40 lượt/IP/giờ (trong bộ nhớ). Dữ liệu ở bản thử nghiệm nên xóa trước khi dùng thật.
+Lưu ý: PIN/mật khẩu mới tối thiểu 6 ký tự (tài khoản cũ có PIN ngắn hơn vẫn đăng nhập được nhưng phải đổi PIN ngay sau khi vào); hàm `numi-signup` giới hạn 40 lượt/IP/giờ, bộ đếm lưu trong bảng `numi_signup_hits` (chỉ lưu mã băm của IP, tự xóa sau 1 giờ). Trước khi dùng thật, chạy `cloud-reset-test-data.sql` để xóa dữ liệu thử nghiệm.
 
-<details><summary>Mã Edge Function <code>numi-signup</code></summary>
-
-```ts
-import { withSupabase } from "jsr:@supabase/server@^1";
-import { createClient } from "npm:@supabase/supabase-js@2";
-
-const cors = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-const json = (b: unknown, s = 200) =>
-  new Response(JSON.stringify(b), { status: s, headers: { ...cors, "Content-Type": "application/json" } });
-
-const hits = new Map<string, number[]>();
-const RESERVED = new Set(["admin", "root", "support"]);
-function limited(req: Request): boolean {
-  const ip = (req.headers.get("x-forwarded-for") || "unknown").split(",")[0].trim();
-  const now = Date.now();
-  const arr = (hits.get(ip) || []).filter((t) => now - t < 3600000);
-  arr.push(now);
-  hits.set(ip, arr);
-  return arr.length > 40;
-}
-
-export default {
-  fetch: withSupabase({ auth: ["publishable", "secret"] }, async (req, _ctx) => {
-    if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
-    if (limited(req)) return json({ error: "rate_limited" }, 429);
-    try {
-      const { username, password, name, avatar, grade, role } = await req.json();
-      const u = String(username || "").trim().toLowerCase();
-      if (!/^[a-z0-9_.-]{2,40}$/.test(u) || RESERVED.has(u)) return json({ error: "bad_username" }, 400);
-      if (typeof password !== "string" || password.length < 6 || password.length > 72) return json({ error: "bad_password" }, 400);
-      const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-      const { data, error } = await admin.auth.admin.createUser({
-        email: u + "@numiquick.app",
-        password,
-        email_confirm: true,
-        user_metadata: {
-          username: u,
-          name: String(name || u).slice(0, 30),
-          avatar: String(avatar || "bunny").slice(0, 20),
-          grade: Math.min(9, Math.max(1, Number(grade) || 1)),
-          role: role === "teacher" ? "teacher" : "student",
-        },
-      });
-      if (error) return json({ error: error.message }, (error as any).status === 422 ? 409 : 400);
-      return json({ ok: true, id: data.user.id });
-    } catch (_e) {
-      return json({ error: "server" }, 500);
-    }
-  }),
-};
-```
-</details>
+Mã Edge Function `numi-signup` nằm ở [`supabase/functions/numi-signup/index.ts`](supabase/functions/numi-signup/index.ts): mở file, chép toàn bộ vào Supabase → Edge Functions → `numi-signup` → Deploy. Hàm cần phần **v2.6** của `cloud-setup.sql` (bảng `numi_signup_hits`).
 
 ## Kiểm thử tự động
 
