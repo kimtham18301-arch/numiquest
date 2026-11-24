@@ -302,6 +302,7 @@ save=function(){
     try{localStorage.setItem('numi-user-state-'+u.username,JSON.stringify(state))}catch{}
   }
   cloudQueue();
+  try{window.dispatchEvent(new Event('numi-saved'))}catch{}
 };
 function cloudStatusText(){return cloudSession?(cloudStatus==='saved'?t('Đã lưu trực tuyến.','Saved online.'):cloudStatus==='saving'?t('Đang lưu trực tuyến…','Saving online…'):cloudStatus==='conflict'?t('Có bản lưu mới từ thiết bị khác. Chọn bản muốn tiếp tục bên dưới.','A newer save exists on another device. Choose which one to continue.'):cloudStatus==='offline'?t('Chưa lưu lên mạng. Kết quả vẫn có trên thiết bị; kết nối lại để đồng bộ.','Not saved online yet. Progress is on this device; reconnect to sync.'):t('Kết quả hiện được lưu trên thiết bị.','Progress is currently saved on this device.')):t('Tài khoản học sinh được lưu an toàn trên máy này.','Student account is saved securely on this device.')}
 
@@ -803,8 +804,7 @@ function openAccount(mode='login'){
           try{await cloudSignInUser(key,pVal);cloudOk=true}catch(cloudErr){console.log('Cloud username sign in failed, trying local:',cloudErr)}
           try{await localSignIn(uVal,pVal)}catch(localErr){if(cloudOk)cloudStoreSession(null);throw localErr}
           const lu=currentAuthUser();
-          if(cloudOk)await cloudAfterSignIn(key,hadLocal);
-          else if(lu&&lu.role!=='teacher'&&lu.role!=='admin')cloudSignUpUser(lu,pVal).catch(e=>console.log('Cloud upgrade skipped:',e));
+          if(cloudOk)await cloudAfterSignIn(key,hadLocal); // not linked yet? cloud-classes.js links it after localSignIn
           return;
         }
         if(cloudConfigured()&&uVal.includes('@')){
@@ -836,7 +836,7 @@ function cloudEmail(username){return String(username||'').trim().toLowerCase()+'
 function cloudPassword(p){return 'nq-'+String(p||'')} // Supabase needs >= 6 chars; app PIN may be 4
 async function cloudSignUpUser(user,password){
   // Supabase rejects made-up email domains on public signup, so a tiny Edge Function creates the user with admin rights.
-  await cloudRequest('/functions/v1/numi-signup','POST',{username:user.username,password:cloudPassword(password),name:user.name,avatar:user.avatar||'bunny',grade:user.grade||1},false);
+  await cloudRequest('/functions/v1/numi-signup','POST',{username:user.username,password:cloudPassword(password),name:user.name,avatar:user.avatar||'bunny',grade:user.grade||1,role:user.role==='teacher'?'teacher':'student'},false);
   const data=await cloudRequest('/auth/v1/token?grant_type=password','POST',{email:cloudEmail(user.username),password:cloudPassword(password)},false);
   cloudStoreSession(data);cloudRevision=null;cloudReady=true;cloudDirty=true;
   await cloudPush();
@@ -845,8 +845,11 @@ async function cloudSignInUser(username,password){
   const data=await cloudRequest('/auth/v1/token?grant_type=password','POST',{email:cloudEmail(username),password:cloudPassword(password)},false);
   cloudStoreSession(data);
   const users=getLocalUsers(),meta=data.user?.user_metadata||{};
+  if(users[username]&&users[username].cloudStub){ // roster stub created on a teacher device: this is the real owner signing in
+    users[username].hash=await hashPassword(password);delete users[username].cloudStub;saveLocalUsers(users);
+  }
   if(!users[username]){
-    users[username]={username,name:meta.name||username,hash:await hashPassword(password),avatar:meta.avatar||'bunny',grade:Number(meta.grade)||1,role:'student',createdAt:new Date().toISOString()};
+    users[username]={username,name:meta.name||username,hash:await hashPassword(password),avatar:meta.avatar||'bunny',grade:Number(meta.grade)||1,role:meta.role==='teacher'?'teacher':'student',createdAt:new Date().toISOString()};
     saveLocalUsers(users);
   }
 }

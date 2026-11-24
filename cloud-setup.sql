@@ -166,3 +166,110 @@ end;
 $$;
 revoke all on function public.join_classroom_by_code(text) from public;
 grant execute on function public.join_classroom_by_code(text) to authenticated;
+
+-- ---------------- v2.5: class mirror (safe to re-run) ----------------
+alter table public.numi_classrooms drop constraint if exists numi_classrooms_join_code_check;
+alter table public.numi_classrooms add constraint numi_classrooms_join_code_check check (char_length(join_code) between 4 and 10);
+alter table public.numi_classrooms add column if not exists level text not null default 'primary';
+alter table public.numi_classrooms add column if not exists teacher_name text not null default '';
+alter table public.numi_classrooms add column if not exists teacher_username text not null default '';
+alter table public.numi_classrooms add column if not exists local_id text;
+create unique index if not exists numi_classrooms_local_id_key on public.numi_classrooms(teacher_id, local_id);
+alter table public.numi_profiles add column if not exists username text;
+alter table public.numi_assignments add column if not exists local_id text;
+alter table public.numi_assignments add column if not exists target_students text[] not null default '{}';
+create unique index if not exists numi_assignments_local_id_key on public.numi_assignments(classroom_id, local_id);
+
+-- One compact stats row per student; teachers read it (never the full numi_progress payload).
+create table if not exists public.numi_student_stats (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  username text not null,
+  display_name text not null default '',
+  grade integer not null default 1,
+  summary jsonb not null default '{}'::jsonb check (jsonb_typeof(summary) = 'object' and octet_length(summary::text) <= 200000),
+  updated_at timestamptz not null default now()
+);
+alter table public.numi_student_stats enable row level security;
+revoke all on public.numi_student_stats from anon;
+grant select, insert, update, delete on public.numi_student_stats to authenticated;
+drop policy if exists numi_stats_own on public.numi_student_stats;
+create policy numi_stats_own on public.numi_student_stats for all to authenticated
+  using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
+drop policy if exists numi_stats_teacher_read on public.numi_student_stats;
+create policy numi_stats_teacher_read on public.numi_student_stats for select to authenticated
+  using (exists (
+    select 1 from public.numi_enrollments e
+    join public.numi_classrooms c on c.id = e.classroom_id
+    where e.student_id = numi_student_stats.user_id and c.teacher_id = (select auth.uid())
+  ));
+
+-- Code lookup works before sign-in (the code is the secret) so a new device can preview the class.
+create or replace function public.numi_lookup_class(p_code text)
+returns json language sql security definer set search_path = public stable as $$
+  select json_build_object('name', name, 'grade', grade, 'level', level, 'teacher_name', teacher_name,
+                           'teacher_username', teacher_username, 'code', join_code)
+  from public.numi_classrooms where upper(join_code) = upper(trim(p_code)) limit 1
+$$;
+revoke all on function public.numi_lookup_class(text) from public;
+grant execute on function public.numi_lookup_class(text) to anon, authenticated;
+
+create or replace function public.numi_join_class(p_code text)
+returns json language plpgsql security definer set search_path = public as $$
+declare c public.numi_classrooms;
+begin
+  select * into c from public.numi_classrooms where upper(join_code) = upper(trim(p_code)) limit 1;
+  if c.id is null then raise exception 'Classroom code not found'; end if;
+  insert into public.numi_enrollments (classroom_id, student_id) values (c.id, auth.uid()) on conflict do nothing;
+  return json_build_object('id', c.id, 'name', c.name, 'grade', c.grade, 'level', c.level,
+                           'teacher_name', c.teacher_name, 'teacher_username', c.teacher_username, 'code', c.join_code);
+end $$;
+revoke all on function public.numi_join_class(text) from public;
+grant execute on function public.numi_join_class(text) to authenticated;
+
+-- ---------------- v2.5 fix: break RLS recursion (classrooms <-> enrollments) ----------------
+create or replace function public.numi_is_teacher_of(cid uuid) returns boolean
+language sql security definer stable set search_path = public as $$
+  select exists (select 1 from public.numi_classrooms where id = cid and teacher_id = auth.uid())
+$$;
+create or replace function public.numi_is_enrolled(cid uuid) returns boolean
+language sql security definer stable set search_path = public as $$
+  select exists (select 1 from public.numi_enrollments where classroom_id = cid and student_id = auth.uid())
+$$;
+create or replace function public.numi_teacher_of_student(sid uuid) returns boolean
+language sql security definer stable set search_path = public as $$
+  select exists (
+    select 1 from public.numi_enrollments e join public.numi_classrooms c on c.id = e.classroom_id
+    where e.student_id = sid and c.teacher_id = auth.uid())
+$$;
+create or replace function public.numi_teacher_of_assignment(aid uuid) returns boolean
+language sql security definer stable set search_path = public as $$
+  select exists (
+    select 1 from public.numi_assignments a join public.numi_classrooms c on c.id = a.classroom_id
+    where a.id = aid and c.teacher_id = auth.uid())
+$$;
+revoke all on function public.numi_is_teacher_of(uuid), public.numi_is_enrolled(uuid),
+  public.numi_teacher_of_student(uuid), public.numi_teacher_of_assignment(uuid) from public;
+grant execute on function public.numi_is_teacher_of(uuid), public.numi_is_enrolled(uuid),
+  public.numi_teacher_of_student(uuid), public.numi_teacher_of_assignment(uuid) to authenticated;
+
+drop policy if exists numi_classrooms_student_read on public.numi_classrooms;
+create policy numi_classrooms_student_read on public.numi_classrooms for select to authenticated
+  using (public.numi_is_enrolled(id));
+drop policy if exists numi_enrollments_teacher on public.numi_enrollments;
+create policy numi_enrollments_teacher on public.numi_enrollments for all to authenticated
+  using (public.numi_is_teacher_of(classroom_id)) with check (public.numi_is_teacher_of(classroom_id));
+drop policy if exists numi_assignments_teacher on public.numi_assignments;
+create policy numi_assignments_teacher on public.numi_assignments for all to authenticated
+  using (public.numi_is_teacher_of(classroom_id)) with check (public.numi_is_teacher_of(classroom_id));
+drop policy if exists numi_assignments_student_read on public.numi_assignments;
+create policy numi_assignments_student_read on public.numi_assignments for select to authenticated
+  using (public.numi_is_enrolled(classroom_id));
+drop policy if exists numi_submissions_teacher_read on public.numi_submissions;
+create policy numi_submissions_teacher_read on public.numi_submissions for select to authenticated
+  using (public.numi_teacher_of_assignment(assignment_id));
+drop policy if exists numi_profiles_teacher_read on public.numi_profiles;
+create policy numi_profiles_teacher_read on public.numi_profiles for select to authenticated
+  using (public.numi_teacher_of_student(user_id));
+drop policy if exists numi_stats_teacher_read on public.numi_student_stats;
+create policy numi_stats_teacher_read on public.numi_student_stats for select to authenticated
+  using (public.numi_teacher_of_student(user_id));

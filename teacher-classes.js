@@ -452,10 +452,11 @@
     return code;
   }
 
-  function checkIncomingClassJoinHash() {
+  async function checkIncomingClassJoinHash() {
     if (typeof location === 'undefined') return;
     const code = parseIncomingJoinHash(location.hash);
     if (!code) return;
+    if (window.numiCloudClasses) await window.numiCloudClasses.ensureClass(code);
     const u = typeof currentAuthUser === 'function' ? currentAuthUser() : null;
     if (u && u.role !== 'admin' && u.role !== 'teacher') {
       try {
@@ -474,13 +475,14 @@
     }
   }
 
-  function processPendingJoinForStudent() {
+  async function processPendingJoinForStudent() {
     try {
       const code = localStorage.getItem(PENDING_JOIN_KEY);
       if (!code) return;
       const u = typeof currentAuthUser === 'function' ? currentAuthUser() : null;
       if (!u || u.role === 'admin' || u.role === 'teacher') return;
       localStorage.removeItem(PENDING_JOIN_KEY);
+      if (window.numiCloudClasses) await window.numiCloudClasses.ensureClass(code);
       const res = joinClassByCode(code, u.username);
       toast(t(`🎉 Đã tự động tham gia ${res.cls.name} (${res.cls.teacherName})!`, `🎉 Automatically joined ${res.cls.name}!`));
     } catch {}
@@ -631,12 +633,15 @@
         if (errEl) errEl.textContent = '';
         try {
           try { localStorage.removeItem(PENDING_JOIN_KEY); } catch {}
-          await studentQuickJoinByCode({
+          const cloudCls = window.numiCloudClasses;
+          if (cloudCls) await cloudCls.ensureClass(fd.get('code')); // class created on another device
+          const joined = await studentQuickJoinByCode({
             code: fd.get('code'),
             name: fd.get('name'),
             pin: fd.get('pin'),
             avatar: chosenAvatar
           });
+          if (cloudCls && joined && joined.username) await cloudCls.linkAccount(joined.username, String(fd.get('pin') || '1234').trim() || '1234');
         } catch (err) {
           if (errEl) errEl.textContent = err.message;
         } finally {
@@ -1660,10 +1665,11 @@
 
     const form = $('#studentJoinClassForm');
     if (form) {
-      form.onsubmit = e => {
+      form.onsubmit = async e => {
         e.preventDefault();
         const code = new FormData(form).get('code');
         try {
+          if (window.numiCloudClasses) await window.numiCloudClasses.ensureClass(code);
           const res = joinClassByCode(code, u.username);
           toast(res.already
             ? t(`Em đã ở trong ${res.cls.name} rồi!`, `Already in ${res.cls.name}!`)
