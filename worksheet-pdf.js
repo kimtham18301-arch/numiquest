@@ -49,6 +49,27 @@
   }
 
   function generateWorksheetQuestions(grade, topics, count) {
+    const g = Number(grade) || 1;
+    const gDef = (typeof NUMI_GRADES !== 'undefined' && NUMI_GRADES[g]) ? NUMI_GRADES[g] : { ops: ['+', '-'], types: ['natural'], digits: [1, 2] };
+    const cleanTopics = Array.isArray(topics) ? topics.filter(id => id && id !== 'all') : [];
+    const cfg = {
+      ...(typeof defaults !== 'undefined' ? defaults : {}),
+      ...gDef,
+      grade: g,
+      ops: [...(gDef.ops || ['+', '-'])],
+      types: [...(gDef.types || ['natural'])],
+      type: (gDef.types && gDef.types[0]) || 'natural',
+      digits: [...(gDef.digits || [1, 2])],
+      questionStyle: 'normal',
+      topic: cleanTopics.length === 1 ? cleanTopics[0] : 'all',
+      topics: cleanTopics
+    };
+    if (typeof generateUniqueQuestions === 'function') {
+      const qs = generateUniqueQuestions(count, cfg);
+      if (Array.isArray(qs) && qs.length) {
+        return qs.map(q => ({ ...q, isColumnExercise: Boolean(q.columnReady) }));
+      }
+    }
     const out = [];
     const seenQ = new Set();
     let tries = 0;

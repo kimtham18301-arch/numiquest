@@ -812,3 +812,40 @@ test('v2.12.3: A4 worksheet PDF composer separates Student Exam (no pre-filled c
   assert.ok(wordExamHtml.includes('ws-dot-fill'), 'Word problem Part II should render responsive CSS dotted writing lines');
   assert.ok(!wordExamHtml.includes('là ? km/h'), 'Prose blanks should render as …… instead of raw ? placeholder');
 });
+
+test('v2.14.0: preset count picker splits questions evenly across chosen topics and keeps each topic default timer', () => {
+  const ctx = loadAppContext();
+  const chosen3 = ['g5_pct', 'g5_box_surface', 'g5_motion_adv']; // default timers: 35s, 45s, 50s
+  const qs = ctx.generateUniqueQuestions(10, { ...ctx.NUMI_GRADES[5], grade: 5, topic: 'all', topics: chosen3, count: 10, questionStyle: 'normal' });
+  assert.equal(qs.length, 10, 'Should generate exactly 10 questions');
+
+  const counts = {};
+  const expectedTimers = { g5_pct: 35, g5_box_surface: 45, g5_motion_adv: 50 };
+  for (const q of qs) {
+    assert.ok(chosen3.includes(q.topicId), `Unexpected topicId ${q.topicId}`);
+    counts[q.topicId] = (counts[q.topicId] || 0) + 1;
+    assert.equal(q.topicSeconds, expectedTimers[q.topicId], `${q.topicId} must keep its own default timer`);
+    assert.equal(q.config.seconds, expectedTimers[q.topicId], `${q.topicId} q.config.seconds must match its own default timer`);
+  }
+  const sortedCounts = Object.values(counts).sort((a, b) => a - b);
+  assert.deepEqual(sortedCounts, [3, 3, 4], `10 questions across 3 topics must split strictly evenly [3, 3, 4], got ${sortedCounts}`);
+
+  // Verify getRecommendedTiming returns per-topic min/max timer range (35s..50s)
+  const rec3 = ctx.getRecommendedTiming(5, chosen3);
+  assert.equal(rec3.minSeconds, 35, 'minSeconds across g5_pct(35s), g5_box_surface(45s), g5_motion_adv(50s) must be 35');
+  assert.equal(rec3.maxSeconds, 50, 'maxSeconds must be 50');
+
+  // Verify buildBalancedTopicPlan directly across multiple counts
+  for (const [n, expected] of [[10, [3, 3, 4]], [9, [3, 3, 3]], [5, [1, 2, 2]]]) {
+    const plan = ctx.buildBalancedTopicPlan(chosen3, n);
+    assert.equal(plan.length, n);
+    const planCounts = Object.values(plan.reduce((acc, id) => { acc[id] = (acc[id] || 0) + 1; return acc; }, {})).sort((a, b) => a - b);
+    assert.deepEqual(planCounts, expected, `buildBalancedTopicPlan(3 topics, ${n}) must produce ${expected}`);
+  }
+
+  // Worksheet generator also balances 10 questions evenly across 3 topics
+  const wsQs = ctx.generateWorksheetQuestions(5, chosen3, 10);
+  assert.equal(wsQs.length, 10);
+  const wsCounts = Object.values(wsQs.reduce((acc, q) => { acc[q.topicId] = (acc[q.topicId] || 0) + 1; return acc; }, {})).sort((a, b) => a - b);
+  assert.deepEqual(wsCounts, [3, 3, 4], `Worksheet 10 questions across 3 topics must also split [3, 3, 4], got ${wsCounts}`);
+});

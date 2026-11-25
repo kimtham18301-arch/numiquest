@@ -163,20 +163,63 @@
   function getRecommendedTiming(gradeNum, selectedIds = []) {
     const g = Number(gradeNum);
     const list = NUMI_GRADE_TOPICS[g];
-    if (!list) return { count: 10, seconds: 20 };
+    if (!list) return { count: 10, seconds: 20, minSeconds: 20, maxSeconds: 20 };
     const clean = (Array.isArray(selectedIds) ? selectedIds : [])
       .map(id => list.find(x => x.id === id && x.id !== 'all'))
       .filter(Boolean);
     if (clean.length === 0) {
       const allItem = list.find(x => x.id === 'all');
-      return { count: allItem?.count || 10, seconds: allItem?.seconds || 30 };
+      const specSecs = list.filter(x => x.id !== 'all').map(x => x.seconds || 25);
+      const minS = specSecs.length ? Math.min(...specSecs) : (allItem?.seconds || 30);
+      const maxS = specSecs.length ? Math.max(...specSecs) : (allItem?.seconds || 30);
+      return { count: allItem?.count || 10, seconds: allItem?.seconds || 30, minSeconds: minS, maxSeconds: maxS };
     }
     if (clean.length === 1) {
-      return { count: clean[0].count || 10, seconds: clean[0].seconds || 30 };
+      const s = clean[0].seconds || 30;
+      return { count: clean[0].count || 10, seconds: s, minSeconds: s, maxSeconds: s };
     }
-    const maxSec = Math.max(...clean.map(x => x.seconds || 25));
+    const secs = clean.map(x => x.seconds || 25);
+    const minSec = Math.min(...secs);
+    const maxSec = Math.max(...secs);
     const count = Math.max(8, Math.min(15, clean.length * 4));
-    return { count, seconds: Math.min(60, maxSec) };
+    return { count, seconds: Math.min(60, maxSec), minSeconds: minSec, maxSeconds: Math.min(60, maxSec) };
+  }
+
+  function buildBalancedTopicPlan(topicIds, count) {
+    const unique = Array.from(new Set((Array.isArray(topicIds) ? topicIds : []).filter(id => id && id !== 'all')));
+    const total = Math.max(1, Number(count) || 1);
+    if (!unique.length) return [];
+    const shuffleArr = arr => {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    };
+    const shuffledTopics = shuffleArr(unique);
+    const base = Math.floor(total / shuffledTopics.length);
+    const rem = total % shuffledTopics.length;
+    const plan = [];
+    shuffledTopics.forEach((id, idx) => {
+      const qty = base + (idx < rem ? 1 : 0);
+      for (let k = 0; k < qty; k++) plan.push(id);
+    });
+    return shuffleArr(plan);
+  }
+
+  function formatSplitHint(totalCount, numTopics) {
+    const n = Math.max(1, Number(totalCount) || 1);
+    const k = Math.max(1, Number(numTopics) || 1);
+    if (k <= 1) return '';
+    if (n < k) return t(`random ${n} dạng khác nhau`, `${n} distinct random topics`);
+    const base = Math.floor(n / k);
+    const rem = n % k;
+    if (k <= 4) {
+      const parts = Array.from({ length: k }, (_, i) => base + (i < rem ? 1 : 0));
+      return `${parts.join(' + ')} ${t('câu', 'qs')}`;
+    }
+    return rem === 0 ? `${base} ${t('câu/dạng', 'qs/topic')}` : `${base}–${base + 1} ${t('câu/dạng', 'qs/topic')}`;
   }
 
   function getTopicMeta(topicId, gradeHint) {
@@ -196,7 +239,7 @@
     const meta = getTopicMeta(topicId, gradeHint);
     if (!meta || meta.id === 'all') return '';
     const label = typeof lang !== 'undefined' && lang === 'en' ? meta.en : meta.vi;
-    return `${meta.col ? '📐 ' : '🎯 '}${label}`;
+    return `${meta.col ? '📐 ' : '🎯 '}${label}${meta.seconds ? ` · ${meta.seconds}s` : ''}`;
   }
 
   function makeQ(q, answer, near, skill, cfg, explanation, extra = {}) {
@@ -219,6 +262,11 @@
     if (!qObj) return qObj;
     qObj.topicId = topicId;
     qObj.topicLabel = formatTopicBadge(topicId, g);
+    const meta = getTopicMeta(topicId, g);
+    if (meta && meta.seconds) {
+      qObj.topicSeconds = meta.seconds;
+      qObj.config = { ...(qObj.config || {}), seconds: meta.seconds };
+    }
     return qObj;
   }
 
@@ -1386,23 +1434,93 @@
     if (typeof global !== 'undefined') global.generate = generate;
   }
 
-  function applySmartTimingToForm(gradeNum, selectedList) {
-    const rec = getRecommendedTiming(gradeNum, selectedList);
+  // Wrap generateUniqueQuestions() so multi-topic sessions (e.g. 10 questions across 3 topics)
+  // are split EVENLY (4 + 3 + 3) in shuffled random order, with EACH question keeping its own topic's default timer!
+  const genUniqueBeforeTopics = typeof generateUniqueQuestions === 'function' ? generateUniqueQuestions : null;
+  if (genUniqueBeforeTopics) {
+    generateUniqueQuestions = function (count, c) {
+      const cfg = c || (typeof window !== 'undefined' && window.config) || config;
+      const g = cfg && cfg.grade && cfg.grade !== 'custom' ? Number(cfg.grade) : null;
+      const topicsArr = Array.isArray(cfg?.topics) ? cfg.topics.filter(id => id && id !== 'all') : [];
+      const singleTopic = cfg && cfg.topic && cfg.topic !== 'all' ? String(cfg.topic) : null;
+      const total = Math.max(1, Number(count) || 10);
+
+      let plan = null;
+      if (topicsArr.length > 0) {
+        plan = buildBalancedTopicPlan(topicsArr, total);
+      } else if (singleTopic) {
+        plan = Array.from({ length: total }, () => singleTopic);
+      } else if (g && NUMI_GRADE_TOPICS[g] && (!cfg.questionStyle || cfg.questionStyle === 'normal')) {
+        const gradeMeta = typeof NUMI_GRADES !== 'undefined' ? NUMI_GRADES[g] : null;
+        const isFullGradeOps = !cfg.ops || !gradeMeta || cfg.ops.length >= gradeMeta.ops.length;
+        if (isFullGradeOps) {
+          const allIds = NUMI_GRADE_TOPICS[g].filter(x => x.id !== 'all').map(x => x.id);
+          if (allIds.length) plan = buildBalancedTopicPlan(allIds, total);
+        }
+      }
+
+      if (!plan || !plan.length) return genUniqueBeforeTopics(total, cfg);
+
+      const out = [];
+      const seen = new Set();
+      for (const topicId of plan) {
+        let q = null;
+        for (let tries = 0; tries < 25; tries++) {
+          const cand = generateTopicQuestion(topicId, { ...cfg, topic: topicId, topics: [topicId] });
+          if (cand) {
+            q = cand;
+            if (!seen.has(cand.q)) break;
+          }
+        }
+        if (!q) q = generate(cfg);
+        if (q) {
+          seen.add(q.q);
+          out.push(q);
+        }
+      }
+      return out;
+    };
+    if (typeof window !== 'undefined') window.generateUniqueQuestions = generateUniqueQuestions;
+    if (typeof global !== 'undefined') global.generateUniqueQuestions = generateUniqueQuestions;
+  }
+
+  let presetManualCount = null;
+  let presetCountGrade = null;
+
+  function formatTimingRange(rec) {
+    if (!rec) return '30s';
+    if (rec.minSeconds && rec.maxSeconds && rec.minSeconds !== rec.maxSeconds) {
+      return `${rec.minSeconds}s–${rec.maxSeconds}s`;
+    }
+    return `${rec.seconds}s`;
+  }
+
+  function syncPresetCountToForm(countVal, rec) {
+    const cleanCount = Math.max(1, Math.min(50, Math.round(Number(countVal) || rec.count || 10)));
     if (typeof config !== 'undefined') {
-      config.count = rec.count;
+      config.count = cleanCount;
       config.seconds = rec.seconds;
       if (typeof window !== 'undefined') window.config = config;
       if (typeof global !== 'undefined') global.config = config;
     }
     const cntInput = $('#lessonCount');
     const secInput = $('#lessonSeconds');
-    if (cntInput) cntInput.value = rec.count;
+    if (cntInput) cntInput.value = cleanCount;
     if (secInput) secInput.value = rec.seconds;
-    $$('[data-count]').forEach(b => b.classList.toggle('chosen', Number(b.dataset.count) === rec.count));
+    $$('[data-count]').forEach(b => b.classList.toggle('chosen', Number(b.dataset.count) === cleanCount));
     $$('[data-seconds]').forEach(b => b.classList.toggle('chosen', Number(b.dataset.seconds) === rec.seconds));
     const stickySub = $('#stickySummaryText');
-    if (stickySub) stickySub.textContent = `${rec.count} ${t('câu', 'qs')} · ${rec.seconds}s`;
-    return rec;
+    if (stickySub) stickySub.textContent = `${cleanCount} ${t('câu', 'qs')} · ${formatTimingRange(rec)}`;
+    return cleanCount;
+  }
+
+  function applySmartTimingToForm(gradeNum, selectedList) {
+    const rec = getRecommendedTiming(gradeNum, selectedList);
+    const chosenCount = (presetManualCount !== null && presetCountGrade === Number(gradeNum))
+      ? presetManualCount
+      : rec.count;
+    const effectiveCount = syncPresetCountToForm(chosenCount, rec);
+    return { ...rec, count: effectiveCount };
   }
 
   function syncCustomFieldsetsVisibility(isPreset) {
@@ -1412,7 +1530,7 @@
     }
   }
 
-  // Inject Grade Topic Stream pills (supporting single + multi-topic synthesis, smart count/timer auto-preset & quick filters!)
+  // Inject Grade Topic Stream pills (supporting single + multi-topic synthesis, custom question count, even random split & per-topic default timers!)
   function renderTopicPillsForGrade(gradeNum, applyTiming = false) {
     const host = $('#gradeTopicsWrap');
     const g = Number(gradeNum);
@@ -1425,19 +1543,45 @@
       if (typeof config !== 'undefined') { config.topic = 'all'; config.topics = []; }
       return;
     }
+    if (presetCountGrade !== g) {
+      presetManualCount = null;
+      presetCountGrade = g;
+    }
     const validIds = new Set(list.filter(x => x.id !== 'all').map(x => x.id));
     let selectedList = Array.isArray(config?.topics) ? config.topics.filter(id => validIds.has(id)) : [];
     if (!selectedList.length && config?.topic && validIds.has(config.topic)) {
       selectedList = [config.topic];
     }
-    if (applyTiming) {
-      applySmartTimingToForm(g, selectedList);
-    }
+    const curRec = applyTiming
+      ? applySmartTimingToForm(g, selectedList)
+      : {
+          ...getRecommendedTiming(g, selectedList),
+          count: Number(config?.count) || getRecommendedTiming(g, selectedList).count
+        };
+    const activeCount = curRec.count;
     const isAllMode = selectedList.length === 0;
     const mentalIds = list.filter(x => x.kind === 'mental').map(x => x.id);
     const colIds = list.filter(x => x.col).map(x => x.id);
     const knowledgeIds = list.filter(x => x.kind === 'knowledge').map(x => x.id);
-    const curTiming = getRecommendedTiming(g, selectedList);
+    const activeTopicCount = isAllMode ? validIds.size : selectedList.length;
+    const timeRangeText = formatTimingRange(curRec);
+    const splitText = formatSplitHint(activeCount, activeTopicCount);
+
+    const updateLessonSummary = (selArr, countNow, recNow) => {
+      const sumEl = $('#lessonSummary');
+      if (!sumEl) return;
+      const tRange = formatTimingRange(recNow);
+      if (selArr.length === 0) {
+        sumEl.textContent = `${t(`Đề tổng hợp ${validIds.size} dạng Lớp ${g}`, `Grade ${g} Mixed (${validIds.size} formats)`)} · ${countNow} ${t('câu', 'qs')} · ${tRange}/${t('câu', 'q')}`;
+      } else {
+        const names = selArr.slice(0, 2).map(id => {
+          const it = list.find(x => x.id === id);
+          return it ? (lang === 'en' ? it.en : it.vi) : id;
+        });
+        const extraTxt = selArr.length > 2 ? ` +${selArr.length - 2}` : '';
+        sumEl.textContent = `${t('Chuyên đề:', 'Topics:')} ${names.join(' · ')}${extraTxt} · ${countNow} ${t('câu', 'qs')} · ${tRange}/${t('câu', 'q')}`;
+      }
+    };
 
     const syncConfigTopics = nextArr => {
       selectedList = nextArr.filter(id => validIds.has(id));
@@ -1456,33 +1600,30 @@
       if (typeof global !== 'undefined') global.config = config;
       const rec = applySmartTimingToForm(g, selectedList);
       renderTopicPillsForGrade(g, false);
-      const sumEl = $('#lessonSummary');
-      if (sumEl) {
-        if (selectedList.length === 0) {
-          sumEl.textContent = `${t(`Đề tổng hợp ${validIds.size} dạng Lớp ${g}`, `Grade ${g} Mixed (${validIds.size} formats)`)} · ${rec.count} ${t('câu', 'qs')} · ${rec.seconds}s/${t('câu', 'q')}`;
-        } else {
-          const names = selectedList.slice(0, 2).map(id => {
-            const it = list.find(x => x.id === id);
-            return it ? (lang === 'en' ? it.en : it.vi) : id;
-          });
-          const extraTxt = selectedList.length > 2 ? ` +${selectedList.length - 2}` : '';
-          sumEl.textContent = `${t('Chuyên đề:', 'Topics:')} ${names.join(' · ')}${extraTxt} · ${rec.count} ${t('câu', 'qs')} · ${rec.seconds}s/${t('câu', 'q')}`;
-        }
-      }
+      updateLessonSummary(selectedList, rec.count, rec);
     };
 
     const statusBadge = isAllMode
       ? t(`Đang bật Đề tổng hợp (${validIds.size} dạng trộn đều)`, `Full Mixed Exam (${validIds.size} formats)`)
       : t(`Đang chọn ${selectedList.length}/${validIds.size} dạng (chạm thêm để ghép nhiều dạng)`, `${selectedList.length}/${validIds.size} selected (tap more to combine)`);
 
+    const timingChipLabel = activeTopicCount > 1
+      ? `⏱ ${t('Thời gian mặc định theo từng dạng:', 'Per-topic default timer:')} ${timeRangeText}`
+      : `⏱ ${t('Thời gian mặc định:', 'Default timer:')} ${timeRangeText}/${t('câu', 'q')}`;
+
+    const splitPillHtml = activeTopicCount > 1
+      ? `<span class="preset-split-badge">🎲 ${isAllMode ? t(`Random đều ${validIds.size} dạng`, `Balanced across ${validIds.size} topics`) : t(`Chia đều ${activeTopicCount} dạng`, `Even split (${activeTopicCount} topics)`)} (${splitText})</span>`
+      : `<span class="preset-split-badge">⏱ ${timeRangeText}/${t('câu', 'q')}</span>`;
+
     const sameSet = (a, b) => a.length > 0 && a.length === b.length && a.every(x => b.includes(x));
+    const quickCounts = [5, 8, 10, 12, 15, 20];
 
     host.hidden = false;
     host.innerHTML = `
       <div class="grade-topics-head">
         <div class="grade-topics-title">
           <span>🎯 ${t(`Luồng chuyên đề Lớp ${g} (Chọn 1 hoặc ghép nhiều dạng):`, `Grade ${g} Exam Topics (Pick 1 or combine many):`)}</span>
-          <span class="grade-topics-status">${statusBadge} · <strong class="grade-timing-chip">⏱ ${t('Tự đặt sẵn:', 'Preset:')} ${curTiming.count} ${t('câu', 'qs')} · ${curTiming.seconds}s/${t('câu', 'q')}</strong></span>
+          <span class="grade-topics-status">${statusBadge} · <strong class="grade-timing-chip">${timingChipLabel}</strong></span>
         </div>
         <div class="grade-topics-quick-row">
           ${mentalIds.length ? `<button type="button" class="grade-topics-quick-btn ${sameSet(selectedList, mentalIds) ? 'is-on' : ''}" id="quickMentalTopicsBtn">⚡ ${t('Tính nhẩm nhanh', 'Mental Math')}</button>` : ''}
@@ -1497,6 +1638,14 @@
           const tip = `${tp.count} ${t('câu', 'qs')} · ${tp.seconds}s/${t('câu', 'q')}`;
           return `<button type="button" class="grade-topic-pill ${active ? 'active' : ''}" data-grade-topic="${esc(tp.id)}" title="${esc(tip)}">${prefix}${esc(typeof lang !== 'undefined' && lang === 'en' ? tp.en : tp.vi)} <small class="tp-sec-tag">${tp.seconds}s</small></button>`;
         }).join('')}
+      </div>
+      <div class="preset-count-bar" id="presetCountBar">
+        <span class="preset-count-lbl">📝 ${t('Số câu luyện:', 'Questions:')}</span>
+        <div class="preset-count-chips">
+          ${quickCounts.map(n => `<button type="button" class="preset-cnt-chip ${activeCount === n ? 'active' : ''}" data-preset-count="${n}">${n}</button>`).join('')}
+        </div>
+        <input type="number" id="presetCountInput" class="preset-cnt-input" min="1" max="50" value="${activeCount}" aria-label="${t('Nhập số câu', 'Question count')}" inputmode="numeric">
+        ${splitPillHtml}
       </div>
     `;
 
@@ -1514,6 +1663,24 @@
       };
     });
 
+    const applyPickedCount = nextCount => {
+      const clean = Math.max(1, Math.min(50, Math.round(Number(nextCount) || 10)));
+      presetManualCount = clean;
+      presetCountGrade = g;
+      const recNow = getRecommendedTiming(g, selectedList);
+      syncPresetCountToForm(clean, recNow);
+      renderTopicPillsForGrade(g, false);
+      updateLessonSummary(selectedList, clean, recNow);
+    };
+
+    $$('[data-preset-count]').forEach(btn => {
+      btn.onclick = () => applyPickedCount(btn.dataset.presetCount);
+    });
+    const cntBox = $('#presetCountInput');
+    if (cntBox) {
+      cntBox.onchange = () => applyPickedCount(cntBox.value);
+    }
+
     const quickMental = $('#quickMentalTopicsBtn');
     if (quickMental && mentalIds.length) quickMental.onclick = () => syncConfigTopics(mentalIds);
     const quickCol = $('#quickColTopicsBtn');
@@ -1523,6 +1690,8 @@
   }
 
   const resetTopicsOnGrade = gk => {
+    presetManualCount = null;
+    presetCountGrade = gk === 'custom' ? null : Number(gk);
     if (typeof config !== 'undefined') {
       config.topic = 'all';
       config.topics = [];
@@ -1577,6 +1746,20 @@
       body.dark-mode .grade-topic-pill{background:#18271f;border-color:#2d4a3a;color:#cde4d6}
       body.dark-mode .grade-topic-pill .tp-sec-tag{background:#233b2e;color:#9cc9b0}
       body.dark-mode .grade-topic-pill.active{background:#2d6a51!important;border-color:#4ba880!important;color:#fff!important}
+      .preset-count-bar{margin-top:12px;padding-top:11px;border-top:1.5px dashed #dce8d6;display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+      .preset-count-lbl{font-size:12.5px;font-weight:800;color:#274c36;white-space:nowrap}
+      .preset-count-chips{display:flex;flex-wrap:wrap;gap:5px}
+      .preset-cnt-chip{min-height:30px!important;min-width:36px!important;padding:3px 10px!important;border-radius:999px!important;border:1.5px solid #cde0c7!important;background:#f7fbf5!important;color:#284d37!important;font-size:12.5px!important;font-weight:800!important;cursor:pointer;transition:all .14s ease}
+      .preset-cnt-chip:hover:not(.active){background:#e9f4e5!important;border-color:#7fb084!important}
+      .preset-cnt-chip.active,.preset-cnt-chip.active:hover{background:#2d6a51!important;border-color:#1e4d3a!important;color:#fff!important}
+      .preset-cnt-input{width:62px!important;min-height:30px!important;padding:3px 8px!important;border-radius:9px!important;border:1.5px solid #c5dac0!important;background:#fff!important;color:#1e4531!important;font-size:13px!important;font-weight:800!important;text-align:center}
+      .preset-split-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:999px;background:#eaf6ee;border:1px solid #c5e2cd;color:#1b5639;font-size:11.5px;font-weight:800}
+      body.dark-mode .preset-count-bar{border-top-color:#2b4637}
+      body.dark-mode .preset-count-lbl{color:#c9e4d4}
+      body.dark-mode .preset-cnt-chip{background:#18271f!important;border-color:#2d4a3a!important;color:#cde4d6!important}
+      body.dark-mode .preset-cnt-chip.active{background:#2d6a51!important;border-color:#4ba880!important;color:#fff!important}
+      body.dark-mode .preset-cnt-input{background:#16241c!important;border-color:#345643!important;color:#d6efe0!important}
+      body.dark-mode .preset-split-badge{background:#1b3828;border-color:#2f5c43;color:#9ee3bc}
       /* Hide redundant custom builder fieldsets when a preset Grade (1-9) is selected; show all 6 steps only in "Tùy chỉnh" */
       form#config.is-preset-mode > fieldset:not(.answer-mode-fieldset){display:none!important}
       form#config.is-preset-mode{margin-top:12px!important;padding:16px 20px!important}
@@ -1588,7 +1771,7 @@
     document.head.append(style);
   }
 
-  const exp = { NUMI_GRADE_TOPICS, generateTopicQuestion, getRecommendedTiming };
+  const exp = { NUMI_GRADE_TOPICS, generateTopicQuestion, getRecommendedTiming, buildBalancedTopicPlan };
   if (typeof window !== 'undefined') Object.assign(window, exp);
   if (typeof global !== 'undefined') Object.assign(global, exp);
 })();
