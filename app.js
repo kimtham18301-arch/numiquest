@@ -416,10 +416,9 @@ function showQuiz(){
   const qClass=isLongQuestion?'question question-compact':'question';
 
   const choicesHtml=`<div class="answers">${q.options.map((o,i)=>`<button class="answer" data-answer="${i}"><small>${'ABCD'[i]}</small>${mathMarkup(o)}</button>`).join('')}</div>`;
-  const hasEqOrQ=String(q.q||'').includes('?')||String(q.q||'').includes('=');
   const numpadHtml=`<div class="numpad-wrap">
     <div class="numpad-display">
-      <span class="numpad-prompt">${mathMarkup(q.q)}${hasEqOrQ?' → ':' = '}</span>
+      <span class="numpad-prompt">${t('Đáp án của em:','Your answer:')}</span>
       <span id="numpadVal" class="numpad-current-val">?</span>
     </div>
     <div class="numpad-grid">
@@ -532,7 +531,13 @@ function answerQuiz(ans,questionId){
 
   const isNumpad=config.inputMode==='numpad'&&s.kind!=='battle';
   if(isNumpad){
-    const disp=$('#numpadVal');if(disp){disp.textContent=(ans!==null?ans:t('Hết giờ','Time out'))+(correct?' ✓':` (≠ ${q.answer})`);if(disp.parentElement)disp.parentElement.className='numpad-display '+(correct?'is-correct':'is-wrong')}
+    const disp=$('#numpadVal');
+    if(disp){
+      const promptEl=disp.parentElement?.querySelector?.('.numpad-prompt');
+      if(promptEl)promptEl.textContent=correct?t('Chính xác:','Correct:'):t('Em vừa nhập:','You entered:');
+      disp.textContent=(ans!==null?ans:t('Hết giờ','Time out'))+(correct?' ✓':' ✕');
+      if(disp.parentElement)disp.parentElement.className='numpad-display '+(correct?'is-correct':'is-wrong');
+    }
     const sub=$('#numpadSubmit');if(sub)sub.disabled=true;$$('[data-np]').forEach(b=>b.disabled=true);
   }else{
     const buttons=$$('[data-answer]');buttons.forEach((b,i)=>{b.disabled=true;const option=q.options[i];if(norm(option)===norm(q.answer))b.classList.add('is-correct');if(ans!==null&&norm(option)===norm(ans)&&!correct)b.classList.add('is-wrong')});
