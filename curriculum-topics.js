@@ -57,7 +57,10 @@
       { id: 'g1_round10', vi: 'Cộng trừ tròn chục', en: 'Round tens', kind: 'mental', count: 10, seconds: 18 },
       { id: 'g1_col100', vi: 'Đặt tính PV 100 (không nhớ)', en: 'Column ±100', kind: 'column', col: true, count: 10, seconds: 30 },
       { id: 'g1_place_cmp', vi: 'Cấu tạo số & Liền trước/sau', en: 'Place Value & Order', kind: 'knowledge', count: 10, seconds: 25 },
+      { id: 'g1_seq_split', vi: 'Quy luật dãy số & Tách–gộp', en: 'Sequences & Number Bonds', kind: 'knowledge', count: 10, seconds: 25 },
+      { id: 'g1_cmp_expr', vi: 'So sánh & Tính nhanh biểu thức', en: 'Compare & Quick Sum', kind: 'mental', count: 10, seconds: 20 },
       { id: 'g1_two_step', vi: 'Tính 2 bước, Đo cm & Xem giờ', en: '2-Step, cm & Clock', kind: 'knowledge', count: 10, seconds: 30 },
+      { id: 'g1_geom_basic', vi: 'Hình học cơ bản & Lịch tuần', en: 'Basic Shapes & Weekdays', kind: 'knowledge', count: 8, seconds: 25 },
       { id: 'g1_missing', vi: 'Điền số ? thích hợp', en: 'Missing Number ?', kind: 'knowledge', count: 10, seconds: 25 },
       { id: 'g1_word', vi: 'Toán lời văn Lớp 1', en: 'Grade 1 Word Problems', kind: 'knowledge', count: 8, seconds: 40 }
     ],
@@ -66,45 +69,65 @@
       { id: 'g2_carry20', vi: 'Cộng trừ có nhớ PV 20', en: 'Carry/Borrow ≤20', kind: 'mental', count: 12, seconds: 18 },
       { id: 'g2_col100', vi: 'Đặt tính có nhớ PV 100', en: 'Column ±100 (carry)', kind: 'column', col: true, count: 10, seconds: 30 },
       { id: 'g2_col1000', vi: 'Đặt tính PV 1.000', en: 'Column ≤1,000', kind: 'column', col: true, count: 8, seconds: 35 },
+      { id: 'g2_num1000', vi: 'Cấu tạo số 3 chữ số (≤1.000)', en: '3-Digit Place Value', kind: 'knowledge', count: 10, seconds: 25 },
       { id: 'g2_mul25', vi: 'Bảng nhân & chia 2, 5', en: '×2, ×5, ÷2, ÷5', kind: 'mental', count: 12, seconds: 15 },
       { id: 'g2_find_x', vi: 'Tìm thành phần chưa biết (?)', en: 'Find Missing Term', kind: 'knowledge', count: 10, seconds: 30 },
       { id: 'g2_units', vi: 'Đổi đơn vị (dm, cm, m, giờ)', en: 'Length & Time Units', kind: 'knowledge', count: 10, seconds: 25 },
+      { id: 'g2_kg_lit', vi: 'Đại lượng kg, lít, mm & km', en: 'kg, Liters, mm & km', kind: 'knowledge', count: 10, seconds: 30 },
       { id: 'g2_geom_time', vi: 'Đường gấp khúc & Giờ 24h', en: 'Polyline & 24h Clock', kind: 'knowledge', count: 8, seconds: 35 },
+      { id: 'g2_peri_shape', vi: 'Chu vi Tam giác & Tứ giác', en: 'Triangle & Quad Perimeter', kind: 'knowledge', count: 8, seconds: 35 },
+      { id: 'g2_stat_table', vi: 'Đọc bảng số liệu thống kê', en: 'Reading Data Tables', kind: 'knowledge', count: 8, seconds: 35 },
       { id: 'g2_word', vi: 'Lời văn Nhiều hơn / Ít hơn', en: 'More/Less Word Problems', kind: 'knowledge', count: 8, seconds: 45 }
     ],
     3: [
       { id: 'all', vi: 'Tổng hợp tất cả dạng Lớp 3', en: 'All Grade 3 Mixed', kind: 'all', count: 12, seconds: 35 },
       { id: 'g3_tables', vi: 'Bảng nhân chia 2–9', en: 'Times tables 2–9', kind: 'mental', count: 15, seconds: 12 },
       { id: 'g3_col10k', vi: 'Đặt tính ± đến 10.000', en: 'Column ±10,000', kind: 'column', col: true, count: 8, seconds: 40 },
+      { id: 'g3_col100k', vi: 'Đặt tính ± đến 100.000', en: 'Column ±100,000', kind: 'column', col: true, count: 8, seconds: 45 },
       { id: 'g3_mul1', vi: 'Đặt tính ×/÷ với 1 chữ số', en: '2-3d ×/÷ 1d', kind: 'column', col: true, count: 8, seconds: 40 },
       { id: 'g3_rem', vi: 'Phép chia có dư', en: 'Remainders', kind: 'knowledge', count: 10, seconds: 30 },
+      { id: 'g3_num100k', vi: 'Số La Mã & Làm tròn số', en: 'Roman Numerals & Rounding', kind: 'knowledge', count: 10, seconds: 25 },
       { id: 'g3_expr', vi: 'Biểu thức (có ngoặc)', en: 'Expressions & Brackets', kind: 'knowledge', count: 10, seconds: 35 },
       { id: 'g3_find_x', vi: 'Tìm x (4 phép tính)', en: 'Solve for x', kind: 'knowledge', count: 10, seconds: 30 },
       { id: 'g3_geom', vi: 'Chu vi & Diện tích (Vuông, HCN)', en: 'Perimeter & Area', kind: 'knowledge', count: 8, seconds: 40 },
+      { id: 'g3_midpoint', vi: 'Trung điểm & Hình khối (Đỉnh/Cạnh)', en: 'Midpoint & 3D Shapes', kind: 'knowledge', count: 10, seconds: 25 },
       { id: 'g3_fold_word', vi: 'Gấp/Giảm số lần & Rút đơn vị', en: 'Multiples & Unitary', kind: 'knowledge', count: 8, seconds: 45 },
-      { id: 'g3_units', vi: 'Đổi đơn vị (m, km, kg, g)', en: 'Units (m, km, kg, g)', kind: 'knowledge', count: 10, seconds: 25 }
+      { id: 'g3_units', vi: 'Đổi đơn vị (m, km, kg, g)', en: 'Units (m, km, kg, g)', kind: 'knowledge', count: 10, seconds: 25 },
+      { id: 'g3_money_ml', vi: 'Tiền VN, ml & Lịch năm/tháng', en: 'Money, ml & Calendar', kind: 'knowledge', count: 10, seconds: 30 },
+      { id: 'g3_stat_prob', vi: 'Bảng số liệu thống kê', en: 'Statistics Tables', kind: 'knowledge', count: 8, seconds: 35 }
     ],
     4: [
       { id: 'all', vi: 'Tổng hợp tất cả dạng Lớp 4', en: 'All Grade 4 Mixed', kind: 'all', count: 12, seconds: 40 },
       { id: 'g4_col', vi: 'Đặt tính ± nhiều chữ số', en: 'Multi-digit Column ±', kind: 'column', col: true, count: 8, seconds: 45 },
       { id: 'g4_mul2', vi: 'Đặt tính ×/÷ với 2 chữ số', en: '×/÷ by 2 digits', kind: 'column', col: true, count: 8, seconds: 50 },
       { id: 'g4_conv', vi: 'Tính bằng cách thuận tiện', en: 'Convenient Mental Math', kind: 'mental', count: 10, seconds: 25 },
+      { id: 'g4_million_round', vi: 'Làm tròn & Biểu thức chứa chữ', en: 'Rounding & Letter Expr', kind: 'knowledge', count: 10, seconds: 30 },
       { id: 'g4_frac', vi: 'Phân số (+, −, ×, ÷)', en: 'Fractions', kind: 'knowledge', count: 10, seconds: 35 },
+      { id: 'g4_frac_cmp', vi: 'Rút gọn & Phân số bằng nhau', en: 'Simplify & Equal Fractions', kind: 'knowledge', count: 10, seconds: 30 },
       { id: 'g4_sum_diff', vi: 'Tổng – Hiệu & Phân số của số', en: 'Sum-Diff & Fraction of N', kind: 'knowledge', count: 8, seconds: 45 },
+      { id: 'g4_angle', vi: 'Đo góc (Nhọn, Vuông, Tù, Bẹt °)', en: 'Angles & Degrees (°)', kind: 'knowledge', count: 10, seconds: 25 },
       { id: 'g4_geom', vi: 'Hình học (Bình hành, Thoi, HCN)', en: 'Parallelogram & Rhombus', kind: 'knowledge', count: 8, seconds: 40 },
+      { id: 'g4_area_units', vi: 'Đổi diện tích & Tấn, tạ, yến', en: 'Area & Mass Units', kind: 'knowledge', count: 10, seconds: 30 },
       { id: 'g4_avg', vi: 'Trung bình cộng & Đổi đơn vị', en: 'Average & Units', kind: 'knowledge', count: 10, seconds: 30 },
-      { id: 'g4_div_rules', vi: 'Chia hết (2,3,5,9) & Thế kỉ/Giây', en: 'Divisibility & Century', kind: 'knowledge', count: 10, seconds: 30 }
+      { id: 'g4_div_rules', vi: 'Chia hết (2,3,5,9) & Thế kỉ/Giây', en: 'Divisibility & Century', kind: 'knowledge', count: 10, seconds: 30 },
+      { id: 'g4_stat_chart', vi: 'Biểu đồ cột & Rút về đơn vị', en: 'Bar Charts & Unitary', kind: 'knowledge', count: 8, seconds: 40 }
     ],
     5: [
       { id: 'all', vi: 'Tổng hợp tất cả dạng Lớp 5', en: 'All Grade 5 Mixed', kind: 'all', count: 12, seconds: 40 },
       { id: 'g5_dec_col', vi: 'Đặt tính ± số thập phân', en: 'Column Decimal ±', kind: 'column', col: true, count: 8, seconds: 40 },
+      { id: 'g5_dec_place', vi: 'Làm tròn & Đổi sang số thập phân', en: 'Decimal Rounding & Units', kind: 'knowledge', count: 10, seconds: 30 },
       { id: 'g5_dec10', vi: 'Nhân/chia nhẩm 10, 100, 0,1', en: 'Decimal ×/÷ 10, 100', kind: 'mental', count: 12, seconds: 15 },
       { id: 'g5_dec_muldiv', vi: 'Tính thuận tiện & Chia thập phân', en: 'Decimal Mental & Division', kind: 'mental', count: 10, seconds: 30 },
+      { id: 'g5_dec_findx', vi: 'Tìm x & Biểu thức số thập phân', en: 'Decimal Equations & Expr', kind: 'knowledge', count: 10, seconds: 35 },
       { id: 'g5_pct', vi: 'Tỉ số phần trăm (3 dạng)', en: 'Percentages (3 types)', kind: 'knowledge', count: 10, seconds: 35 },
-      { id: 'g5_geom', vi: 'Hình học (Tam giác, Thang, Tròn, V)', en: 'Triangle, Circle & Volume', kind: 'knowledge', count: 8, seconds: 45 },
+      { id: 'g5_geom', vi: 'Hình phẳng (Tam giác, Thang, Tròn)', en: 'Triangle, Trapezoid, Circle', kind: 'knowledge', count: 8, seconds: 45 },
+      { id: 'g5_box_surface', vi: 'DT xung quanh/TP & Thể tích (m³, dm³)', en: 'Surface Area & Volume', kind: 'knowledge', count: 8, seconds: 45 },
+      { id: 'g5_time_calc', vi: 'Cộng, trừ, nhân, chia Thời gian', en: 'Time Arithmetic', kind: 'knowledge', count: 8, seconds: 40 },
       { id: 'g5_sum_ratio', vi: 'Tổng–Tỉ, Hiệu–Tỉ & Hỗn số', en: 'Ratios & Mixed Numbers', kind: 'knowledge', count: 8, seconds: 50 },
       { id: 'g5_units', vi: 'Đổi đơn vị (ha, m², giờ/phút)', en: 'Area & Time Units', kind: 'knowledge', count: 10, seconds: 30 },
-      { id: 'g5_motion', vi: 'Toán chuyển động (v, s, t)', en: 'Speed · Distance · Time', kind: 'knowledge', count: 8, seconds: 45 }
+      { id: 'g5_motion', vi: 'Chuyển động cơ bản (v, s, t)', en: 'Speed · Distance · Time', kind: 'knowledge', count: 8, seconds: 45 },
+      { id: 'g5_motion_adv', vi: 'Chuyển động Ngược/Cùng chiều & Dòng nước', en: 'Meeting, Catch-up & River', kind: 'knowledge', count: 8, seconds: 50 },
+      { id: 'g5_stat_pie', vi: 'Biểu đồ quạt tròn, Giảm giá & Xác suất', en: 'Pie Charts, Discounts & Prob', kind: 'knowledge', count: 8, seconds: 40 }
     ],
     6: [
       { id: 'all', vi: 'Tổng hợp Lớp 6', en: 'All Grade 6', kind: 'all', count: 12, seconds: 30 },
@@ -300,6 +323,64 @@
         }
         break;
       }
+      case 'g1_seq_split': {
+        const kind = pickAny(['seq2', 'seq5', 'seq10', 'split']);
+        if (kind === 'seq2') {
+          const start = rInt(1, 5) * 2;
+          const seq = [start, start + 2, start + 4, start + 6];
+          const hideIdx = rInt(1, 3), ans = seq[hideIdx];
+          const disp = seq.map((v, i) => i === hideIdx ? '?' : String(v)).join(', ');
+          res = makeQ(t(`Điền số tiếp vào dãy: ${disp}`, `Fill the sequence: ${disp}`), ans, [ans + 1, Math.max(1, ans - 1), ans + 2], 'natural:seq', cfg, `Dãy số tăng thêm 2 đơn vị mỗi bước → số cần điền là ${ans}`);
+        } else if (kind === 'seq5') {
+          const start = rInt(1, 10) * 5;
+          const seq = [start, start + 5, start + 10, start + 15];
+          const hideIdx = rInt(1, 3), ans = seq[hideIdx];
+          const disp = seq.map((v, i) => i === hideIdx ? '?' : String(v)).join(', ');
+          res = makeQ(t(`Điền số vào dãy đếm cách 5: ${disp}`, `Count by 5s: ${disp}`), ans, [ans + 10, Math.max(5, ans - 10), ans + 5], 'natural:seq', cfg, `Mỗi số sau hơn số trước 5 đơn vị → đáp án: ${ans}`);
+        } else if (kind === 'seq10') {
+          const start = rInt(1, 5) * 10;
+          const seq = [start, start + 10, start + 20, start + 30];
+          const hideIdx = rInt(1, 3), ans = seq[hideIdx];
+          const disp = seq.map((v, i) => i === hideIdx ? '?' : String(v)).join(', ');
+          res = makeQ(t(`Điền số tròn chục: ${disp}`, `Round tens sequence: ${disp}`), ans, [ans + 10, Math.max(10, ans - 10), ans + 20], 'natural:seq', cfg, `Mỗi số sau tăng thêm 1 chục (+10) → đáp án: ${ans}`);
+        } else {
+          const tens = rInt(2, 9) * 10, ones = rInt(1, 9), n = tens + ones;
+          if (Math.random() < 0.5) {
+            res = makeQ(`${n} = ${tens} + ?`, ones, [ones + 1, Math.max(1, ones - 1), ones + 2], 'natural:place', cfg, `Tách ${n} thành ${tens} và ${ones} → số cần điền là ${ones}`);
+          } else {
+            res = makeQ(`${n} = ? + ${ones}`, tens, [tens + 10, Math.max(10, tens - 10), tens + 20], 'natural:place', cfg, `Tách ${n} thành ${tens} và ${ones} → số cần điền là ${tens}`);
+          }
+        }
+        break;
+      }
+      case 'g1_cmp_expr': {
+        const kind = pickAny(['maxLess', 'sumLargest1', 'quick3']);
+        if (kind === 'maxLess') {
+          const a = rInt(2, 6), ans = rInt(2, 9 - a), bound = a + ans + 1;
+          res = makeQ(t(`Số lớn nhất điền vào ô ? để ${a} + ? < ${bound} là ?`, `Largest number for ${a} + ? < ${bound} is ?`), ans, [ans + 1, Math.max(1, ans - 1), ans + 2], 'natural:cmp', cfg, `Vì ${a} + ${ans} = ${a + ans} < ${bound} (còn ${a} + ${ans + 1} = ${bound}) nên số lớn nhất là ${ans}`);
+        } else if (kind === 'sumLargest1') {
+          const b = rInt(1, 8) * 10, ans = 9 + b;
+          res = makeQ(t(`Tổng của số lớn nhất có 1 chữ số và ${b} là ?`, `Sum of largest 1-digit number and ${b} is ?`), ans, [ans + 10, Math.max(10, ans - 10), ans + 20], 'natural:+', cfg, `Số lớn nhất có 1 chữ số là 9 → 9 + ${b} = ${ans}`);
+        } else {
+          const a = rInt(2, 6) * 10, b = rInt(1, 3) * 10, c = rInt(1, 9), ans = a + b + c;
+          res = makeQ(`${a} + ${b} + ${c}`, ans, [ans + 10, Math.max(10, ans - 10), ans + 20], 'natural:+', cfg, `Cộng tròn chục trước: ${a} + ${b} = ${a + b}, cộng tiếp ${c} = ${ans}`);
+        }
+        break;
+      }
+      case 'g1_geom_basic': {
+        const bank = [
+          { q: t('Hình tam giác có mấy cạnh?', 'How many sides does a triangle have?'), a: 3, near: [2, 4, 5], exp: 'Hình tam giác có 3 cạnh và 3 đỉnh.' },
+          { q: t('Hình vuông có mấy cạnh bằng nhau?', 'How many equal sides does a square have?'), a: 4, near: [2, 3, 5], exp: 'Hình vuông có 4 cạnh bằng nhau.' },
+          { q: t('Hình chữ nhật có mấy cạnh?', 'How many sides does a rectangle have?'), a: 4, near: [3, 5, 6], exp: 'Hình chữ nhật có 4 cạnh (2 cạnh dài và 2 cạnh ngắn).' },
+          { q: t('Khối lập phương có mấy mặt?', 'How many faces does a cube have?'), a: 6, near: [4, 5, 8], exp: 'Khối lập phương có 6 mặt đều là hình vuông.' },
+          { q: t('Một tuần lễ có mấy ngày?', 'How many days are in a week?'), a: 7, near: [5, 6, 8], exp: 'Một tuần lễ có 7 ngày (từ Thứ Hai đến Chủ Nhật).' },
+          { q: t('Hôm nay là Thứ Hai, 3 ngày nữa là Thứ mấy?', 'If today is Monday (2), 3 days later is day ?'), a: 5, near: [4, 6, 7], exp: 'Thứ Hai (2) + 3 ngày = Thứ Năm (5).' },
+          { q: t('Hôm nay là Thứ Tư, 2 ngày nữa là Thứ mấy?', 'If today is Wednesday (4), 2 days later is day ?'), a: 6, near: [5, 7, 3], exp: 'Thứ Tư (4) + 2 ngày = Thứ Sáu (6).' }
+        ];
+        const item = pickAny(bank);
+        res = makeQ(item.q, item.a, item.near, 'geom:basic', cfg, item.exp);
+        break;
+      }
       case 'g1_word': {
         const scenarios = [
           () => {
@@ -408,6 +489,58 @@
         } else {
           const pm = rInt(1, 9), ans = pm + 12;
           res = makeQ(t(`${pm} giờ chiều còn gọi là ? giờ (theo hệ 24 giờ)`, `${pm} PM in 24-hour time is ?`), ans, [ans + 1, ans - 1, pm + 10], 'units:time', cfg, `Sau 12 giờ trưa, cộng thêm 12:\n${pm} + 12 = ${ans} giờ`);
+        }
+        break;
+      }
+      case 'g2_num1000': {
+        const kind = pickAny(['compose', 'expand', 'next100']);
+        if (kind === 'compose') {
+          const h = rInt(1, 9), tn = rInt(0, 9), o = rInt(1, 9), ans = h * 100 + tn * 10 + o;
+          res = makeQ(t(`Số gồm ${h} trăm, ${tn} chục và ${o} đơn vị là ?`, `Number with ${h} hundreds, ${tn} tens, ${o} ones is ?`), ans, [ans + 10, Math.max(100, ans - 10), ans + 100], 'natural:place', cfg, `${h} trăm = ${h * 100}; ${tn} chục = ${tn * 10}; ${o} đơn vị → ${ans}`);
+        } else if (kind === 'expand') {
+          const h = rInt(2, 9) * 100, tn = rInt(1, 9) * 10, o = rInt(1, 9), n = h + tn + o;
+          res = makeQ(`${n} = ${h} + ? + ${o}`, tn, [tn + 10, Math.max(10, tn - 10), tn + 20], 'natural:place', cfg, `Phân tích số ${n} = ${h} + ${tn} + ${o} → đáp án: ${tn}`);
+        } else {
+          const h = rInt(1, 8) * 100, ans = h + 100;
+          res = makeQ(t(`Số tròn trăm liền sau của ${h} là ?`, `Next round hundred after ${h} is ?`), ans, [h + 10, ans + 100, Math.max(100, h - 100)], 'natural:order', cfg, `Số tròn trăm liền sau tăng thêm 100: ${h} + 100 = ${ans}`);
+        }
+        break;
+      }
+      case 'g2_kg_lit': {
+        const kind = pickAny(['lit', 'kg', 'cm_mm', 'km_m']);
+        if (kind === 'lit') {
+          const a = rInt(14, 48), b = rInt(12, 36), ans = a + b;
+          res = makeQ(t(`Can thứ nhất có ${a} lít dầu, can thứ hai có ${b} lít dầu. Cả hai can có ? lít`, `Can 1 has ${a} L, can 2 has ${b} L. Total = ? L`), ans, [ans + 10, Math.max(10, ans - 10), ans + 20], 'units:vol', cfg, `Tổng số lít dầu: ${a} + ${b} = ${ans} lít`);
+        } else if (kind === 'kg') {
+          const a = rInt(35, 85), b = rInt(14, 29), ans = a - b;
+          res = makeQ(t(`Bao gạo nặng ${a} kg, đã dùng hết ${b} kg. Còn lại ? kg`, `A ${a} kg rice bag used ${b} kg. Remaining = ? kg`), ans, [ans + 10, Math.max(1, ans - 10), a + b], 'units:mass', cfg, `Số gạo còn lại: ${a} − ${b} = ${ans} kg`);
+        } else if (kind === 'cm_mm') {
+          const v = rInt(2, 9), ans = v * 10;
+          res = makeQ(t(`Đổi: ${v} cm = ? mm`, `Convert: ${v} cm = ? mm`), ans, [ans + 10, ans + 20, v * 100], 'units:len', cfg, `1 cm = 10 mm → ${v} cm = ${ans} mm`);
+        } else {
+          const v = rInt(2, 8), ans = v * 1000;
+          res = makeQ(t(`Đổi: ${v} km = ? m`, `Convert: ${v} km = ? m`), ans, [v * 100, ans + 1000, Math.max(1000, ans - 1000)], 'units:len', cfg, `1 km = 1.000 m → ${v} km = ${ans} m`);
+        }
+        break;
+      }
+      case 'g2_peri_shape': {
+        if (Math.random() < 0.55) {
+          const a = rInt(8, 22), b = rInt(9, 24), c = rInt(10, 25), ans = a + b + c;
+          res = makeQ(t(`Chu vi hình tam giác có 3 cạnh ${a} cm, ${b} cm, ${c} cm là ? cm`, `Perimeter of triangle (${a}, ${b}, ${c} cm) = ? cm`), ans, [ans + 10, Math.max(10, ans - 10), ans + 20], 'geom:perimeter', cfg, `Chu vi hình tam giác = tổng độ dài 3 cạnh = ${a} + ${b} + ${c} = ${ans} cm`);
+        } else {
+          const a = rInt(6, 15), b = rInt(7, 16), c = rInt(8, 15), d = rInt(6, 14), ans = a + b + c + d;
+          res = makeQ(t(`Chu vi hình tứ giác có 4 cạnh ${a} cm, ${b} cm, ${c} cm, ${d} cm là ? cm`, `Perimeter of quad (${a}, ${b}, ${c}, ${d} cm) = ? cm`), ans, [ans + 10, Math.max(10, ans - 10), ans + 20], 'geom:perimeter', cfg, `Chu vi hình tứ giác = tổng 4 cạnh = ${a} + ${b} + ${c} + ${d} = ${ans} cm`);
+        }
+        break;
+      }
+      case 'g2_stat_table': {
+        const t1 = rInt(11, 28), t2 = rInt(12, 29), t3 = rInt(14, 32);
+        if (Math.random() < 0.55) {
+          const ans = t1 + t2 + t3;
+          res = makeQ(t(`Bảng số sách đọc: Tổ 1: ${t1}, Tổ 2: ${t2}, Tổ 3: ${t3}. Cả 3 tổ đọc ? quyển`, `Books read: Team 1: ${t1}, Team 2: ${t2}, Team 3: ${t3}. Total = ?`), ans, [ans + 10, Math.max(10, ans - 10), ans + 20], 'stat:table', cfg, `Tổng số sách cả 3 tổ: ${t1} + ${t2} + ${t3} = ${ans} quyển`);
+        } else {
+          const mx = Math.max(t1, t2, t3), mn = Math.min(t1, t2, t3), ans = mx - mn;
+          res = makeQ(t(`Số hoa hái được: An: ${t1}, Bình: ${t2}, Chi: ${t3}. Bạn nhiều nhất hơn bạn ít nhất ? bông`, `Flowers: An ${t1}, Binh ${t2}, Chi ${t3}. Max minus min = ?`), ans, [ans + 10, Math.max(1, ans + 2), mx + mn], 'stat:table', cfg, `Nhiều nhất là ${mx}, ít nhất là ${mn} → hơn nhau: ${mx} − ${mn} = ${ans} bông`);
         }
         break;
       }
@@ -530,6 +663,90 @@
         }
         break;
       }
+      case 'g3_col100k': {
+        if (Math.random() < 0.55) {
+          const a = rInt(12400, 48500), b = rInt(11500, 45500), ans = a + b;
+          res = makeQ(`${a} + ${b}`, ans, [ans + 100, ans - 100, ans + 1000], 'natural:+', cfg, `Đặt tính thẳng hàng từ phải sang trái: ${a} + ${b} = ${ans}`, { columnReady: true });
+        } else {
+          const b = rInt(12500, 38500), ans = rInt(11500, 46500), a = b + ans;
+          res = makeQ(`${a} − ${b}`, ans, [ans + 100, ans - 100, ans + 1000], 'natural:-', cfg, `Đặt tính thẳng hàng từ phải sang trái: ${a} − ${b} = ${ans}`, { columnReady: true });
+        }
+        break;
+      }
+      case 'g3_num100k': {
+        const kind = pickAny(['roman', 'round100', 'round10', 'digitVal']);
+        if (kind === 'roman') {
+          const romans = [['IV', 4], ['VI', 6], ['VII', 7], ['VIII', 8], ['IX', 9], ['XI', 11], ['XII', 12], ['XIV', 14], ['XV', 15], ['XVI', 16], ['XIX', 19], ['XX', 20]];
+          const [sym, val] = pickAny(romans);
+          res = makeQ(t(`Số La Mã ${sym} có giá trị là số nào?`, `What number is Roman numeral ${sym}?`), val, [val + 1, Math.max(1, val - 1), val + 2], 'number:roman', cfg, `Quy tắc số La Mã (I=1, V=5, X=10): ${sym} = ${val}`);
+        } else if (kind === 'round100') {
+          const base = rInt(12, 85) * 100, rem = pickAny([18, 24, 37, 42, 56, 68, 79, 85]);
+          const n = base + rem, ans = rem >= 50 ? base + 100 : base;
+          res = makeQ(t(`Làm tròn số ${n} đến hàng trăm ta được ?`, `Round ${n} to the nearest hundred: ?`), ans, [ans + 100, Math.max(100, ans - 100), ans + 200], 'number:round', cfg, `Chữ số hàng chục là ${Math.floor(rem / 10)} ${rem >= 50 ? '≥ 5 nên làm tròn lên' : '< 5 nên làm tròn xuống'} → ${ans}`);
+        } else if (kind === 'round10') {
+          const base = rInt(12, 95) * 10, rem = pickAny([1, 2, 3, 4, 6, 7, 8, 9]);
+          const n = base + rem, ans = rem >= 5 ? base + 10 : base;
+          res = makeQ(t(`Làm tròn số ${n} đến hàng chục ta được ?`, `Round ${n} to the nearest ten: ?`), ans, [ans + 10, Math.max(10, ans - 10), ans + 20], 'number:round', cfg, `Chữ số hàng đơn vị là ${rem} ${rem >= 5 ? '≥ 5 nên làm tròn lên' : '< 5 nên làm tròn xuống'} → ${ans}`);
+        } else {
+          const d = rInt(2, 9), n = rInt(1, 8) * 10000 + d * 1000 + rInt(112, 899), ans = d * 1000;
+          res = makeQ(t(`Trong số ${n}, chữ số ${d} ở hàng nghìn có giá trị là ?`, `In ${n}, value of digit ${d} in thousands place is ?`), ans, [d * 100, d * 10000, ans + 1000], 'natural:place', cfg, `Chữ số ${d} đứng ở hàng nghìn nên có giá trị là ${ans}`);
+        }
+        break;
+      }
+      case 'g3_midpoint': {
+        const bank = [
+          () => {
+            const half = rInt(6, 28), ab = half * 2;
+            return makeQ(t(`M là trung điểm của đoạn thẳng AB dài ${ab} cm. Độ dài đoạn AM là ? cm`, `M is midpoint of AB (${ab} cm). Length of AM = ? cm`), half, [half + 2, Math.max(2, half - 2), half + 10], 'geom:midpoint', cfg, `Trung điểm chia đoạn thẳng thành 2 phần bằng nhau:\nAM = ${ab} ÷ 2 = ${half} cm`);
+          },
+          () => {
+            const half = rInt(7, 25), ab = half * 2;
+            return makeQ(t(`O là trung điểm đoạn thẳng CD, biết OC = ${half} cm. Độ dài đoạn CD là ? cm`, `O is midpoint of CD, OC = ${half} cm. Length of CD = ? cm`), ab, [ab + 10, Math.max(4, ab - 10), half], 'geom:midpoint', cfg, `CD gấp 2 lần OC: CD = ${half} × 2 = ${ab} cm`);
+          },
+          () => {
+            const facts = [
+              { q: t('Hình hộp chữ nhật có mấy đỉnh?', 'How many vertices does a rectangular prism have?'), a: 8, near: [6, 10, 12], exp: 'Hình hộp chữ nhật (và hình lập phương) có 8 đỉnh, 12 cạnh, 6 mặt.' },
+              { q: t('Hình lập phương có mấy cạnh?', 'How many edges does a cube have?'), a: 12, near: [6, 8, 10], exp: 'Hình lập phương có 12 cạnh bằng nhau.' },
+              { q: t('Hình hộp chữ nhật có mấy mặt?', 'How many faces does a rectangular prism have?'), a: 6, near: [4, 8, 12], exp: 'Hình hộp chữ nhật có 6 mặt đều là hình chữ nhật.' }
+            ];
+            const it = pickAny(facts);
+            return makeQ(it.q, it.a, it.near, 'geom:3d', cfg, it.exp);
+          }
+        ];
+        res = pickAny(bank)();
+        break;
+      }
+      case 'g3_money_ml': {
+        const kind = pickAny(['money', 'ml', 'calendar']);
+        if (kind === 'money') {
+          const p1 = rInt(3, 12), p2 = rInt(4, 15), pay = pickAny([30, 50]);
+          const ans = pay - (p1 + p2);
+          res = makeQ(t(`An mua bút hết ${p1} nghìn đồng và vở hết ${p2} nghìn đồng. Đưa ${pay} nghìn đồng được trả lại ? nghìn đồng`, `An spent ${p1}k & ${p2}k VND, paid ${pay}k. Change = ?k VND`), ans, [ans + 10, Math.max(1, ans - 10), p1 + p2], 'units:money', cfg, `Tổng tiền mua: ${p1} + ${p2} = ${p1 + p2} nghìn\nTiền trả lại: ${pay} − ${p1 + p2} = ${ans} nghìn đồng`);
+        } else if (kind === 'ml') {
+          const l = rInt(1, 5), ml = pickAny([0, 250, 500, 750]), ans = l * 1000 + ml;
+          res = makeQ(ml ? t(`Đổi: ${l} lít ${ml} ml = ? ml`, `${l} L ${ml} ml = ? ml`) : t(`Đổi: ${l} lít = ? ml`, `${l} L = ? ml`), ans, [ans + 100, Math.max(100, ans - 100), ans + 1000], 'units:vol', cfg, `1 lít = 1.000 ml → ${l} × 1.000${ml ? ' + ' + ml : ''} = ${ans} ml`);
+        } else {
+          const m31 = pickAny([1, 3, 5, 7, 8, 10, 12]);
+          const m30 = pickAny([4, 6, 9, 11]);
+          if (Math.random() < 0.5) {
+            res = makeQ(t(`Tháng ${m31} có bao nhiêu ngày?`, `How many days are in month ${m31}?`), 31, [28, 29, 30], 'units:time', cfg, `Các tháng 1, 3, 5, 7, 8, 10, 12 đều có 31 ngày.`);
+          } else {
+            res = makeQ(t(`Tháng ${m30} có bao nhiêu ngày?`, `How many days are in month ${m30}?`), 30, [28, 29, 31], 'units:time', cfg, `Các tháng 4, 6, 9, 11 đều có 30 ngày.`);
+          }
+        }
+        break;
+      }
+      case 'g3_stat_prob': {
+        const a = rInt(18, 36), b = rInt(20, 38), c = rInt(22, 42), d = rInt(19, 35);
+        if (Math.random() < 0.55) {
+          const ans = a + b + c + d;
+          res = makeQ(t(`Số học sinh giỏi 4 lớp: 3A: ${a}, 3B: ${b}, 3C: ${c}, 3D: ${d}. Cả khối có ? học sinh giỏi`, `Top students: 3A:${a}, 3B:${b}, 3C:${c}, 3D:${d}. Total = ?`), ans, [ans + 10, Math.max(20, ans - 10), ans + 20], 'stat:table', cfg, `Tổng 4 lớp: ${a} + ${b} + ${c} + ${d} = ${ans} học sinh`);
+        } else {
+          const mx = Math.max(a, b, c, d), mn = Math.min(a, b, c, d), ans = mx - mn;
+          res = makeQ(t(`Số cây trồng 4 ngày: ${a}, ${b}, ${c}, ${d}. Ngày nhiều nhất hơn ngày ít nhất ? cây`, `Trees planted over 4 days: ${a}, ${b}, ${c}, ${d}. Max − min = ?`), ans, [ans + 2, Math.max(1, ans - 2), ans + 10], 'stat:table', cfg, `Ngày nhiều nhất: ${mx} cây; ít nhất: ${mn} cây → chênh lệch: ${mx} − ${mn} = ${ans} cây`);
+        }
+        break;
+      }
       case 'g3_units': {
         const kind = pickAny(['m_cm', 'km_m', 'kg_g']);
         if (kind === 'm_cm') {
@@ -624,6 +841,76 @@
             const v = rInt(2, 15);
             res = makeQ(t(`Đổi: ${v} m² = ? dm²`, `${v} m² = ? dm²`), v * 100, [v * 10, v * 1000, v * 100 + 10], 'units:area', cfg, `1 m² = 100 dm² → ${v} m² = ${v * 100} dm²`);
           }
+        }
+        break;
+      }
+      case 'g4_million_round': {
+        const kind = pickAny(['letter2', 'round1000', 'digitVal']);
+        if (kind === 'letter2') {
+          const m = rInt(12, 45), n = rInt(4, 12), k = rInt(2, 6), ans = m + n * k;
+          res = makeQ(t(`Tính giá trị biểu thức m + n × ${k} với m = ${m}, n = ${n}`, `Evaluate m + n × ${k} when m = ${m}, n = ${n}`), ans, [ans + 10, Math.max(10, ans - 10), (m + n) * k], 'algebra:eval', cfg, `Thay số rồi tính nhân trước:\n${m} + ${n} × ${k} = ${m} + ${n * k} = ${ans}`);
+        } else if (kind === 'round1000') {
+          const base = rInt(12, 85) * 1000, rem = pickAny([140, 280, 420, 560, 720, 890]);
+          const n = base + rem, ans = rem >= 500 ? base + 1000 : base;
+          res = makeQ(t(`Làm tròn số ${n} đến hàng nghìn được ?`, `Round ${n} to nearest thousand: ?`), ans, [ans + 1000, Math.max(1000, ans - 1000), ans + 2000], 'number:round', cfg, `Chữ số hàng trăm là ${Math.floor(rem / 100)} ${rem >= 500 ? '≥ 5 nên làm tròn lên' : '< 5 nên làm tròn xuống'} → ${ans}`);
+        } else {
+          const d = rInt(2, 9), n = d * 10000 + rInt(1234, 8765), ans = d * 10000;
+          res = makeQ(t(`Trong số ${n}, chữ số ${d} có giá trị là ?`, `In ${n}, value of digit ${d} is ?`), ans, [d * 1000, ans + 10000, Math.max(10000, ans - 10000)], 'natural:place', cfg, `Chữ số ${d} đứng ở hàng chục nghìn nên có giá trị là ${ans}`);
+        }
+        break;
+      }
+      case 'g4_frac_cmp': {
+        if (Math.random() < 0.5) {
+          const basePairs = [[1, 2], [1, 3], [2, 3], [1, 4], [3, 4], [2, 5], [3, 5], [4, 5], [3, 7], [5, 6]];
+          const [n, d] = pickAny(basePairs), k = rInt(2, 7);
+          const ans = `${n}/${d}`;
+          res = makeQ(t(`Rút gọn phân số ${n * k}/${d * k} về phân số tối giản`, `Simplify ${n * k}/${d * k}`), ans, [`${n + 1}/${d}`, `${Math.max(1, n - 1)}/${d}`, `${n + 2}/${d}`], 'ratio:simplify', cfg, `Chia cả tử và mẫu cho ${k}: (${n * k} ÷ ${k}) / (${d * k} ÷ ${k}) = ${ans}`);
+        } else {
+          const d1 = pickAny([3, 4, 5, 6, 8]), n1 = rInt(1, d1 - 1), k = rInt(2, 6);
+          const ans = n1 * k, d2 = d1 * k;
+          res = makeQ(t(`Điền số thích hợp: ${n1}/${d1} = ?/${d2}`, `Fill in: ${n1}/${d1} = ?/${d2}`), ans, [ans + 1, Math.max(1, ans - 1), ans + d1], 'ratio:frac', cfg, `Mẫu tăng ${k} lần (${d1} × ${k} = ${d2}) nên tử cũng nhân ${k}: ${n1} × ${k} = ${ans}`);
+        }
+        break;
+      }
+      case 'g4_angle': {
+        const bank = [
+          { q: t('Góc vuông có số đo bằng ? độ', 'A right angle measures ? degrees'), a: 90, near: [60, 120, 180], exp: 'Góc vuông luôn có số đo đúng bằng 90°.' },
+          { q: t('Góc bẹt có số đo bằng ? độ', 'A straight angle measures ? degrees'), a: 180, near: [90, 120, 360], exp: 'Góc bẹt bằng 2 góc vuông = 180°.' },
+          { q: t('Góc bẹt gấp mấy lần góc vuông?', 'A straight angle is how many times a right angle?'), a: 2, near: [3, 4, 5], exp: '180° ÷ 90° = 2 lần.' },
+          { q: t('Nửa góc vuông có số đo bằng ? độ', 'Half of a right angle measures ? degrees'), a: 45, near: [35, 55, 65], exp: '90° ÷ 2 = 45° (góc nhọn).' },
+          { q: t('Lúc 3 giờ đúng, kim giờ và kim phút tạo thành góc ? độ', 'At 3:00, clock hands form a ? degree angle'), a: 90, near: [60, 120, 180], exp: 'Lúc 3 giờ (hoặc 9 giờ), hai kim vuông góc nhau = 90°.' },
+          { q: t('Lúc 6 giờ đúng, kim giờ và kim phút tạo thành góc ? độ', 'At 6:00, clock hands form a ? degree angle'), a: 180, near: [90, 120, 150], exp: 'Lúc 6 giờ, hai kim thẳng hàng tạo thành góc bẹt = 180°.' },
+          { q: t('Lúc 2 giờ đúng, kim giờ và kim phút tạo thành góc ? độ', 'At 2:00, clock hands form a ? degree angle'), a: 60, near: [30, 90, 120], exp: 'Mỗi giờ trên đồng hồ ứng với 30° → 2 giờ = 2 × 30° = 60°.' }
+        ];
+        const it = pickAny(bank);
+        res = makeQ(it.q, it.a, it.near, 'geom:angle', cfg, it.exp);
+        break;
+      }
+      case 'g4_area_units': {
+        const kind = pickAny(['yen_kg', 'ta_yen', 'dm2_cm2', 'cm2_mm2']);
+        if (kind === 'yen_kg') {
+          const y = rInt(2, 9), kg = pickAny([0, 5, 8]), ans = y * 10 + kg;
+          res = makeQ(kg ? t(`Đổi: ${y} yến ${kg} kg = ? kg`, `${y}0 + ${kg} kg = ? kg`) : t(`Đổi: ${y} yến = ? kg`, `${y} yen = ? kg`), ans, [ans + 10, Math.max(10, ans - 10), ans + 20], 'units:mass', cfg, `1 yến = 10 kg → ${y} × 10${kg ? ' + ' + kg : ''} = ${ans} kg`);
+        } else if (kind === 'ta_yen') {
+          const ta = rInt(2, 8), y = pickAny([2, 4, 5]), ans = ta * 100 + y * 10;
+          res = makeQ(t(`Đổi: ${ta} tạ ${y} yến = ? kg`, `${ta} quintals ${y} yen = ? kg`), ans, [ans + 10, ans + 100, Math.max(100, ans - 100)], 'units:mass', cfg, `1 tạ = 100 kg, 1 yến = 10 kg → ${ta * 100} + ${y * 10} = ${ans} kg`);
+        } else if (kind === 'dm2_cm2') {
+          const d = rInt(2, 9), c = pickAny([15, 25, 40, 50]), ans = d * 100 + c;
+          res = makeQ(t(`Đổi: ${d} dm² ${c} cm² = ? cm²`, `${d} dm² ${c} cm² = ? cm²`), ans, [ans + 10, ans + 100, Math.max(100, ans - 100)], 'units:area', cfg, `1 dm² = 100 cm² → ${d} × 100 + ${c} = ${ans} cm²`);
+        } else {
+          const c = rInt(3, 15), ans = c * 100;
+          res = makeQ(t(`Đổi: ${c} cm² = ? mm²`, `${c} cm² = ? mm²`), ans, [c * 10, ans + 100, Math.max(100, ans - 100)], 'units:area', cfg, `1 cm² = 100 mm² → ${c} × 100 = ${ans} mm²`);
+        }
+        break;
+      }
+      case 'g4_stat_chart': {
+        if (Math.random() < 0.5) {
+          const avgV = rInt(18, 42), d1 = rInt(2, 8), d2 = rInt(2, 6);
+          const arr = [avgV - d1, avgV + d1, avgV - d2, avgV + d2];
+          res = makeQ(t(`Biểu đồ cột số cây 4 lớp trồng: 4A: ${arr[0]}, 4B: ${arr[1]}, 4C: ${arr[2]}, 4D: ${arr[3]}. Trung bình mỗi lớp trồng ? cây`, `Bar chart trees: 4A:${arr[0]}, 4B:${arr[1]}, 4C:${arr[2]}, 4D:${arr[3]}. Average = ?`), avgV, [avgV + 10, Math.max(5, avgV - 10), avgV + 20], 'stat:chart', cfg, `Trung bình cộng = (${arr.join(' + ')}) ÷ 4 = ${avgV * 4} ÷ 4 = ${avgV} cây`);
+        } else {
+          const n1 = rInt(3, 7), price = rInt(6, 15), total1 = n1 * price, n2 = n1 + rInt(2, 5), ans = n2 * price;
+          res = makeQ(t(`Mua ${n1} quyển vở hết ${total1} nghìn đồng. Mua ${n2} quyển vở như thế hết ? nghìn đồng`, `${n1} notebooks cost ${total1}k. ${n2} notebooks cost ?k`), ans, [ans + 10, Math.max(10, ans - 10), ans + 20], 'word:unitary', cfg, `Giá 1 quyển vở: ${total1} ÷ ${n1} = ${price} nghìn\nGiá ${n2} quyển: ${price} × ${n2} = ${ans} nghìn đồng`);
         }
         break;
       }
@@ -774,6 +1061,114 @@
           const h = pickAny([1.5, 2.5, 0.5, 1.25]);
           const ans = Math.round(h * 60);
           res = makeQ(t(`Đổi: ${fmtNum(h)} giờ = ? phút`, `${fmtNum(h)} hours = ? min`), ans, [ans + 10, ans - 10, Math.round(h * 100)], 'units:time', cfg, `1 giờ = 60 phút → ${fmtNum(h)} × 60 = ${ans} phút`);
+        }
+        break;
+      }
+      case 'g5_dec_place': {
+        const kind = pickAny(['m_cm', 'kg_g', 'round10', 'frac_dec']);
+        if (kind === 'm_cm') {
+          const m = rInt(1, 14), cm = pickAny([5, 12, 25, 35, 48, 75]), ans = Number((m + cm / 100).toFixed(2));
+          res = makeQ(t(`Viết ${m} m ${cm} cm dưới dạng số thập phân (đơn vị mét)`, `Write ${m} m ${cm} cm as decimal meters`), fmtNum(ans), [Number((ans + 1).toFixed(2)), Number((ans + 0.1).toFixed(2)), Number(Math.max(0.1, ans - 1).toFixed(2))], 'decimal:units', cfg, `1 cm = 0,01 m → ${m} m ${cm} cm = ${fmtNum(ans)} m`);
+        } else if (kind === 'kg_g') {
+          const kg = rInt(1, 12), gVal = pickAny([200, 250, 500, 750]), ans = Number((kg + gVal / 1000).toFixed(2));
+          res = makeQ(t(`Viết ${kg} kg ${gVal} g dưới dạng số thập phân (đơn vị kg)`, `Write ${kg} kg ${gVal} g as decimal kg`), fmtNum(ans), [Number((ans + 1).toFixed(2)), Number((ans + 0.1).toFixed(2)), Number(Math.max(0.1, ans - 1).toFixed(2))], 'decimal:units', cfg, `1 kg = 1.000 g → ${kg} kg ${gVal} g = ${fmtNum(ans)} kg`);
+        } else if (kind === 'round10') {
+          const whole = rInt(4, 35), t10 = rInt(1, 8), h100 = pickAny([2, 3, 4, 6, 7, 8]);
+          const orig = Number((whole + t10 / 10 + h100 / 100).toFixed(2));
+          const ans = Number((whole + (h100 >= 5 ? t10 + 1 : t10) / 10).toFixed(1));
+          res = makeQ(t(`Làm tròn số ${fmtNum(orig)} đến hàng phần mười được ?`, `Round ${fmtNum(orig)} to nearest tenth: ?`), fmtNum(ans), [Number((ans + 1).toFixed(1)), Number((ans + 0.1).toFixed(1)), Number(Math.max(0.1, ans - 1).toFixed(1))], 'decimal:round', cfg, `Chữ số hàng phần trăm là ${h100} ${h100 >= 5 ? '≥ 5 nên làm tròn lên' : '< 5 nên giữ nguyên'} → ${fmtNum(ans)}`);
+        } else {
+          const pairs = [[1, 4, 0.25], [3, 4, 0.75], [1, 5, 0.2], [2, 5, 0.4], [3, 5, 0.6], [4, 5, 0.8], [3, 8, 0.375], [7, 20, 0.35], [9, 25, 0.36]];
+          const [n, d, dv] = pickAny(pairs);
+          res = makeQ(t(`Viết phân số ${n}/${d} dưới dạng số thập phân`, `Convert fraction ${n}/${d} to decimal`), fmtNum(dv), [Number((dv + 0.1).toFixed(3)), Number((dv + 1).toFixed(3)), Number((dv + 0.2).toFixed(3))], 'decimal:frac', cfg, `Lấy tử chia mẫu: ${n} ÷ ${d} = ${fmtNum(dv)}`);
+        }
+        break;
+      }
+      case 'g5_dec_findx': {
+        const kind = pickAny(['addX', 'subX', 'mulX', 'expr']);
+        if (kind === 'addX') {
+          const xVal = Number((rInt(15, 95) / 10).toFixed(1)), b = Number((rInt(12, 68) / 10).toFixed(1)), sum = Number((xVal + b).toFixed(1));
+          res = makeQ(t(`Tìm x: x + ${fmtNum(b)} = ${fmtNum(sum)}`, `Find x: x + ${fmtNum(b)} = ${fmtNum(sum)}`), fmtNum(xVal), [Number((xVal + 1).toFixed(1)), Number((xVal + 2).toFixed(1)), Number(Math.max(0.1, xVal - 1).toFixed(1))], 'equation:dec', cfg, `x = ${fmtNum(sum)} − ${fmtNum(b)} = ${fmtNum(xVal)}`);
+        } else if (kind === 'subX') {
+          const xVal = Number((rInt(14, 75) / 10).toFixed(1)), rem = Number((rInt(15, 85) / 10).toFixed(1)), a = Number((xVal + rem).toFixed(1));
+          res = makeQ(t(`Tìm x: ${fmtNum(a)} − x = ${fmtNum(rem)}`, `Find x: ${fmtNum(a)} − x = ${fmtNum(rem)}`), fmtNum(xVal), [Number((xVal + 1).toFixed(1)), Number((xVal + 2).toFixed(1)), Number(Math.max(0.1, xVal - 1).toFixed(1))], 'equation:dec', cfg, `x = ${fmtNum(a)} − ${fmtNum(rem)} = ${fmtNum(xVal)}`);
+        } else if (kind === 'mulX') {
+          const xVal = rInt(3, 14), k = pickAny([0.5, 1.5, 2.5, 0.25]), prod = Number((xVal * k).toFixed(2));
+          res = makeQ(t(`Tìm x: x × ${fmtNum(k)} = ${fmtNum(prod)}`, `Find x: x × ${fmtNum(k)} = ${fmtNum(prod)}`), xVal, [xVal + 1, Math.max(1, xVal - 1), xVal + 2], 'equation:dec', cfg, `x = ${fmtNum(prod)} ÷ ${fmtNum(k)} = ${xVal}`);
+        } else {
+          const a = Number((rInt(15, 85) / 10).toFixed(1)), b = pickAny([1.5, 2.5, 3.5]), c = pickAny([2, 4, 6]), ans = Number((a + b * c).toFixed(1));
+          res = makeQ(`${fmtNum(a)} + ${fmtNum(b)} × ${c}`, fmtNum(ans), [Number((ans + 1).toFixed(1)), Number((ans + 2).toFixed(1)), Number(Math.max(0.1, ans - 1).toFixed(1))], 'decimal:expression', cfg, `Nhân trước, cộng sau:\n${fmtNum(b)} × ${c} = ${fmtNum(b * c)} → ${fmtNum(a)} + ${fmtNum(b * c)} = ${fmtNum(ans)}`);
+        }
+        break;
+      }
+      case 'g5_box_surface': {
+        const kind = pickAny(['cubeSxq', 'cubeStp', 'boxSxq', 'dm3_cm3', 'm3_dm3']);
+        if (kind === 'cubeSxq') {
+          const a = rInt(2, 9), ans = a * a * 4;
+          res = makeQ(t(`Diện tích xung quanh hình lập phương cạnh ${a} cm là ? cm²`, `Lateral area of cube (edge ${a} cm) = ? cm²`), ans, [a * a * 6, ans + 10, Math.max(4, ans - 10)], 'geom:surface', cfg, `Sxq lập phương = a × a × 4 = ${a} × ${a} × 4 = ${ans} cm²`);
+        } else if (kind === 'cubeStp') {
+          const a = rInt(2, 9), ans = a * a * 6;
+          res = makeQ(t(`Diện tích toàn phần hình lập phương cạnh ${a} cm là ? cm²`, `Total surface area of cube (edge ${a} cm) = ? cm²`), ans, [a * a * 4, ans + 10, Math.max(6, ans - 10)], 'geom:surface', cfg, `Stp lập phương = a × a × 6 = ${a} × ${a} × 6 = ${ans} cm²`);
+        } else if (kind === 'boxSxq') {
+          const l = rInt(5, 12), w = rInt(3, 8), h = rInt(2, 6), ans = (l + w) * 2 * h;
+          res = makeQ(t(`Diện tích xung quanh hình hộp CN dài ${l} cm, rộng ${w} cm, cao ${h} cm là ? cm²`, `Lateral area of ${l}×${w}×${h} cm box = ? cm²`), ans, [l * w * h, ans + 10, Math.max(10, ans - 10)], 'geom:surface', cfg, `Sxq = (dài + rộng) × 2 × cao = (${l} + ${w}) × 2 × ${h} = ${ans} cm²`);
+        } else if (kind === 'dm3_cm3') {
+          const v = Number((rInt(12, 85) / 10).toFixed(1)), ans = Math.round(v * 1000);
+          res = makeQ(t(`Đổi: ${fmtNum(v)} dm³ = ? cm³`, `${fmtNum(v)} dm³ = ? cm³`), ans, [ans / 10, ans + 100, Math.max(100, ans - 100)], 'units:vol', cfg, `1 dm³ = 1.000 cm³ → ${fmtNum(v)} × 1.000 = ${ans} cm³`);
+        } else {
+          const v = Number((rInt(12, 85) / 10).toFixed(1)), ans = Math.round(v * 1000);
+          res = makeQ(t(`Đổi: ${fmtNum(v)} m³ = ? dm³`, `${fmtNum(v)} m³ = ? dm³`), ans, [ans / 10, ans + 100, Math.max(100, ans - 100)], 'units:vol', cfg, `1 m³ = 1.000 dm³ → ${fmtNum(v)} × 1.000 = ${ans} dm³`);
+        }
+        break;
+      }
+      case 'g5_time_calc': {
+        const kind = pickAny(['addHr', 'subMin', 'mulHr', 'arrive']);
+        if (kind === 'addHr') {
+          const h1 = rInt(1, 5), m1 = pickAny([20, 25, 35, 40, 45]), m2 = 60 - m1, h2 = rInt(1, 4), ans = h1 + h2 + 1;
+          res = makeQ(t(`${h1} giờ ${m1} phút + ${h2} giờ ${m2} phút = ? giờ`, `${h1}h ${m1}m + ${h2}h ${m2}m = ? hours`), ans, [ans + 1, Math.max(1, ans - 1), h1 + h2], 'units:time', cfg, `${m1} phút + ${m2} phút = 60 phút = 1 giờ → ${h1} + ${h2} + 1 = ${ans} giờ`);
+        } else if (kind === 'subMin') {
+          const h1 = rInt(2, 4), m1 = pickAny([15, 20, 25]), h2 = 1, m2 = pickAny([40, 45, 50]);
+          const ans = (h1 * 60 + m1) - (h2 * 60 + m2);
+          res = makeQ(t(`${h1} giờ ${m1} phút − ${h2} giờ ${m2} phút = ? phút`, `${h1}h ${m1}m − ${h2}h ${m2}m = ? min`), ans, [ans + 10, Math.max(10, ans - 10), ans + 20], 'units:time', cfg, `Đổi sang phút: ${h1 * 60 + m1} − ${h2 * 60 + m2} = ${ans} phút`);
+        } else if (kind === 'mulHr') {
+          const pair = pickAny([[1, 15, 4, 5], [1, 30, 4, 6], [2, 15, 4, 9], [1, 20, 3, 4], [2, 20, 3, 7], [1, 30, 2, 3]]);
+          const [h, m, k, ans] = pair;
+          res = makeQ(t(`${h} giờ ${m} phút × ${k} = ? giờ`, `${h}h ${m}m × ${k} = ? hours`), ans, [ans + 1, Math.max(1, ans - 1), ans + 2], 'units:time', cfg, `${h}×${k} giờ = ${h * k} giờ; ${m}×${k} phút = ${m * k} phút = ${(m * k) / 60} giờ → tổng ${ans} giờ`);
+        } else {
+          const startH = rInt(6, 9), startM = pickAny([15, 20, 30, 45]), addH = rInt(1, 3), addM = 60 - startM, ans = startH + addH + 1;
+          res = makeQ(t(`Xe xuất phát lúc ${startH} giờ ${startM} phút, đi hết ${addH} giờ ${addM} phút. Đến nơi lúc ? giờ`, `Leaves at ${startH}:${startM}, travels ${addH}h ${addM}m. Arrives at ? o'clock`), ans, [ans + 1, Math.max(7, ans - 1), ans + 2], 'units:time', cfg, `${startH} giờ ${startM} phút + ${addH} giờ ${addM} phút = ${ans} giờ đúng`);
+        }
+        break;
+      }
+      case 'g5_motion_adv': {
+        const kind = pickAny(['meet', 'catch', 'riverDown', 'riverUp']);
+        if (kind === 'meet') {
+          const v1 = pickAny([35, 40, 45]), v2 = pickAny([45, 50, 55]), tHr = rInt(2, 4), s = (v1 + v2) * tHr;
+          res = makeQ(t(`Hai xe cách nhau ${s} km đi ngược chiều với vận tốc ${v1} km/h và ${v2} km/h. Sau ? giờ gặp nhau`, `Two cars ${s} km apart head toward each other at ${v1} & ${v2} km/h. Meet in ? hours`), tHr, [tHr + 1, Math.max(1, tHr - 1), tHr + 2], 'motion:meet', cfg, `Tổng vận tốc: ${v1} + ${v2} = ${v1 + v2} km/h\nThời gian gặp nhau: ${s} ÷ ${v1 + v2} = ${tHr} giờ`);
+        } else if (kind === 'catch') {
+          const v1 = pickAny([30, 35, 40]), diff = pickAny([15, 20, 25]), v2 = v1 + diff, tHr = rInt(2, 4), s = diff * tHr;
+          res = makeQ(t(`Xe sau (${v2} km/h) đuổi theo xe trước (${v1} km/h) cách ${s} km. Sau ? giờ đuổi kịp`, `Car (${v2} km/h) chases car (${v1} km/h) ${s} km ahead. Catches up in ? hours`), tHr, [tHr + 1, Math.max(1, tHr - 1), tHr + 2], 'motion:catch', cfg, `Hiệu vận tốc: ${v2} − ${v1} = ${diff} km/h\nThời gian đuổi kịp: ${s} ÷ ${diff} = ${tHr} giờ`);
+        } else if (kind === 'riverDown') {
+          const vBoat = rInt(16, 28), vWater = rInt(2, 5), ans = vBoat + vWater;
+          res = makeQ(t(`Ca nô có vận tốc khi nước lặng là ${vBoat} km/h, dòng nước chảy ${vWater} km/h. Vận tốc xuôi dòng là ? km/h`, `Boat speed ${vBoat} km/h, current ${vWater} km/h. Downstream speed = ? km/h`), ans, [vBoat - vWater, ans + 10, Math.max(5, ans - 10)], 'motion:river', cfg, `Vận tốc xuôi dòng = V thực + V dòng nước = ${vBoat} + ${vWater} = ${ans} km/h`);
+        } else {
+          const vBoat = rInt(18, 30), vWater = rInt(2, 5), ans = vBoat - vWater;
+          res = makeQ(t(`Ca nô có vận tốc khi nước lặng là ${vBoat} km/h, dòng nước chảy ${vWater} km/h. Vận tốc ngược dòng là ? km/h`, `Boat speed ${vBoat} km/h, current ${vWater} km/h. Upstream speed = ? km/h`), ans, [vBoat + vWater, ans + 10, Math.max(5, ans - 10)], 'motion:river', cfg, `Vận tốc ngược dòng = V thực − V dòng nước = ${vBoat} − ${vWater} = ${ans} km/h`);
+        }
+        break;
+      }
+      case 'g5_stat_pie': {
+        const kind = pickAny(['pie', 'discount', 'prob']);
+        if (kind === 'pie') {
+          const total = pickAny([40, 60, 80, 120, 200]), pct = pickAny([15, 20, 25, 30, 35, 40]);
+          const ans = (total * pct) / 100;
+          res = makeQ(t(`Biểu đồ quạt tròn của ${total} học sinh cho biết ${pct}% thích Bóng đá. Có ? học sinh thích Bóng đá`, `Pie chart of ${total} students: ${pct}% like football. How many students?`), ans, [ans + 10, Math.max(2, ans - 10), ans + 20], 'stat:pie', cfg, `Số học sinh = ${total} × ${pct} ÷ 100 = ${ans} học sinh`);
+        } else if (kind === 'discount') {
+          const orig = pickAny([100, 200, 300, 400, 500]), disc = pickAny([10, 15, 20, 25]), ans = orig - (orig * disc) / 100;
+          res = makeQ(t(`Món hàng giá ${orig} nghìn đồng được giảm giá ${disc}%. Giá sau khi giảm là ? nghìn đồng`, `Item costs ${orig}k, ${disc}% off. Sale price = ?k`), ans, [ans + 10, Math.max(10, ans - 10), (orig * disc) / 100], 'percent:discount', cfg, `Số tiền giảm: ${orig} × ${disc}% = ${(orig * disc) / 100} nghìn\nGiá bán mới: ${orig} − ${(orig * disc) / 100} = ${ans} nghìn đồng`);
+        } else {
+          const trials = pickAny([20, 25, 50]), hits = rInt(4, Math.min(trials - 2, 18)), pct = Math.round((hits / trials) * 100);
+          res = makeQ(t(`Tung đồng xu ${trials} lần thấy ${hits} lần mặt ngửa. Tỉ số phần trăm xuất hiện mặt ngửa là ? %`, `Flipped coin ${trials} times, ${hits} heads. Percentage of heads = ? %`), pct, [pct + 10, Math.max(5, pct - 10), 100 - pct], 'stat:prob', cfg, `Tỉ số phần trăm = (${hits} ÷ ${trials}) × 100% = ${pct}%`);
         }
         break;
       }

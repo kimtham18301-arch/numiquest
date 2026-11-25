@@ -694,8 +694,8 @@ test('v2.10.0: all Grade 1-5 deep exam topics, multi-topic synthesis, and Column
       }
     }
   }
-  assert.ok(elemTopics >= 38, `Expected >= 38 specialized Grade 1-5 topics, got ${elemTopics}`);
-  assert.ok(totalTopics >= 55, `Expected >= 55 specialized Grade 1-9 topics, got ${totalTopics}`);
+  assert.ok(elemTopics >= 62, `Expected >= 62 specialized Grade 1-5 topics, got ${elemTopics}`);
+  assert.ok(totalTopics >= 78, `Expected >= 78 specialized Grade 1-9 topics, got ${totalTopics}`);
 
   // 2. Multi-topic synthesis covers every selected topic evenly via round-robin deck
   const combo = ['g3_col10k', 'g3_geom', 'g3_fold_word'];
