@@ -763,3 +763,29 @@ test('v2.11.1: reloading page while signed in as teacher boots directly into Tea
   assert.equal(ctx.view, 'teacher', 'Reloading as a teacher must boot directly into Teacher Workspace, not student home');
   assert.ok(ctx.document.querySelector('#app').innerHTML.includes('Lớp học của Cô Lan'), 'Teacher workspace content should render on reload');
 });
+
+test('v2.12.0: A4 worksheet PDF composer generates column grids, mixed/essay/mcq layouts, and answer keys', () => {
+  const ctx = loadAppContext();
+  const qs = ctx.generateWorksheetQuestions(2, ['g2_col100', 'g2_word'], 10);
+  assert.equal(qs.length, 10, 'Should generate exact requested question count');
+  assert.ok(qs.some(q => q.colSpec), 'Grade 2 column topic should include printable column grid specs');
+
+  for (const fmtMode of ['mixed', 'essay', 'mcq']) {
+    const html = ctx.buildWorksheetSheetHTML({
+      grade: 2,
+      topics: ['g2_col100', 'g2_word'],
+      count: 10,
+      format: fmtMode,
+      includeAnswerKey: true,
+      title: 'PHIẾU ÔN TẬP LỚP 2',
+      durationMin: 20,
+      examCode: '01',
+      questions: qs
+    }, false);
+    assert.ok(html.includes('PHIẾU ÔN TẬP LỚP 2'), `Missing worksheet title in ${fmtMode}`);
+    assert.ok(html.includes('ws-answer-page'), `Missing answer key page in ${fmtMode}`);
+    if (fmtMode !== 'mcq') {
+      assert.ok(html.includes('ws-col-tbl'), `Printable column grid table should render in ${fmtMode}`);
+    }
+  }
+});

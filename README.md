@@ -1,10 +1,11 @@
-# NumiQuick — bản cập nhật 2.10.0
+# NumiQuick — bản cập nhật 2.12.0
 
-Web luyện tính nhẩm và đặt tính vui cho học sinh Tiểu học & THCS (Lớp 1–9 theo chuẩn Chương trình GDPT 2018), chạy tĩnh trên GitHub Pages.
+Web luyện tính nhẩm, đặt tính và soạn phiếu đề in PDF vui cho học sinh Tiểu học & THCS (Lớp 1–9 theo chuẩn Chương trình GDPT 2018), chạy tĩnh trên GitHub Pages.
 
 ## Tính năng chính
 
-- **Tối ưu chuyên sâu Tiểu học (Lớp 1–5) & Ghép nhiều phần dạng (Mới v2.10.0):** 40 chuyên đề chuẩn đề kiểm tra riêng cho Lớp 1–5 (7–9 phần dạng/lớp: đặt tính cộng/trừ/nhân không nhớ & có nhớ, cấu tạo số, liền trước/sau, tìm thành phần chưa biết/tìm `x`, đường gấp khúc & giờ 24h, chu vi & diện tích hình vuông/chữ nhật/bình hành/thoi/tam giác/thang/tròn & thể tích, gấp/giảm số lần & rút về đơn vị, Tổng–Hiệu, Tổng–Tỉ/Hiệu–Tỉ, dấu hiệu chia hết, đổi đơn vị, 3 dạng tỉ số phần trăm, hỗn số, toán chuyển động) và 17 chuyên đề THCS (Lớp 6–9). Hỗ trợ **chọn 1 hoặc chạm ghép nhiều chuyên đề cùng lúc**, nút nhanh **Chỉ bài Đặt tính**, chế độ **Tổng hợp xoay vòng cân bằng mọi dạng** và nhãn tên dạng bài trực tiếp trên thẻ câu hỏi.
+- **Soạn đề sẵn & In phiếu bài tập PDF khổ A4 (Mới v2.12.0):** Mở trực tiếp từ **Không gian Giáo viên** (`🖨️ Soạn & In đề PDF`) hoặc trang **Luyện tập** (`🖨️ Soạn đề sẵn & In phiếu PDF (A4)`). Hỗ trợ chọn Lớp 1–9, ghép nhiều chuyên đề, sửa tiêu đề/thời gian, đổi mã đề (`01, 02...`), đổi riêng từng câu (`↻`), chọn 3 hình thức (*Kết hợp*, *Tự luận + Kẻ bảng đặt tính ô ly*, *100% Trắc nghiệm*) và tự động kèm **trang Đáp án & Hướng dẫn chấm** riêng biệt khi in/lưu PDF.
+- **Tối ưu chuyên sâu Tiểu học (Lớp 1–5) & Ghép nhiều phần dạng:** 40 chuyên đề chuẩn đề kiểm tra riêng cho Lớp 1–5 (7–9 phần dạng/lớp) và 17 chuyên đề THCS (Lớp 6–9), tự động đặt sẵn số câu & thời gian phù hợp theo từng dạng (Tính nhẩm / Đặt tính / Ôn kiến thức), chọn ghép nhiều chuyên đề xoay vòng cân bằng và ẩn gọn mục tùy chỉnh khi chọn lớp có sẵn.
 - **Bảng kẻ "📐 Đặt tính rồi tính" ô ly tương tác:** Kẻ bảng dọc – ngang đầy đủ với tiêu đề tên hàng (`Trăm | Chục | Đ.vị` hoặc `Chục | Đ.vị | , | P.10 | P.100`), tô sáng cả cột đang tính, hàng ghi **Nhớ**, nhập chữ số từ phải sang trái bằng bàn phím hoặc chạm số trên màn hình, tự động mở sẵn bên phải trên máy tính với các phép đặt tính Tiểu học.
 - **Tự luận nhập song song & Giao diện làm bài 1 màn hình cố định:** Chuyển nhanh `Trắc nghiệm ↔ Tự luận` ngay trong khi làm bài; chế độ Tự luận cho phép vừa gõ bàn phím vừa bấm số trên màn hình mượt mà. Màn hình làm bài khóa gọn trong 1 khung hình (không giật, không cuộn lên xuống), bảng Đặt tính / Nháp mở song song bên phải trên máy tính.
 - **Gõ bàn phím nhanh & Bảng nháp vẽ tay (Mới v2.3.0):** Phím tắt `1–4` / `A–D` chọn nhanh đáp án, gõ số trực tiếp ở chế độ bàn phím số, `Enter` qua câu tiếp, `R` đọc đề, và **Bảng nháp vẽ tay (Canvas cảm ứng/chuột)** với 3 màu bút, tẩy, hoàn tác và xóa sạch (bấm `S` hoặc nút `✏️ Nháp`).
