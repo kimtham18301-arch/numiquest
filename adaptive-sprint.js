@@ -281,7 +281,6 @@
         <h1>${isNewBest ? t('🏆 Kỷ lục mới!', '🏆 New Personal Best!') : t('Hết 60 giây rồi!', 'Time’s up!')}</h1>
         <div class="finish-streak-wrap">
           <span class="finish-xp-pill">+${earnedXp} XP</span>
-          ${earnedPearls ? `<span class="finish-xp-pill">+${earnedPearls} 🧋</span>` : ''}
         </div>
         <div class="finish-stats-grid">
           <div class="finish-stat-box">

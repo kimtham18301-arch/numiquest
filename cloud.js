@@ -729,7 +729,7 @@ function openAccount(mode='login'){
     <div class="intro-animal">${animal('bunny')}</div>
     <span class="eyebrow">NUMIQUICK · ${t('BẢO VỆ TIẾN ĐỘ HỌC','SAVE YOUR PROGRESS')}</span>
     <h1>${signup?t('Tạo tài khoản học sinh','Create student account'):t('Đăng nhập để vào học','Sign in to learn')}</h1>
-    <p class="muted">${signup?t('Tạo tài khoản riêng để lưu điểm số, chuỗi ngày học và trân châu của em.','Create an account to save your scores, daily streak and pearls.'):t('Nhập tài khoản để mở khóa toàn bộ bài học và tiếp tục tiến độ.','Enter your account to unlock all lessons and resume your progress.')}</p>
+    <p class="muted">${signup?t('Tạo tài khoản riêng để lưu điểm số, chuỗi ngày học và tiến độ học của em.','Create an account to save your scores, daily streak and progress.'):t('Nhập tài khoản để mở khóa toàn bộ bài học và tiếp tục tiến độ.','Enter your account to unlock all lessons and resume your progress.')}</p>
     <div class="auth-tabs">
       <button type="button" class="auth-tab ${!signup?'active':''}" id="tabLogin">${t('Đăng nhập','Sign in')}</button>
       <button type="button" class="auth-tab ${signup?'active':''}" id="tabSignup">${t('Tạo tài khoản mới','Create new account')}</button>

@@ -22,7 +22,7 @@
   <meta name="twitter:image" content="https://kimtham18301-arch.github.io/numiquest/og-image.png">
   <meta name="theme-color" content="#34765c">
   <title>NumiQuick · Luyện tính nhẩm vui</title>
-  <link rel="stylesheet" href="style.css?v=2.12.1">
+  <link rel="stylesheet" href="style.css?v=2.12.2">
   <link rel="manifest" href="manifest.json">
 </head>
 <body class="numi-booting">
@@ -32,7 +32,6 @@
     <button data-view="home"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><i data-vi="Trang chủ" data-en="Home"></i></button>
     <button data-view="setup"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><i data-vi="Luyện tập" data-en="Practice"></i></button>
     <button data-view="guide"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10M6 10h10"/></svg><i data-vi="Hướng dẫn" data-en="Guide"></i></button>
-    <button data-view="atlas"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg><i data-vi="Mục tiêu" data-en="Goals"></i></button>
     <button data-view="stats"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.45 1-1 1H7"/><path d="M14 14.66V17c0 .55.45 1 1 1h2"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg><i data-vi="Thành tích" data-en="Progress"></i></button>
     <button data-view="profile"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg><i data-vi="Hồ sơ" data-en="Profile"></i></button>
     <button data-view="admin" id="navAdminBtn" style="display:none"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><i data-vi="Quản trị" data-en="Admin"></i></button>
@@ -42,7 +41,7 @@
   <button id="lang">EN</button>
 </header>
 <main id="app"></main>
-<footer>NumiQuick · <span data-vi="Mỗi câu đúng, thêm một viên trân châu!" data-en="Every correct answer earns a pearl!"></span> <span class="local" data-vi="Lưu trên thiết bị · Đăng nhập để bảo vệ tiến độ học" data-en="Saved on this device · Sign in to save progress"></span></footer>
+<footer>NumiQuick · <span data-vi="Mỗi ngày luyện tập, giỏi toán thêm một chút!" data-en="Practice a little every day, get better at maths!"></span> <span class="local" data-vi="Lưu trên thiết bị · Đăng nhập để bảo vệ tiến độ học" data-en="Saved on this device · Sign in to save progress"></span></footer>
 <div id="moreSheetBackdrop" class="sheet-backdrop" style="display:none"></div>
 <div id="moreSheet" class="more-sheet" style="display:none" role="dialog" aria-modal="true" aria-label="Tiện ích mở rộng">
   <div class="sheet-handle"></div>
@@ -54,10 +53,6 @@
     <button type="button" class="sheet-item" data-sheet-view="guide">
       <span class="sheet-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10M6 10h10"/></svg></span>
       <div class="sheet-text"><b data-vi="Hướng dẫn" data-en="Guide"></b><small data-vi="Cách học & mẹo cho phụ huynh" data-en="Student & parent guide"></small></div>
-    </button>
-    <button type="button" class="sheet-item" data-sheet-view="atlas">
-      <span class="sheet-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2h4"/><path d="M12 2v4"/><path d="M6 6h12l-1.5 14a2 2 0 0 1-2 1.8h-5a2 2 0 0 1-2-1.8L6 6z"/><circle cx="10" cy="17" r="1"/><circle cx="14" cy="17" r="1"/><circle cx="12" cy="14" r="1"/></svg></span>
-      <div class="sheet-text"><b data-vi="Mục tiêu trà sữa" data-en="Milktea Goals"></b><small data-vi="Tích trân châu & nhận huy hiệu" data-en="Collect pearls & earn badges"></small></div>
     </button>
     <button type="button" class="sheet-item" id="sheetAdminItem" data-sheet-view="admin" style="display:none">
       <span class="sheet-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
@@ -79,30 +74,30 @@
 </div>
 <dialog id="modal"><div id="modalBody"></div><button id="closeModal" class="primary" data-vi="Tiếp tục" data-en="Continue"></button></dialog>
 <input id="restore" type="file" accept="application/json" hidden style="display:none">
-<script src="app.js?v=2.12.1"></script>
-<script src="milktea.js?v=2.12.1"></script>
-<script src="cloud-config.js?v=2.12.1"></script>
-<script src="cloud.js?v=2.12.1"></script>
-<script src="admin.js?v=2.12.1"></script>
-<script src="ui.js?v=2.12.1"></script>
-<script src="advanced.js?v=2.12.1"></script>
-<script src="refresh.js?v=2.12.1"></script>
-<script src="analytics.js?v=2.12.1"></script>
-<script src="review-exit.js?v=2.12.1"></script>
-<script src="adaptive-sprint.js?v=2.12.1"></script>
-<script src="pedagogy.js?v=2.12.1"></script>
-<script src="engagement.js?v=2.12.1"></script>
-<script src="admin-assignments.js?v=2.12.1"></script>
-<script src="admin-dashboard.js?v=2.12.1"></script>
-<script src="scratchpad-kbd.js?v=2.12.1"></script>
-<script src="teacher-classes.js?v=2.12.1"></script>
-<script src="teacher-auth-gate.js?v=2.12.1"></script>
-<script src="teacher-workspace.js?v=2.12.1"></script>
-<script src="teacher-integration.js?v=2.12.1"></script>
-<script src="cloud-classes.js?v=2.12.1"></script>
-<script src="curriculum-topics.js?v=2.12.1"></script>
-<script src="column-calc.js?v=2.12.1"></script>
-<script src="worksheet-pdf.js?v=2.12.1"></script>
+<script src="app.js?v=2.12.2"></script>
+<script src="milktea.js?v=2.12.2"></script>
+<script src="cloud-config.js?v=2.12.2"></script>
+<script src="cloud.js?v=2.12.2"></script>
+<script src="admin.js?v=2.12.2"></script>
+<script src="ui.js?v=2.12.2"></script>
+<script src="advanced.js?v=2.12.2"></script>
+<script src="refresh.js?v=2.12.2"></script>
+<script src="analytics.js?v=2.12.2"></script>
+<script src="review-exit.js?v=2.12.2"></script>
+<script src="adaptive-sprint.js?v=2.12.2"></script>
+<script src="pedagogy.js?v=2.12.2"></script>
+<script src="engagement.js?v=2.12.2"></script>
+<script src="admin-assignments.js?v=2.12.2"></script>
+<script src="admin-dashboard.js?v=2.12.2"></script>
+<script src="scratchpad-kbd.js?v=2.12.2"></script>
+<script src="teacher-classes.js?v=2.12.2"></script>
+<script src="teacher-auth-gate.js?v=2.12.2"></script>
+<script src="teacher-workspace.js?v=2.12.2"></script>
+<script src="teacher-integration.js?v=2.12.2"></script>
+<script src="cloud-classes.js?v=2.12.2"></script>
+<script src="curriculum-topics.js?v=2.12.2"></script>
+<script src="column-calc.js?v=2.12.2"></script>
+<script src="worksheet-pdf.js?v=2.12.2"></script>
 <script>document.body.classList.remove('numi-booting');</script>
 <script>
 if('serviceWorker' in navigator){
@@ -110,9 +105,9 @@ if('serviceWorker' in navigator){
     try{
       if(window.caches){
         const keys=await caches.keys();
-        await Promise.all(keys.filter(k=>k!=='numiquick-v2.12.1').map(k=>caches.delete(k)));
+        await Promise.all(keys.filter(k=>k!=='numiquick-v2.12.2').map(k=>caches.delete(k)));
       }
-      navigator.serviceWorker.register('./sw.js?v=2.12.1').then(r=>r.update()).catch(()=>{});
+      navigator.serviceWorker.register('./sw.js?v=2.12.2').then(r=>r.update()).catch(()=>{});
     }catch{}
   });
 }
