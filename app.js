@@ -1001,7 +1001,7 @@ function setup(){
       toast(t('Chọn ít nhất một phép tính, loại số và số chữ số nhé.','Choose at least one operation, number type and digit length.'));
       return;
     }
-    config={...defaults,ops,types,type:types[0]||'natural',digits,count:+f.get('count'),seconds:+f.get('seconds'),inputMode:f.get('inputMode')||'choices',grade:config.grade,topic:config.topic||'all'};
+    config={...defaults,ops,types,type:types[0]||'natural',digits,count:+f.get('count'),seconds:+f.get('seconds'),inputMode:f.get('inputMode')||'choices',grade:config.grade,topic:config.topic||'all',topics:Array.isArray(config.topics)?[...config.topics]:[]};
     if(typeof window!=='undefined')window.config=config;
     if(typeof global!=='undefined')global.config=config;
     startQuiz();

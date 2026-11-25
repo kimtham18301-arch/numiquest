@@ -301,9 +301,11 @@
 
     const colSpec = parseColumnArithmetic(q.q);
     if (colSpec) {
-      // Auto-open interactive Column Arithmetic on desktop for explicit column topics unless user closed it
+      // Auto-open ruled Column Arithmetic Table on desktop for Grade 1-5 multi-digit / decimal column problems unless user closed it
       const isDesktop = typeof window !== 'undefined' && (window.innerWidth || 0) >= 860;
-      if (isDesktop && q.columnReady && !colUserDismissed && !colPanelOpen) {
+      const gCur = Number(q.config?.grade || (typeof config !== 'undefined' ? config.grade : 0));
+      const isElemColumn = Boolean(q.columnReady || (gCur >= 1 && gCur <= 5 && (colSpec.hasDec || colSpec.totalCols >= 2)));
+      if (isDesktop && isElemColumn && !colUserDismissed && !colPanelOpen) {
         const sp = $('#scratchpadDrawer');
         if (!sp || sp.hidden) colPanelOpen = true;
       }
@@ -480,6 +482,17 @@
     if (qEl) qEl.before(utilBar);
     else mainCol.prepend(utilBar);
 
+    // Show compact exam-format topic pill inside companion row (zero extra height!)
+    if (q.topicLabel) {
+      const comp = mainCol.querySelector('.quiz-companion');
+      if (comp && !comp.querySelector('.quiz-topic-badge')) {
+        const b = document.createElement('span');
+        b.className = 'quiz-topic-badge';
+        b.textContent = q.topicLabel;
+        comp.append(b);
+      }
+    }
+
     // Sync side pane state when scratchpad is toggled via S key or close button
     $('#spCloseBtn')?.addEventListener('click', () => setTimeout(syncQuizSideWorkbenchState, 10));
     syncQuizSideWorkbenchState();
@@ -634,6 +647,25 @@
       }
       body[data-view="quiz"] .quiz-companion span {
         font-size: 13px !important;
+      }
+      .quiz-topic-badge {
+        margin-left: auto;
+        padding: 3px 10px;
+        border-radius: 999px;
+        background: #edf7eb;
+        border: 1px solid #cce2c9;
+        color: #24563a;
+        font-size: 11.5px !important;
+        font-weight: 800;
+        white-space: nowrap;
+        max-width: 52%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      body.dark-mode .quiz-topic-badge {
+        background: #1a3125;
+        border-color: #2e5540;
+        color: #a9e5c3;
       }
       .quiz-util-bar {
         display: flex;

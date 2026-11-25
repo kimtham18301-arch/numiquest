@@ -671,29 +671,43 @@ test('distractors cannot be eliminated by units digit, denominator, or answer po
   for (const r of rank) assert.ok(r / total > 0.17 && r / total < 0.33, `answer position is predictable: ${rank}`);
 });
 
-test('v2.9.0: all 42 Grade 1-9 exam topic streams and Column Arithmetic parser work accurately', () => {
+test('v2.10.0: all Grade 1-5 deep exam topics, multi-topic synthesis, and Column Arithmetic parser work accurately', () => {
   const ctx = loadAppContext();
 
-  // 1. Every specialized topic across Grades 1-9 produces valid questions with 4 unique options containing the answer
+  // 1. Every specialized topic across Grades 1-9 (including 40 deep Grade 1-5 topics) produces valid questions
   let totalTopics = 0;
+  let elemTopics = 0;
   for (let g = 1; g <= 9; g++) {
     const topics = ctx.NUMI_GRADE_TOPICS[g];
-    assert.ok(Array.isArray(topics) && topics.length >= 4, `Grade ${g} should have at least 4 topics`);
+    assert.ok(Array.isArray(topics) && topics.length >= (g <= 5 ? 8 : 5), `Grade ${g} expected >= ${g <= 5 ? 8 : 5} topics, got ${topics?.length}`);
     for (const tp of topics) {
       if (tp.id === 'all') continue;
       totalTopics++;
+      if (g <= 5) elemTopics++;
       for (let i = 0; i < 6; i++) {
-        const q = ctx.generate({ ...ctx.NUMI_GRADES[g], grade: g, topic: tp.id, questionStyle: 'normal' });
+        const q = ctx.generate({ ...ctx.NUMI_GRADES[g], grade: g, topic: tp.id, topics: [tp.id], questionStyle: 'normal' });
         assert.ok(q && q.q && q.answer !== undefined, `Topic ${tp.id} failed to generate`);
         assert.equal(q.options.length, 4, `Topic ${tp.id} must have 4 options (got ${q.options.length} for "${q.q}")`);
         assert.ok(q.options.some(opt => ctx.isAnswerMatch(opt, q.answer)), `Topic ${tp.id} missing answer "${q.answer}" in [${q.options.join(', ')}] for "${q.q}"`);
         assert.ok(q.explanation && q.explanation.length > 3, `Topic ${tp.id} missing explanation`);
+        assert.ok(q.topicLabel && q.topicLabel.length > 2, `Topic ${tp.id} missing topicLabel`);
       }
     }
   }
-  assert.ok(totalTopics >= 38, `Expected >= 38 specialized topics across Grades 1-9, got ${totalTopics}`);
+  assert.ok(elemTopics >= 38, `Expected >= 38 specialized Grade 1-5 topics, got ${elemTopics}`);
+  assert.ok(totalTopics >= 55, `Expected >= 55 specialized Grade 1-9 topics, got ${totalTopics}`);
 
-  // 2. Column Arithmetic parser ("Đặt tính rồi tính")
+  // 2. Multi-topic synthesis covers every selected topic evenly via round-robin deck
+  const combo = ['g3_col10k', 'g3_geom', 'g3_fold_word'];
+  const seen = new Set();
+  for (let i = 0; i < combo.length; i++) {
+    const q = ctx.generate({ ...ctx.NUMI_GRADES[3], grade: 3, topic: 'all', topics: combo, questionStyle: 'normal' });
+    assert.ok(combo.includes(q.topicId), `Unexpected topicId ${q.topicId} for multi-topic mix`);
+    seen.add(q.topicId);
+  }
+  assert.equal(seen.size, combo.length, `Multi-topic synthesis should cover all 3 topics evenly in 3 draws, saw [${[...seen]}]`);
+
+  // 3. Column Arithmetic parser ("Đặt tính rồi tính")
   const addCol = ctx.parseColumnArithmetic('47 + 38');
   assert.ok(addCol && addCol.op === '+' && addCol.expected === 85 && addCol.commaCol === -1);
   assert.equal(addCol.rowA.join('').trim(), '47');

@@ -153,7 +153,7 @@ setup=function(){
       types=types.filter(x=>['natural','fraction'].includes(x));
       if(!types.length)types=['natural'];
     }
-    config={...defaults,ops,types,type:types[0]||'natural',digits,count:+f.get('count'),seconds:+f.get('seconds'),inputMode:f.get('inputMode')||config.inputMode||'choices',questionStyle:style,termCount:+f.get('termCount'),grade:config.grade,topic:config.topic||'all'};
+    config={...defaults,ops,types,type:types[0]||'natural',digits,count:+f.get('count'),seconds:+f.get('seconds'),inputMode:f.get('inputMode')||config.inputMode||'choices',questionStyle:style,termCount:+f.get('termCount'),grade:config.grade,topic:config.topic||'all',topics:Array.isArray(config.topics)?[...config.topics]:[]};
     if(typeof window!=='undefined')window.config=config;
     if(typeof global!=='undefined')global.config=config;
     startQuiz();
