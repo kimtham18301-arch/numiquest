@@ -60,65 +60,115 @@
 
   function composeColumnAnswer(spec) {
     const inputs = $$('#columnCalcPanel .col-ans-cell');
+    const getVal = c => {
+      const inp = inputs.find(el => Number(el.dataset.colIdx) === c);
+      return inp ? String(inp.value || '').trim() : '';
+    };
+    const anyFilled = Array.from({ length: spec.totalCols }, (_, c) => c !== spec.commaCol && Boolean(getVal(c))).some(Boolean);
+    if (!anyFilled) return '';
+
+    if (spec.commaCol >= 0) {
+      let intPart = '';
+      for (let c = 0; c < spec.commaCol; c++) {
+        const v = getVal(c);
+        if (v) intPart += v;
+      }
+      intPart = intPart.replace(/^0+(?=\d)/, '') || '0';
+      let decPart = '';
+      for (let c = spec.commaCol + 1; c < spec.totalCols; c++) {
+        decPart += getVal(c) || '0';
+      }
+      decPart = decPart.replace(/0+$/, '');
+      return decPart ? `${intPart},${decPart}` : intPart;
+    }
+
     let out = '';
     for (let c = 0; c < spec.totalCols; c++) {
+      const v = getVal(c);
+      if (v) out += v;
+    }
+    return out.replace(/^0+(?=\d)/, '');
+  }
+
+  function getPlaceValueHeaders(spec) {
+    const intVi = ['Đ.vị', 'Chục', 'Trăm', 'Nghìn', 'C.nghìn', 'Tr.nghìn', 'Triệu'];
+    const intEn = ['1s', '10s', '100s', '1k', '10k', '100k', '1M'];
+    const decVi = ['P.10', 'P.100', 'P.1000'];
+    const decEn = ['0.1', '0.01', '0.001'];
+    const isEn = typeof lang !== 'undefined' && lang === 'en';
+    const intCount = spec.commaCol >= 0 ? spec.commaCol : spec.totalCols;
+    const headers = [];
+    for (let c = 0; c < spec.totalCols; c++) {
       if (c === spec.commaCol) {
-        out += ',';
+        headers.push(',');
+      } else if (c < intCount) {
+        const power = intCount - 1 - c;
+        const arr = isEn ? intEn : intVi;
+        headers.push(arr[power] || `10^${power}`);
       } else {
-        const inp = inputs.find(el => Number(el.dataset.colIdx) === c);
-        const v = inp ? String(inp.value || '').trim() : '';
-        if (v) out += v;
+        const dIdx = c - spec.commaCol - 1;
+        const arr = isEn ? decEn : decVi;
+        headers.push(arr[dIdx] || `10^-${dIdx + 1}`);
       }
     }
-    // Strip leading zeros except right before comma or single '0'
-    out = out.replace(/^0+(?=\d)/, '');
-    if (out.startsWith(',')) out = '0' + out;
-    if (out.includes(',')) out = out.replace(/0+$/, '').replace(/,$/, '');
-    return out;
+    return headers;
   }
 
   function buildColumnCalcMarkup(spec) {
-    const digitCols = [];
-    for (let c = 0; c < spec.totalCols; c++) {
-      if (c !== spec.commaCol) digitCols.push(c);
-    }
-    const carryRow = Array.from({ length: spec.totalCols }, (_, c) =>
-      c === spec.commaCol
-        ? '<span class="col-cell col-comma-spacer"></span>'
-        : `<button type="button" class="col-carry-btn" data-carry-col="${c}" title="${t('Chạm để đánh dấu nhớ', 'Tap to mark carry')}"></button>`
+    const headers = getPlaceValueHeaders(spec);
+
+    const headCells = headers.map((lbl, c) =>
+      `<th class="${c === spec.commaCol ? 'col-th-comma' : 'col-th-digit'}" data-col-group="${c}">${esc(lbl)}</th>`
     ).join('');
 
-    const renderDigitRow = (cells, opLabel = '') => `<div class="col-grid-row">
-      <span class="col-op-cell">${opLabel}</span>
-      ${cells.map(ch => `<span class="col-cell ${ch === ',' ? 'col-comma' : ''}">${ch === ' ' ? '&nbsp;' : esc(ch)}</span>`).join('')}
-    </div>`;
+    const carryRow = Array.from({ length: spec.totalCols }, (_, c) =>
+      c === spec.commaCol
+        ? `<td class="col-td-comma" data-col-group="${c}"></td>`
+        : `<td class="col-td-carry" data-col-group="${c}"><button type="button" class="col-carry-btn" data-carry-col="${c}" title="${t('Chạm để đánh dấu nhớ', 'Tap to mark carry')}"></button></td>`
+    ).join('');
+
+    const renderDigitRow = (cells, opLabel = '', rowClass = '') => `<tr class="col-tr-num ${rowClass}">
+      <td class="col-td-op">${opLabel || '&nbsp;'}</td>
+      ${cells.map((ch, c) => `<td class="${ch === ',' ? 'col-td-comma col-comma-glyph' : 'col-td-digit'}" data-col-group="${c}">${ch === ' ' ? '&nbsp;' : esc(ch)}</td>`).join('')}
+    </tr>`;
 
     const ansCells = Array.from({ length: spec.totalCols }, (_, c) =>
       c === spec.commaCol
-        ? '<span class="col-cell col-comma">,</span>'
-        : `<input type="text" inputmode="numeric" maxlength="1" class="col-ans-cell" data-col-idx="${c}" aria-label="${t('Chữ số cột', 'Column digit')} ${c + 1}">`
+        ? `<td class="col-td-comma col-comma-glyph" data-col-group="${c}">,</td>`
+        : `<td class="col-td-ans" data-col-group="${c}"><input type="text" inputmode="numeric" maxlength="1" class="col-ans-cell" data-col-idx="${c}" aria-label="${t('Chữ số hàng', 'Digit')} ${esc(headers[c])}"></td>`
     ).join('');
 
     return `
       <div class="col-calc-head">
-        <span>📐 ${t('Đặt tính rồi tính', 'Column Arithmetic')}</span>
+        <span>📐 ${t('Bảng Đặt tính rồi tính', 'Column Arithmetic Table')}</span>
         <div class="col-calc-head-btns">
           <button type="button" class="sp-tool-btn" id="colClearBtn">↺ ${t('Xóa ô', 'Clear')}</button>
           <button type="button" class="sp-tool-btn" id="colCloseBtn" title="${t('Đóng đặt tính', 'Close')}">✕</button>
         </div>
       </div>
-      <div class="col-calc-tip">${t('Tính từ <b>phải sang trái</b> (hàng đơn vị trước). Chạm ô nhỏ trên cùng để ghi <b>nhớ</b>.', 'Compute <b>right to left</b> (ones first). Tap tiny top boxes to mark <b>carries</b>.')}</div>
-      <div class="col-notebook" style="--col-n:${spec.totalCols}">
-        <div class="col-grid-row col-carry-row">
-          <span class="col-op-cell col-carry-lbl">${t('Nhớ', 'C')}</span>
-          ${carryRow}
-        </div>
-        ${renderDigitRow(spec.rowA, '')}
-        ${renderDigitRow(spec.rowB, spec.op)}
-        <div class="col-divider-line"></div>
-        <div class="col-grid-row col-ans-row">
-          <span class="col-op-cell">=</span>
-          ${ansCells}
+      <div class="col-calc-tip">${t('Tính từng cột từ <b>phải sang trái</b> (cột sáng xanh). Chạm hàng <b>Nhớ</b> nếu có nhớ.', 'Calculate column by column <b>right to left</b>. Tap the <b>Carry</b> row if needed.')}</div>
+      <div class="col-notebook">
+        <div class="col-table-scroll">
+          <table class="col-table" role="grid" aria-label="${t('Bảng đặt tính', 'Column table')}">
+            <thead>
+              <tr class="col-tr-head">
+                <th class="col-th-op">${t('Hàng', 'Place')}</th>
+                ${headCells}
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="col-tr-carry">
+                <td class="col-td-op col-carry-lbl">${t('Nhớ', 'Carry')}</td>
+                ${carryRow}
+              </tr>
+              ${renderDigitRow(spec.rowA, '', 'col-tr-a')}
+              ${renderDigitRow(spec.rowB, spec.op, 'col-tr-b')}
+              <tr class="col-tr-ans">
+                <td class="col-td-op col-td-eq">=</td>
+                ${ansCells}
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
       <div class="col-digit-pad" aria-label="${t('Bàn phím chọn chữ số đặt tính', 'Column digit pad')}">
@@ -284,14 +334,22 @@
         if (outEl) outEl.textContent = val || '?';
       };
 
-      const focusCol = cIdx => {
+      const highlightColGroup = cIdx => {
+        $$('#columnCalcPanel [data-col-group]').forEach(cell => {
+          cell.classList.toggle('col-active-col', Number(cell.dataset.colGroup) === cIdx);
+        });
+      };
+
+      const focusCol = (cIdx, shouldFocus = true) => {
         const target = inputs.find(el => Number(el.dataset.colIdx) === cIdx);
         if (target) {
           activeColIdx = cIdx;
           inputs.forEach(el => el.classList.toggle('is-focused', el === target));
-          target.focus();
+          highlightColGroup(cIdx);
+          if (shouldFocus) target.focus();
         }
       };
+      if (digitCols.length) focusCol(digitCols[digitCols.length - 1], false);
 
       const enterDigitAtActive = digit => {
         const pos = digitCols.indexOf(activeColIdx);
@@ -322,6 +380,7 @@
         inp.addEventListener('focus', () => {
           activeColIdx = Number(inp.dataset.colIdx);
           inputs.forEach(el => el.classList.toggle('is-focused', el === inp));
+          highlightColGroup(activeColIdx);
         });
         inp.addEventListener('keydown', e => {
           if (/^[0-9]$/.test(e.key)) {
@@ -718,31 +777,81 @@
         border-bottom: 1px solid #edf3e9;
       }
       .col-notebook {
-        padding: 12px 14px 10px;
+        padding: 10px 12px;
         display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
-        background-image: linear-gradient(to bottom, rgba(56, 105, 80, 0.06) 1px, transparent 1px);
-        background-size: 100% 24px;
+        justify-content: center;
+        background: #fffef9;
       }
-      .col-grid-row {
-        display: grid;
-        grid-template-columns: 32px repeat(var(--col-n, 3), 40px);
-        gap: 6px;
-        align-items: center;
-        justify-items: center;
+      .col-table-scroll {
+        max-width: 100%;
+        overflow-x: auto;
       }
-      .col-op-cell {
-        font-size: 22px;
-        font-weight: 900;
-        color: #2d6a51;
+      .col-table {
+        border-collapse: collapse;
+        border: 2px solid #76a382;
+        background: #ffffff;
+        margin: 0 auto;
+        table-layout: fixed;
+      }
+      .col-table th,
+      .col-table td {
+        border: 1.5px solid #bdd6c2;
         text-align: center;
+        vertical-align: middle;
+        padding: 0;
+        transition: background-color 0.14s ease;
       }
-      .col-carry-lbl {
+      .col-tr-head th {
+        height: 26px;
+        background: #eaf5e8;
+        color: #2c5a3f;
         font-size: 10.5px;
         font-weight: 800;
-        color: #8a6d3b;
+        letter-spacing: 0.01em;
+        padding: 0 3px;
+        white-space: nowrap;
+      }
+      .col-th-op,
+      .col-td-op {
+        width: 44px;
+        background: #f4faf2;
+        color: #2b654a;
+        font-size: 21px;
+        font-weight: 900;
+      }
+      .col-th-op {
+        font-size: 10.5px !important;
+        color: #4d6e5a;
+      }
+      .col-th-digit,
+      .col-td-digit,
+      .col-td-carry,
+      .col-td-ans {
+        width: 48px;
+      }
+      @media (max-width: 480px) {
+        .col-th-op, .col-td-op { width: 38px; font-size: 18px; }
+        .col-th-digit, .col-td-digit, .col-td-carry, .col-td-ans { width: 42px; }
+      }
+      .col-th-comma,
+      .col-td-comma {
+        width: 24px !important;
+        background: #fff6ea !important;
+      }
+      .col-comma-glyph {
+        font-size: 26px;
+        font-weight: 900;
+        color: #c2410c;
+        line-height: 1;
+      }
+      .col-tr-carry td {
+        height: 32px;
+        background: #fffdf5;
+      }
+      .col-carry-lbl {
+        font-size: 10.5px !important;
+        font-weight: 800;
+        color: #9a6d20 !important;
         text-transform: uppercase;
       }
       .col-carry-btn {
@@ -750,11 +859,12 @@
         height: 24px !important;
         min-height: 24px !important;
         padding: 0 !important;
-        border-radius: 7px !important;
-        border: 1.5px dashed #d4c49c !important;
-        background: #fffcf0 !important;
+        margin: 0 auto !important;
+        border-radius: 6px !important;
+        border: 1.5px dashed #d4bc85 !important;
+        background: #fffaf0 !important;
         color: #b45309 !important;
-        font-size: 12px !important;
+        font-size: 12.5px !important;
         font-weight: 900 !important;
         display: inline-flex;
         align-items: center;
@@ -765,49 +875,52 @@
         border-color: #d97706 !important;
         background: #fef3c7 !important;
       }
-      .col-cell {
-        width: 40px;
-        height: 36px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 25px;
+      .col-tr-num td {
+        height: 40px;
+      }
+      .col-td-digit {
+        font-size: 24px;
         font-weight: 900;
-        color: #223f2f;
+        color: #1f3d2d;
         font-variant-numeric: tabular-nums;
       }
-      .col-comma {
-        width: 18px;
-        color: #c2410c;
+      .col-tr-ans td {
+        height: 46px;
+        border-top: 3px solid #244f38 !important;
+        background: #f8fcf7;
       }
-      .col-divider-line {
-        width: calc(32px + var(--col-n, 3) * 46px);
-        max-width: 100%;
-        height: 3px;
-        border-radius: 3px;
-        background: #2b4f3a;
-        margin: 2px 0 4px;
+      .col-td-eq {
+        font-size: 22px;
+        color: #244f38;
+      }
+      .col-active-col {
+        background: #e5f6ea !important;
+      }
+      .col-tr-head th.col-active-col {
+        background: #2d6a51 !important;
+        color: #ffffff !important;
       }
       .col-ans-cell {
-        width: 40px !important;
-        height: 44px !important;
-        min-height: 44px !important;
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 42px !important;
         margin: 0 !important;
         padding: 0 !important;
-        border-radius: 11px !important;
-        border: 2px solid #b8d3ba !important;
-        background: #ffffff !important;
-        color: #1c4a32 !important;
-        font-size: 23px !important;
+        border: 2px solid transparent !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        color: #15442c !important;
+        font-size: 24px !important;
         font-weight: 900 !important;
         text-align: center !important;
         cursor: pointer;
+        box-sizing: border-box !important;
       }
       .col-ans-cell.is-focused,
       .col-ans-cell:focus {
-        border-color: #2d6a51 !important;
-        background: #eefaf2 !important;
-        box-shadow: 0 0 0 3px rgba(45, 106, 81, 0.18) !important;
+        border: 2.5px solid #2d6a51 !important;
+        background: #dff5e7 !important;
+        box-shadow: inset 0 0 0 1px rgba(45, 106, 81, 0.2) !important;
         outline: none !important;
       }
       .col-digit-pad {
@@ -863,11 +976,20 @@
       body.dark-mode .column-calc-panel { background: #14211a; border-color: #2b4637; }
       body.dark-mode .col-calc-head { background: #1a2b22; border-bottom-color: #2b4637; color: #d5ecde; }
       body.dark-mode .col-calc-tip { background: #16241c; border-bottom-color: #263d30; color: #9eb9a8; }
-      body.dark-mode .col-cell { color: #e6f5ec; }
-      body.dark-mode .col-divider-line { background: #64a882; }
+      body.dark-mode .col-notebook { background: #121e17; }
+      body.dark-mode .col-table { border-color: #47745b; background: #15231b; }
+      body.dark-mode .col-table th, body.dark-mode .col-table td { border-color: #2c4938; }
+      body.dark-mode .col-tr-head th { background: #1c3125; color: #b7dcc6; }
+      body.dark-mode .col-th-op, body.dark-mode .col-td-op { background: #182920; color: #7bc79e; }
+      body.dark-mode .col-th-comma, body.dark-mode .col-td-comma { background: #261f16 !important; }
+      body.dark-mode .col-tr-carry td { background: #192219; }
+      body.dark-mode .col-td-digit { color: #e6f5ec; }
+      body.dark-mode .col-tr-ans td { border-top-color: #6ab58b !important; background: #13221a; }
+      body.dark-mode .col-active-col { background: #1e3a2b !important; }
+      body.dark-mode .col-tr-head th.col-active-col { background: #2d6a51 !important; color: #fff !important; }
       body.dark-mode .col-carry-btn { background: #222015 !important; border-color: #6b5826 !important; color: #facc15 !important; }
-      body.dark-mode .col-ans-cell { background: #111c16 !important; border-color: #325440 !important; color: #e8f7ee !important; }
-      body.dark-mode .col-ans-cell.is-focused { background: #1b3627 !important; border-color: #52b788 !important; }
+      body.dark-mode .col-ans-cell { color: #e8f7ee !important; }
+      body.dark-mode .col-ans-cell.is-focused { background: #204431 !important; border-color: #52b788 !important; }
       body.dark-mode .col-digit-pad { background: #17251d; border-top-color: #2a4335; }
       body.dark-mode .col-pad-btn { background: #1f3127 !important; border-color: #324f3e !important; color: #e2f3e8 !important; }
       body.dark-mode .col-calc-footer { background: #15221b; border-top-color: #2a4335; }
