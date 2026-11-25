@@ -4,7 +4,6 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { loadAppContext } = require('./helpers/app-context');
 
-
 test('natural mode (normal, convenient, expression) never generates negative answers or options', () => {
   const ctx = loadAppContext();
   for (const style of ['normal', 'convenient', 'expression']) {
@@ -670,4 +669,51 @@ test('distractors cannot be eliminated by units digit, denominator, or answer po
   }
   const total = rank.reduce((a, b) => a + b, 0);
   for (const r of rank) assert.ok(r / total > 0.17 && r / total < 0.33, `answer position is predictable: ${rank}`);
+});
+
+test('v2.9.0: all 42 Grade 1-9 exam topic streams and Column Arithmetic parser work accurately', () => {
+  const ctx = loadAppContext();
+
+  // 1. Every specialized topic across Grades 1-9 produces valid questions with 4 unique options containing the answer
+  let totalTopics = 0;
+  for (let g = 1; g <= 9; g++) {
+    const topics = ctx.NUMI_GRADE_TOPICS[g];
+    assert.ok(Array.isArray(topics) && topics.length >= 4, `Grade ${g} should have at least 4 topics`);
+    for (const tp of topics) {
+      if (tp.id === 'all') continue;
+      totalTopics++;
+      for (let i = 0; i < 6; i++) {
+        const q = ctx.generate({ ...ctx.NUMI_GRADES[g], grade: g, topic: tp.id, questionStyle: 'normal' });
+        assert.ok(q && q.q && q.answer !== undefined, `Topic ${tp.id} failed to generate`);
+        assert.equal(q.options.length, 4, `Topic ${tp.id} must have 4 options (got ${q.options.length} for "${q.q}")`);
+        assert.ok(q.options.some(opt => ctx.isAnswerMatch(opt, q.answer)), `Topic ${tp.id} missing answer "${q.answer}" in [${q.options.join(', ')}] for "${q.q}"`);
+        assert.ok(q.explanation && q.explanation.length > 3, `Topic ${tp.id} missing explanation`);
+      }
+    }
+  }
+  assert.ok(totalTopics >= 38, `Expected >= 38 specialized topics across Grades 1-9, got ${totalTopics}`);
+
+  // 2. Column Arithmetic parser ("Đặt tính rồi tính")
+  const addCol = ctx.parseColumnArithmetic('47 + 38');
+  assert.ok(addCol && addCol.op === '+' && addCol.expected === 85 && addCol.commaCol === -1);
+  assert.equal(addCol.rowA.join('').trim(), '47');
+  assert.equal(addCol.rowB.join('').trim(), '38');
+
+  const subCol = ctx.parseColumnArithmetic('82 − 35');
+  assert.ok(subCol && subCol.op === '−' && subCol.expected === 47);
+
+  const mulCol = ctx.parseColumnArithmetic('124 × 3');
+  assert.ok(mulCol && mulCol.op === '×' && mulCol.expected === 372 && mulCol.totalCols === 3);
+
+  const decCol = ctx.parseColumnArithmetic('12,5 + 4,75');
+  assert.ok(decCol && decCol.hasDec && decCol.decLen === 2 && decCol.expected === 17.25);
+  assert.equal(decCol.rowA[decCol.commaCol], ',');
+  assert.equal(decCol.rowB[decCol.commaCol], ',');
+  assert.equal(decCol.rowA.join(''), '12,50');
+  assert.equal(decCol.rowB.join(''), ' 4,75');
+
+  // Non-column questions return null
+  assert.equal(ctx.parseColumnArithmetic('Tìm x: 2x + 4 = 10'), null);
+  assert.equal(ctx.parseColumnArithmetic('1/2 + 1/3'), null);
+  assert.equal(ctx.parseColumnArithmetic('12 − 25'), null); // negative result excluded from elementary column calc
 });

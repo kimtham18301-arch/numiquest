@@ -1,10 +1,12 @@
-# NumiQuick — bản cập nhật 2.8.0
+# NumiQuick — bản cập nhật 2.9.0
 
-Web luyện tính nhẩm vui cho học sinh tiểu học & THCS (Lớp 1–9 theo chuẩn GDPT 2018), chạy tĩnh trên GitHub Pages.
+Web luyện tính nhẩm và đặt tính vui cho học sinh Tiểu học & THCS (Lớp 1–9 theo chuẩn Chương trình GDPT 2018), chạy tĩnh trên GitHub Pages.
 
 ## Tính năng chính
 
-- **Tự học theo Lớp 1–9 & Tùy chỉnh:** Hỗ trợ số tự nhiên, số nguyên âm, số thập phân, phân số, chia có dư, tính thuận tiện, biểu thức nhiều phép tính, điền số còn thiếu (`?`) và toán đố ngắn.
+- **Phân luồng 42 chuyên đề đề kiểm tra Lớp 1–9 (Mới v2.9.0):** Chia rõ từng lớp theo chuẩn GDPT 2018 (Kết nối tri thức, Chân trời sáng tạo, Cánh Diều): đặt tính cộng/trừ không nhớ & có nhớ, bảng cửu chương, chia có dư, tính bằng cách thuận tiện, đổi đơn vị đo, 3 dạng tỉ số phần trăm, toán chuyển động (Lớp 1–5); lũy thừa, ƯCLN/BCNN, tìm x, tỉ lệ thức, căn bậc hai/ba, 7 hằng đẳng thức, phương trình, Vi-ét và hàm số (Lớp 6–9).
+- **Bảng "📐 Đặt tính rồi tính" tương tác (Mới v2.9.0):** Thay cho nháp vẽ tay mất thời gian — tự động đặt tính thẳng hàng (và thẳng dấu phẩy với số thập phân), có ô đánh dấu **Nhớ**, nhập chữ số từ phải sang trái bằng bàn phím hoặc chạm số trên màn hình, rồi bấm nộp kết quả trực tiếp.
+- **Tự luận nhập song song & Giao diện làm bài 1 màn hình cố định (Mới v2.9.0):** Chuyển nhanh `Trắc nghiệm ↔ Tự luận` ngay trong khi làm bài; chế độ Tự luận cho phép vừa gõ bàn phím vừa bấm số trên màn hình mượt mà. Màn hình làm bài khóa gọn trong 1 khung hình (không giật, không cuộn lên xuống), bảng Đặt tính / Nháp mở song song bên phải trên máy tính.
 - **Gõ bàn phím nhanh & Bảng nháp vẽ tay (Mới v2.3.0):** Phím tắt `1–4` / `A–D` chọn nhanh đáp án, gõ số trực tiếp ở chế độ bàn phím số, `Enter` qua câu tiếp, `R` đọc đề, và **Bảng nháp vẽ tay (Canvas cảm ứng/chuột)** với 3 màu bút, tẩy, hoàn tác và xóa sạch (bấm `S` hoặc nút `✏️ Nháp`).
 - **Lớp học riêng cho từng Thầy/Cô tự điều phối (Mới v2.3.0):** Admin tạo tài khoản Giáo viên & Lớp học (kèm tài khoản mẫu `colan` / `1234` phụ trách `Lớp 4A` — mã `4ANUMI`). Mỗi thầy/cô có Không gian Giáo viên riêng để thêm/nhận học sinh, gửi mã/link mời `#join=...`, giao bài chọn lọc cho lớp, phụ đạo 1 chạm và in/lưu PDF báo cáo tiến độ lớp.
 - **Lộ trình thích ứng & Thi đấu 60 giây:** Tự động điều chỉnh độ khó theo chuỗi trả lời đúng/sai, kèm chế độ Thi đấu tốc độ 60s và 3 Nhiệm vụ hằng ngày.

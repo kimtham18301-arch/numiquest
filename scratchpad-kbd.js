@@ -276,7 +276,7 @@
 
   // Global keyboard handler for Quiz & Speed Sprint 60s
   function handleQuizKeydown(e) {
-    if (!e || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (!e || e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
     if (typeof view === 'undefined' || (view !== 'quiz' && view !== 'sprint60')) return;
 
     // Ignore when typing inside form inputs or when modal dialog is open

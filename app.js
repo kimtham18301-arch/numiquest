@@ -737,8 +737,8 @@ window.addEventListener('keydown',e=>{
     if(isNumpad){
       if(e.key==='Enter'){e.preventDefault();$('#numpadSubmit')?.click();return}
       if(e.key==='Backspace'){e.preventDefault();$('[data-np="backspace"]')?.click();return}
-      if(e.key==='Escape'){e.preventDefault();$('[data-np="clear"]')?.click();return}
-      if(e.key==='.'){$('[data-np=","]')?.click();return}
+      if(e.key==='Escape'||e.key==='Delete'){e.preventDefault();$('[data-np="clear"]')?.click();return}
+      if(e.key==='.'||e.key===','){e.preventDefault();$('[data-np=","]')?.click();return}
       const b=$(`[data-np="${e.key}"]`);if(b&&!b.disabled){e.preventDefault();b.click();return}
     }else{
       const k=e.key.toLowerCase();
@@ -856,8 +856,8 @@ function setup(){
       <fieldset>
         <legend><span>5</span>${t('Cách trả lời','Answer mode')}</legend>
         <div class="type-picks">
-          <label><input type="radio" name="inputMode" value="choices" ${config.inputMode!=='numpad'?'checked':''}><span>${t('Trắc nghiệm 4 đáp án','Multiple choice')}</span></label>
-          <label><input type="radio" name="inputMode" value="numpad" ${config.inputMode==='numpad'?'checked':''}><span>${t('Bàn phím số tự nhập','Numpad input')}</span></label>
+          <label><input type="radio" name="inputMode" value="choices" ${config.inputMode!=='numpad'?'checked':''}><span>${t('Trắc nghiệm (4 đáp án)','Multiple choice (4 options)')}</span></label>
+          <label><input type="radio" name="inputMode" value="numpad" ${config.inputMode==='numpad'?'checked':''}><span>${t('Tự luận (Gõ phím / Bấm số)','Free input (Keyboard / Numpad)')}</span></label>
         </div>
       </fieldset>
 
@@ -913,6 +913,7 @@ function setup(){
       if(subgrid)subgrid.innerHTML=renderGradeButtons('custom','custom');
       $('#gradeActiveBadge').textContent=t('Tùy chỉnh','Custom');
       $('#gradeDesc').textContent=t('Tùy ý kết hợp các phép tính, loại số và số chữ số.','Freely combine operations, number types and digits.');
+      if(typeof window!=='undefined'&&typeof window.onGradeApplied==='function')window.onGradeApplied('custom');
       refresh();
       return;
     }
@@ -942,6 +943,7 @@ function setup(){
     if($('#lessonCount'))$('#lessonCount').value=g.count;
     if($('#lessonSeconds'))$('#lessonSeconds').value=g.seconds;
     const r=$(`[name=inputMode][value="${g.inputMode}"]`);if(r)r.checked=true;
+    if(typeof window!=='undefined'&&typeof window.onGradeApplied==='function')window.onGradeApplied(g.id);
     refresh();
   }
   if(typeof window!=='undefined')window.applyGrade=applyGrade;
@@ -978,6 +980,7 @@ function setup(){
         if(subgrid)subgrid.innerHTML=renderGradeButtons('custom','custom');
         $('#gradeActiveBadge').textContent=t('Tùy chỉnh','Custom');
         $('#gradeDesc').textContent=t('Tùy ý kết hợp các phép tính, loại số và số chữ số.','Freely combine operations, number types and digits.');
+        if(typeof window!=='undefined'&&typeof window.onGradeApplied==='function')window.onGradeApplied('custom');
       }
     }
     refresh();
@@ -993,7 +996,7 @@ function setup(){
       toast(t('Chọn ít nhất một phép tính, loại số và số chữ số nhé.','Choose at least one operation, number type and digit length.'));
       return;
     }
-    config={...defaults,ops,types,type:types[0]||'natural',digits,count:+f.get('count'),seconds:+f.get('seconds'),inputMode:f.get('inputMode')||'choices',grade:config.grade};
+    config={...defaults,ops,types,type:types[0]||'natural',digits,count:+f.get('count'),seconds:+f.get('seconds'),inputMode:f.get('inputMode')||'choices',grade:config.grade,topic:config.topic||'all'};
     if(typeof window!=='undefined')window.config=config;
     if(typeof global!=='undefined')global.config=config;
     startQuiz();
