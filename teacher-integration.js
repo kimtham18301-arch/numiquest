@@ -261,7 +261,9 @@
     if (typeof global !== 'undefined') global.renderProfile = renderProfile;
   }
 
-  if (typeof view !== 'undefined' && view === 'home') {
+  if (isCurrentUserTeacher()) {
+    if (typeof renderTeacherWorkspace === 'function') renderTeacherWorkspace();
+  } else if (typeof view !== 'undefined' && view === 'home') {
     injectStudentClassBadgeOnHome();
   }
 })();

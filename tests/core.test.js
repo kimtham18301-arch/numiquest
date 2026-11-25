@@ -745,3 +745,21 @@ test('v2.10.0: all Grade 1-5 deep exam topics, multi-topic synthesis, and Column
   assert.equal(ctx.parseColumnArithmetic('1/2 + 1/3'), null);
   assert.equal(ctx.parseColumnArithmetic('12 − 25'), null); // negative result excluded from elementary column calc
 });
+
+test('v2.11.1: reloading page while signed in as teacher boots directly into Teacher Workspace', () => {
+  const ctx = loadAppContext({
+    storage: {
+      'numi-current-user-v1': JSON.stringify({
+        id: 'colan',
+        username: 'colan',
+        name: 'Cô Lan',
+        avatar: 'bunny',
+        grade: 4,
+        role: 'teacher',
+        type: 'local'
+      })
+    }
+  });
+  assert.equal(ctx.view, 'teacher', 'Reloading as a teacher must boot directly into Teacher Workspace, not student home');
+  assert.ok(ctx.document.querySelector('#app').innerHTML.includes('Lớp học của Cô Lan'), 'Teacher workspace content should render on reload');
+});

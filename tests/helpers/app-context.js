@@ -55,8 +55,8 @@ function createMockElement(tag = 'div') {
 // options.exclude: page scripts to skip (cloud-classes.js schedules background sync, so it is off by default)
 // options.timers : false replaces setTimeout with a no-op so debounced cloud saves only run when a test calls them
 function loadAppContext(options = {}) {
-  const { fetch: fakeFetch, exclude = ['cloud-classes.js'], timers = true } = options;
-  const storage = new Map();
+  const { fetch: fakeFetch, exclude = ['cloud-classes.js'], timers = true, storage: initialStorage } = options;
+  const storage = new Map(initialStorage ? Object.entries(initialStorage) : []);
   const rootEl = createMockElement('main');
   rootEl.id = 'app';
 
