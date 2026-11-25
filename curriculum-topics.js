@@ -1008,12 +1008,20 @@
     return rec;
   }
 
+  function syncCustomFieldsetsVisibility(isPreset) {
+    const form = $('#config');
+    if (form && form.classList) {
+      form.classList.toggle('is-preset-mode', Boolean(isPreset));
+    }
+  }
+
   // Inject Grade Topic Stream pills (supporting single + multi-topic synthesis, smart count/timer auto-preset & quick filters!)
   function renderTopicPillsForGrade(gradeNum, applyTiming = false) {
     const host = $('#gradeTopicsWrap');
-    if (!host) return;
     const g = Number(gradeNum);
     const list = NUMI_GRADE_TOPICS[g];
+    syncCustomFieldsetsVisibility(Boolean(list));
+    if (!host) return;
     if (!list) {
       host.hidden = true;
       host.innerHTML = '';
@@ -1172,6 +1180,13 @@
       body.dark-mode .grade-topic-pill{background:#18271f;border-color:#2d4a3a;color:#cde4d6}
       body.dark-mode .grade-topic-pill .tp-sec-tag{background:#233b2e;color:#9cc9b0}
       body.dark-mode .grade-topic-pill.active{background:#2d6a51!important;border-color:#4ba880!important;color:#fff!important}
+      /* Hide redundant custom builder fieldsets when a preset Grade (1-9) is selected; show all 6 steps only in "Tùy chỉnh" */
+      form#config.is-preset-mode > fieldset:not(.answer-mode-fieldset){display:none!important}
+      form#config.is-preset-mode{margin-top:12px!important;padding:16px 20px!important}
+      form#config.is-preset-mode .answer-mode-fieldset{margin:0 0 12px!important;padding:0 0 12px!important;border-bottom:1px solid #e7f0e3}
+      form#config.is-preset-mode .answer-mode-fieldset legend span{display:none!important}
+      form#config.is-preset-mode ~ .setup-sticky-cta{display:none!important}
+      body.dark-mode form#config.is-preset-mode .answer-mode-fieldset{border-bottom-color:#283f31}
     `;
     document.head.append(style);
   }

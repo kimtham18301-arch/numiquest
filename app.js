@@ -858,7 +858,7 @@ function setup(){
         </div>
       </fieldset>
 
-      <fieldset>
+      <fieldset class="answer-mode-fieldset">
         <legend><span>5</span>${t('Cách trả lời','Answer mode')}</legend>
         <div class="type-picks">
           <label><input type="radio" name="inputMode" value="choices" ${config.inputMode!=='numpad'?'checked':''}><span>${t('Trắc nghiệm (4 đáp án)','Multiple choice (4 options)')}</span></label>
@@ -886,7 +886,10 @@ function setup(){
     $$('[data-seconds]').forEach(b=>b.classList.toggle('chosen',+b.dataset.seconds===seconds));
     $('#randomDigits').classList.toggle('chosen',digits.length===6);
     const gradeBadge = config.grade && NUMI_GRADES[config.grade] ? (lang==='vi'?NUMI_GRADES[config.grade].name:NUMI_GRADES[config.grade].enName) : t('Tùy chỉnh','Custom');
-    $('#lessonSummary').textContent=`${gradeBadge} · ${count} ${t('câu','questions')} · ${seconds}s/${t('câu','question')} · ${digits.length?digits.join(', ')+' '+t('chữ số','digits'):t('Chưa chọn chữ số','Choose digits')} · ${types.length} ${t('loại số','number types')} · ${modeLabel}`;
+    const isPresetGrade = Boolean(config.grade && NUMI_GRADES[config.grade]);
+    $('#lessonSummary').textContent = isPresetGrade
+      ? `${gradeBadge} · ${count} ${t('câu','questions')} · ${seconds}s/${t('câu','question')} · ${modeLabel}`
+      : `${gradeBadge} · ${count} ${t('câu','questions')} · ${seconds}s/${t('câu','question')} · ${digits.length?digits.join(', ')+' '+t('chữ số','digits'):t('Chưa chọn chữ số','Choose digits')} · ${types.length} ${t('loại số','number types')} · ${modeLabel}`;
     if(ops.length===0)$('#lessonSummary').textContent+=' · '+t('Hãy chọn phép tính','Choose an operation');
     const stickyGrade=$('#stickyGradePill');
     const stickySub=$('#stickySummaryText');
