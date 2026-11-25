@@ -314,7 +314,7 @@
       }
       case 'g1_missing': {
         if (Math.random() < 0.55) {
-          const a = rInt(11, 45), b = rInt(1, 9 - (a % 10));
+          const a10 = rInt(1, 4), a1 = rInt(1, 7), a = a10 * 10 + a1, b = rInt(1, 9 - a1);
           const sum = a + b;
           res = makeQ(`${a} + ? = ${sum}`, b, [b + 1, Math.max(1, b - 1), b + 2], 'natural:missing', cfg, `Muốn tìm số còn thiếu: ${sum} − ${a} = ${b}`);
         } else {
@@ -384,7 +384,7 @@
       case 'g1_word': {
         const scenarios = [
           () => {
-            const a = rInt(11, 24), b = rInt(2, 9 - (a % 10)), ans = a + b;
+            const a10 = rInt(1, 2), a1 = rInt(1, 7), a = a10 * 10 + a1, b = rInt(2, 9 - a1), ans = a + b;
             return makeQ(t(`Lan có ${a} quyển vở, mẹ mua thêm ${b} quyển. Lan có tất cả ? quyển`, `Lan had ${a} notebooks and got ${b} more. Total = ?`), ans, [ans + 10, Math.max(1, ans - 10), ans + 1], 'word:+', cfg, `Phép cộng: ${a} + ${b} = ${ans} (quyển vở)`);
           },
           () => {
@@ -534,7 +534,8 @@
         break;
       }
       case 'g2_stat_table': {
-        const t1 = rInt(11, 28), t2 = rInt(12, 29), t3 = rInt(14, 32);
+        let t1 = rInt(11, 26), t2 = rInt(14, 30), t3 = rInt(18, 36);
+        if (Math.max(t1, t2, t3) === Math.min(t1, t2, t3)) t3 += 6;
         if (Math.random() < 0.55) {
           const ans = t1 + t2 + t3;
           res = makeQ(t(`Bảng số sách đọc: Tổ 1: ${t1}, Tổ 2: ${t2}, Tổ 3: ${t3}. Cả 3 tổ đọc ? quyển`, `Books read: Team 1: ${t1}, Team 2: ${t2}, Team 3: ${t3}. Total = ?`), ans, [ans + 10, Math.max(10, ans - 10), ans + 20], 'stat:table', cfg, `Tổng số sách cả 3 tổ: ${t1} + ${t2} + ${t3} = ${ans} quyển`);
@@ -737,7 +738,8 @@
         break;
       }
       case 'g3_stat_prob': {
-        const a = rInt(18, 36), b = rInt(20, 38), c = rInt(22, 42), d = rInt(19, 35);
+        let a = rInt(18, 34), b = rInt(20, 38), c = rInt(24, 42), d = rInt(19, 35);
+        if (Math.max(a, b, c, d) === Math.min(a, b, c, d)) c += 7;
         if (Math.random() < 0.55) {
           const ans = a + b + c + d;
           res = makeQ(t(`Số học sinh giỏi 4 lớp: 3A: ${a}, 3B: ${b}, 3C: ${c}, 3D: ${d}. Cả khối có ? học sinh giỏi`, `Top students: 3A:${a}, 3B:${b}, 3C:${c}, 3D:${d}. Total = ?`), ans, [ans + 10, Math.max(20, ans - 10), ans + 20], 'stat:table', cfg, `Tổng 4 lớp: ${a} + ${b} + ${c} + ${d} = ${ans} học sinh`);
@@ -855,7 +857,7 @@
           res = makeQ(t(`Làm tròn số ${n} đến hàng nghìn được ?`, `Round ${n} to nearest thousand: ?`), ans, [ans + 1000, Math.max(1000, ans - 1000), ans + 2000], 'number:round', cfg, `Chữ số hàng trăm là ${Math.floor(rem / 100)} ${rem >= 500 ? '≥ 5 nên làm tròn lên' : '< 5 nên làm tròn xuống'} → ${ans}`);
         } else {
           const d = rInt(2, 9), n = d * 10000 + rInt(1234, 8765), ans = d * 10000;
-          res = makeQ(t(`Trong số ${n}, chữ số ${d} có giá trị là ?`, `In ${n}, value of digit ${d} is ?`), ans, [d * 1000, ans + 10000, Math.max(10000, ans - 10000)], 'natural:place', cfg, `Chữ số ${d} đứng ở hàng chục nghìn nên có giá trị là ${ans}`);
+          res = makeQ(t(`Trong số ${n}, chữ số ${d} ở hàng chục nghìn có giá trị là ?`, `In ${n}, value of digit ${d} in ten-thousands place is ?`), ans, [d * 1000, ans + 10000, Math.max(10000, ans - 10000)], 'natural:place', cfg, `Chữ số ${d} đứng ở hàng chục nghìn nên có giá trị là ${ans}`);
         }
         break;
       }

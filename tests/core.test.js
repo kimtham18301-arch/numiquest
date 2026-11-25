@@ -788,11 +788,27 @@ test('v2.12.3: A4 worksheet PDF composer separates Student Exam (no pre-filled c
     assert.ok(!examHtml.includes('ws-col-tbl') && !ansHtml.includes('ws-col-tbl'), 'Pre-filled column tables must NOT appear in printed PDF (scratchpad only)');
     assert.ok(!examHtml.includes('ws-essay-sol') && !examHtml.includes('ws-quick-key-grid'), `Exam sheet must NOT leak answers in ${fmtMode}`);
     assert.ok(ansHtml.includes('ws-paper-answers') && ansHtml.includes('ws-quick-key-grid'), `Answer sheet missing answers/key in ${fmtMode}`);
+    assert.ok(!examHtml.includes('....................................................................'), 'Must never use long unbroken dot strings that overflow A4 preview');
     if (fmtMode !== 'mcq') {
       assert.ok(examHtml.includes('ws-blank-workbox'), `Exam sheet should provide blank squared workbox for self column work in ${fmtMode}`);
+      if (fmtMode === 'essay') assert.ok(examHtml.includes('ws-dot-fill'), 'Essay writing lines must use CSS dotted borders');
       assert.ok(ansHtml.includes('ws-essay-sol'), `Answer sheet should include concise solutions in ${fmtMode}`);
     } else {
       assert.ok(ansHtml.includes('ws-opt-hit'), 'Answer sheet MCQ should highlight correct option');
     }
+
+    // Sequential numbering Câu 1..10 in exact display order (never skipping numbers across Part I & Part II)
+    const nums = [...examHtml.matchAll(/ws-q-num">Câu (\d+)\./g)].map(m => Number(m[1]));
+    assert.deepEqual(nums, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], `Display numbering must be strictly sequential 1..10 in ${fmtMode}, got ${nums}`);
   }
+
+  // Word-problem-only mixed sheet must NOT show "ĐẶT TÍNH RỒI TÍNH" in Part II heading and formats blanks cleanly
+  const wordQs = ctx.generateWorksheetQuestions(5, ['g5_motion_adv'], 6);
+  const wordExamHtml = ctx.buildWorksheetSheetHTML({
+    grade: 5, topics: ['g5_motion_adv'], count: 6, format: 'mixed', title: 'LỚP 5', durationMin: 20, examCode: '02', questions: wordQs
+  }, { withAnswers: false, interactivePreview: true });
+  assert.ok(wordExamHtml.includes('PHẦN II. TỰ LUẬN'), 'Part II without column exercises should say PHẦN II. TỰ LUẬN');
+  assert.ok(!wordExamHtml.includes('PHẦN II. ĐẶT TÍNH RỒI TÍNH'), 'Part II without column exercises must not show ĐẶT TÍNH RỒI TÍNH');
+  assert.ok(wordExamHtml.includes('ws-dot-fill'), 'Word problem Part II should render responsive CSS dotted writing lines');
+  assert.ok(!wordExamHtml.includes('là ? km/h'), 'Prose blanks should render as …… instead of raw ? placeholder');
 });

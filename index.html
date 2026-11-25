@@ -95,9 +95,9 @@
 <script src="teacher-workspace.js?v=2.13.0"></script>
 <script src="teacher-integration.js?v=2.13.0"></script>
 <script src="cloud-classes.js?v=2.13.0"></script>
-<script src="curriculum-topics.js?v=2.13.0"></script>
-<script src="column-calc.js?v=2.13.0"></script>
-<script src="worksheet-pdf.js?v=2.13.0"></script>
+<script src="curriculum-topics.js?v=2.13.1"></script>
+<script src="column-calc.js?v=2.13.1"></script>
+<script src="worksheet-pdf.js?v=2.13.1"></script>
 <script>document.body.classList.remove('numi-booting');</script>
 <script>
 if('serviceWorker' in navigator){
@@ -105,9 +105,9 @@ if('serviceWorker' in navigator){
     try{
       if(window.caches){
         const keys=await caches.keys();
-        await Promise.all(keys.filter(k=>k!=='numiquick-v2.13.0').map(k=>caches.delete(k)));
+        await Promise.all(keys.filter(k=>k!=='numiquick-v2.13.1').map(k=>caches.delete(k)));
       }
-      navigator.serviceWorker.register('./sw.js?v=2.13.0').then(r=>r.update()).catch(()=>{});
+      navigator.serviceWorker.register('./sw.js?v=2.13.1').then(r=>r.update()).catch(()=>{});
     }catch{}
   });
 }

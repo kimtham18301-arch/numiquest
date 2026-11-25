@@ -66,7 +66,13 @@
 
   function formatPromptPlain(qStr) {
     const s = String(qStr || '').trim();
-    return (s.includes('?') || s.includes('=')) ? esc(s) : `${esc(s)} = ?`;
+    const hasProse = /[a-zA-ZÀ-ỹ]{2,}/.test(s);
+    if (!hasProse) {
+      return (s.includes('?') || s.includes('=')) ? esc(s) : `${esc(s)} = ?`;
+    }
+    // For Vietnamese/English word problems & knowledge prompts, replace standalone placeholder " ?" with clean exam blanks " ……"
+    const cleaned = s.replace(/(^|\s)\?(?=\s|$|[.,;:])/g, '$1……');
+    return esc(cleaned);
   }
 
   function isOptCorrect(opt, answer) {
@@ -84,15 +90,15 @@
     const subtitle = (stateObj.subtitle || t(`Môn: Toán · Lớp ${g} (Chuẩn GDPT 2018)`, `Subject: Maths · Grade ${g}`)).trim();
     const today = new Date().toLocaleDateString('vi-VN');
 
-    const renderSwapBtn = idx => interactivePreview
-      ? `<button type="button" class="ws-swap-btn no-print" data-ws-swap="${idx}" title="${t('Đổi câu khác', 'Swap this question')}">↻</button>`
+    const renderSwapBtn = origIdx => interactivePreview
+      ? `<button type="button" class="ws-swap-btn no-print" data-ws-swap="${origIdx}" title="${t('Đổi câu khác', 'Swap this question')}">↻</button>`
       : '';
 
-    const renderMcqCard = (q, i) => `<div class="ws-q-box ${withAnswers ? 'is-ans-box' : ''}">
+    const renderMcqCard = (q, displayNum, origIdx) => `<div class="ws-q-box ${withAnswers ? 'is-ans-box' : ''}">
       <div class="ws-q-head">
-        <span class="ws-q-num">${t('Câu', 'Q')} ${i + 1}.</span>
+        <span class="ws-q-num">${t('Câu', 'Q')} ${displayNum}.</span>
         <span class="ws-q-text">${formatPromptPlain(q.q)}</span>
-        ${renderSwapBtn(i)}
+        ${renderSwapBtn(origIdx)}
       </div>
       <div class="ws-mcq-opts">
         ${(q.options || []).map((opt, oi) => {
@@ -103,72 +109,114 @@
       ${withAnswers && q.explanation ? `<div class="ws-inline-sol">💡 ${esc(String(q.explanation).replace(/\n/g, ' · '))}</div>` : ''}
     </div>`;
 
-    const renderColCard = (q, i) => `<div class="ws-col-card ${withAnswers ? 'is-ans-box' : ''}">
+    const renderColCard = (q, displayNum, origIdx) => `<div class="ws-col-card ${withAnswers ? 'is-ans-box' : ''}">
       <div class="ws-q-head">
-        <span class="ws-q-num">${t('Câu', 'Q')} ${i + 1}.</span>
+        <span class="ws-q-num">${t('Câu', 'Q')} ${displayNum}.</span>
         <span class="ws-q-text">${formatPromptPlain(q.q)}</span>
-        ${renderSwapBtn(i)}
+        ${renderSwapBtn(origIdx)}
       </div>
       ${withAnswers
         ? `<div class="ws-essay-sol" style="width:100%;box-sizing:border-box"><b>✓ ${t('Đáp án:', 'Ans:')} ${esc(String(q.answer))}</b>${q.explanation ? `<div style="margin-top:3px;font-size:11.5px;color:#2b573e">${esc(String(q.explanation).replace(/\n/g, ' · '))}</div>` : ''}</div>`
         : `<div class="ws-blank-workbox" aria-label="${t('Ô trống tự đặt tính', 'Blank space for written calculation')}"></div>`}
     </div>`;
 
-    const renderEssayItem = (q, i) => `<div class="ws-essay-item ${withAnswers ? 'is-ans-box' : ''}">
+    const renderEssayItem = (q, displayNum, origIdx) => {
+      const len = String(q.q || '').length;
+      const extraLines = len > 55 ? 2 : len > 24 ? 1 : 0;
+      return `<div class="ws-essay-item ${withAnswers ? 'is-ans-box' : ''}">
       <div class="ws-q-head">
-        <span class="ws-q-num">${t('Câu', 'Q')} ${i + 1}.</span>
+        <span class="ws-q-num">${t('Câu', 'Q')} ${displayNum}.</span>
         <span class="ws-q-text">${formatPromptPlain(q.q)}</span>
-        ${renderSwapBtn(i)}
+        ${renderSwapBtn(origIdx)}
       </div>
       ${withAnswers
         ? `<div class="ws-essay-sol"><b>✓ ${t('Đáp án:', 'Answer:')} ${esc(String(q.answer))}</b>${q.explanation ? ` — <span>${esc(String(q.explanation).replace(/\n/g, ' · '))}</span>` : ''}</div>`
         : `<div class="ws-write-lines">
-            <span>${t('Bài làm / Trả lời:', 'Answer:')} ..................................................................................................................</span>
-            ${String(q.q || '').length > 28 ? '<span>......................................................................................................................................</span>' : ''}
+            <div class="ws-write-row"><span class="ws-write-lbl">${t('Bài làm / Trả lời:', 'Answer:')}</span><span class="ws-dot-fill"></span></div>
+            ${Array.from({ length: extraLines }, () => '<div class="ws-write-row"><span class="ws-dot-fill"></span></div>').join('')}
           </div>`}
     </div>`;
+    };
 
     let bodyHtml = '';
+    const displayOrder = [];
+    let seq = 0;
+
     if (stateObj.format === 'mcq') {
+      const items = qs.map((q, origIdx) => {
+        const displayNum = ++seq;
+        displayOrder.push({ q, displayNum });
+        return renderMcqCard(q, displayNum, origIdx);
+      });
       bodyHtml = `<div class="ws-section-title">${t('PHẦN TRẮC NGHIỆM (Khoanh tròn vào chữ cái đặt trước câu trả lời đúng)', 'MULTIPLE CHOICE (Circle the correct letter)')}</div>
-        <div class="ws-mcq-grid">${qs.map((q, i) => renderMcqCard(q, i)).join('')}</div>`;
+        <div class="ws-mcq-grid">${items.join('')}</div>`;
     } else if (stateObj.format === 'essay') {
       const colItems = [];
       const textItems = [];
-      qs.forEach((q, i) => {
-        if (q.isColumnExercise) colItems.push({ q, i });
-        else textItems.push({ q, i });
+      qs.forEach((q, origIdx) => {
+        if (q.isColumnExercise) colItems.push({ q, origIdx });
+        else textItems.push({ q, origIdx });
       });
       if (colItems.length) {
+        const cards = colItems.map(({ q, origIdx }) => {
+          const displayNum = ++seq;
+          displayOrder.push({ q, displayNum });
+          return renderColCard(q, displayNum, origIdx);
+        });
         bodyHtml += `<div class="ws-section-title">${t('PHẦN I. ĐẶT TÍNH RỒI TÍNH', 'PART I. COLUMN ARITHMETIC')}</div>
-          <div class="ws-col-grid">${colItems.map(({ q, i }) => renderColCard(q, i)).join('')}</div>`;
+          <div class="ws-col-grid">${cards.join('')}</div>`;
       }
       if (textItems.length) {
+        const cards = textItems.map(({ q, origIdx }) => {
+          const displayNum = ++seq;
+          displayOrder.push({ q, displayNum });
+          return renderEssayItem(q, displayNum, origIdx);
+        });
         bodyHtml += `<div class="ws-section-title">${colItems.length ? t('PHẦN II. TÍNH NHẨM & TỰ LUẬN', 'PART II. MENTAL MATH & WORD PROBLEMS') : t('BÀI TẬP TỰ LUẬN', 'WRITTEN EXERCISES')}</div>
-          <div class="ws-essay-list">${textItems.map(({ q, i }) => renderEssayItem(q, i)).join('')}</div>`;
+          <div class="ws-essay-list">${cards.join('')}</div>`;
       }
     } else {
       const part2 = [];
       const part1 = [];
       const half = Math.ceil(qs.length / 2);
-      qs.forEach((q, i) => {
-        if (q.isColumnExercise) part2.push({ q, i });
-        else if (part1.length < half) part1.push({ q, i });
-        else part2.push({ q, i });
+      qs.forEach((q, origIdx) => {
+        if (q.isColumnExercise) part2.push({ q, origIdx });
+        else if (part1.length < half) part1.push({ q, origIdx });
+        else part2.push({ q, origIdx });
       });
       if (part1.length) {
+        const cards = part1.map(({ q, origIdx }) => {
+          const displayNum = ++seq;
+          displayOrder.push({ q, displayNum });
+          return renderMcqCard(q, displayNum, origIdx);
+        });
         bodyHtml += `<div class="ws-section-title">${t('PHẦN I. TRẮC NGHIỆM (Khoanh tròn vào chữ cái trước đáp án đúng)', 'PART I. MULTIPLE CHOICE')}</div>
-          <div class="ws-mcq-grid">${part1.map(({ q, i }) => renderMcqCard(q, i)).join('')}</div>`;
+          <div class="ws-mcq-grid">${cards.join('')}</div>`;
       }
       if (part2.length) {
         const colPart = part2.filter(x => x.q.isColumnExercise);
         const essayPart = part2.filter(x => !x.q.isColumnExercise);
-        bodyHtml += `<div class="ws-section-title">${t('PHẦN II. ĐẶT TÍNH RỒI TÍNH & TỰ LUẬN', 'PART II. COLUMN ARITHMETIC & WRITTEN')}</div>`;
+        const part2Heading = colPart.length && essayPart.length
+          ? t('PHẦN II. ĐẶT TÍNH RỒI TÍNH & TỰ LUẬN', 'PART II. COLUMN ARITHMETIC & WRITTEN')
+          : colPart.length
+            ? t('PHẦN II. ĐẶT TÍNH RỒI TÍNH', 'PART II. COLUMN ARITHMETIC')
+            : t('PHẦN II. TỰ LUẬN', 'PART II. WRITTEN EXERCISES');
+        bodyHtml += `<div class="ws-section-title">${part2Heading}</div>`;
         if (colPart.length) {
-          bodyHtml += `<div class="ws-col-grid">${colPart.map(({ q, i }) => renderColCard(q, i)).join('')}</div>`;
+          const cards = colPart.map(({ q, origIdx }) => {
+            const displayNum = ++seq;
+            displayOrder.push({ q, displayNum });
+            return renderColCard(q, displayNum, origIdx);
+          });
+          bodyHtml += `<div class="ws-col-grid">${cards.join('')}</div>`;
         }
         if (essayPart.length) {
-          bodyHtml += `<div class="ws-essay-list">${essayPart.map(({ q, i }) => renderEssayItem(q, i)).join('')}</div>`;
+          const cards = essayPart.map(({ q, origIdx }) => {
+            const displayNum = ++seq;
+            displayOrder.push({ q, displayNum });
+            return renderEssayItem(q, displayNum, origIdx);
+          });
+          bodyHtml += `<div class="ws-essay-list">${cards.join('')}</div>`;
         }
       }
     }
@@ -177,7 +225,7 @@
       <div class="ws-quick-key-wrap">
         <div class="ws-section-title">📋 ${t('BẢNG TRA ĐÁP ÁN NHANH (CHẤM BÀI)', 'QUICK ANSWER SUMMARY TABLE')}</div>
         <div class="ws-quick-key-grid">
-          ${qs.map((q, i) => `<div class="ws-qk-cell"><small>${t('Câu', 'Q')} ${i + 1}</small><b>${esc(String(q.answer))}</b></div>`).join('')}
+          ${displayOrder.map(({ q, displayNum }) => `<div class="ws-qk-cell"><small>${t('Câu', 'Q')} ${displayNum}</small><b>${esc(String(q.answer))}</b></div>`).join('')}
         </div>
       </div>
     ` : '';
@@ -193,7 +241,7 @@
           <div class="ws-hdr-right">
             ${withAnswers
               ? `<div class="ws-ans-stamp">✅ ${t('BẢN CÓ ĐÁP ÁN', 'WITH ANSWERS')}</div><div style="font-size:11.5px;color:#4b5563">${t('Dành cho Giáo viên / Phụ huynh chấm bài', 'For Teacher / Parent grading')}</div>`
-              : `<div>${t('Họ và tên:', 'Full name:')} ........................................</div><div>${t('Lớp:', 'Class:')} .................. &nbsp; ${t('Điểm:', 'Score:')} ..............</div>`}
+              : `<div class="ws-hdr-field"><span>${t('Họ và tên:', 'Full name:')}</span><span class="ws-hdr-dots" style="min-width:150px"></span></div><div class="ws-hdr-field"><span>${t('Lớp:', 'Class:')}</span><span class="ws-hdr-dots" style="min-width:64px"></span><span style="margin-left:8px">${t('Điểm:', 'Score:')}</span><span class="ws-hdr-dots" style="min-width:52px"></span></div>`}
           </div>
         </div>
         <h2 class="ws-main-title">${esc(title)}${withAnswers ? ` — ${t('ĐÁP ÁN', 'KEY')}` : ''}</h2>
@@ -517,35 +565,40 @@
       .ws-tab-btn{min-height:38px!important;padding:6px 12px!important;border-radius:9px!important;border:1.5px solid transparent!important;background:transparent!important;color:#355943!important;font-size:13px!important;font-weight:800!important;cursor:pointer}
       .ws-tab-btn.active,.ws-tab-btn.active:hover{background:#ffffff!important;border-color:#b8d7be!important;color:#174f34!important;box-shadow:0 2px 6px rgba(24,78,50,.1)}
 
-      .ws-preview-stage{background:#e7eee8;border-radius:14px;padding:16px;max-height:54vh;overflow-y:auto;display:grid;gap:16px}
+      .ws-preview-stage{background:#e7eee8;border-radius:14px;padding:16px;max-height:54vh;overflow-y:auto;overflow-x:hidden;display:grid;gap:16px}
 
       /* ===== A4 Worksheet Paper Styling (both preview and @media print) ===== */
-      .ws-a4-paper{background:#ffffff;color:#111827;border:1px solid #d4ded6;border-radius:8px;padding:20px 24px;box-shadow:0 4px 16px rgba(0,0,0,.06);font-family:'Nunito',Arial,sans-serif;line-height:1.45}
+      .ws-a4-paper{background:#ffffff;color:#111827;border:1px solid #d4ded6;border-radius:8px;padding:20px 24px;box-shadow:0 4px 16px rgba(0,0,0,.06);font-family:'Nunito',Arial,sans-serif;line-height:1.45;width:100%;max-width:100%;min-width:0;box-sizing:border-box;overflow:hidden}
       .ws-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;border-bottom:2px solid #224d36;padding-bottom:10px;margin-bottom:12px;font-size:12.5px}
       .ws-brand{font-weight:900;color:#1e563a;font-size:13px;letter-spacing:.03em}
       .ws-sub{font-weight:700;color:#374151;margin-top:2px}
       .ws-meta-line{color:#4b5563;margin-top:2px;font-size:12px}
-      .ws-hdr-right{text-align:right;display:grid;gap:4px;font-weight:700;color:#1f2937;white-space:nowrap}
+      .ws-hdr-right{text-align:right;display:grid;gap:6px;font-weight:700;color:#1f2937;flex-shrink:0}
+      .ws-hdr-field{display:flex;align-items:flex-end;justify-content:flex-end;gap:6px;white-space:nowrap}
+      .ws-hdr-dots{display:inline-block;height:14px;border-bottom:1.5px dotted #6b7280}
       .ws-ans-stamp{display:inline-block;padding:3px 10px;border-radius:999px;background:#e5f7ec;border:1.5px solid #2e8b57;color:#145c36;font-weight:900;font-size:12px}
       .ws-main-title{text-align:center;font-size:18px;font-weight:900;color:#163d28;margin:4px 0 14px;text-transform:uppercase}
-      .ws-section-title{font-size:13.5px;font-weight:900;color:#1b4d33;margin:12px 0 8px;padding:4px 10px;background:#eef6ef;border-left:4px solid #2b6a50;border-radius:4px}
-      .ws-mcq-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 14px}
-      .ws-q-box{border:1px solid #dce6dd;border-radius:8px;padding:8px 10px;break-inside:avoid}
-      .ws-q-head{display:flex;align-items:baseline;gap:6px;margin-bottom:6px;font-size:13.5px}
-      .ws-q-num{font-weight:900;color:#1b5336;white-space:nowrap}
-      .ws-q-text{font-weight:800;color:#111827;flex:1}
+      .ws-section-title{font-size:13.5px;font-weight:900;color:#1b4d33;margin:12px 0 8px;padding:4px 10px;background:#eef6ef;border-left:4px solid #2b6a50;border-radius:4px;max-width:100%;box-sizing:border-box}
+      .ws-mcq-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px;min-width:0;max-width:100%}
+      .ws-q-box{border:1px solid #dce6dd;border-radius:8px;padding:8px 10px;break-inside:avoid;min-width:0;max-width:100%;box-sizing:border-box}
+      .ws-q-head{display:flex;align-items:flex-start;gap:6px;margin-bottom:6px;font-size:13.5px;min-width:0;width:100%}
+      .ws-q-num{font-weight:900;color:#1b5336;white-space:nowrap;flex-shrink:0}
+      .ws-q-text{font-weight:800;color:#111827;flex:1;min-width:0;overflow-wrap:break-word;word-break:break-word}
       .ws-swap-btn{min-height:22px!important;width:24px!important;height:22px!important;padding:0!important;border-radius:6px!important;border:1px solid #cdddc9!important;background:#f4faf3!important;color:#2b6346!important;font-size:13px!important;font-weight:800!important;cursor:pointer;flex-shrink:0}
-      .ws-mcq-opts{display:grid;grid-template-columns:repeat(2,1fr);gap:4px 10px;font-size:13px;color:#1f2937}
+      .ws-mcq-opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 10px;font-size:13px;color:#1f2937}
       .ws-opt-hit{background:#e4f7ea;color:#115e35;font-weight:900;border:1.5px solid #2e8b57;border-radius:6px;padding:1px 6px}
       .ws-inline-sol{margin-top:5px;padding-top:4px;border-top:1px dashed #d3e5d7;font-size:11.5px;color:#2e5b42}
-      .ws-col-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-      .ws-col-card{border:1px solid #d5e2d6;border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;align-items:stretch;break-inside:avoid}
+      .ws-col-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;min-width:0;max-width:100%}
+      .ws-col-card{border:1px solid #d5e2d6;border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;align-items:stretch;break-inside:avoid;min-width:0;max-width:100%;box-sizing:border-box}
       .ws-col-card .ws-q-head{width:100%}
-      .ws-blank-workbox{width:100%;height:96px;border:1px dashed #b9ccb9;border-radius:6px;background-image:linear-gradient(to right,rgba(60,110,80,.08) 1px,transparent 1px),linear-gradient(to bottom,rgba(60,110,80,.08) 1px,transparent 1px);background-size:16px 16px;background-color:#ffffff;margin-top:4px}
-      .ws-essay-list{display:grid;gap:10px}
-      .ws-essay-item{border:1px solid #dce6dd;border-radius:8px;padding:8px 12px;break-inside:avoid}
-      .ws-write-lines{display:grid;gap:8px;margin-top:6px;font-size:12.5px;color:#6b7280}
-      .ws-essay-sol{margin-top:5px;padding:5px 9px;border-radius:6px;background:#ebf8ef;border-left:3px solid #267d50;font-size:12.5px;color:#154c30}
+      .ws-blank-workbox{width:100%;height:96px;border:1px dashed #b9ccb9;border-radius:6px;background-image:linear-gradient(to right,rgba(60,110,80,.08) 1px,transparent 1px),linear-gradient(to bottom,rgba(60,110,80,.08) 1px,transparent 1px);background-size:16px 16px;background-color:#ffffff;margin-top:4px;box-sizing:border-box}
+      .ws-essay-list{display:grid;gap:10px;min-width:0;max-width:100%}
+      .ws-essay-item{border:1px solid #dce6dd;border-radius:8px;padding:10px 12px;break-inside:avoid;min-width:0;max-width:100%;box-sizing:border-box}
+      .ws-write-lines{display:grid;gap:10px;margin-top:8px;font-size:12.5px;color:#4b5563;min-width:0;width:100%}
+      .ws-write-row{display:flex;align-items:flex-end;gap:8px;min-height:20px;width:100%;min-width:0}
+      .ws-write-lbl{white-space:nowrap;flex-shrink:0;font-weight:700;color:#4b5563}
+      .ws-dot-fill{flex:1;min-width:40px;height:14px;border-bottom:1.5px dotted #8fa396}
+      .ws-essay-sol{margin-top:5px;padding:5px 9px;border-radius:6px;background:#ebf8ef;border-left:3px solid #267d50;font-size:12.5px;color:#154c30;overflow-wrap:break-word}
       .ws-quick-key-wrap{margin-top:14px;break-inside:avoid}
       .ws-quick-key-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px}
       .ws-qk-cell{border:1px solid #c6dccb;border-radius:7px;padding:5px 6px;text-align:center;background:#f7fcf8;display:flex;flex-direction:column;gap:2px}
