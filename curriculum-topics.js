@@ -52,90 +52,109 @@
 
   const NUMI_GRADE_TOPICS = {
     1: [
-      { id: 'all', vi: 'Tổng hợp tất cả dạng Lớp 1', en: 'All Grade 1 Mixed' },
-      { id: 'g1_within10', vi: 'Cộng trừ PV 10', en: 'Add/Sub ≤10' },
-      { id: 'g1_round10', vi: 'Cộng trừ tròn chục', en: 'Round tens' },
-      { id: 'g1_col100', vi: 'Đặt tính PV 100 (không nhớ)', en: 'Column ±100', col: true },
-      { id: 'g1_place_cmp', vi: 'Cấu tạo số & Liền trước/sau', en: 'Place Value & Order' },
-      { id: 'g1_two_step', vi: 'Tính 2 bước, Đo cm & Xem giờ', en: '2-Step, cm & Clock' },
-      { id: 'g1_missing', vi: 'Điền số ? thích hợp', en: 'Missing Number ?' },
-      { id: 'g1_word', vi: 'Toán lời văn Lớp 1', en: 'Grade 1 Word Problems' }
+      { id: 'all', vi: 'Tổng hợp tất cả dạng Lớp 1', en: 'All Grade 1 Mixed', kind: 'all', count: 10, seconds: 30 },
+      { id: 'g1_within10', vi: 'Cộng trừ PV 10', en: 'Add/Sub ≤10', kind: 'mental', count: 10, seconds: 15 },
+      { id: 'g1_round10', vi: 'Cộng trừ tròn chục', en: 'Round tens', kind: 'mental', count: 10, seconds: 18 },
+      { id: 'g1_col100', vi: 'Đặt tính PV 100 (không nhớ)', en: 'Column ±100', kind: 'column', col: true, count: 10, seconds: 30 },
+      { id: 'g1_place_cmp', vi: 'Cấu tạo số & Liền trước/sau', en: 'Place Value & Order', kind: 'knowledge', count: 10, seconds: 25 },
+      { id: 'g1_two_step', vi: 'Tính 2 bước, Đo cm & Xem giờ', en: '2-Step, cm & Clock', kind: 'knowledge', count: 10, seconds: 30 },
+      { id: 'g1_missing', vi: 'Điền số ? thích hợp', en: 'Missing Number ?', kind: 'knowledge', count: 10, seconds: 25 },
+      { id: 'g1_word', vi: 'Toán lời văn Lớp 1', en: 'Grade 1 Word Problems', kind: 'knowledge', count: 8, seconds: 40 }
     ],
     2: [
-      { id: 'all', vi: 'Tổng hợp tất cả dạng Lớp 2', en: 'All Grade 2 Mixed' },
-      { id: 'g2_carry20', vi: 'Cộng trừ có nhớ PV 20', en: 'Carry/Borrow ≤20' },
-      { id: 'g2_col100', vi: 'Đặt tính có nhớ PV 100', en: 'Column ±100 (carry)', col: true },
-      { id: 'g2_col1000', vi: 'Đặt tính PV 1.000', en: 'Column ≤1,000', col: true },
-      { id: 'g2_mul25', vi: 'Bảng nhân & chia 2, 5', en: '×2, ×5, ÷2, ÷5' },
-      { id: 'g2_find_x', vi: 'Tìm thành phần chưa biết (?)', en: 'Find Missing Term' },
-      { id: 'g2_units', vi: 'Đổi đơn vị (dm, cm, m, giờ)', en: 'Length & Time Units' },
-      { id: 'g2_geom_time', vi: 'Đường gấp khúc & Giờ 24h', en: 'Polyline & 24h Clock' },
-      { id: 'g2_word', vi: 'Lời văn Nhiều hơn / Ít hơn', en: 'More/Less Word Problems' }
+      { id: 'all', vi: 'Tổng hợp tất cả dạng Lớp 2', en: 'All Grade 2 Mixed', kind: 'all', count: 10, seconds: 35 },
+      { id: 'g2_carry20', vi: 'Cộng trừ có nhớ PV 20', en: 'Carry/Borrow ≤20', kind: 'mental', count: 12, seconds: 18 },
+      { id: 'g2_col100', vi: 'Đặt tính có nhớ PV 100', en: 'Column ±100 (carry)', kind: 'column', col: true, count: 10, seconds: 30 },
+      { id: 'g2_col1000', vi: 'Đặt tính PV 1.000', en: 'Column ≤1,000', kind: 'column', col: true, count: 8, seconds: 35 },
+      { id: 'g2_mul25', vi: 'Bảng nhân & chia 2, 5', en: '×2, ×5, ÷2, ÷5', kind: 'mental', count: 12, seconds: 15 },
+      { id: 'g2_find_x', vi: 'Tìm thành phần chưa biết (?)', en: 'Find Missing Term', kind: 'knowledge', count: 10, seconds: 30 },
+      { id: 'g2_units', vi: 'Đổi đơn vị (dm, cm, m, giờ)', en: 'Length & Time Units', kind: 'knowledge', count: 10, seconds: 25 },
+      { id: 'g2_geom_time', vi: 'Đường gấp khúc & Giờ 24h', en: 'Polyline & 24h Clock', kind: 'knowledge', count: 8, seconds: 35 },
+      { id: 'g2_word', vi: 'Lời văn Nhiều hơn / Ít hơn', en: 'More/Less Word Problems', kind: 'knowledge', count: 8, seconds: 45 }
     ],
     3: [
-      { id: 'all', vi: 'Tổng hợp tất cả dạng Lớp 3', en: 'All Grade 3 Mixed' },
-      { id: 'g3_tables', vi: 'Bảng nhân chia 2–9', en: 'Times tables 2–9' },
-      { id: 'g3_col10k', vi: 'Đặt tính ± đến 10.000', en: 'Column ±10,000', col: true },
-      { id: 'g3_mul1', vi: 'Đặt tính ×/÷ với 1 chữ số', en: '2-3d ×/÷ 1d', col: true },
-      { id: 'g3_rem', vi: 'Phép chia có dư', en: 'Remainders' },
-      { id: 'g3_expr', vi: 'Biểu thức (có ngoặc)', en: 'Expressions & Brackets' },
-      { id: 'g3_find_x', vi: 'Tìm x (4 phép tính)', en: 'Solve for x' },
-      { id: 'g3_geom', vi: 'Chu vi & Diện tích (Vuông, HCN)', en: 'Perimeter & Area' },
-      { id: 'g3_fold_word', vi: 'Gấp/Giảm số lần & Rút đơn vị', en: 'Multiples & Unitary' },
-      { id: 'g3_units', vi: 'Đổi đơn vị (m, km, kg, g)', en: 'Units (m, km, kg, g)' }
+      { id: 'all', vi: 'Tổng hợp tất cả dạng Lớp 3', en: 'All Grade 3 Mixed', kind: 'all', count: 12, seconds: 35 },
+      { id: 'g3_tables', vi: 'Bảng nhân chia 2–9', en: 'Times tables 2–9', kind: 'mental', count: 15, seconds: 12 },
+      { id: 'g3_col10k', vi: 'Đặt tính ± đến 10.000', en: 'Column ±10,000', kind: 'column', col: true, count: 8, seconds: 40 },
+      { id: 'g3_mul1', vi: 'Đặt tính ×/÷ với 1 chữ số', en: '2-3d ×/÷ 1d', kind: 'column', col: true, count: 8, seconds: 40 },
+      { id: 'g3_rem', vi: 'Phép chia có dư', en: 'Remainders', kind: 'knowledge', count: 10, seconds: 30 },
+      { id: 'g3_expr', vi: 'Biểu thức (có ngoặc)', en: 'Expressions & Brackets', kind: 'knowledge', count: 10, seconds: 35 },
+      { id: 'g3_find_x', vi: 'Tìm x (4 phép tính)', en: 'Solve for x', kind: 'knowledge', count: 10, seconds: 30 },
+      { id: 'g3_geom', vi: 'Chu vi & Diện tích (Vuông, HCN)', en: 'Perimeter & Area', kind: 'knowledge', count: 8, seconds: 40 },
+      { id: 'g3_fold_word', vi: 'Gấp/Giảm số lần & Rút đơn vị', en: 'Multiples & Unitary', kind: 'knowledge', count: 8, seconds: 45 },
+      { id: 'g3_units', vi: 'Đổi đơn vị (m, km, kg, g)', en: 'Units (m, km, kg, g)', kind: 'knowledge', count: 10, seconds: 25 }
     ],
     4: [
-      { id: 'all', vi: 'Tổng hợp tất cả dạng Lớp 4', en: 'All Grade 4 Mixed' },
-      { id: 'g4_col', vi: 'Đặt tính ± nhiều chữ số', en: 'Multi-digit Column ±', col: true },
-      { id: 'g4_mul2', vi: 'Đặt tính ×/÷ với 2 chữ số', en: '×/÷ by 2 digits', col: true },
-      { id: 'g4_conv', vi: 'Tính bằng cách thuận tiện', en: 'Convenient Mental Math' },
-      { id: 'g4_frac', vi: 'Phân số (+, −, ×, ÷)', en: 'Fractions' },
-      { id: 'g4_sum_diff', vi: 'Tổng – Hiệu & Phân số của số', en: 'Sum-Diff & Fraction of N' },
-      { id: 'g4_geom', vi: 'Hình học (Bình hành, Thoi, HCN)', en: 'Parallelogram & Rhombus' },
-      { id: 'g4_avg', vi: 'Trung bình cộng & Đổi đơn vị', en: 'Average & Units' },
-      { id: 'g4_div_rules', vi: 'Chia hết (2,3,5,9) & Thế kỉ/Giây', en: 'Divisibility & Century' }
+      { id: 'all', vi: 'Tổng hợp tất cả dạng Lớp 4', en: 'All Grade 4 Mixed', kind: 'all', count: 12, seconds: 40 },
+      { id: 'g4_col', vi: 'Đặt tính ± nhiều chữ số', en: 'Multi-digit Column ±', kind: 'column', col: true, count: 8, seconds: 45 },
+      { id: 'g4_mul2', vi: 'Đặt tính ×/÷ với 2 chữ số', en: '×/÷ by 2 digits', kind: 'column', col: true, count: 8, seconds: 50 },
+      { id: 'g4_conv', vi: 'Tính bằng cách thuận tiện', en: 'Convenient Mental Math', kind: 'mental', count: 10, seconds: 25 },
+      { id: 'g4_frac', vi: 'Phân số (+, −, ×, ÷)', en: 'Fractions', kind: 'knowledge', count: 10, seconds: 35 },
+      { id: 'g4_sum_diff', vi: 'Tổng – Hiệu & Phân số của số', en: 'Sum-Diff & Fraction of N', kind: 'knowledge', count: 8, seconds: 45 },
+      { id: 'g4_geom', vi: 'Hình học (Bình hành, Thoi, HCN)', en: 'Parallelogram & Rhombus', kind: 'knowledge', count: 8, seconds: 40 },
+      { id: 'g4_avg', vi: 'Trung bình cộng & Đổi đơn vị', en: 'Average & Units', kind: 'knowledge', count: 10, seconds: 30 },
+      { id: 'g4_div_rules', vi: 'Chia hết (2,3,5,9) & Thế kỉ/Giây', en: 'Divisibility & Century', kind: 'knowledge', count: 10, seconds: 30 }
     ],
     5: [
-      { id: 'all', vi: 'Tổng hợp tất cả dạng Lớp 5', en: 'All Grade 5 Mixed' },
-      { id: 'g5_dec_col', vi: 'Đặt tính ± số thập phân', en: 'Column Decimal ±', col: true },
-      { id: 'g5_dec10', vi: 'Nhân/chia nhẩm 10, 100, 0,1', en: 'Decimal ×/÷ 10, 100' },
-      { id: 'g5_dec_muldiv', vi: 'Tính thuận tiện & Chia thập phân', en: 'Decimal Mental & Division' },
-      { id: 'g5_pct', vi: 'Tỉ số phần trăm (3 dạng)', en: 'Percentages (3 types)' },
-      { id: 'g5_geom', vi: 'Hình học (Tam giác, Thang, Tròn, V)', en: 'Triangle, Circle & Volume' },
-      { id: 'g5_sum_ratio', vi: 'Tổng–Tỉ, Hiệu–Tỉ & Hỗn số', en: 'Ratios & Mixed Numbers' },
-      { id: 'g5_units', vi: 'Đổi đơn vị (ha, m², giờ/phút)', en: 'Area & Time Units' },
-      { id: 'g5_motion', vi: 'Toán chuyển động (v, s, t)', en: 'Speed · Distance · Time' }
+      { id: 'all', vi: 'Tổng hợp tất cả dạng Lớp 5', en: 'All Grade 5 Mixed', kind: 'all', count: 12, seconds: 40 },
+      { id: 'g5_dec_col', vi: 'Đặt tính ± số thập phân', en: 'Column Decimal ±', kind: 'column', col: true, count: 8, seconds: 40 },
+      { id: 'g5_dec10', vi: 'Nhân/chia nhẩm 10, 100, 0,1', en: 'Decimal ×/÷ 10, 100', kind: 'mental', count: 12, seconds: 15 },
+      { id: 'g5_dec_muldiv', vi: 'Tính thuận tiện & Chia thập phân', en: 'Decimal Mental & Division', kind: 'mental', count: 10, seconds: 30 },
+      { id: 'g5_pct', vi: 'Tỉ số phần trăm (3 dạng)', en: 'Percentages (3 types)', kind: 'knowledge', count: 10, seconds: 35 },
+      { id: 'g5_geom', vi: 'Hình học (Tam giác, Thang, Tròn, V)', en: 'Triangle, Circle & Volume', kind: 'knowledge', count: 8, seconds: 45 },
+      { id: 'g5_sum_ratio', vi: 'Tổng–Tỉ, Hiệu–Tỉ & Hỗn số', en: 'Ratios & Mixed Numbers', kind: 'knowledge', count: 8, seconds: 50 },
+      { id: 'g5_units', vi: 'Đổi đơn vị (ha, m², giờ/phút)', en: 'Area & Time Units', kind: 'knowledge', count: 10, seconds: 30 },
+      { id: 'g5_motion', vi: 'Toán chuyển động (v, s, t)', en: 'Speed · Distance · Time', kind: 'knowledge', count: 8, seconds: 45 }
     ],
     6: [
-      { id: 'all', vi: 'Tổng hợp Lớp 6', en: 'All Grade 6' },
-      { id: 'g6_int', vi: 'Số nguyên âm Z (+, −, ×, ÷)', en: 'Signed Integers Z' },
-      { id: 'g6_pow', vi: 'Lũy thừa số mũ tự nhiên', en: 'Natural Powers (aⁿ)' },
-      { id: 'g6_findx', vi: 'Tìm x (chuyển vế, ngoặc)', en: 'Solve for x' },
-      { id: 'g6_frac', vi: 'Phân số & Thập phân', en: 'Fractions & Decimals' },
-      { id: 'g6_div', vi: 'ƯCLN & BCNN', en: 'GCD & LCM' }
+      { id: 'all', vi: 'Tổng hợp Lớp 6', en: 'All Grade 6', kind: 'all', count: 12, seconds: 30 },
+      { id: 'g6_int', vi: 'Số nguyên âm Z (+, −, ×, ÷)', en: 'Signed Integers Z', kind: 'mental', count: 12, seconds: 20 },
+      { id: 'g6_pow', vi: 'Lũy thừa số mũ tự nhiên', en: 'Natural Powers (aⁿ)', kind: 'mental', count: 12, seconds: 20 },
+      { id: 'g6_findx', vi: 'Tìm x (chuyển vế, ngoặc)', en: 'Solve for x', kind: 'knowledge', count: 10, seconds: 35 },
+      { id: 'g6_frac', vi: 'Phân số & Thập phân', en: 'Fractions & Decimals', kind: 'knowledge', count: 10, seconds: 35 },
+      { id: 'g6_div', vi: 'ƯCLN & BCNN', en: 'GCD & LCM', kind: 'knowledge', count: 10, seconds: 35 }
     ],
     7: [
-      { id: 'all', vi: 'Tổng hợp Lớp 7', en: 'All Grade 7' },
-      { id: 'g7_rat', vi: 'Số hữu tỉ Q & Lũy thừa', en: 'Rationals & Powers' },
-      { id: 'g7_ratio', vi: 'Tỉ lệ thức & Dãy tỉ số', en: 'Proportions' },
-      { id: 'g7_sqrt_abs', vi: 'Căn bậc hai & Trị tuyệt đối', en: 'Square Root & |x|' },
-      { id: 'g7_alg', vi: 'Giá trị biểu thức & Đa thức', en: 'Polynomials' }
+      { id: 'all', vi: 'Tổng hợp Lớp 7', en: 'All Grade 7', kind: 'all', count: 12, seconds: 30 },
+      { id: 'g7_rat', vi: 'Số hữu tỉ Q & Lũy thừa', en: 'Rationals & Powers', kind: 'mental', count: 12, seconds: 25 },
+      { id: 'g7_ratio', vi: 'Tỉ lệ thức & Dãy tỉ số', en: 'Proportions', kind: 'knowledge', count: 10, seconds: 35 },
+      { id: 'g7_sqrt_abs', vi: 'Căn bậc hai & Trị tuyệt đối', en: 'Square Root & |x|', kind: 'mental', count: 12, seconds: 20 },
+      { id: 'g7_alg', vi: 'Giá trị biểu thức & Đa thức', en: 'Polynomials', kind: 'knowledge', count: 10, seconds: 35 }
     ],
     8: [
-      { id: 'all', vi: 'Tổng hợp Lớp 8', en: 'All Grade 8' },
-      { id: 'g8_id', vi: '7 Hằng đẳng thức tính nhanh', en: 'Algebraic Identities' },
-      { id: 'g8_eq', vi: 'Giải phương trình bậc nhất', en: 'Linear Equations' },
-      { id: 'g8_poly', vi: 'Đa thức & Phân thức', en: 'Polynomials & Fractions' },
-      { id: 'g8_rat', vi: 'Số hữu tỉ & Lũy thừa', en: 'Rationals & Powers' }
+      { id: 'all', vi: 'Tổng hợp Lớp 8', en: 'All Grade 8', kind: 'all', count: 12, seconds: 30 },
+      { id: 'g8_id', vi: '7 Hằng đẳng thức tính nhanh', en: 'Algebraic Identities', kind: 'mental', count: 12, seconds: 25 },
+      { id: 'g8_eq', vi: 'Giải phương trình bậc nhất', en: 'Linear Equations', kind: 'knowledge', count: 10, seconds: 35 },
+      { id: 'g8_poly', vi: 'Đa thức & Phân thức', en: 'Polynomials & Fractions', kind: 'knowledge', count: 10, seconds: 35 },
+      { id: 'g8_rat', vi: 'Số hữu tỉ & Lũy thừa', en: 'Rationals & Powers', kind: 'mental', count: 12, seconds: 25 }
     ],
     9: [
-      { id: 'all', vi: 'Tổng hợp Lớp 9', en: 'All Grade 9' },
-      { id: 'g9_sqrt', vi: 'Biến đổi Căn bậc hai', en: 'Square Root Expressions' },
-      { id: 'g9_cbrt', vi: 'Căn bậc ba (∛)', en: 'Cube Roots (∛)' },
-      { id: 'g9_eq', vi: 'PT vô tỷ & Hệ thức Vi-ét', en: 'Radical Eq & Vieta' },
-      { id: 'g9_func', vi: 'Hàm số y = ax + b', en: 'Linear Functions' }
+      { id: 'all', vi: 'Tổng hợp Lớp 9', en: 'All Grade 9', kind: 'all', count: 12, seconds: 30 },
+      { id: 'g9_sqrt', vi: 'Biến đổi Căn bậc hai', en: 'Square Root Expressions', kind: 'mental', count: 12, seconds: 25 },
+      { id: 'g9_cbrt', vi: 'Căn bậc ba (∛)', en: 'Cube Roots (∛)', kind: 'mental', count: 12, seconds: 20 },
+      { id: 'g9_eq', vi: 'PT vô tỷ & Hệ thức Vi-ét', en: 'Radical Eq & Vieta', kind: 'knowledge', count: 10, seconds: 40 },
+      { id: 'g9_func', vi: 'Hàm số y = ax + b', en: 'Linear Functions', kind: 'knowledge', count: 10, seconds: 35 }
     ]
   };
+
+  function getRecommendedTiming(gradeNum, selectedIds = []) {
+    const g = Number(gradeNum);
+    const list = NUMI_GRADE_TOPICS[g];
+    if (!list) return { count: 10, seconds: 20 };
+    const clean = (Array.isArray(selectedIds) ? selectedIds : [])
+      .map(id => list.find(x => x.id === id && x.id !== 'all'))
+      .filter(Boolean);
+    if (clean.length === 0) {
+      const allItem = list.find(x => x.id === 'all');
+      return { count: allItem?.count || 10, seconds: allItem?.seconds || 30 };
+    }
+    if (clean.length === 1) {
+      return { count: clean[0].count || 10, seconds: clean[0].seconds || 30 };
+    }
+    const maxSec = Math.max(...clean.map(x => x.seconds || 25));
+    const count = Math.max(8, Math.min(15, clean.length * 4));
+    return { count, seconds: Math.min(60, maxSec) };
+  }
 
   function getTopicMeta(topicId, gradeHint) {
     const g = Number(gradeHint);
@@ -970,8 +989,27 @@
     if (typeof global !== 'undefined') global.generate = generate;
   }
 
-  // Inject Grade Topic Stream pills (supporting single + multi-topic synthesis & Grade 1-5 quick presets!)
-  function renderTopicPillsForGrade(gradeNum) {
+  function applySmartTimingToForm(gradeNum, selectedList) {
+    const rec = getRecommendedTiming(gradeNum, selectedList);
+    if (typeof config !== 'undefined') {
+      config.count = rec.count;
+      config.seconds = rec.seconds;
+      if (typeof window !== 'undefined') window.config = config;
+      if (typeof global !== 'undefined') global.config = config;
+    }
+    const cntInput = $('#lessonCount');
+    const secInput = $('#lessonSeconds');
+    if (cntInput) cntInput.value = rec.count;
+    if (secInput) secInput.value = rec.seconds;
+    $$('[data-count]').forEach(b => b.classList.toggle('chosen', Number(b.dataset.count) === rec.count));
+    $$('[data-seconds]').forEach(b => b.classList.toggle('chosen', Number(b.dataset.seconds) === rec.seconds));
+    const stickySub = $('#stickySummaryText');
+    if (stickySub) stickySub.textContent = `${rec.count} ${t('câu', 'qs')} · ${rec.seconds}s`;
+    return rec;
+  }
+
+  // Inject Grade Topic Stream pills (supporting single + multi-topic synthesis, smart count/timer auto-preset & quick filters!)
+  function renderTopicPillsForGrade(gradeNum, applyTiming = false) {
     const host = $('#gradeTopicsWrap');
     if (!host) return;
     const g = Number(gradeNum);
@@ -987,8 +1025,14 @@
     if (!selectedList.length && config?.topic && validIds.has(config.topic)) {
       selectedList = [config.topic];
     }
+    if (applyTiming) {
+      applySmartTimingToForm(g, selectedList);
+    }
     const isAllMode = selectedList.length === 0;
+    const mentalIds = list.filter(x => x.kind === 'mental').map(x => x.id);
     const colIds = list.filter(x => x.col).map(x => x.id);
+    const knowledgeIds = list.filter(x => x.kind === 'knowledge').map(x => x.id);
+    const curTiming = getRecommendedTiming(g, selectedList);
 
     const syncConfigTopics = nextArr => {
       selectedList = nextArr.filter(id => validIds.has(id));
@@ -1005,20 +1049,19 @@
       }
       if (typeof window !== 'undefined') window.config = config;
       if (typeof global !== 'undefined') global.config = config;
-      renderTopicPillsForGrade(g);
+      const rec = applySmartTimingToForm(g, selectedList);
+      renderTopicPillsForGrade(g, false);
       const sumEl = $('#lessonSummary');
       if (sumEl) {
-        const cnt = $('#lessonCount')?.value || config.count;
-        const sec = $('#lessonSeconds')?.value || config.seconds;
         if (selectedList.length === 0) {
-          sumEl.textContent = `${t(`Đề tổng hợp ${validIds.size} dạng Lớp ${g}`, `Grade ${g} Mixed (${validIds.size} formats)`)} · ${cnt} ${t('câu', 'qs')} · ${sec}s/${t('câu', 'q')}`;
+          sumEl.textContent = `${t(`Đề tổng hợp ${validIds.size} dạng Lớp ${g}`, `Grade ${g} Mixed (${validIds.size} formats)`)} · ${rec.count} ${t('câu', 'qs')} · ${rec.seconds}s/${t('câu', 'q')}`;
         } else {
           const names = selectedList.slice(0, 2).map(id => {
             const it = list.find(x => x.id === id);
             return it ? (lang === 'en' ? it.en : it.vi) : id;
           });
           const extraTxt = selectedList.length > 2 ? ` +${selectedList.length - 2}` : '';
-          sumEl.textContent = `${t('Ghép dạng:', 'Topics:')} ${names.join(' · ')}${extraTxt} · ${cnt} ${t('câu', 'qs')} · ${sec}s/${t('câu', 'q')}`;
+          sumEl.textContent = `${t('Chuyên đề:', 'Topics:')} ${names.join(' · ')}${extraTxt} · ${rec.count} ${t('câu', 'qs')} · ${rec.seconds}s/${t('câu', 'q')}`;
         }
       }
     };
@@ -1027,20 +1070,27 @@
       ? t(`Đang bật Đề tổng hợp (${validIds.size} dạng trộn đều)`, `Full Mixed Exam (${validIds.size} formats)`)
       : t(`Đang chọn ${selectedList.length}/${validIds.size} dạng (chạm thêm để ghép nhiều dạng)`, `${selectedList.length}/${validIds.size} selected (tap more to combine)`);
 
+    const sameSet = (a, b) => a.length > 0 && a.length === b.length && a.every(x => b.includes(x));
+
     host.hidden = false;
     host.innerHTML = `
       <div class="grade-topics-head">
         <div class="grade-topics-title">
           <span>🎯 ${t(`Luồng chuyên đề Lớp ${g} (Chọn 1 hoặc ghép nhiều dạng):`, `Grade ${g} Exam Topics (Pick 1 or combine many):`)}</span>
-          <span class="grade-topics-status">${statusBadge}</span>
+          <span class="grade-topics-status">${statusBadge} · <strong class="grade-timing-chip">⏱ ${t('Tự đặt sẵn:', 'Preset:')} ${curTiming.count} ${t('câu', 'qs')} · ${curTiming.seconds}s/${t('câu', 'q')}</strong></span>
         </div>
-        ${colIds.length ? `<button type="button" class="grade-topics-quick-col" id="quickColTopicsBtn">📐 ${t('Chỉ bài Đặt tính', 'Column Only')}</button>` : ''}
+        <div class="grade-topics-quick-row">
+          ${mentalIds.length ? `<button type="button" class="grade-topics-quick-btn ${sameSet(selectedList, mentalIds) ? 'is-on' : ''}" id="quickMentalTopicsBtn">⚡ ${t('Tính nhẩm nhanh', 'Mental Math')}</button>` : ''}
+          ${colIds.length ? `<button type="button" class="grade-topics-quick-btn ${sameSet(selectedList, colIds) ? 'is-on' : ''}" id="quickColTopicsBtn">📐 ${t('Đặt tính', 'Column')}</button>` : ''}
+          ${knowledgeIds.length ? `<button type="button" class="grade-topics-quick-btn ${sameSet(selectedList, knowledgeIds) ? 'is-on' : ''}" id="quickKnowTopicsBtn">📚 ${t('Ôn kiến thức', 'Knowledge Review')}</button>` : ''}
+        </div>
       </div>
       <div class="grade-topics-list">
         ${list.map(tp => {
           const active = tp.id === 'all' ? isAllMode : selectedList.includes(tp.id);
           const prefix = tp.id === 'all' ? '✨ ' : tp.col ? '📐 ' : '';
-          return `<button type="button" class="grade-topic-pill ${active ? 'active' : ''}" data-grade-topic="${esc(tp.id)}">${prefix}${esc(typeof lang !== 'undefined' && lang === 'en' ? tp.en : tp.vi)}</button>`;
+          const tip = `${tp.count} ${t('câu', 'qs')} · ${tp.seconds}s/${t('câu', 'q')}`;
+          return `<button type="button" class="grade-topic-pill ${active ? 'active' : ''}" data-grade-topic="${esc(tp.id)}" title="${esc(tip)}">${prefix}${esc(typeof lang !== 'undefined' && lang === 'en' ? tp.en : tp.vi)} <small class="tp-sec-tag">${tp.seconds}s</small></button>`;
         }).join('')}
       </div>
     `;
@@ -1059,10 +1109,12 @@
       };
     });
 
+    const quickMental = $('#quickMentalTopicsBtn');
+    if (quickMental && mentalIds.length) quickMental.onclick = () => syncConfigTopics(mentalIds);
     const quickCol = $('#quickColTopicsBtn');
-    if (quickCol && colIds.length) {
-      quickCol.onclick = () => syncConfigTopics(colIds);
-    }
+    if (quickCol && colIds.length) quickCol.onclick = () => syncConfigTopics(colIds);
+    const quickKnow = $('#quickKnowTopicsBtn');
+    if (quickKnow && knowledgeIds.length) quickKnow.onclick = () => syncConfigTopics(knowledgeIds);
   }
 
   const resetTopicsOnGrade = gk => {
@@ -1070,7 +1122,7 @@
       config.topic = 'all';
       config.topics = [];
     }
-    renderTopicPillsForGrade(gk === 'custom' ? null : gk);
+    renderTopicPillsForGrade(gk === 'custom' ? null : gk, gk !== 'custom');
   };
   if (typeof window !== 'undefined') window.onGradeApplied = resetTopicsOnGrade;
   if (typeof global !== 'undefined') global.onGradeApplied = resetTopicsOnGrade;
@@ -1086,7 +1138,7 @@
         wrap.className = 'grade-topics-wrap';
         box.append(wrap);
       }
-      renderTopicPillsForGrade(config.grade);
+      renderTopicPillsForGrade(config.grade, Boolean(config.grade && config.grade !== 'custom'));
     };
     if (typeof window !== 'undefined') window.setup = setup;
     if (typeof global !== 'undefined') global.setup = setup;
@@ -1097,26 +1149,34 @@
     const style = document.createElement('style');
     style.textContent = `
       .grade-topics-wrap{margin-top:12px;padding-top:12px;border-top:1.5px dashed #dce8d6}
-      .grade-topics-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px}
-      .grade-topics-title{display:flex;flex-direction:column;gap:2px;font-size:12.5px;font-weight:800;color:#2f533c}
-      .grade-topics-status{font-size:11.5px;font-weight:700;color:#4f7a60}
-      .grade-topics-quick-col{min-height:28px!important;padding:4px 10px!important;border-radius:999px!important;border:1.5px solid #c2dcc6!important;background:#eef8f0!important;color:#1f583c!important;font-size:11.5px!important;font-weight:800!important;cursor:pointer}
-      .grade-topics-quick-col:hover{background:#dcf1e2!important;border-color:#74ad86!important}
+      .grade-topics-head{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+      .grade-topics-title{display:flex;flex-direction:column;gap:3px;font-size:12.5px;font-weight:800;color:#2f533c}
+      .grade-topics-status{font-size:11.5px;font-weight:700;color:#4f7a60;line-height:1.45}
+      .grade-timing-chip{display:inline-block;padding:1px 7px;border-radius:999px;background:#e6f4ea;color:#1b5a3c;font-weight:800}
+      .grade-topics-quick-row{display:flex;flex-wrap:wrap;gap:5px}
+      .grade-topics-quick-btn{min-height:28px!important;padding:4px 10px!important;border-radius:999px!important;border:1.5px solid #c2dcc6!important;background:#eef8f0!important;color:#1f583c!important;font-size:11.5px!important;font-weight:800!important;cursor:pointer}
+      .grade-topics-quick-btn:hover{background:#dcf1e2!important;border-color:#74ad86!important}
+      .grade-topics-quick-btn.is-on,.grade-topics-quick-btn.is-on:hover{background:#235c43!important;border-color:#194432!important;color:#fff!important}
       .grade-topics-list{display:flex;flex-wrap:wrap;gap:6px}
-      .grade-topic-pill{min-height:34px;padding:6px 11px;border-radius:999px;border:1.5px solid #d4e3cc;background:#f7fbf5;color:#2e4e3a;font-size:12.5px;font-weight:700;cursor:pointer;transition:all .15s ease}
+      .grade-topic-pill{display:inline-flex;align-items:center;gap:5px;min-height:34px;padding:6px 11px;border-radius:999px;border:1.5px solid #d4e3cc;background:#f7fbf5;color:#2e4e3a;font-size:12.5px;font-weight:700;cursor:pointer;transition:all .15s ease}
+      .grade-topic-pill .tp-sec-tag{font-size:10.5px;font-weight:800;padding:1px 5px;border-radius:999px;background:#e4f0e0;color:#3d6b4f}
       .grade-topic-pill:hover:not(.active){background:#eaf4e6;border-color:#8cb685}
       .grade-topic-pill.active,.grade-topic-pill.active:hover{background:#2d6a51!important;border-color:#1f4f3c!important;color:#fff!important;box-shadow:0 2px 8px rgba(45,106,81,.22)}
+      .grade-topic-pill.active .tp-sec-tag{background:rgba(255,255,255,0.22);color:#fff}
       body.dark-mode .grade-topics-wrap{border-top-color:#2b4637}
       body.dark-mode .grade-topics-title{color:#c9e4d4}
       body.dark-mode .grade-topics-status{color:#8dc1a3}
-      body.dark-mode .grade-topics-quick-col{background:#193225!important;border-color:#35614a!important;color:#9ee3bc!important}
+      body.dark-mode .grade-timing-chip{background:#1b3828;color:#9ee3bc}
+      body.dark-mode .grade-topics-quick-btn{background:#193225!important;border-color:#35614a!important;color:#9ee3bc!important}
+      body.dark-mode .grade-topics-quick-btn.is-on{background:#2d6a51!important;color:#fff!important}
       body.dark-mode .grade-topic-pill{background:#18271f;border-color:#2d4a3a;color:#cde4d6}
+      body.dark-mode .grade-topic-pill .tp-sec-tag{background:#233b2e;color:#9cc9b0}
       body.dark-mode .grade-topic-pill.active{background:#2d6a51!important;border-color:#4ba880!important;color:#fff!important}
     `;
     document.head.append(style);
   }
 
-  const exp = { NUMI_GRADE_TOPICS, generateTopicQuestion };
+  const exp = { NUMI_GRADE_TOPICS, generateTopicQuestion, getRecommendedTiming };
   if (typeof window !== 'undefined') Object.assign(window, exp);
   if (typeof global !== 'undefined') Object.assign(global, exp);
 })();

@@ -845,13 +845,13 @@ function setup(){
         <div class="formgrid">
           <div>
             <label for="lessonCount">${t('Số câu trong lượt luyện','Questions per session')}</label>
-            <div class="chip-row">${[5,10,20,30].map(n=>`<button type="button" data-count="${n}">${n}</button>`).join('')}</div>
+            <div class="chip-row">${[5,8,10,12,15,20].map(n=>`<button type="button" data-count="${n}">${n}</button>`).join('')}</div>
             <input id="lessonCount" name="count" type="number" min="1" max="100" value="${config.count||10}" required inputmode="numeric" aria-describedby="countHelp">
             <small id="countHelp">${t('Chọn nhanh hoặc nhập từ 1–100 câu.','Pick above or enter 1–100 questions.')}</small>
           </div>
           <div>
             <label for="lessonSeconds">${t('Số giây mỗi câu','Seconds per question')}</label>
-            <div class="chip-row">${[10,15,30,60].map(n=>`<button type="button" data-seconds="${n}">${n}s</button>`).join('')}</div>
+            <div class="chip-row">${[15,25,30,40,45,60].map(n=>`<button type="button" data-seconds="${n}">${n}s</button>`).join('')}</div>
             <input id="lessonSeconds" name="seconds" type="number" min="5" max="120" value="${config.seconds||15}" required inputmode="numeric" aria-describedby="secondsHelp">
             <small id="secondsHelp">${t('Chọn nhanh hoặc nhập từ 5–120 giây.','Pick above or enter 5–120 seconds.')}</small>
           </div>

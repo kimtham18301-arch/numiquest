@@ -707,6 +707,20 @@ test('v2.10.0: all Grade 1-5 deep exam topics, multi-topic synthesis, and Column
   }
   assert.equal(seen.size, combo.length, `Multi-topic synthesis should cover all 3 topics evenly in 3 draws, saw [${[...seen]}]`);
 
+  // 2b. Smart recommended count & timer presets adapt to Mental Math vs Column vs Knowledge Review
+  const fastTiming = ctx.getRecommendedTiming(3, ['g3_tables']);
+  assert.equal(fastTiming.count, 15);
+  assert.equal(fastTiming.seconds, 12);
+  const colTiming = ctx.getRecommendedTiming(4, ['g4_mul2']);
+  assert.equal(colTiming.count, 8);
+  assert.equal(colTiming.seconds, 50);
+  const wordTiming = ctx.getRecommendedTiming(5, ['g5_motion']);
+  assert.equal(wordTiming.count, 8);
+  assert.equal(wordTiming.seconds, 45);
+  const mixTiming = ctx.getRecommendedTiming(3, combo);
+  assert.equal(mixTiming.count, 12);
+  assert.equal(mixTiming.seconds, 45);
+
   // 3. Column Arithmetic parser ("Đặt tính rồi tính")
   const addCol = ctx.parseColumnArithmetic('47 + 38');
   assert.ok(addCol && addCol.op === '+' && addCol.expected === 85 && addCol.commaCol === -1);
