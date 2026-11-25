@@ -22,7 +22,7 @@
   <meta name="twitter:image" content="https://kimtham18301-arch.github.io/numiquest/og-image.png">
   <meta name="theme-color" content="#34765c">
   <title>NumiQuick · Luyện tính nhẩm vui</title>
-  <link rel="stylesheet" href="style.css?v=2.12.0">
+  <link rel="stylesheet" href="style.css?v=2.12.1">
   <link rel="manifest" href="manifest.json">
 </head>
 <body class="numi-booting">
@@ -79,30 +79,30 @@
 </div>
 <dialog id="modal"><div id="modalBody"></div><button id="closeModal" class="primary" data-vi="Tiếp tục" data-en="Continue"></button></dialog>
 <input id="restore" type="file" accept="application/json" hidden style="display:none">
-<script src="app.js?v=2.12.0"></script>
-<script src="milktea.js?v=2.12.0"></script>
-<script src="cloud-config.js?v=2.12.0"></script>
-<script src="cloud.js?v=2.12.0"></script>
-<script src="admin.js?v=2.12.0"></script>
-<script src="ui.js?v=2.12.0"></script>
-<script src="advanced.js?v=2.12.0"></script>
-<script src="refresh.js?v=2.12.0"></script>
-<script src="analytics.js?v=2.12.0"></script>
-<script src="review-exit.js?v=2.12.0"></script>
-<script src="adaptive-sprint.js?v=2.12.0"></script>
-<script src="pedagogy.js?v=2.12.0"></script>
-<script src="engagement.js?v=2.12.0"></script>
-<script src="admin-assignments.js?v=2.12.0"></script>
-<script src="admin-dashboard.js?v=2.12.0"></script>
-<script src="scratchpad-kbd.js?v=2.12.0"></script>
-<script src="teacher-classes.js?v=2.12.0"></script>
-<script src="teacher-auth-gate.js?v=2.12.0"></script>
-<script src="teacher-workspace.js?v=2.12.0"></script>
-<script src="teacher-integration.js?v=2.12.0"></script>
-<script src="cloud-classes.js?v=2.12.0"></script>
-<script src="curriculum-topics.js?v=2.12.0"></script>
-<script src="column-calc.js?v=2.12.0"></script>
-<script src="worksheet-pdf.js?v=2.12.0"></script>
+<script src="app.js?v=2.12.1"></script>
+<script src="milktea.js?v=2.12.1"></script>
+<script src="cloud-config.js?v=2.12.1"></script>
+<script src="cloud.js?v=2.12.1"></script>
+<script src="admin.js?v=2.12.1"></script>
+<script src="ui.js?v=2.12.1"></script>
+<script src="advanced.js?v=2.12.1"></script>
+<script src="refresh.js?v=2.12.1"></script>
+<script src="analytics.js?v=2.12.1"></script>
+<script src="review-exit.js?v=2.12.1"></script>
+<script src="adaptive-sprint.js?v=2.12.1"></script>
+<script src="pedagogy.js?v=2.12.1"></script>
+<script src="engagement.js?v=2.12.1"></script>
+<script src="admin-assignments.js?v=2.12.1"></script>
+<script src="admin-dashboard.js?v=2.12.1"></script>
+<script src="scratchpad-kbd.js?v=2.12.1"></script>
+<script src="teacher-classes.js?v=2.12.1"></script>
+<script src="teacher-auth-gate.js?v=2.12.1"></script>
+<script src="teacher-workspace.js?v=2.12.1"></script>
+<script src="teacher-integration.js?v=2.12.1"></script>
+<script src="cloud-classes.js?v=2.12.1"></script>
+<script src="curriculum-topics.js?v=2.12.1"></script>
+<script src="column-calc.js?v=2.12.1"></script>
+<script src="worksheet-pdf.js?v=2.12.1"></script>
 <script>document.body.classList.remove('numi-booting');</script>
 <script>
 if('serviceWorker' in navigator){
@@ -110,9 +110,9 @@ if('serviceWorker' in navigator){
     try{
       if(window.caches){
         const keys=await caches.keys();
-        await Promise.all(keys.filter(k=>k!=='numiquick-v2.12.0').map(k=>caches.delete(k)));
+        await Promise.all(keys.filter(k=>k!=='numiquick-v2.12.1').map(k=>caches.delete(k)));
       }
-      navigator.serviceWorker.register('./sw.js?v=2.12.0').then(r=>r.update()).catch(()=>{});
+      navigator.serviceWorker.register('./sw.js?v=2.12.1').then(r=>r.update()).catch(()=>{});
     }catch{}
   });
 }

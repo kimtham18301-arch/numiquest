@@ -1,4 +1,4 @@
-// Printable A4 Worksheet & Exam Composer with Column Arithmetic Grids & Answer Key PDF (v2.12.0)
+// Printable A4 Worksheet & Exam Composer — Separate Student Sheet (No Answers) & Answer Key Sheet (With Answers) (v2.12.1)
 (() => {
   'use strict';
 
@@ -7,7 +7,7 @@
     topics: [],
     count: 10,
     format: 'mixed', // 'mixed' | 'essay' | 'mcq'
-    includeAnswerKey: true,
+    previewTab: 'exam', // 'exam' (no answers) | 'answers' (with answers)
     title: '',
     subtitle: '',
     durationMin: 20,
@@ -24,7 +24,7 @@
     return t(`ĐỀ ÔN TẬP TỔNG HỢP TOÁN LỚP ${g}`, `GRADE ${g} COMPREHENSIVE MATH WORKSHEET`);
   }
 
-  function makeSingleWorksheetQuestion(grade, topics, forceFormat) {
+  function makeSingleWorksheetQuestion(grade, topics) {
     const g = Number(grade) || 1;
     const gDef = (typeof NUMI_GRADES !== 'undefined' && NUMI_GRADES[g]) ? NUMI_GRADES[g] : { ops: ['+', '-'], types: ['natural'], digits: [1, 2] };
     const cleanTopics = Array.isArray(topics) ? topics.filter(id => id && id !== 'all') : [];
@@ -45,8 +45,7 @@
     const colSpec = typeof parseColumnArithmetic === 'function' ? parseColumnArithmetic(q.q) : null;
     return {
       ...q,
-      colSpec: (colSpec && (colSpec.hasDec || colSpec.totalCols >= 2 || g <= 5)) ? colSpec : null,
-      forceFormat: forceFormat || null
+      colSpec: (colSpec && (colSpec.hasDec || colSpec.totalCols >= 2 || g <= 5)) ? colSpec : null
     };
   }
 
@@ -79,8 +78,19 @@
     return out;
   }
 
-  function renderPrintableColumnGrid(spec) {
+  function buildExpectedColumnCells(spec) {
+    const intCount = spec.commaCol >= 0 ? spec.commaCol : spec.totalCols;
+    if (spec.commaCol >= 0) {
+      const formatted = Number(spec.expected).toFixed(spec.decLen).replace('.', ',');
+      const [intR, decR = ''] = formatted.split(',');
+      return [...intR.padStart(intCount, ' ').split(''), ',', ...decR.padEnd(spec.decLen, '0').split('')];
+    }
+    return String(Math.round(spec.expected)).padStart(spec.totalCols, ' ').split('');
+  }
+
+  function renderPrintableColumnGrid(spec, withAnswers = false) {
     const headers = buildPrintPlaceHeaders(spec);
+    const ansRowChars = withAnswers ? buildExpectedColumnCells(spec) : null;
     return `<table class="ws-col-tbl">
       <thead>
         <tr>
@@ -103,7 +113,14 @@
         </tr>
         <tr class="ws-ans-r">
           <td class="ws-op-c ws-op-sym">=</td>
-          ${headers.map((_, c) => `<td class="${c === spec.commaCol ? 'ws-cm ws-cm-g' : 'ws-blank'}">${c === spec.commaCol ? ',' : '&nbsp;'}</td>`).join('')}
+          ${headers.map((_, c) => {
+            if (c === spec.commaCol) return '<td class="ws-cm ws-cm-g">,</td>';
+            if (withAnswers && ansRowChars) {
+              const ch = ansRowChars[c];
+              return `<td class="ws-filled-ans">${ch === ' ' ? '&nbsp;' : esc(ch)}</td>`;
+            }
+            return '<td class="ws-blank">&nbsp;</td>';
+          }).join('')}
         </tr>
       </tbody>
     </table>`;
@@ -114,7 +131,15 @@
     return (s.includes('?') || s.includes('=')) ? esc(s) : `${esc(s)} = ?`;
   }
 
-  function buildWorksheetSheetHTML(stateObj, interactivePreview = false) {
+  function isOptCorrect(opt, answer) {
+    if (typeof isAnswerMatch === 'function') return isAnswerMatch(opt, answer);
+    return String(opt).trim() === String(answer).trim();
+  }
+
+  // Build either the Student Worksheet (withAnswers = false) OR the Graded Answer Key Sheet (withAnswers = true)
+  function buildWorksheetSheetHTML(stateObj, options = {}) {
+    const withAnswers = Boolean(typeof options === 'boolean' ? false : options.withAnswers);
+    const interactivePreview = Boolean(typeof options === 'boolean' ? options : options.interactivePreview);
     const qs = stateObj.questions || [];
     const g = Number(stateObj.grade) || 1;
     const title = (stateObj.title || defaultTitleFor(g, stateObj.topics)).trim();
@@ -125,21 +150,49 @@
       ? `<button type="button" class="ws-swap-btn no-print" data-ws-swap="${idx}" title="${t('Đổi câu khác', 'Swap this question')}">↻</button>`
       : '';
 
+    const renderMcqCard = (q, i) => `<div class="ws-q-box ${withAnswers ? 'is-ans-box' : ''}">
+      <div class="ws-q-head">
+        <span class="ws-q-num">${t('Câu', 'Q')} ${i + 1}.</span>
+        <span class="ws-q-text">${formatPromptPlain(q.q)}</span>
+        ${renderSwapBtn(i)}
+      </div>
+      <div class="ws-mcq-opts">
+        ${(q.options || []).map((opt, oi) => {
+          const hit = withAnswers && isOptCorrect(opt, q.answer);
+          return `<span class="${hit ? 'ws-opt-hit' : ''}"><b>${'ABCD'[oi]}.</b> ${esc(String(opt))}${hit ? ' ✓' : ''}</span>`;
+        }).join('')}
+      </div>
+      ${withAnswers && q.explanation ? `<div class="ws-inline-sol">💡 ${esc(String(q.explanation).replace(/\n/g, ' · '))}</div>` : ''}
+    </div>`;
+
+    const renderColCard = (q, i) => `<div class="ws-col-card ${withAnswers ? 'is-ans-box' : ''}">
+      <div class="ws-q-head">
+        <span class="ws-q-num">${t('Câu', 'Q')} ${i + 1}.</span>
+        <span class="ws-q-text">${formatPromptPlain(q.q)}</span>
+        ${renderSwapBtn(i)}
+      </div>
+      ${renderPrintableColumnGrid(q.colSpec, withAnswers)}
+      ${withAnswers ? `<div class="ws-col-sol-tag">${t('Đáp án:', 'Ans:')} <b>${esc(String(q.answer))}</b></div>` : ''}
+    </div>`;
+
+    const renderEssayItem = (q, i) => `<div class="ws-essay-item ${withAnswers ? 'is-ans-box' : ''}">
+      <div class="ws-q-head">
+        <span class="ws-q-num">${t('Câu', 'Q')} ${i + 1}.</span>
+        <span class="ws-q-text">${formatPromptPlain(q.q)}</span>
+        ${renderSwapBtn(i)}
+      </div>
+      ${withAnswers
+        ? `<div class="ws-essay-sol"><b>✓ ${t('Đáp án:', 'Answer:')} ${esc(String(q.answer))}</b>${q.explanation ? ` — <span>${esc(String(q.explanation).replace(/\n/g, ' · '))}</span>` : ''}</div>`
+        : `<div class="ws-write-lines">
+            <span>${t('Bài làm / Trả lời:', 'Answer:')} ..................................................................................................................</span>
+            ${String(q.q || '').length > 28 ? '<span>......................................................................................................................................</span>' : ''}
+          </div>`}
+    </div>`;
+
     let bodyHtml = '';
     if (stateObj.format === 'mcq') {
       bodyHtml = `<div class="ws-section-title">${t('PHẦN TRẮC NGHIỆM (Khoanh tròn vào chữ cái đặt trước câu trả lời đúng)', 'MULTIPLE CHOICE (Circle the correct letter)')}</div>
-        <div class="ws-mcq-grid">
-          ${qs.map((q, i) => `<div class="ws-q-box">
-            <div class="ws-q-head">
-              <span class="ws-q-num">${t('Câu', 'Q')} ${i + 1}.</span>
-              <span class="ws-q-text">${formatPromptPlain(q.q)}</span>
-              ${renderSwapBtn(i)}
-            </div>
-            <div class="ws-mcq-opts">
-              ${(q.options || []).map((opt, oi) => `<span><b>${'ABCD'[oi]}.</b> ${esc(String(opt))}</span>`).join('')}
-            </div>
-          </div>`).join('')}
-        </div>`;
+        <div class="ws-mcq-grid">${qs.map((q, i) => renderMcqCard(q, i)).join('')}</div>`;
     } else if (stateObj.format === 'essay') {
       const colItems = [];
       const textItems = [];
@@ -149,35 +202,13 @@
       });
       if (colItems.length) {
         bodyHtml += `<div class="ws-section-title">${t('PHẦN I. ĐẶT TÍNH RỒI TÍNH', 'PART I. COLUMN ARITHMETIC')}</div>
-          <div class="ws-col-grid">
-            ${colItems.map(({ q, i }) => `<div class="ws-col-card">
-              <div class="ws-q-head">
-                <span class="ws-q-num">${t('Câu', 'Q')} ${i + 1}.</span>
-                <span class="ws-q-text">${formatPromptPlain(q.q)}</span>
-                ${renderSwapBtn(i)}
-              </div>
-              ${renderPrintableColumnGrid(q.colSpec)}
-            </div>`).join('')}
-          </div>`;
+          <div class="ws-col-grid">${colItems.map(({ q, i }) => renderColCard(q, i)).join('')}</div>`;
       }
       if (textItems.length) {
         bodyHtml += `<div class="ws-section-title">${colItems.length ? t('PHẦN II. TÍNH NHẨM & TỰ LUẬN', 'PART II. MENTAL MATH & WORD PROBLEMS') : t('BÀI TẬP TỰ LUẬN', 'WRITTEN EXERCISES')}</div>
-          <div class="ws-essay-list">
-            ${textItems.map(({ q, i }) => `<div class="ws-essay-item">
-              <div class="ws-q-head">
-                <span class="ws-q-num">${t('Câu', 'Q')} ${i + 1}.</span>
-                <span class="ws-q-text">${formatPromptPlain(q.q)}</span>
-                ${renderSwapBtn(i)}
-              </div>
-              <div class="ws-write-lines">
-                <span>${t('Bài làm / Trả lời:', 'Answer:')} ..................................................................................................................</span>
-                ${String(q.q || '').length > 28 ? '<span>......................................................................................................................................</span>' : ''}
-              </div>
-            </div>`).join('')}
-          </div>`;
+          <div class="ws-essay-list">${textItems.map(({ q, i }) => renderEssayItem(q, i)).join('')}</div>`;
       }
     } else {
-      // 'mixed': Part I (MCQ — non-column questions up to half) + Part II (Column arithmetic grids + written essay)
       const part2 = [];
       const part1 = [];
       const half = Math.ceil(qs.length / 2);
@@ -188,101 +219,53 @@
       });
       if (part1.length) {
         bodyHtml += `<div class="ws-section-title">${t('PHẦN I. TRẮC NGHIỆM (Khoanh tròn vào chữ cái trước đáp án đúng)', 'PART I. MULTIPLE CHOICE')}</div>
-          <div class="ws-mcq-grid">
-            ${part1.map(({ q, i }) => `<div class="ws-q-box">
-              <div class="ws-q-head">
-                <span class="ws-q-num">${t('Câu', 'Q')} ${i + 1}.</span>
-                <span class="ws-q-text">${formatPromptPlain(q.q)}</span>
-                ${renderSwapBtn(i)}
-              </div>
-              <div class="ws-mcq-opts">
-                ${(q.options || []).map((opt, oi) => `<span><b>${'ABCD'[oi]}.</b> ${esc(String(opt))}</span>`).join('')}
-              </div>
-            </div>`).join('')}
-          </div>`;
+          <div class="ws-mcq-grid">${part1.map(({ q, i }) => renderMcqCard(q, i)).join('')}</div>`;
       }
       if (part2.length) {
         const colPart = part2.filter(x => x.q.colSpec);
         const essayPart = part2.filter(x => !x.q.colSpec);
         bodyHtml += `<div class="ws-section-title">${t('PHẦN II. ĐẶT TÍNH RỒI TÍNH & TỰ LUẬN', 'PART II. COLUMN ARITHMETIC & WRITTEN')}</div>`;
         if (colPart.length) {
-          bodyHtml += `<div class="ws-col-grid">
-            ${colPart.map(({ q, i }) => `<div class="ws-col-card">
-              <div class="ws-q-head">
-                <span class="ws-q-num">${t('Câu', 'Q')} ${i + 1}.</span>
-                <span class="ws-q-text">${formatPromptPlain(q.q)}</span>
-                ${renderSwapBtn(i)}
-              </div>
-              ${renderPrintableColumnGrid(q.colSpec)}
-            </div>`).join('')}
-          </div>`;
+          bodyHtml += `<div class="ws-col-grid">${colPart.map(({ q, i }) => renderColCard(q, i)).join('')}</div>`;
         }
         if (essayPart.length) {
-          bodyHtml += `<div class="ws-essay-list">
-            ${essayPart.map(({ q, i }) => `<div class="ws-essay-item">
-              <div class="ws-q-head">
-                <span class="ws-q-num">${t('Câu', 'Q')} ${i + 1}.</span>
-                <span class="ws-q-text">${formatPromptPlain(q.q)}</span>
-                ${renderSwapBtn(i)}
-              </div>
-              <div class="ws-write-lines">
-                <span>${t('Bài làm / Trả lời:', 'Answer:')} ..................................................................................................................</span>
-              </div>
-            </div>`).join('')}
-          </div>`;
+          bodyHtml += `<div class="ws-essay-list">${essayPart.map(({ q, i }) => renderEssayItem(q, i)).join('')}</div>`;
         }
       }
     }
 
-    const answerKeyHtml = stateObj.includeAnswerKey ? `
-      <div class="ws-answer-page">
-        <div class="ws-ans-head">
-          <strong>${t('ĐÁP ÁN & HƯỚNG DẪN CHẤM', 'ANSWER KEY & SOLUTIONS')}</strong>
-          <span>${esc(title)} · ${t('Mã đề', 'Code')}: ${esc(stateObj.examCode)}</span>
+    const quickKeyTable = withAnswers ? `
+      <div class="ws-quick-key-wrap">
+        <div class="ws-section-title">📋 ${t('BẢNG TRA ĐÁP ÁN NHANH (CHẤM BÀI)', 'QUICK ANSWER SUMMARY TABLE')}</div>
+        <div class="ws-quick-key-grid">
+          ${qs.map((q, i) => `<div class="ws-qk-cell"><small>${t('Câu', 'Q')} ${i + 1}</small><b>${esc(String(q.answer))}</b></div>`).join('')}
         </div>
-        <table class="ws-ans-table">
-          <thead>
-            <tr>
-              <th style="width:58px">${t('Câu', 'Q')}</th>
-              <th style="width:28%">${t('Đề bài', 'Question')}</th>
-              <th style="width:16%">${t('Đáp án', 'Answer')}</th>
-              <th>${t('Hướng dẫn giải nhanh', 'Explanation')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${qs.map((q, i) => `<tr>
-              <td style="text-align:center;font-weight:800">${i + 1}</td>
-              <td>${formatPromptPlain(q.q)}</td>
-              <td style="text-align:center;font-weight:900;color:#1b5a3c">${esc(String(q.answer))}</td>
-              <td>${esc(String(q.explanation || '').replace(/\n/g, ' · '))}</td>
-            </tr>`).join('')}
-          </tbody>
-        </table>
       </div>
     ` : '';
 
     return `
-      <div class="ws-a4-paper">
+      <div class="ws-a4-paper ${withAnswers ? 'ws-paper-answers' : 'ws-paper-exam'}">
         <div class="ws-header">
           <div class="ws-hdr-left">
-            <div class="ws-brand">NUMIQUICK · ${t('PHIẾU ĐỀ ÔN TẬP', 'MATH WORKSHEET')}</div>
+            <div class="ws-brand">NUMIQUICK · ${withAnswers ? t('BẢN ĐÁP ÁN & HƯỚNG DẪN CHẤM', 'ANSWER KEY & SOLUTIONS') : t('PHIẾU ĐỀ BÀI (KHÔNG ĐÁP ÁN)', 'STUDENT WORKSHEET')}</div>
             <div class="ws-sub">${esc(subtitle)}</div>
             <div class="ws-meta-line">${t('Ngày:', 'Date:')} ${today} · ${t('Mã đề:', 'Code:')} <b>${esc(stateObj.examCode)}</b> · ${t('Thời gian:', 'Time:')} <b>${stateObj.durationMin} ${t('phút', 'min')}</b></div>
           </div>
           <div class="ws-hdr-right">
-            <div>${t('Họ và tên:', 'Full name:')} ........................................</div>
-            <div>${t('Lớp:', 'Class:')} .................. &nbsp; ${t('Điểm:', 'Score:')} ..............</div>
+            ${withAnswers
+              ? `<div class="ws-ans-stamp">✅ ${t('BẢN CÓ ĐÁP ÁN', 'WITH ANSWERS')}</div><div style="font-size:11.5px;color:#4b5563">${t('Dành cho Giáo viên / Phụ huynh chấm bài', 'For Teacher / Parent grading')}</div>`
+              : `<div>${t('Họ và tên:', 'Full name:')} ........................................</div><div>${t('Lớp:', 'Class:')} .................. &nbsp; ${t('Điểm:', 'Score:')} ..............</div>`}
           </div>
         </div>
-        <h2 class="ws-main-title">${esc(title)}</h2>
+        <h2 class="ws-main-title">${esc(title)}${withAnswers ? ` — ${t('ĐÁP ÁN', 'KEY')}` : ''}</h2>
         ${bodyHtml}
-        <div class="ws-footer-note">${t('— Hết — Chúc em làm bài thật cẩn thận và đạt điểm cao!', '— End — Good luck!')}</div>
+        ${quickKeyTable}
+        <div class="ws-footer-note">${withAnswers ? t('— Hết bản Đáp án & Hướng dẫn chấm —', '— End of Answer Key —') : t('— Hết — Chúc em làm bài thật cẩn thận và đạt điểm cao!', '— End — Good luck!')}</div>
       </div>
-      ${answerKeyHtml}
     `;
   }
 
-  function printCurrentWorksheet() {
+  function printWorksheetSheet(withAnswers = false) {
     if (typeof document === 'undefined') return;
     let sheet = document.getElementById('numiPrintSheet');
     if (!sheet) {
@@ -291,7 +274,7 @@
       sheet.className = 'numi-print-sheet';
       document.body.append(sheet);
     }
-    sheet.innerHTML = buildWorksheetSheetHTML(wsState, false);
+    sheet.innerHTML = buildWorksheetSheetHTML(wsState, { withAnswers: Boolean(withAnswers), interactivePreview: false });
     if (typeof window !== 'undefined' && typeof window.print === 'function') {
       window.print();
     }
@@ -309,7 +292,7 @@
       topics: startTopics,
       count: [8, 10, 12, 15, 20].includes(startCount) ? startCount : 10,
       format: startGrade <= 5 ? 'mixed' : 'mcq',
-      includeAnswerKey: true,
+      previewTab: 'exam',
       title: defaultTitleFor(startGrade, startTopics),
       subtitle: t(`Môn: Toán · Lớp ${startGrade} (Chuẩn GDPT 2018)`, `Subject: Maths · Grade ${startGrade}`),
       durationMin: startGrade <= 2 ? 15 : 20,
@@ -321,16 +304,18 @@
     const renderComposerModal = () => {
       const topicList = (typeof NUMI_GRADE_TOPICS !== 'undefined' && NUMI_GRADE_TOPICS[wsState.grade]) || [];
       const isAllTopics = wsState.topics.length === 0;
+      const showAnswers = wsState.previewTab === 'answers';
 
       modal(`<div class="ws-composer">
         <div class="ws-comp-top">
           <div>
             <span class="eyebrow">NUMIQUICK · ${t('SOẠN ĐỀ & IN PHIẾU PDF (KHỔ A4)', 'A4 WORKSHEET & PDF COMPOSER')}</span>
-            <h2 style="margin:2px 0 0">🖨️ ${t('Soạn đề sẵn & Xuất file PDF', 'Compose Printable Worksheet PDF')}</h2>
+            <h2 style="margin:2px 0 0">🖨️ ${t('Soạn đề sẵn & In 2 bản PDF riêng biệt', 'Compose & Print Separate Exam & Key PDFs')}</h2>
           </div>
           <div class="ws-comp-actions">
             <button type="button" class="ws-btn-sec" id="wsRegenAllBtn">🔄 ${t('Đổi mã đề mới', 'New Version')}</button>
-            <button type="button" class="primary" id="wsPrintPdfBtn">🖨️ ${t('In / Lưu PDF (A4)', 'Print / Save PDF')}</button>
+            <button type="button" class="primary ws-btn-print-exam" id="wsPrintExamOnlyBtn">📄 ${t('In đề (Không đáp án)', 'Print Exam Only')}</button>
+            <button type="button" class="ws-btn-print-ans" id="wsPrintWithAnswersBtn">✅ ${t('In bản Có đáp án', 'Print Answer Key')}</button>
             <button type="button" class="ws-btn-sec" id="wsCloseModalBtn">✕</button>
           </div>
         </div>
@@ -359,10 +344,6 @@
           <label class="ws-title-field">${t('Tiêu đề phiếu đề', 'Worksheet Title')}
             <input type="text" id="wsTitleInput" value="${esc(wsState.title)}" maxlength="90">
           </label>
-          <label class="ws-check-lbl">
-            <input type="checkbox" id="wsAnsKeyCheck" ${wsState.includeAnswerKey ? 'checked' : ''}>
-            <span>${t('Kèm trang Đáp án & Lời giải (trang riêng)', 'Include Answer Key page')}</span>
-          </label>
         </div>
 
         <div class="ws-topic-strip">
@@ -375,10 +356,13 @@
           </div>
         </div>
 
-        <div class="ws-preview-tip">💡 ${t('Xem trước khổ giấy A4 bên dưới. Chạm nút <b>↻</b> ở bất kỳ câu nào để đổi riêng câu đó, sau đó bấm <b>In / Lưu PDF (A4)</b> rồi chọn <i>Lưu dưới dạng PDF</i>.', 'Preview your A4 sheet below. Click <b>↻</b> on any question to replace it, then click <b>Print / Save PDF</b>.')}</div>
+        <div class="ws-preview-tabs" id="wsPreviewTabs" role="tablist">
+          <button type="button" class="ws-tab-btn ${!showAnswers ? 'active' : ''}" id="wsTabExam" data-ws-tab="exam" role="tab" aria-selected="${!showAnswers}">📄 ${t('Bảng 1: Đề phát học sinh (Không đáp án)', 'Sheet 1: Student Exam (No Answers)')}</button>
+          <button type="button" class="ws-tab-btn ${showAnswers ? 'active' : ''}" id="wsTabAnswers" data-ws-tab="answers" role="tab" aria-selected="${showAnswers}">✅ ${t('Bảng 2: Bản Có đáp án & Lời giải (Chấm bài)', 'Sheet 2: Answer Key & Solutions')}</button>
+        </div>
 
         <div class="ws-preview-stage" id="wsPreviewStage">
-          ${buildWorksheetSheetHTML(wsState, true)}
+          ${buildWorksheetSheetHTML(wsState, { withAnswers: showAnswers, interactivePreview: true })}
         </div>
       </div>`);
 
@@ -401,8 +385,14 @@
 
       const refreshPreview = () => {
         const stage = $('#wsPreviewStage');
+        const isAns = wsState.previewTab === 'answers';
+        $$('[data-ws-tab]').forEach(tb => {
+          const on = tb.dataset.wsTab === wsState.previewTab;
+          tb.classList.toggle('active', on);
+          tb.setAttribute('aria-selected', String(on));
+        });
         if (stage) {
-          stage.innerHTML = buildWorksheetSheetHTML(wsState, true);
+          stage.innerHTML = buildWorksheetSheetHTML(wsState, { withAnswers: isAns, interactivePreview: true });
           bindSwapButtons();
         }
       };
@@ -421,12 +411,20 @@
       };
 
       $('#wsCloseModalBtn')?.addEventListener('click', closeClean);
-      $('#wsPrintPdfBtn')?.addEventListener('click', () => printCurrentWorksheet());
+      $('#wsPrintExamOnlyBtn')?.addEventListener('click', () => printWorksheetSheet(false));
+      $('#wsPrintWithAnswersBtn')?.addEventListener('click', () => printWorksheetSheet(true));
       $('#wsRegenAllBtn')?.addEventListener('click', () => {
         const curNum = parseInt(wsState.examCode, 10) || 1;
         wsState.examCode = String((curNum % 99) + 1).padStart(2, '0');
         wsState.questions = generateWorksheetQuestions(wsState.grade, wsState.topics, wsState.count);
         refreshPreview();
+      });
+
+      $$('[data-ws-tab]').forEach(tb => {
+        tb.onclick = () => {
+          wsState.previewTab = tb.dataset.wsTab === 'answers' ? 'answers' : 'exam';
+          refreshPreview();
+        };
       });
 
       $('#wsGradeSel')?.addEventListener('change', e => {
@@ -456,11 +454,6 @@
 
       $('#wsTitleInput')?.addEventListener('input', e => {
         wsState.title = e.target.value;
-        refreshPreview();
-      });
-
-      $('#wsAnsKeyCheck')?.addEventListener('change', e => {
-        wsState.includeAnswerKey = Boolean(e.target.checked);
         refreshPreview();
       });
 
@@ -563,31 +556,38 @@
       body.dark-mode .ws-launch-btn{background:#182e22!important;border-color:#325c44!important;color:#a9e5c3!important}
       body.dark-mode .ws-tch-pdf-btn{background:#1a3325!important;border-color:#35664b!important;color:#a9e5c3!important}
 
-      dialog#modal.ws-wide-modal{width:min(96vw,980px)!important;max-width:980px!important;max-height:92vh!important;padding:16px 20px!important;overflow-y:auto!important}
-      .ws-composer{display:grid;gap:12px}
+      dialog#modal.ws-wide-modal{width:min(96vw,1000px)!important;max-width:1000px!important;max-height:92vh!important;padding:16px 20px!important;overflow-y:auto!important}
+      .ws-composer{display:grid;gap:11px}
       .ws-comp-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;border-bottom:1.5px solid #e2eee0;padding-bottom:10px}
-      .ws-comp-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-      .ws-btn-sec{min-height:38px!important;padding:6px 12px!important;border-radius:10px!important;border:1.5px solid #cfe0cc!important;background:#fff!important;color:#274c36!important;font-weight:800!important;font-size:13px!important;cursor:pointer}
-      .ws-controls-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;background:#f6faf4;border:1.5px solid #dfebd9;border-radius:14px;padding:10px 12px}
+      .ws-comp-actions{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+      .ws-btn-sec{min-height:38px!important;padding:6px 11px!important;border-radius:10px!important;border:1.5px solid #cfe0cc!important;background:#fff!important;color:#274c36!important;font-weight:800!important;font-size:13px!important;cursor:pointer}
+      .ws-btn-print-exam{min-height:38px!important;padding:6px 13px!important;border-radius:10px!important;font-size:13px!important}
+      .ws-btn-print-ans{min-height:38px!important;padding:6px 13px!important;border-radius:10px!important;border:1.5px solid #22734d!important;background:#1f6a47!important;color:#ffffff!important;font-weight:800!important;font-size:13px!important;cursor:pointer}
+      .ws-btn-print-ans:hover{background:#185538!important;color:#ffffff!important}
+      .ws-controls-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;background:#f6faf4;border:1.5px solid #dfebd9;border-radius:14px;padding:10px 12px}
       .ws-controls-bar label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:800;color:#2d523c;margin:0}
       .ws-controls-bar select,.ws-controls-bar input[type=text],.ws-controls-bar input[type=number]{min-height:36px!important;padding:5px 10px!important;border-radius:9px!important;border:1.5px solid #c9dec4!important;font-size:13px!important;background:#fff!important;color:#1f3d2d!important}
       .ws-title-field{grid-column:span 2}
-      .ws-check-lbl{flex-direction:row!important;align-items:center!important;gap:8px!important;grid-column:1/-1;cursor:pointer;padding-top:2px}
       .ws-topic-strip{display:grid;gap:6px}
       .ws-topic-strip-lbl{font-size:12px;font-weight:800;color:#2d523c}
       .ws-topic-pills{display:flex;flex-wrap:wrap;gap:5px}
       .ws-tp-pill{min-height:28px!important;padding:4px 10px!important;border-radius:999px!important;border:1.5px solid #d1e2cb!important;background:#f8fcf6!important;color:#2c4d39!important;font-size:12px!important;font-weight:700!important;cursor:pointer}
       .ws-tp-pill.active,.ws-tp-pill.active:hover{background:#2d6a51!important;border-color:#1d4e39!important;color:#fff!important}
-      .ws-preview-tip{font-size:12px;color:#4a6b56;background:#eef7ee;border-radius:10px;padding:7px 12px}
+
+      .ws-preview-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#edf4eb;padding:5px;border-radius:12px}
+      .ws-tab-btn{min-height:38px!important;padding:6px 12px!important;border-radius:9px!important;border:1.5px solid transparent!important;background:transparent!important;color:#355943!important;font-size:13px!important;font-weight:800!important;cursor:pointer}
+      .ws-tab-btn.active,.ws-tab-btn.active:hover{background:#ffffff!important;border-color:#b8d7be!important;color:#174f34!important;box-shadow:0 2px 6px rgba(24,78,50,.1)}
+
       .ws-preview-stage{background:#e7eee8;border-radius:14px;padding:16px;max-height:54vh;overflow-y:auto;display:grid;gap:16px}
 
       /* ===== A4 Worksheet Paper Styling (both preview and @media print) ===== */
-      .ws-a4-paper,.ws-answer-page{background:#ffffff;color:#111827;border:1px solid #d4ded6;border-radius:8px;padding:20px 24px;box-shadow:0 4px 16px rgba(0,0,0,.06);font-family:'Nunito',Arial,sans-serif;line-height:1.45}
+      .ws-a4-paper{background:#ffffff;color:#111827;border:1px solid #d4ded6;border-radius:8px;padding:20px 24px;box-shadow:0 4px 16px rgba(0,0,0,.06);font-family:'Nunito',Arial,sans-serif;line-height:1.45}
       .ws-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;border-bottom:2px solid #224d36;padding-bottom:10px;margin-bottom:12px;font-size:12.5px}
       .ws-brand{font-weight:900;color:#1e563a;font-size:13px;letter-spacing:.03em}
       .ws-sub{font-weight:700;color:#374151;margin-top:2px}
       .ws-meta-line{color:#4b5563;margin-top:2px;font-size:12px}
       .ws-hdr-right{text-align:right;display:grid;gap:4px;font-weight:700;color:#1f2937;white-space:nowrap}
+      .ws-ans-stamp{display:inline-block;padding:3px 10px;border-radius:999px;background:#e5f7ec;border:1.5px solid #2e8b57;color:#145c36;font-weight:900;font-size:12px}
       .ws-main-title{text-align:center;font-size:18px;font-weight:900;color:#163d28;margin:4px 0 14px;text-transform:uppercase}
       .ws-section-title{font-size:13.5px;font-weight:900;color:#1b4d33;margin:12px 0 8px;padding:4px 10px;background:#eef6ef;border-left:4px solid #2b6a50;border-radius:4px}
       .ws-mcq-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 14px}
@@ -597,6 +597,8 @@
       .ws-q-text{font-weight:800;color:#111827;flex:1}
       .ws-swap-btn{min-height:22px!important;width:24px!important;height:22px!important;padding:0!important;border-radius:6px!important;border:1px solid #cdddc9!important;background:#f4faf3!important;color:#2b6346!important;font-size:13px!important;font-weight:800!important;cursor:pointer;flex-shrink:0}
       .ws-mcq-opts{display:grid;grid-template-columns:repeat(2,1fr);gap:4px 10px;font-size:13px;color:#1f2937}
+      .ws-opt-hit{background:#e4f7ea;color:#115e35;font-weight:900;border:1.5px solid #2e8b57;border-radius:6px;padding:1px 6px}
+      .ws-inline-sol{margin-top:5px;padding-top:4px;border-top:1px dashed #d3e5d7;font-size:11.5px;color:#2e5b42}
       .ws-col-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
       .ws-col-card{border:1px solid #d5e2d6;border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;align-items:center;break-inside:avoid}
       .ws-col-card .ws-q-head{width:100%}
@@ -610,23 +612,25 @@
       .ws-col-tbl .ws-cm{width:14px!important;background:#fff5e6}
       .ws-col-tbl .ws-cm-g{color:#c2410c;font-weight:900}
       .ws-col-tbl .ws-ans-r td{border-top:2.4px solid #1b4b32!important;height:28px;background:#ffffff}
+      .ws-col-tbl .ws-filled-ans{background:#e7f8ec!important;color:#125c35!important;font-weight:900!important}
+      .ws-col-sol-tag{margin-top:5px;font-size:12px;color:#145c36;background:#eaf8ee;padding:2px 8px;border-radius:999px}
       .ws-essay-list{display:grid;gap:10px}
       .ws-essay-item{border:1px solid #dce6dd;border-radius:8px;padding:8px 12px;break-inside:avoid}
       .ws-write-lines{display:grid;gap:8px;margin-top:6px;font-size:12.5px;color:#6b7280}
+      .ws-essay-sol{margin-top:5px;padding:5px 9px;border-radius:6px;background:#ebf8ef;border-left:3px solid #267d50;font-size:12.5px;color:#154c30}
+      .ws-quick-key-wrap{margin-top:14px;break-inside:avoid}
+      .ws-quick-key-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px}
+      .ws-qk-cell{border:1px solid #c6dccb;border-radius:7px;padding:5px 6px;text-align:center;background:#f7fcf8;display:flex;flex-direction:column;gap:2px}
+      .ws-qk-cell small{font-size:10.5px;color:#4f6f5b;font-weight:700}
+      .ws-qk-cell b{font-size:13.5px;color:#145a35;font-weight:900}
       .ws-footer-note{text-align:center;font-size:12px;font-style:italic;color:#4b5563;margin-top:14px;padding-top:8px;border-top:1px dashed #cbd5cc}
-
-      .ws-ans-head{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #224d36;padding-bottom:8px;margin-bottom:10px;font-size:13px;color:#1a4c32}
-      .ws-ans-table{width:100%;border-collapse:collapse;font-size:12.5px}
-      .ws-ans-table th,.ws-ans-table td{border:1px solid #c6d6c9;padding:5px 8px;text-align:left;vertical-align:top}
-      .ws-ans-table th{background:#eef6ef;color:#1b4d33;font-weight:800}
 
       .numi-print-sheet{display:none}
       @media print {
         @page { size: A4 portrait; margin: 12mm; }
         body > *:not(#numiPrintSheet) { display: none !important; }
         #numiPrintSheet { display: block !important; background: #fff !important; }
-        #numiPrintSheet .ws-a4-paper,
-        #numiPrintSheet .ws-answer-page {
+        #numiPrintSheet .ws-a4-paper {
           border: none !important;
           box-shadow: none !important;
           border-radius: 0 !important;
@@ -634,11 +638,10 @@
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }
-        #numiPrintSheet .ws-answer-page { page-break-before: always; break-before: page; }
         .no-print { display: none !important; }
       }
       @media (max-width: 720px) {
-        .ws-mcq-grid,.ws-col-grid{grid-template-columns:1fr}
+        .ws-mcq-grid,.ws-col-grid,.ws-preview-tabs{grid-template-columns:1fr}
         .ws-title-field{grid-column:span 1}
         .ws-header{flex-direction:column}
         .ws-hdr-right{text-align:left}
@@ -647,7 +650,7 @@
     document.head.append(style);
   }
 
-  const exp = { openWorksheetComposer, generateWorksheetQuestions, buildWorksheetSheetHTML };
+  const exp = { openWorksheetComposer, generateWorksheetQuestions, buildWorksheetSheetHTML, printWorksheetSheet };
   if (typeof window !== 'undefined') Object.assign(window, exp);
   if (typeof global !== 'undefined') Object.assign(global, exp);
 })();
