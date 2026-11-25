@@ -456,6 +456,22 @@
       };
     }
 
+    // Quick Formula / Knowledge Sheet pill button during quiz
+    if (typeof window !== 'undefined' && typeof window.openKnowledgeModal === 'function') {
+      const khBtn = document.createElement('button');
+      khBtn.type = 'button';
+      khBtn.id = 'quizFormulaBtn';
+      khBtn.className = 'quiz-pill-btn';
+      khBtn.innerHTML = `📖 <span>${t('Công thức', 'Formulas')}</span>`;
+      khBtn.title = t('Xem nhanh công thức & phương pháp giải của lớp đang học', 'Quick formula & method reference');
+      khBtn.onclick = () => {
+        const gCur = Number(q.config?.grade || (typeof config !== 'undefined' && config.grade !== 'custom' ? config.grade : 0)) || 6;
+        const domCur = q.domain === 'geometry' ? 'geometry' : (q.domain === 'number' && gCur >= 6 ? 'number' : 'all');
+        window.openKnowledgeModal(gCur, domCur);
+      };
+      utilBar.append(khBtn);
+    }
+
     // Quick Answer Mode Switcher pill: Trắc nghiệm ↔ Tự luận (Gõ phím / Bấm số)
     const type = (q.skill || '').split(':')[0];
     if (session.kind !== 'battle' && type !== 'remainder') {
@@ -464,9 +480,10 @@
       modeBtn.id = 'quizModeSwitchBtn';
       modeBtn.className = 'quiz-pill-btn';
       const isNumpad = config.inputMode === 'numpad';
+      const gCur = Number(q.config?.grade || (typeof config !== 'undefined' && config.grade !== 'custom' ? config.grade : 0)) || 0;
       modeBtn.innerHTML = isNumpad
         ? `☑️ <span>${t('Đổi sang Trắc nghiệm', 'Switch to Choices')}</span>`
-        : `⌨️ <span>${t('Tự luận (Gõ/Bấm số)', 'Free Input')}</span>`;
+        : `⌨️ <span>${gCur >= 6 ? t('Tự luận (Không giới hạn giờ)', 'Free Input (Untimed)') : t('Tự luận (Gõ/Bấm số)', 'Free Input')}</span>`;
       modeBtn.title = t('Chuyển đổi nhanh giữa Trắc nghiệm và Tự luận', 'Toggle Multiple Choice / Free Input');
       modeBtn.onclick = () => {
         if (session.answered) return;
@@ -479,13 +496,34 @@
     }
 
     const qEl = mainCol.querySelector('.question');
-    if (qEl) qEl.before(utilBar);
-    else mainCol.prepend(utilBar);
+    if (qEl) {
+      qEl.before(utilBar);
+      // If question has a prose length > 42 (word problems / geometry solutions), use readable prose styling
+      if (String(q.q || '').length > 42) qEl.classList.add('question-prose');
+      // Render inline Geometry diagram right below question prompt when available
+      if (q.visualKind && typeof window !== 'undefined' && typeof window.buildGeometryVisualSvg === 'function' && !mainCol.querySelector('.quiz-inline-geom')) {
+        const svgMarkup = window.buildGeometryVisualSvg(q);
+        if (svgMarkup) {
+          const geomWrap = document.createElement('div');
+          geomWrap.className = 'quiz-inline-geom';
+          geomWrap.innerHTML = svgMarkup;
+          qEl.after(geomWrap);
+        }
+      }
+    } else {
+      mainCol.prepend(utilBar);
+    }
 
-    // Show compact exam-format topic pill inside companion row (zero extra height!)
-    if (q.topicLabel) {
-      const comp = mainCol.querySelector('.quiz-companion');
-      if (comp && !comp.querySelector('.quiz-topic-badge')) {
+    // Show compact cognitive tier badge + exam-format topic pill inside companion row
+    const comp = mainCol.querySelector('.quiz-companion');
+    if (comp) {
+      if (q.difficultyLabel && !comp.querySelector('.quiz-diff-badge')) {
+        const db = document.createElement('span');
+        db.className = `quiz-diff-badge is-${q.difficulty || 'easy'}`;
+        db.textContent = q.difficultyLabel;
+        comp.append(db);
+      }
+      if (q.topicLabel && !comp.querySelector('.quiz-topic-badge')) {
         const b = document.createElement('span');
         b.className = 'quiz-topic-badge';
         b.textContent = q.topicLabel;
@@ -725,6 +763,51 @@
       }
       body[data-view="quiz"] .question.question-compact {
         font-size: clamp(19px, 2.8vw, 30px) !important;
+      }
+      body[data-view="quiz"] .question.question-prose {
+        font-size: clamp(16px, 2.1vw, 22px) !important;
+        line-height: 1.45 !important;
+        font-weight: 800 !important;
+        padding: 4px 8px !important;
+      }
+      .timer.timer-untimed {
+        font-size: 12.5px !important;
+        padding: 4px 10px !important;
+        border-radius: 999px !important;
+        background: #eaf5ee !important;
+        border: 1px solid #bcdbc5 !important;
+        color: #1c5a3c !important;
+        white-space: nowrap !important;
+      }
+      body.dark-mode .timer.timer-untimed {
+        background: #1a3326 !important;
+        border-color: #2f5c44 !important;
+        color: #a7e8c3 !important;
+      }
+      .quiz-diff-badge {
+        margin-left: auto;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 11px !important;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+      .quiz-diff-badge + .quiz-topic-badge {
+        margin-left: 4px;
+      }
+      .quiz-diff-badge.is-easy { background: #e8f7ec; color: #166534; border: 1px solid #bbf7d0; }
+      .quiz-diff-badge.is-medium { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+      .quiz-diff-badge.is-hard { background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; }
+      body.dark-mode .quiz-diff-badge.is-easy { background: #143321; color: #86efac; border-color: #22543d; }
+      body.dark-mode .quiz-diff-badge.is-medium { background: #172a46; color: #93c5fd; border-color: #1e40af; }
+      body.dark-mode .quiz-diff-badge.is-hard { background: #3b2110; color: #fdba74; border-color: #7c2d12; }
+      .quiz-inline-geom .visual-math-box {
+        margin: 0 0 8px !important;
+        padding: 6px 10px !important;
+      }
+      .quiz-inline-geom .visual-math-svg {
+        max-height: 92px !important;
+        width: auto !important;
       }
       body[data-view="quiz"] .answers {
         gap: 10px !important;

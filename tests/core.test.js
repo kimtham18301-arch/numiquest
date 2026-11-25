@@ -849,3 +849,159 @@ test('v2.14.0: preset count picker splits questions evenly across chosen topics 
   const wsCounts = Object.values(wsQs.reduce((acc, q) => { acc[q.topicId] = (acc[q.topicId] || 0) + 1; return acc; }, {})).sort((a, b) => a - b);
   assert.deepEqual(wsCounts, [3, 3, 4], `Worksheet 10 questions across 3 topics must also split [3, 3, 4], got ${wsCounts}`);
 });
+
+test('v2.14.1: review variants handle all 80 topics without undefined, teacher workspace keeps PDF button, setup syncs summary, and Sprint stays fast mental math', async () => {
+  const ctx = loadAppContext();
+
+  // 1. Every single GDPT 2018 topic (Grades 1-9) must produce a clean review variant with no undefined/NaN
+  let checked = 0;
+  for (let g = 1; g <= 9; g++) {
+    const list = (ctx.NUMI_GRADE_TOPICS[g] || []).filter(tp => tp.id !== 'all');
+    for (const tp of list) {
+      const cfg = { grade: g, topic: tp.id, topics: [tp.id], count: 8, seconds: tp.seconds || 30, ops: ['+', '-'], digits: [2], types: ['natural'] };
+      const q = ctx.generateTopicQuestion(tp.id, cfg);
+      const rv = ctx.numiReviewVariant({ ...q, id: 'm_' + tp.id });
+      assert.ok(rv && rv.q && !String(rv.q).includes('undefined') && !String(rv.q).includes('NaN'), `Broken review variant for g${g}/${tp.id}: ${rv?.q}`);
+      assert.ok(rv.answer !== undefined && !String(rv.answer).includes('NaN'), `Broken review answer for g${g}/${tp.id}: ${rv?.answer}`);
+      checked++;
+    }
+  }
+  assert.equal(checked, 126, 'Expected all 126 specialized GDPT 2018 topics checked');
+
+  // Seeded fraction mistake stays a fraction question
+  const fracRv = ctx.numiReviewVariant({ id: 'm1', q: '3/4 + 1/2', answer: '5/4', options: ['5/4', '4/6', '3/6', '7/4'], config: { seconds: 20, type: 'fraction' }, skill: 'fraction:+' });
+  assert.ok(String(fracRv.q).includes('/'), `Seeded fraction mistake should stay fraction, got: ${fracRv.q}`);
+
+  // 2. Login page hides dangling Supabase label when googleEnabled is false
+  ctx.window.NUMI_CLOUD_CONFIG = { url: 'https://example.supabase.co', publishableKey: 'sb_publishable_x', googleEnabled: false };
+  ctx.openAccount('login');
+  assert.equal(ctx.document.querySelector('#app').innerHTML.includes('Hoặc tài khoản Supabase'), false, 'Should not render empty Supabase heading when Google login is disabled');
+
+  // 3. Setup initial render syncs #lessonSummary with grade topic bar
+  await ctx.localSignIn('minhkhoi', '1234');
+  ctx.setup();
+  const sumText = ctx.document.querySelector('#lessonSummary')?.textContent || '';
+  assert.ok(sumText.includes('13 dạng') || sumText.includes('Đề tổng hợp'), `Initial setup summary must reflect Grade 4 mixed preset, got: ${sumText}`);
+
+  // 4. 60s Sprint clears slow column topic from config
+  ctx.config.grade = 4;
+  ctx.config.topic = 'g4_col';
+  ctx.config.topics = ['g4_col'];
+  ctx.startSprint60();
+  const sprintHtml = ctx.document.querySelector('#app')?.innerHTML || '';
+  const sprintMatch = sprintHtml.match(/class="sprint-problem">([\s\S]*?)<\/div>/);
+  const sprintQ = (sprintMatch ? sprintMatch[1].replace(/<[^>]+>/g, '') : '').trim();
+  ctx.stop();
+  assert.ok(sprintQ.length > 0 && sprintQ.length <= 24 && !/\d{4}/.test(sprintQ), `60s Sprint must stay concise mental math (no 4-5 digit column arithmetic), got: ${sprintQ}`);
+  ctx.nav('home');
+
+  // 5. Teacher workspace keeps Print Worksheet PDF button across internal re-renders & avoids "lớp Lớp"
+  await ctx.localSignIn('colan', '1234');
+  const appEl = ctx.document.querySelector('#app');
+  assert.equal(appEl.innerHTML.includes('lớp Lớp'), false, 'Should not repeat "lớp Lớp"');
+  assert.ok(ctx.document.querySelector('#tchOpenWorksheetPdfBtn'), 'Teacher Workspace must show Print Worksheet PDF button on initial render');
+  // Simulate level filter click (which triggers internal re-render via rerenderTeacherWorkspace)
+  const lvlBtn = ctx.document.querySelector('[data-tch-lvl="primary"]');
+  if (lvlBtn && typeof lvlBtn.onclick === 'function') lvlBtn.onclick();
+  assert.ok(ctx.document.querySelector('#tchOpenWorksheetPdfBtn'), 'Print Worksheet PDF button must persist after internal teacher workspace re-render');
+});
+
+test('v2.15.0: THCS Number vs Geometry split, 3-tier progressive difficulty (Easy -> Medium -> Hard), Primary vs Secondary free-input timer rules, and Knowledge Hub work accurately', async () => {
+  const ctx = loadAppContext();
+
+  // 1. Every topic across Grades 1-9 generates clean questions across ALL 3 cognitive tiers (easy, medium, hard)
+  for (let g = 1; g <= 9; g++) {
+    const list = (ctx.NUMI_GRADE_TOPICS[g] || []).filter(tp => tp.id !== 'all');
+    if (g >= 6) {
+      const numTopics = list.filter(tp => tp.domain === 'number');
+      const geomTopics = list.filter(tp => tp.domain === 'geometry');
+      assert.ok(numTopics.length >= 8, `Grade ${g} must have >= 8 Number/Algebra topics, got ${numTopics.length}`);
+      assert.ok(geomTopics.length >= 4, `Grade ${g} must have >= 4 Geometry topics, got ${geomTopics.length}`);
+    }
+    for (const tp of list) {
+      for (const tier of ['easy', 'medium', 'hard']) {
+        const q = ctx.generateTopicQuestion(tp.id, { ...ctx.NUMI_GRADES[g], grade: g, topic: tp.id, topics: [tp.id], difficulty: tier });
+        assert.ok(q && q.q && !/undefined|NaN/.test(String(q.q)), `Invalid prompt for ${tp.id} (${tier}): ${q?.q}`);
+        assert.ok(q.answer !== undefined && !/undefined|NaN/.test(String(q.answer)), `Invalid answer for ${tp.id} (${tier}): ${q?.answer}`);
+        assert.equal(new Set(q.options).size, 4, `${tp.id} (${tier}) must produce 4 distinct options, got [${q.options}] for "${q.q}"`);
+        assert.ok(q.options.some(o => ctx.isAnswerMatch(o, q.answer)), `${tp.id} (${tier}) missing answer "${q.answer}" in [${q.options}]`);
+        assert.equal(q.difficulty, tier, `${tp.id} must tag difficulty=${tier}`);
+        assert.ok(q.difficultyLabel && q.difficultyLabel.length > 4, `${tp.id} must include difficultyLabel`);
+      }
+    }
+  }
+
+  // 2. THCS domainFilter ('number' vs 'geometry') strictly isolates Number/Algebra vs Geometry questions
+  for (const g of [6, 7, 8, 9]) {
+    const numQs = ctx.generateUniqueQuestions(10, { ...ctx.NUMI_GRADES[g], grade: g, topic: 'all', topics: [], domainFilter: 'number', difficultyMode: 'progressive' });
+    assert.equal(numQs.length, 10);
+    assert.ok(numQs.every(q => q.domain === 'number'), `Grade ${g} domainFilter=number leaked non-number question`);
+
+    const geomQs = ctx.generateUniqueQuestions(10, { ...ctx.NUMI_GRADES[g], grade: g, topic: 'all', topics: [], domainFilter: 'geometry', difficultyMode: 'progressive' });
+    assert.equal(geomQs.length, 10);
+    assert.ok(geomQs.every(q => q.domain === 'geometry'), `Grade ${g} domainFilter=geometry leaked non-geometry question`);
+
+    // Progressive schedule orders Easy -> Medium -> Hard!
+    const orderMap = { easy: 1, medium: 2, hard: 3 };
+    for (let i = 1; i < numQs.length; i++) {
+      assert.ok(orderMap[numQs[i].difficulty] >= orderMap[numQs[i - 1].difficulty], `Progressive difficulty must be non-decreasing at index ${i}`);
+    }
+    assert.equal(numQs[0].difficulty, 'easy');
+    assert.equal(numQs[numQs.length - 1].difficulty, 'hard');
+  }
+
+  // 3. Timer rules: Primary (Grades 1-5) ALWAYS keeps timer; Secondary (Grades 6-9) Tự luận removes timer!
+  for (const g of [1, 2, 3, 4, 5]) {
+    assert.equal(ctx.isUntimedQuizSession({ grade: g, inputMode: 'choices' }, { skill: 'natural:+' }), false, `Grade ${g} MCQ must stay timed`);
+    assert.equal(ctx.isUntimedQuizSession({ grade: g, inputMode: 'numpad' }, { skill: 'natural:+' }), false, `Grade ${g} Tự luận must stay timed for fast mental thinking`);
+  }
+  for (const g of [6, 7, 8, 9]) {
+    assert.equal(ctx.isUntimedQuizSession({ grade: g, inputMode: 'choices', untimed: false }, { skill: 'equation:x' }), false, `Grade ${g} MCQ default is timed`);
+    assert.equal(ctx.isUntimedQuizSession({ grade: g, inputMode: 'numpad' }, { skill: 'equation:x' }), true, `Grade ${g} Tự luận must be untimed`);
+    assert.equal(ctx.isUntimedQuizSession({ grade: g, inputMode: 'choices', untimed: true }, { skill: 'equation:x' }), true, `Grade ${g} explicit untimed toggle works`);
+  }
+
+  // Live quiz render test: Grade 8 Tự luận displays untimed badge instead of countdown seconds
+  await ctx.localSignIn('minhkhoi', '1234');
+  ctx.config = { ...ctx.defaults, ...ctx.NUMI_GRADES[8], grade: 8, inputMode: 'numpad', count: 5, topic: 'g8_word_eq', topics: ['g8_word_eq'] };
+  ctx.startQuiz();
+  const clkTextSec = ctx.document.querySelector('#clock')?.textContent || '';
+  assert.ok(clkTextSec.includes('Không giới hạn giờ') || clkTextSec.includes('Untimed'), `Grade 8 Tự luận clock should show Untimed, got: ${clkTextSec}`);
+  ctx.stop();
+
+  // Live quiz render test: Grade 4 Tự luận STILL runs countdown seconds
+  ctx.config = { ...ctx.defaults, ...ctx.NUMI_GRADES[4], grade: 4, inputMode: 'numpad', count: 5, seconds: 30, topic: 'g4_seq_gauss', topics: ['g4_seq_gauss'] };
+  ctx.startQuiz();
+  const clkTextPri = ctx.document.querySelector('#clock')?.textContent || '';
+  assert.ok(/^\d+(\.\d+)?s$/.test(clkTextPri), `Grade 4 Tự luận clock must run countdown timer, got: ${clkTextPri}`);
+  ctx.stop();
+
+  // 4. Knowledge Hub & Geometry Visual SVG work for all grades 1-9 (complete 3-strand GDPT 2018 coverage)
+  let totalKnowledgeCards = 0;
+  for (let g = 1; g <= 9; g++) {
+    const bank = ctx.NUMI_KNOWLEDGE_BANK[g];
+    assert.ok(bank, `Missing knowledge bank for Grade ${g}`);
+    const domains = bank.sections.map(s => s.domain).join(',');
+    assert.equal(domains, 'number,geometry,stats', `Grade ${g} knowledge bank must cover all 3 GDPT 2018 strands (number, geometry, stats)`);
+    const validTopicIds = new Set((ctx.NUMI_GRADE_TOPICS[g] || []).map(tp => tp.id));
+    let gradeCount = 0;
+    for (const sec of bank.sections) {
+      for (const it of sec.items) {
+        gradeCount++;
+        totalKnowledgeCards++;
+        if (it.topicId) {
+          assert.ok(validTopicIds.has(it.topicId), `Grade ${g} knowledge card "${it.tag}" links unknown topicId "${it.topicId}"`);
+        }
+      }
+    }
+    assert.ok(gradeCount >= 12, `Grade ${g} must have >= 12 comprehensive knowledge items, got ${gradeCount}`);
+    const cardHtml = ctx.buildKnowledgeCardHtml(g, 'all');
+    assert.ok(cardHtml.includes('kh-sec-card') && cardHtml.includes('kh-dom-stats'), `Knowledge card HTML missing sections/stats for Grade ${g}`);
+  }
+  assert.ok(totalKnowledgeCards >= 115, `Expected >= 115 total knowledge cards across Grades 1-9, got ${totalKnowledgeCards}`);
+  const searchHtml8 = ctx.buildKnowledgeCardHtml(8, 'all', false, 'Thalès');
+  assert.ok(searchHtml8.includes('Thalès') && !searchHtml8.includes('Đơn thức'), 'Knowledge search should filter Grade 8 cards accurately');
+  const pythaQ = ctx.generateTopicQuestion('g8_geom_pytha', { grade: 8, difficulty: 'easy' });
+  const geomSvg = ctx.buildVisualMathSvg(pythaQ);
+  assert.ok(geomSvg.includes('<svg') && geomSvg.includes('visual-math-svg'), 'Pythagorean geometry question should render SVG diagram');
+});

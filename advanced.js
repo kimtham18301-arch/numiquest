@@ -153,7 +153,7 @@ setup=function(){
       types=types.filter(x=>['natural','fraction'].includes(x));
       if(!types.length)types=['natural'];
     }
-    config={...defaults,ops,types,type:types[0]||'natural',digits,count:+f.get('count'),seconds:+f.get('seconds'),inputMode:f.get('inputMode')||config.inputMode||'choices',questionStyle:style,termCount:+f.get('termCount'),grade:config.grade,topic:config.topic||'all',topics:Array.isArray(config.topics)?[...config.topics]:[]};
+    config={...defaults,ops,types,type:types[0]||'natural',digits,count:+f.get('count'),seconds:+f.get('seconds'),inputMode:f.get('inputMode')||config.inputMode||'choices',questionStyle:style,termCount:+f.get('termCount'),grade:config.grade,topic:config.topic||'all',topics:Array.isArray(config.topics)?[...config.topics]:[],domainFilter:config.domainFilter||'all',difficultyMode:config.difficultyMode||'progressive',untimed:Boolean(config.untimed)};
     if(typeof window!=='undefined')window.config=config;
     if(typeof global!=='undefined')global.config=config;
     startQuiz();
@@ -177,5 +177,43 @@ const startBeforePause=startQuiz;
 startQuiz=function(){const baseline=JSON.stringify(state);startBeforePause();if(session)session.baseline=baseline};
 function advancedResumeCard(){const host=$('.simple-home');if(!host)return;let saved;try{saved=JSON.parse(localStorage.getItem(PAUSED_LESSON_KEY)||'null')}catch{}if(!saved?.session)return;const box=document.createElement('section');box.className='paused-lesson-card';const remaining=Math.max(0,Math.ceil((saved.readyAt-Date.now())/60000));box.innerHTML=`<b>${t('Bài luyện đang tạm nghỉ','Your practice is paused')}</b><p>${remaining?t(`Em nghỉ thêm khoảng ${remaining} phút rồi quay lại nhé.`,'Take about '+remaining+' more minutes, then come back.') :t('Bài đã sẵn sàng để làm tiếp.','Your lesson is ready to resume.')}</p><div class="actions"><button class="primary" id="resumePaused" ${remaining?'disabled':''}>${t('Làm tiếp câu đang dở','Resume this lesson')} →</button><button id="discardPaused">${t('Bỏ bài đang dở','Discard this lesson')}</button></div>`;host.prepend(box);$('#resumePaused').onclick=()=>{if(Date.now()<saved.readyAt)return;try{state={...fresh(),...saved.state};lang=state.lang==='en'?'en':'vi';save()}catch{}config=saved.config||config;session=saved.session;view='quiz';const q=session.questions[session.index];if(q?.config)q.config.seconds=saved.remaining||q.config.seconds||config.seconds;localStorage.removeItem(PAUSED_LESSON_KEY);showQuiz()};$('#discardPaused').onclick=()=>{restoreProgressBaseline(saved.session.baseline);localStorage.removeItem(PAUSED_LESSON_KEY);home()}}
 const navBeforePause=nav;
-nav=function(nextView){if(session&&!session.done&&view==='quiz'&&nextView!==view){modal(`<h2>${t('Mình tạm dừng nhé?','Take a break?')}</h2><p>${t('Bài đang làm có thể giữ lại để em quay lại sau. Em chọn thời gian nghỉ:','Your lesson can wait here while you take a break. Choose how long:')}</p><div class="actions">${[1,3,5].map(h=>`<button class="pause-choice" data-pause="${h}">${h} ${t('giờ','hours')}</button>`).join('')}</div><p>${t('Hoặc bỏ riêng lượt đang dở. Những tiến độ đã hoàn thành trước đó vẫn được giữ.','Or discard only the unfinished lesson. Your earlier progress stays.')}</p><div class="actions"><button id="discardCurrent">${t('Bỏ lượt đang dở','Discard unfinished lesson')}</button><button id="stayCurrent">${t('Ở lại làm tiếp','Stay and continue')}</button></div>`);$('#stayCurrent').onclick=()=>$('#modal').close();$$('[data-pause]').forEach(b=>b.onclick=()=>{const left=parseFloat($('#clock')?.textContent)||config.seconds,copy=JSON.parse(JSON.stringify(session)),q=copy.questions[copy.index];if(q?.config)q.config.seconds=Math.max(5,Math.ceil(left));localStorage.setItem(PAUSED_LESSON_KEY,JSON.stringify({session:copy,config,state,remaining:Math.max(5,Math.ceil(left)),readyAt:Date.now()+(+b.dataset.pause)*3600000}));stop();session=null;$('#modal').close();navBeforePause(nextView)});$('#discardCurrent').onclick=()=>{restoreProgressBaseline(session.baseline);localStorage.removeItem(PAUSED_LESSON_KEY);stop();session=null;$('#modal').close();navBeforePause(nextView)};return}navBeforePause(nextView)};
+nav=function(nextView){
+  if(session&&!session.done&&view==='quiz'&&nextView!==view){
+    const pausedLeft=Math.max(1,parseFloat($('#clock')?.textContent)||config.seconds);
+    const pausedAt=performance.now();
+    const curQ=session.questions?.[session.index];
+    const qSec=curQ?.topicSeconds||curQ?.config?.seconds||config.seconds;
+    const wasAnswered=Boolean(session.answered);
+    const untimedNow=typeof isUntimedQuizSession==='function'&&isUntimedQuizSession(config,curQ);
+    stop();
+    let handled=false;
+    const resumeQuizClock=()=>{
+      if(handled||!session||session.done||view!=='quiz'||wasAnswered||session.answered)return;
+      session.started=(session.started||pausedAt)+(performance.now()-pausedAt);
+      if(untimedNow)return;
+      if(typeof startClock==='function'){
+        startClock(pausedLeft,()=>{
+          if(session.kind==='challenge'){answerQuiz(null,curQ?.id);return}
+          if(typeof timeoutAgain==='function')timeoutAgain(qSec);
+          else answerQuiz(null,curQ?.id);
+        });
+      }
+    };
+    modal(`<h2>${t('Mình tạm dừng nhé?','Take a break?')}</h2><p>${t('Bài đang làm có thể giữ lại để em quay lại sau. Em chọn thời gian nghỉ:','Your lesson can wait here while you take a break. Choose how long:')}</p><div class="actions">${[1,3,5].map(h=>`<button class="pause-choice" data-pause="${h}">${h} ${t('giờ','hours')}</button>`).join('')}</div><p>${t('Hoặc bỏ riêng lượt đang dở. Những tiến độ đã hoàn thành trước đó vẫn được giữ.','Or discard only the unfinished lesson. Your earlier progress stays.')}</p><div class="actions"><button id="discardCurrent">${t('Bỏ lượt đang dở','Discard unfinished lesson')}</button><button id="stayCurrent" class="primary">${t('Ở lại làm tiếp','Stay and continue')}</button></div>`,resumeQuizClock);
+    $('#stayCurrent').onclick=()=>$('#modal').close();
+    $$('[data-pause]').forEach(b=>b.onclick=()=>{
+      handled=true;
+      const copy=JSON.parse(JSON.stringify(session)),q=copy.questions[copy.index];
+      if(q?.config)q.config.seconds=Math.max(5,Math.ceil(pausedLeft));
+      localStorage.setItem(PAUSED_LESSON_KEY,JSON.stringify({session:copy,config,state,remaining:Math.max(5,Math.ceil(pausedLeft)),readyAt:Date.now()+(+b.dataset.pause)*3600000}));
+      stop();session=null;$('#modal').close();navBeforePause(nextView);
+    });
+    $('#discardCurrent').onclick=()=>{
+      handled=true;
+      restoreProgressBaseline(session.baseline);localStorage.removeItem(PAUSED_LESSON_KEY);stop();session=null;$('#modal').close();navBeforePause(nextView);
+    };
+    return;
+  }
+  navBeforePause(nextView);
+};
 window.addEventListener('beforeunload',e=>{if(session&&!session.done&&['quiz','garden','battle'].includes(view)){e.preventDefault();e.returnValue=''}});

@@ -5,6 +5,8 @@
   let wsState = {
     grade: 3,
     topics: [],
+    domainFilter: 'all', // 'all' | 'number' | 'geometry'
+    difficultyMode: 'progressive', // 'progressive' | 'easy' | 'medium' | 'hard'
     count: 10,
     format: 'mixed', // 'mixed' | 'essay' | 'mcq'
     previewTab: 'exam', // 'exam' (no answers) | 'answers' (with answers)
@@ -15,16 +17,22 @@
     questions: []
   };
 
-  function defaultTitleFor(grade, topics) {
+  function defaultTitleFor(grade, topics, domainFilter = 'all') {
     const g = Number(grade) || 1;
     if (topics && topics.length === 1 && typeof NUMI_GRADE_TOPICS !== 'undefined' && NUMI_GRADE_TOPICS[g]) {
       const meta = NUMI_GRADE_TOPICS[g].find(x => x.id === topics[0]);
       if (meta) return t(`PHIẾU LUYỆN TẬP TOÁN LỚP ${g} — ${meta.vi.toUpperCase()}`, `GRADE ${g} MATH WORKSHEET — ${meta.en.toUpperCase()}`);
     }
+    if (g >= 6 && domainFilter === 'number') {
+      return t(`ĐỀ KIỂM TRA PHẦN SỐ HỌC & ĐẠI SỐ LỚP ${g}`, `GRADE ${g} NUMBERS & ALGEBRA WORKSHEET`);
+    }
+    if (g >= 6 && domainFilter === 'geometry') {
+      return t(`ĐỀ KIỂM TRA PHẦN HÌNH HỌC & ĐO LƯỜNG LỚP ${g}`, `GRADE ${g} GEOMETRY WORKSHEET`);
+    }
     return t(`ĐỀ ÔN TẬP TỔNG HỢP TOÁN LỚP ${g}`, `GRADE ${g} COMPREHENSIVE MATH WORKSHEET`);
   }
 
-  function makeSingleWorksheetQuestion(grade, topics) {
+  function makeSingleWorksheetQuestion(grade, topics, opts = {}) {
     const g = Number(grade) || 1;
     const gDef = (typeof NUMI_GRADES !== 'undefined' && NUMI_GRADES[g]) ? NUMI_GRADES[g] : { ops: ['+', '-'], types: ['natural'], digits: [1, 2] };
     const cleanTopics = Array.isArray(topics) ? topics.filter(id => id && id !== 'all') : [];
@@ -38,7 +46,9 @@
       digits: [...(gDef.digits || [1, 2])],
       questionStyle: 'normal',
       topic: cleanTopics.length === 1 ? cleanTopics[0] : 'all',
-      topics: cleanTopics
+      topics: cleanTopics,
+      domainFilter: opts.domainFilter || 'all',
+      difficultyMode: opts.difficultyMode || 'progressive'
     };
     const q = typeof generate === 'function' ? generate(cfg) : null;
     if (!q) return null;
@@ -48,7 +58,7 @@
     };
   }
 
-  function generateWorksheetQuestions(grade, topics, count) {
+  function generateWorksheetQuestions(grade, topics, count, opts = {}) {
     const g = Number(grade) || 1;
     const gDef = (typeof NUMI_GRADES !== 'undefined' && NUMI_GRADES[g]) ? NUMI_GRADES[g] : { ops: ['+', '-'], types: ['natural'], digits: [1, 2] };
     const cleanTopics = Array.isArray(topics) ? topics.filter(id => id && id !== 'all') : [];
@@ -62,7 +72,9 @@
       digits: [...(gDef.digits || [1, 2])],
       questionStyle: 'normal',
       topic: cleanTopics.length === 1 ? cleanTopics[0] : 'all',
-      topics: cleanTopics
+      topics: cleanTopics,
+      domainFilter: opts.domainFilter || 'all',
+      difficultyMode: opts.difficultyMode || 'progressive'
     };
     if (typeof generateUniqueQuestions === 'function') {
       const qs = generateUniqueQuestions(count, cfg);
@@ -75,7 +87,7 @@
     let tries = 0;
     while (out.length < count && tries < count * 8) {
       tries++;
-      const q = makeSingleWorksheetQuestion(grade, topics);
+      const q = makeSingleWorksheetQuestion(grade, topics, opts);
       if (!q) break;
       const key = String(q.q || '').trim();
       if (seenQ.has(key) && tries < count * 5) continue;
@@ -143,11 +155,13 @@
 
     const renderEssayItem = (q, displayNum, origIdx) => {
       const len = String(q.q || '').length;
-      const extraLines = len > 55 ? 2 : len > 24 ? 1 : 0;
+      const baseExtra = len > 55 ? 2 : len > 24 ? 1 : 0;
+      const extraLines = (g >= 6 || q.difficulty === 'hard') ? Math.max(2, baseExtra) : baseExtra;
+      const tierTag = withAnswers && q.difficultyLabel ? ` <span style="font-size:11px;font-weight:800;color:#4b5563">[${esc(q.difficultyLabel)}]</span>` : '';
       return `<div class="ws-essay-item ${withAnswers ? 'is-ans-box' : ''}">
       <div class="ws-q-head">
         <span class="ws-q-num">${t('Câu', 'Q')} ${displayNum}.</span>
-        <span class="ws-q-text">${formatPromptPlain(q.q)}</span>
+        <span class="ws-q-text">${formatPromptPlain(q.q)}${tierTag}</span>
         ${renderSwapBtn(origIdx)}
       </div>
       ${withAnswers
@@ -294,23 +308,32 @@
       ? [...preset.topics]
       : (typeof config !== 'undefined' && Array.isArray(config.topics) && config.topics.length ? [...config.topics] : []);
     const startCount = Number(preset.count || (startGrade <= 2 ? 10 : 12));
+    const startDom = preset.domainFilter || (typeof config !== 'undefined' && config.domainFilter ? config.domainFilter : 'all');
+    const startDiff = preset.difficultyMode || (typeof config !== 'undefined' && config.difficultyMode ? config.difficultyMode : 'progressive');
 
     wsState = {
       grade: startGrade,
       topics: startTopics,
+      domainFilter: startGrade >= 6 ? startDom : 'all',
+      difficultyMode: startDiff,
       count: [8, 10, 12, 15, 20].includes(startCount) ? startCount : 10,
-      format: startGrade <= 5 ? 'mixed' : 'mcq',
+      format: 'mixed',
       previewTab: 'exam',
-      title: defaultTitleFor(startGrade, startTopics),
+      title: defaultTitleFor(startGrade, startTopics, startGrade >= 6 ? startDom : 'all'),
       subtitle: t(`Môn: Toán · Lớp ${startGrade} (Chuẩn GDPT 2018)`, `Subject: Maths · Grade ${startGrade}`),
-      durationMin: startGrade <= 2 ? 15 : 20,
+      durationMin: startGrade <= 2 ? 15 : startGrade >= 6 ? 45 : 25,
       examCode: '01',
       questions: []
     };
-    wsState.questions = generateWorksheetQuestions(wsState.grade, wsState.topics, wsState.count);
+    const wsOpts = () => ({ domainFilter: wsState.domainFilter, difficultyMode: wsState.difficultyMode });
+    wsState.questions = generateWorksheetQuestions(wsState.grade, wsState.topics, wsState.count, wsOpts());
 
     const renderComposerModal = () => {
-      const topicList = (typeof NUMI_GRADE_TOPICS !== 'undefined' && NUMI_GRADE_TOPICS[wsState.grade]) || [];
+      const fullList = (typeof NUMI_GRADE_TOPICS !== 'undefined' && NUMI_GRADE_TOPICS[wsState.grade]) || [];
+      const isSec = wsState.grade >= 6;
+      const topicList = isSec && wsState.domainFilter !== 'all'
+        ? fullList.filter(tp => tp.id === 'all' || tp.domain === wsState.domainFilter)
+        : fullList;
       const isAllTopics = wsState.topics.length === 0;
       const showAnswers = wsState.previewTab === 'answers';
 
@@ -339,6 +362,14 @@
               ${[8, 10, 12, 15, 20].map(n => `<option value="${n}" ${wsState.count === n ? 'selected' : ''}>${n} ${t('câu', 'qs')}</option>`).join('')}
             </select>
           </label>
+          <label>${t('Mức độ đề', 'Difficulty')}
+            <select id="wsDiffSel">
+              <option value="progressive" ${wsState.difficultyMode === 'progressive' ? 'selected' : ''}>${t('Ma trận chuẩn (Dễ → Khó)', 'Progressive (Easy → Hard)')}</option>
+              <option value="easy" ${wsState.difficultyMode === 'easy' ? 'selected' : ''}>${t('Mức 1: Nhận biết (Dễ)', 'Lv1: Foundation')}</option>
+              <option value="medium" ${wsState.difficultyMode === 'medium' ? 'selected' : ''}>${t('Mức 2: Thông hiểu (Vừa)', 'Lv2: Comprehension')}</option>
+              <option value="hard" ${wsState.difficultyMode === 'hard' ? 'selected' : ''}>${t('Mức 3: Vận dụng & Toán giải', 'Lv3: Application & Word')}</option>
+            </select>
+          </label>
           <label>${t('Hình thức đề', 'Format')}
             <select id="wsFormatSel">
               <option value="mixed" ${wsState.format === 'mixed' ? 'selected' : ''}>${t('Kết hợp (Trắc nghiệm + Tự luận)', 'Mixed (MCQ + Written)')}</option>
@@ -355,11 +386,19 @@
         </div>
 
         <div class="ws-topic-strip">
-          <span class="ws-topic-strip-lbl">${t('Chọn chuyên đề đưa vào đề:', 'Topics in worksheet:')}</span>
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
+            <span class="ws-topic-strip-lbl">${t('Chọn chuyên đề đưa vào đề:', 'Topics in worksheet:')}</span>
+            ${isSec ? `<div style="display:flex;gap:5px;flex-wrap:wrap">
+              <button type="button" class="ws-tp-pill ${wsState.domainFilter === 'all' ? 'active' : ''}" data-ws-dom="all">✨ ${t('Số + Hình', 'All')}</button>
+              <button type="button" class="ws-tp-pill ${wsState.domainFilter === 'number' ? 'active' : ''}" data-ws-dom="number">🔢 ${t('Phần Số học & Đại số', 'Numbers & Algebra')}</button>
+              <button type="button" class="ws-tp-pill ${wsState.domainFilter === 'geometry' ? 'active' : ''}" data-ws-dom="geometry">📐 ${t('Phần Hình học', 'Geometry')}</button>
+            </div>` : ''}
+          </div>
           <div class="ws-topic-pills">
             ${topicList.map(tp => {
               const on = tp.id === 'all' ? isAllTopics : wsState.topics.includes(tp.id);
-              return `<button type="button" class="ws-tp-pill ${on ? 'active' : ''}" data-ws-topic="${esc(tp.id)}">${tp.id === 'all' ? '✨ ' : tp.col ? '📐 ' : ''}${esc(typeof lang !== 'undefined' && lang === 'en' ? tp.en : tp.vi)}</button>`;
+              const pfx = tp.id === 'all' ? '✨ ' : tp.col ? '📐 ' : (isSec ? (tp.domain === 'geometry' ? '📐 ' : '🔢 ') : '');
+              return `<button type="button" class="ws-tp-pill ${on ? 'active' : ''}" data-ws-topic="${esc(tp.id)}">${pfx}${esc(typeof lang !== 'undefined' && lang === 'en' ? tp.en : tp.vi)}</button>`;
             }).join('')}
           </div>
         </div>
@@ -409,7 +448,8 @@
         $$('[data-ws-swap]').forEach(btn => {
           btn.onclick = () => {
             const idx = Number(btn.dataset.wsSwap);
-            const nextQ = makeSingleWorksheetQuestion(wsState.grade, wsState.topics);
+            const curTier = wsState.questions[idx]?.difficulty || undefined;
+            const nextQ = makeSingleWorksheetQuestion(wsState.grade, wsState.topics, { ...wsOpts(), difficultyMode: curTier || wsState.difficultyMode });
             if (nextQ && Number.isInteger(idx) && idx >= 0 && idx < wsState.questions.length) {
               wsState.questions[idx] = nextQ;
               refreshPreview();
@@ -424,7 +464,7 @@
       $('#wsRegenAllBtn')?.addEventListener('click', () => {
         const curNum = parseInt(wsState.examCode, 10) || 1;
         wsState.examCode = String((curNum % 99) + 1).padStart(2, '0');
-        wsState.questions = generateWorksheetQuestions(wsState.grade, wsState.topics, wsState.count);
+        wsState.questions = generateWorksheetQuestions(wsState.grade, wsState.topics, wsState.count, wsOpts());
         refreshPreview();
       });
 
@@ -438,15 +478,23 @@
       $('#wsGradeSel')?.addEventListener('change', e => {
         wsState.grade = Number(e.target.value) || 1;
         wsState.topics = [];
-        wsState.title = defaultTitleFor(wsState.grade, []);
+        wsState.domainFilter = 'all';
+        wsState.durationMin = wsState.grade <= 2 ? 15 : wsState.grade >= 6 ? 45 : 25;
+        wsState.title = defaultTitleFor(wsState.grade, [], 'all');
         wsState.subtitle = t(`Môn: Toán · Lớp ${wsState.grade} (Chuẩn GDPT 2018)`, `Subject: Maths · Grade ${wsState.grade}`);
-        wsState.questions = generateWorksheetQuestions(wsState.grade, wsState.topics, wsState.count);
+        wsState.questions = generateWorksheetQuestions(wsState.grade, wsState.topics, wsState.count, wsOpts());
         renderComposerModal();
       });
 
       $('#wsCountSel')?.addEventListener('change', e => {
         wsState.count = Number(e.target.value) || 10;
-        wsState.questions = generateWorksheetQuestions(wsState.grade, wsState.topics, wsState.count);
+        wsState.questions = generateWorksheetQuestions(wsState.grade, wsState.topics, wsState.count, wsOpts());
+        refreshPreview();
+      });
+
+      $('#wsDiffSel')?.addEventListener('change', e => {
+        wsState.difficultyMode = e.target.value || 'progressive';
+        wsState.questions = generateWorksheetQuestions(wsState.grade, wsState.topics, wsState.count, wsOpts());
         refreshPreview();
       });
 
@@ -465,6 +513,16 @@
         refreshPreview();
       });
 
+      $$('[data-ws-dom]').forEach(btn => {
+        btn.onclick = () => {
+          wsState.domainFilter = btn.dataset.wsDom || 'all';
+          wsState.topics = [];
+          wsState.title = defaultTitleFor(wsState.grade, [], wsState.domainFilter);
+          wsState.questions = generateWorksheetQuestions(wsState.grade, [], wsState.count, wsOpts());
+          renderComposerModal();
+        };
+      });
+
       $$('[data-ws-topic]').forEach(btn => {
         btn.onclick = () => {
           const id = btn.dataset.wsTopic;
@@ -475,8 +533,8 @@
               ? wsState.topics.filter(x => x !== id)
               : [...wsState.topics, id];
           }
-          wsState.title = defaultTitleFor(wsState.grade, wsState.topics);
-          wsState.questions = generateWorksheetQuestions(wsState.grade, wsState.topics, wsState.count);
+          wsState.title = defaultTitleFor(wsState.grade, wsState.topics, wsState.domainFilter);
+          wsState.questions = generateWorksheetQuestions(wsState.grade, wsState.topics, wsState.count, wsOpts());
           renderComposerModal();
         };
       });
@@ -501,7 +559,8 @@
         btn.className = 'ws-launch-btn wide';
         btn.innerHTML = `🖨️ ${t('Soạn đề sẵn & In phiếu PDF (A4)', 'Compose & Print A4 PDF Worksheet')}`;
         btn.onclick = () => {
-          const g = config?.grade && config.grade !== 'custom' ? Number(config.grade) : 3;
+          const u = typeof currentAuthUser === 'function' ? currentAuthUser() : null;
+          const g = config?.grade && config.grade !== 'custom' ? Number(config.grade) : (Number(u?.grade) || 4);
           const tps = Array.isArray(config?.topics) && config.topics.length ? [...config.topics] : (config?.topic && config.topic !== 'all' ? [config.topic] : []);
           const cnt = Number($('#lessonCount')?.value || config?.count || 10);
           openWorksheetComposer({ grade: g, topics: tps, count: cnt });
@@ -528,7 +587,16 @@
       btn.innerHTML = `🖨️ ${t('Soạn & In đề PDF', 'Print Worksheet PDF')}`;
       btn.onclick = () => {
         const u = typeof currentAuthUser === 'function' ? currentAuthUser() : null;
-        openWorksheetComposer({ grade: u?.grade || 3, topics: [], count: 12 });
+        let activeGrade = Number(u?.grade) || 4;
+        try {
+          const nc = window.NumiClasses;
+          if (nc && u && typeof nc.getClassesForTeacher === 'function') {
+            const clsList = nc.getClassesForTeacher(u.username) || [];
+            const activeCls = clsList.find(c => c.id === nc.ui?.activeTeacherClassId) || clsList[0];
+            if (activeCls?.grade) activeGrade = Number(activeCls.grade);
+          }
+        } catch {}
+        openWorksheetComposer({ grade: activeGrade, topics: [], count: 12 });
       };
       const createBtn = $('#tchCreateClassBtn');
       if (createBtn && typeof createBtn.insertAdjacentElement === 'function') {
@@ -564,9 +632,10 @@
       body.dark-mode .ws-launch-btn{background:#182e22!important;border-color:#325c44!important;color:#a9e5c3!important}
       body.dark-mode .ws-tch-pdf-btn{background:#1a3325!important;border-color:#35664b!important;color:#a9e5c3!important}
 
-      dialog#modal.ws-wide-modal{width:min(96vw,1000px)!important;max-width:1000px!important;max-height:92vh!important;padding:16px 20px!important;overflow-y:auto!important}
-      .ws-composer{display:grid;gap:11px}
-      .ws-comp-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;border-bottom:1.5px solid #e2eee0;padding-bottom:10px}
+      dialog#modal.ws-wide-modal{width:min(96vw,1000px)!important;max-width:1000px!important;max-height:92vh!important;padding:16px 20px 24px!important;overflow-y:auto!important;overflow-x:hidden!important}
+      .ws-composer{display:flex;flex-direction:column;gap:11px}
+      .ws-comp-top{position:sticky;top:-16px;z-index:6;background:#fffefa;margin:-16px -20px 0;padding:14px 20px 10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;border-bottom:1.5px solid #e2eee0}
+      body.dark-mode .ws-comp-top{background:#18261f;border-bottom-color:#2b4937}
       .ws-comp-actions{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
       .ws-btn-sec{min-height:38px!important;padding:6px 11px!important;border-radius:10px!important;border:1.5px solid #cfe0cc!important;background:#fff!important;color:#274c36!important;font-weight:800!important;font-size:13px!important;cursor:pointer}
       .ws-btn-print-exam{min-height:38px!important;padding:6px 13px!important;border-radius:10px!important;font-size:13px!important}
@@ -586,10 +655,11 @@
       .ws-tab-btn{min-height:38px!important;padding:6px 12px!important;border-radius:9px!important;border:1.5px solid transparent!important;background:transparent!important;color:#355943!important;font-size:13px!important;font-weight:800!important;cursor:pointer}
       .ws-tab-btn.active,.ws-tab-btn.active:hover{background:#ffffff!important;border-color:#b8d7be!important;color:#174f34!important;box-shadow:0 2px 6px rgba(24,78,50,.1)}
 
-      .ws-preview-stage{background:#e7eee8;border-radius:14px;padding:16px;max-height:54vh;overflow-y:auto;overflow-x:hidden;display:grid;gap:16px}
+      .ws-preview-stage{background:#e7eee8;border-radius:14px;padding:16px;max-height:none;overflow:visible;display:block}
+      body.dark-mode .ws-preview-stage{background:#122018}
 
       /* ===== A4 Worksheet Paper Styling (both preview and @media print) ===== */
-      .ws-a4-paper{background:#ffffff;color:#111827;border:1px solid #d4ded6;border-radius:8px;padding:20px 24px;box-shadow:0 4px 16px rgba(0,0,0,.06);font-family:'Nunito',Arial,sans-serif;line-height:1.45;width:100%;max-width:100%;min-width:0;box-sizing:border-box;overflow:hidden}
+      .ws-a4-paper{background:#ffffff;color:#111827;border:1px solid #d4ded6;border-radius:8px;padding:20px 24px;box-shadow:0 4px 16px rgba(0,0,0,.06);font-family:'Nunito',Arial,sans-serif;line-height:1.45;width:100%;max-width:100%;min-width:0;height:auto;box-sizing:border-box;overflow-x:clip;overflow-y:visible}
       .ws-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;border-bottom:2px solid #224d36;padding-bottom:10px;margin-bottom:12px;font-size:12.5px}
       .ws-brand{font-weight:900;color:#1e563a;font-size:13px;letter-spacing:.03em}
       .ws-sub{font-weight:700;color:#374151;margin-top:2px}

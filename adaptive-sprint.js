@@ -105,7 +105,16 @@
         const { cfg, levelDelta } = computeAdaptiveConfig(config, session.adaptiveStreak, state.mastery);
         session.adaptiveDelta = levelDelta;
         if (levelDelta !== 0) {
-          session.questions[session.index] = generate(cfg);
+          const prevQ = session.questions[session.index];
+          if (prevQ && prevQ.topicId && typeof generateTopicQuestion === 'function') {
+            const nextTier = levelDelta > 0
+              ? (prevQ.difficulty === 'easy' ? 'medium' : 'hard')
+              : (prevQ.difficulty === 'hard' ? 'medium' : 'easy');
+            const adapted = generateTopicQuestion(prevQ.topicId, { ...cfg, topic: prevQ.topicId, topics: [prevQ.topicId], difficulty: nextTier });
+            if (adapted) session.questions[session.index] = adapted;
+          } else {
+            session.questions[session.index] = generate(cfg);
+          }
         }
       }
     };
@@ -131,11 +140,25 @@
 
   // ---------------- 60-Second Sprint Mode ----------------
   let sprintTimer = null;
+  let sprintKeyHandler = null;
   function stopSprint() {
     if (sprintTimer) {
       clearInterval(sprintTimer);
       sprintTimer = null;
     }
+    if (sprintKeyHandler && typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
+      window.removeEventListener('keydown', sprintKeyHandler);
+      sprintKeyHandler = null;
+    }
+  }
+  const stopBeforeSprint = typeof stop === 'function' ? stop : null;
+  if (stopBeforeSprint) {
+    stop = function () {
+      stopSprint();
+      return stopBeforeSprint.apply(this, arguments);
+    };
+    if (typeof window !== 'undefined') window.stop = stop;
+    if (typeof global !== 'undefined') global.stop = stop;
   }
 
   function startSprint60() {
@@ -150,13 +173,21 @@
     if (typeof window !== 'undefined') window.view = 'sprint60';
     document.body.dataset.view = 'sprint60';
 
+    const authU = typeof currentAuthUser === 'function' ? currentAuthUser() : null;
+    const gNum = Number(config.grade && config.grade !== 'custom' ? config.grade : authU?.grade) || 3;
+    const sprintOps = gNum <= 1 ? ['+', '-'] : (gNum === 2 ? ['+', '-', '*'] : ['+', '-', '*', '/']);
+    const sprintDigits = gNum <= 1 ? [1] : [1, 2];
+    const sprintTypes = gNum >= 6 ? ['natural', 'negative'] : ['natural'];
+
     const sprintCfg = {
       ...defaults,
-      ...config,
-      digits: config.digits?.length ? config.digits : [1],
-      ops: config.ops?.length ? config.ops : ['+', '-'],
-      types: config.types?.length ? config.types : [config.type || 'natural'],
-      type: config.type || 'natural',
+      grade: 'custom',
+      topic: 'all',
+      topics: [],
+      digits: sprintDigits,
+      ops: sprintOps,
+      types: sprintTypes,
+      type: sprintTypes[0],
       questionStyle: 'normal'
     };
 
@@ -197,7 +228,7 @@
         </div>
         <div class="sprint-problem">${typeof formatQuestionPrompt === 'function' ? formatQuestionPrompt(q.q) : (typeof mathMarkup === 'function' ? mathMarkup(q.q) : esc(q.q))}</div>
         <div class="choices sprint-choices">
-          ${q.options.map((opt, idx) => `<button type="button" class="choice" data-sprint-opt="${idx}">${typeof mathMarkup === 'function' ? mathMarkup(opt) : esc(opt)}</button>`).join('')}
+          ${q.options.map((opt, idx) => `<button type="button" class="choice" data-sprint-opt="${idx}"><small style="opacity:.6;margin-right:6px;font-weight:800">${'ABCD'[idx]}</small>${typeof mathMarkup === 'function' ? mathMarkup(opt) : esc(opt)}</button>`).join('')}
         </div>
         <div class="sprint-actions">
           <button type="button" id="sprintQuitBtn" class="ghost">${t('Dừng lượt', 'Quit')}</button>
@@ -304,6 +335,20 @@
     }
 
     renderSprint();
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+      sprintKeyHandler = e => {
+        if (view !== 'sprint60' || s.locked) return;
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        const k = String(e.key || '').toLowerCase();
+        let idx = 'abcd'.indexOf(k);
+        if (idx < 0) idx = '1234'.indexOf(k);
+        if (idx >= 0) {
+          const btn = $(`[data-sprint-opt="${idx}"]`);
+          if (btn) { e.preventDefault(); btn.click(); }
+        }
+      };
+      window.addEventListener('keydown', sprintKeyHandler);
+    }
     sprintTimer = setInterval(() => {
       if (view !== 'sprint60') { stopSprint(); return; }
       s.timeLeft--;

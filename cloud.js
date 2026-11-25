@@ -198,8 +198,12 @@ async function localSignIn(username,password){
 // Accounts made before v2.5.3 may still have a 4-digit PIN: they must pick a 6+ character one before studying.
 function forcePinChange(){
   if(typeof document==='undefined'||!$('#modal'))return;
+  const cu=currentAuthUser();
+  const isAdult=cu&&(cu.role==='teacher'||cu.role==='admin');
   modal(`<h2>${t('Đổi mã PIN mới','Choose a new PIN')}</h2>
-    <p class="muted">${t('Mã PIN của em đang quá ngắn. Hãy đặt mã mới có ít nhất 6 ký tự để bảo vệ tiến độ học tập nhé!','Your PIN is too short. Please choose a new one with at least 6 characters to protect your progress!')}</p>
+    <p class="muted">${isAdult
+      ? t('Mã PIN hiện tại đang quá ngắn. Vui lòng đặt mã mới có ít nhất 6 ký tự để bảo vệ tài khoản!','Your current PIN is too short. Please choose a new one with at least 6 characters to secure your account!')
+      : t('Mã PIN của em đang quá ngắn. Hãy đặt mã mới có ít nhất 6 ký tự để bảo vệ tiến độ học tập nhé!','Your PIN is too short. Please choose a new one with at least 6 characters to protect your progress!')}</p>
     <form id="forcePinForm">
       <input type="password" id="forcePin1" minlength="6" required autocomplete="new-password" placeholder="${t('Mã PIN mới','New PIN')}" style="width:100%;font-size:17px;padding:10px;margin:8px 0;border-radius:10px;border:1.5px solid #d5e4c7">
       <input type="password" id="forcePin2" minlength="6" required autocomplete="new-password" placeholder="${t('Nhập lại mã PIN','Repeat PIN')}" style="width:100%;font-size:17px;padding:10px;margin:8px 0;border-radius:10px;border:1.5px solid #d5e4c7">
@@ -487,11 +491,11 @@ function renderProfile(){
 
         <div class="card profile-password-card">
           <div class="profile-pwd-header">
-            <h3>${t('Mật khẩu & Mã PIN của em','My Password & PIN')}</h3>
-            <p class="muted">${t('Dùng để đăng nhập và bảo vệ tiến độ học tập của em.','Use this PIN/Password to sign in and protect your learning progress.')}</p>
+            <h3>${(isAdmin||isTeacher)?t('Mật khẩu & Mã PIN tài khoản','Account Password & PIN'):t('Mật khẩu & Mã PIN của em','My Password & PIN')}</h3>
+            <p class="muted">${(isAdmin||isTeacher)?t('Dùng để đăng nhập và bảo vệ dữ liệu lớp học của Thầy/Cô.','Use this PIN/Password to sign in and protect your classroom data.'):t('Dùng để đăng nhập và bảo vệ tiến độ học tập của em.','Use this PIN/Password to sign in and protect your learning progress.')}</p>
           </div>
 
-          <p class="muted" style="margin:8px 0 14px;font-size:12px">${t('Mật khẩu được mã hóa nên không xem lại được. Quên mật khẩu thì nhờ Thầy/Cô hoặc bố mẹ đặt lại giúp em nhé.','Your password is encrypted and cannot be shown. If you forget it, ask your teacher or parent to reset it.')}</p>
+          <p class="muted" style="margin:8px 0 14px;font-size:12px">${(isAdmin||isTeacher)?t('Mật khẩu được mã hóa nên không hiển thị lại được. Nếu quên mật khẩu, vui lòng liên hệ Quản trị viên để đặt lại.','Your password is encrypted and cannot be shown. Contact the administrator if you need a reset.'):t('Mật khẩu được mã hóa nên không xem lại được. Quên mật khẩu thì nhờ Thầy/Cô hoặc bố mẹ đặt lại giúp em nhé.','Your password is encrypted and cannot be shown. If you forget it, ask your teacher or parent to reset it.')}</p>
 
           <div class="change-pwd-box">
             <h4 style="margin:0 0 10px;font-size:14px;color:#284632;font-weight:800">
@@ -744,7 +748,7 @@ function openAccount(mode='login'){
       <p id="authMessage" class="danger" role="status" style="margin:12px 0;font-weight:700"></p>
       <button type="submit" class="primary wide" id="authSubmitBtn">${signup?t('Tạo tài khoản & Bắt đầu học →','Create account & Start learning →'):t('Đăng nhập vào học →','Sign in to learn →')}</button>
     </form>
-    ${cloudConfigured()&&!signup?`<div class="section"><p class="muted" style="text-align:center">${t('Hoặc tài khoản Supabase:','Or Supabase Account:')}</p>${window.NUMI_CLOUD_CONFIG.googleEnabled?`<button type="button" class="wide" id="googleSignIn">${t('Tiếp tục với Google','Continue with Google')}</button>`:''}</div>`:''}
+    ${cloudConfigured()&&window.NUMI_CLOUD_CONFIG?.googleEnabled&&!signup?`<div class="section"><p class="muted" style="text-align:center">${t('Hoặc đăng nhập bằng Google:','Or sign in with Google:')}</p><button type="button" class="wide" id="googleSignIn">${t('Tiếp tục với Google','Continue with Google')}</button></div>`:''}
   </div>`;
 
   $('#tabLogin').onclick=()=>openAccount('login');

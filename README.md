@@ -1,10 +1,14 @@
-# NumiQuick — bản cập nhật 2.13.0
+# NumiQuick — bản cập nhật 2.15.0
 
-Web luyện tính nhẩm, đặt tính và soạn phiếu đề in PDF vui cho học sinh Tiểu học & THCS (Lớp 1–9 theo chuẩn Chương trình GDPT 2018), chạy tĩnh trên GitHub Pages.
+Web học toán, luyện tính nhẩm, giải bài tập từ cơ bản đến vận dụng và soạn phiếu đề in PDF cho học sinh Tiểu học & THCS (Lớp 1–9 theo chuẩn Chương trình GDPT 2018 & Công văn 7991/BGDĐT-GDTrH), chạy tĩnh trên GitHub Pages.
 
 ## Tính năng chính
 
-- **Trọn bộ 63 chuyên đề Tiểu học Lớp 1–5 (Mới v2.13.0):** Phủ đầy đủ cả 3 mạch kiến thức GDPT 2018 (*Số học · Hình học & Đo lường · Thống kê & Xác suất*): Lớp 1 (10 dạng), Lớp 2 (12 dạng), Lớp 3 (14 dạng), Lớp 4 (13 dạng), Lớp 5 (14 dạng) cùng 17 chuyên đề THCS (Lớp 6–9). Tự động đặt sẵn số câu & thời gian phù hợp theo từng dạng (Tính nhẩm / Đặt tính / Ôn kiến thức), chọn ghép nhiều chuyên đề xoay vòng cân bằng và ẩn gọn mục tùy chỉnh khi chọn lớp có sẵn.
+- **Trọn bộ 126 chuyên đề Toán Lớp 1–9 & Tách phân môn THCS (Mới v2.15.0):**
+  - **Tiểu học (Lớp 1–5 — 73 chuyên đề):** Củng cố toàn diện Toán Số, Tính nhẩm nhanh, Đặt tính, Dãy số quy luật và Toán giải có lời văn nhiều bước (tổng–hiệu ẩn, rút về đơn vị, chia dư thực tế, vòi nước, lãi–lỗ, chuyển động).
+  - **THCS (Lớp 6–9 — 53 chuyên đề):** Chia rõ 2 phân môn **🔢 Số học & Đại số** (34 chuyên đề: tập hợp, ƯCLN–BCNN, số nguyên, tỉ lệ thức, đa thức, hằng đẳng thức, phân thức, lập PT/hệ PT, bất phương trình, parabol & Viète, toán thực tế thi vào 10) và **📐 Hình học & Đo lường** (19 chuyên đề: đối xứng, song song, tam giác, đồng quy, lăng trụ, Pythagore, tứ giác, Thalès, đồng dạng, chóp đều, lượng giác, đường tròn, trụ–nón–cầu).
+- **Lộ trình nhận thức khoa học Dễ → Khó & Cẩm nang Kiến thức Lớp 1–9 (Mới v2.15.0):** Sắp xếp câu hỏi theo 3 mức độ nhận thức (*🌱 Nhận biết → 📘 Thông hiểu → 🏆 Vận dụng & Toán thực tế*), kèm **Bài giảng tóm tắt & Công thức trọng tâm**, minh họa Hình học SVG và mục **Xem lại đề & Bài giải chi tiết từng câu** sau mỗi lượt làm.
+- **Quy tắc thời gian thông minh theo cấp học (Mới v2.15.0):** Tiểu học (Lớp 1–5) luôn giữ đồng hồ đếm ngược để rèn phản xạ suy nghĩ nhanh; THCS (Lớp 6–9) khi làm **Tự luận** tự động bỏ giới hạn thời gian (`🧠 Không giới hạn giờ`) để học sinh tập trung tư duy, lập phương trình và suy luận hình học.
 - **Soạn đề sẵn & In 2 bản PDF khổ A4 riêng biệt:** Mở trực tiếp từ **Không gian Giáo viên** (`🖨️ Soạn & In đề PDF`) hoặc trang **Luyện tập** (`🖨️ Soạn đề sẵn & In phiếu PDF (A4)`). Xuất tách riêng **Bảng 1: Đề phát học sinh (Không đáp án — kèm khung ô ly trống tự đặt tính)** và **Bảng 2: Bản Có đáp án & Lời giải nhanh (Chấm bài)**, hỗ trợ đổi mã đề (`01, 02...`) và đổi riêng từng câu (`↻`).
 - **Bảng kẻ "📐 Đặt tính rồi tính" ô ly tương tác:** Kẻ bảng dọc – ngang đầy đủ với tiêu đề tên hàng (`Trăm | Chục | Đ.vị` hoặc `Chục | Đ.vị | , | P.10 | P.100`), tô sáng cả cột đang tính, hàng ghi **Nhớ**, nhập chữ số từ phải sang trái bằng bàn phím hoặc chạm số trên màn hình, tự động mở sẵn bên phải trên máy tính với các phép đặt tính Tiểu học.
 - **Tự luận nhập song song & Giao diện làm bài 1 màn hình cố định:** Chuyển nhanh `Trắc nghiệm ↔ Tự luận` ngay trong khi làm bài; chế độ Tự luận cho phép vừa gõ bàn phím vừa bấm số trên màn hình mượt mà. Màn hình làm bài khóa gọn trong 1 khung hình (không giật, không cuộn lên xuống), bảng Đặt tính / Nháp mở song song bên phải trên máy tính.

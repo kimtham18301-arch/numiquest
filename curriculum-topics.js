@@ -160,6 +160,34 @@
     ]
   };
 
+  // Merge expanded Primary Number/Word-Problem topics & full THCS Number vs Geometry streams (v2.15.0)
+  const PRIMARY_GEOM_IDS = new Set([
+    'g1_geom_basic', 'g2_geom_time', 'g2_peri_shape', 'g3_geom', 'g3_midpoint',
+    'g4_angle', 'g4_geom', 'g5_geom', 'g5_box_surface'
+  ]);
+  for (let g = 1; g <= 5; g++) {
+    if (Array.isArray(NUMI_GRADE_TOPICS[g])) {
+      NUMI_GRADE_TOPICS[g].forEach(tp => {
+        if (!tp.domain) tp.domain = tp.id === 'all' ? 'all' : (PRIMARY_GEOM_IDS.has(tp.id) ? 'geometry' : 'number');
+      });
+    }
+    const ext = typeof NUMI_CURRICULUM_EXT !== 'undefined' ? NUMI_CURRICULUM_EXT : null;
+    if (ext && ext.EXTRA_PRIMARY_TOPICS && Array.isArray(ext.EXTRA_PRIMARY_TOPICS[g])) {
+      for (const extraTp of ext.EXTRA_PRIMARY_TOPICS[g]) {
+        if (!NUMI_GRADE_TOPICS[g].some(x => x.id === extraTp.id)) {
+          NUMI_GRADE_TOPICS[g].push({ ...extraTp });
+        }
+      }
+    }
+  }
+  if (typeof NUMI_CURRICULUM_EXT !== 'undefined' && NUMI_CURRICULUM_EXT.SECONDARY_GRADE_TOPICS) {
+    for (let g = 6; g <= 9; g++) {
+      if (Array.isArray(NUMI_CURRICULUM_EXT.SECONDARY_GRADE_TOPICS[g])) {
+        NUMI_GRADE_TOPICS[g] = NUMI_CURRICULUM_EXT.SECONDARY_GRADE_TOPICS[g].map(tp => ({ ...tp }));
+      }
+    }
+  }
+
   function getRecommendedTiming(gradeNum, selectedIds = []) {
     const g = Number(gradeNum);
     const list = NUMI_GRADE_TOPICS[g];
@@ -235,11 +263,14 @@
     return null;
   }
 
-  function formatTopicBadge(topicId, gradeHint) {
+  function formatTopicBadge(topicId, gradeHint, cfgHint) {
     const meta = getTopicMeta(topicId, gradeHint);
     if (!meta || meta.id === 'all') return '';
     const label = typeof lang !== 'undefined' && lang === 'en' ? meta.en : meta.vi;
-    return `${meta.col ? '📐 ' : '🎯 '}${label}${meta.seconds ? ` · ${meta.seconds}s` : ''}`;
+    const g = Number(gradeHint || cfgHint?.grade || 0);
+    const icon = meta.col ? '📐 ' : (g >= 6 ? (meta.domain === 'geometry' ? '📐 ' : '🔢 ') : '🎯 ');
+    const untimed = typeof isUntimedQuizSession === 'function' && isUntimedQuizSession(cfgHint || (typeof config !== 'undefined' ? config : null), { config: { grade: g } });
+    return `${icon}${label}${!untimed && meta.seconds ? ` · ${meta.seconds}s` : ''}`;
   }
 
   function makeQ(q, answer, near, skill, cfg, explanation, extra = {}) {
@@ -258,20 +289,35 @@
     };
   }
 
-  function tagTopic(qObj, topicId, g) {
+  function tagTopic(qObj, topicId, g, cfgUsed) {
     if (!qObj) return qObj;
-    qObj.topicId = topicId;
-    qObj.topicLabel = formatTopicBadge(topicId, g);
     const meta = getTopicMeta(topicId, g);
+    qObj.topicId = topicId;
+    qObj.domain = meta?.domain || qObj.domain || 'number';
+    qObj.topicLabel = formatTopicBadge(topicId, g, cfgUsed || qObj.config);
+    const ext = typeof NUMI_CURRICULUM_EXT !== 'undefined' ? NUMI_CURRICULUM_EXT : null;
+    if (!qObj.difficulty) {
+      qObj.difficulty = ext && typeof ext.resolveTier === 'function' ? ext.resolveTier(cfgUsed || qObj.config) : 'medium';
+    }
+    if (!qObj.difficultyLabel) {
+      qObj.difficultyLabel = ext && typeof ext.difficultyBadgeLabel === 'function'
+        ? ext.difficultyBadgeLabel(qObj.difficulty)
+        : '';
+    }
     if (meta && meta.seconds) {
       qObj.topicSeconds = meta.seconds;
-      qObj.config = { ...(qObj.config || {}), seconds: meta.seconds };
+      qObj.config = { ...(qObj.config || {}), seconds: meta.seconds, difficulty: qObj.difficulty };
     }
     return qObj;
   }
 
-  function generateTopicQuestion(topicId, cfg) {
+  function generateTopicQuestion(topicId, cfg = {}) {
     const g = Number(cfg.grade) || 1;
+    const ext = typeof NUMI_CURRICULUM_EXT !== 'undefined' ? NUMI_CURRICULUM_EXT : null;
+    if (ext && typeof ext.generateExtendedTopicQuestion === 'function') {
+      const extRes = ext.generateExtendedTopicQuestion(topicId, cfg);
+      if (extRes) return tagTopic(extRes, topicId, g, cfg);
+    }
     let res = null;
     switch (topicId) {
       // ---------- GRADE 1 ----------
@@ -1371,7 +1417,31 @@
       default:
         return null;
     }
-    return tagTopic(res, topicId, g);
+    return tagTopic(res, topicId, g, cfg);
+  }
+
+  function getCandidateTopicIdsForGrade(g, domainFilter = 'all') {
+    const list = NUMI_GRADE_TOPICS[g] || [];
+    return list
+      .filter(x => x.id !== 'all' && (domainFilter === 'all' || Number(g) < 6 || x.domain === domainFilter))
+      .map(x => x.id);
+  }
+
+  function buildProgressiveTierSchedule(totalCount, difficultyMode = 'progressive') {
+    const n = Math.max(1, Number(totalCount) || 1);
+    if (difficultyMode === 'easy' || difficultyMode === 'medium' || difficultyMode === 'hard') {
+      return Array.from({ length: n }, () => difficultyMode);
+    }
+    if (n === 1) return ['medium'];
+    if (n === 2) return ['easy', 'hard'];
+    const nEasy = Math.max(1, Math.round(n * 0.4));
+    const nHard = Math.max(1, Math.round(n * 0.25));
+    const nMed = Math.max(0, n - nEasy - nHard);
+    return [
+      ...Array.from({ length: nEasy }, () => 'easy'),
+      ...Array.from({ length: nMed }, () => 'medium'),
+      ...Array.from({ length: nHard }, () => 'hard')
+    ];
   }
 
   // Round-robin shuffled topic deck so mixed-format sessions cover EVERY selected topic evenly without clumps!
@@ -1390,7 +1460,7 @@
     return deck.pop();
   }
 
-  // Hook generate() to support single topic, multi-topic synthesis (config.topics), and balanced Grade 1-5/6-9 mixed streams
+  // Hook generate() to support single topic, multi-topic synthesis (config.topics), THCS Number/Geometry domain filter, and balanced streams
   const genBeforeTopics = typeof generate === 'function' ? generate : null;
   if (genBeforeTopics) {
     generate = function (c) {
@@ -1398,6 +1468,7 @@
       const g = cfg && cfg.grade && cfg.grade !== 'custom' ? Number(cfg.grade) : null;
       const topic = cfg && cfg.topic ? String(cfg.topic) : 'all';
       const topicsArr = Array.isArray(cfg?.topics) ? cfg.topics.filter(id => id && id !== 'all') : [];
+      const domainFilter = cfg?.domainFilter || 'all';
 
       // 1. Explicit multi-topic mix chosen by student/parent/teacher
       if (topicsArr.length > 0) {
@@ -1415,13 +1486,23 @@
         if (tq) return tq;
       }
 
+      // 2b. Explicit THCS Domain Filter ('number' or 'geometry') on Grade 6-9
+      if (g && g >= 6 && (domainFilter === 'number' || domainFilter === 'geometry')) {
+        const domIds = getCandidateTopicIdsForGrade(g, domainFilter);
+        if (domIds.length) {
+          const pickedId = nextFromDeck(`dom:${g}:${domainFilter}`, domIds);
+          const tq = generateTopicQuestion(pickedId, cfg);
+          if (tq) return tq;
+        }
+      }
+
       // 3. "Tổng hợp tất cả dạng Lớp X" (normal style & full grade ops):
-      //    Grades 1-5 get 80% rich balanced multi-format synthesis; Grades 6-9 get 45% specialized exam mix.
+      //    Grades 1-5 get 80% rich balanced multi-format synthesis; Grades 6-9 get 55% specialized Number + Geometry exam mix.
       const gradeMeta = typeof NUMI_GRADES !== 'undefined' ? NUMI_GRADES[g] : null;
       const isFullGradeOps = !cfg.ops || !gradeMeta || cfg.ops.length >= gradeMeta.ops.length;
-      const mixProb = g && g <= 5 ? 0.8 : 0.45;
+      const mixProb = g && g <= 5 ? 0.8 : 0.55;
       if (g && NUMI_GRADE_TOPICS[g] && isFullGradeOps && (!cfg.questionStyle || cfg.questionStyle === 'normal') && Math.random() < mixProb) {
-        const specializedIds = NUMI_GRADE_TOPICS[g].filter(x => x.id !== 'all').map(x => x.id);
+        const specializedIds = getCandidateTopicIdsForGrade(g, 'all');
         if (specializedIds.length) {
           const pickedId = nextFromDeck(`all:${g}`, specializedIds);
           const tq = generateTopicQuestion(pickedId, cfg);
@@ -1434,8 +1515,7 @@
     if (typeof global !== 'undefined') global.generate = generate;
   }
 
-  // Wrap generateUniqueQuestions() so multi-topic sessions (e.g. 10 questions across 3 topics)
-  // are split EVENLY (4 + 3 + 3) in shuffled random order, with EACH question keeping its own topic's default timer!
+  // Wrap generateUniqueQuestions() so sessions are balanced across topics AND progress scientifically from Easy -> Medium -> Hard!
   const genUniqueBeforeTopics = typeof generateUniqueQuestions === 'function' ? generateUniqueQuestions : null;
   if (genUniqueBeforeTopics) {
     generateUniqueQuestions = function (count, c) {
@@ -1443,6 +1523,8 @@
       const g = cfg && cfg.grade && cfg.grade !== 'custom' ? Number(cfg.grade) : null;
       const topicsArr = Array.isArray(cfg?.topics) ? cfg.topics.filter(id => id && id !== 'all') : [];
       const singleTopic = cfg && cfg.topic && cfg.topic !== 'all' ? String(cfg.topic) : null;
+      const domainFilter = cfg?.domainFilter || 'all';
+      const diffMode = cfg?.difficultyMode || 'progressive';
       const total = Math.max(1, Number(count) || 10);
 
       let plan = null;
@@ -1453,26 +1535,29 @@
       } else if (g && NUMI_GRADE_TOPICS[g] && (!cfg.questionStyle || cfg.questionStyle === 'normal')) {
         const gradeMeta = typeof NUMI_GRADES !== 'undefined' ? NUMI_GRADES[g] : null;
         const isFullGradeOps = !cfg.ops || !gradeMeta || cfg.ops.length >= gradeMeta.ops.length;
-        if (isFullGradeOps) {
-          const allIds = NUMI_GRADE_TOPICS[g].filter(x => x.id !== 'all').map(x => x.id);
+        if (isFullGradeOps || (g >= 6 && domainFilter !== 'all')) {
+          const allIds = getCandidateTopicIdsForGrade(g, domainFilter);
           if (allIds.length) plan = buildBalancedTopicPlan(allIds, total);
         }
       }
 
       if (!plan || !plan.length) return genUniqueBeforeTopics(total, cfg);
 
+      const tierSchedule = buildProgressiveTierSchedule(plan.length, diffMode);
       const out = [];
       const seen = new Set();
-      for (const topicId of plan) {
+      for (let i = 0; i < plan.length; i++) {
+        const topicId = plan[i];
+        const slotTier = tierSchedule[i] || 'medium';
         let q = null;
         for (let tries = 0; tries < 25; tries++) {
-          const cand = generateTopicQuestion(topicId, { ...cfg, topic: topicId, topics: [topicId] });
+          const cand = generateTopicQuestion(topicId, { ...cfg, topic: topicId, topics: [topicId], difficulty: slotTier });
           if (cand) {
             q = cand;
             if (!seen.has(cand.q)) break;
           }
         }
-        if (!q) q = generate(cfg);
+        if (!q) q = generate({ ...cfg, difficulty: slotTier });
         if (q) {
           seen.add(q.q);
           out.push(q);
@@ -1530,7 +1615,7 @@
     }
   }
 
-  // Inject Grade Topic Stream pills (supporting single + multi-topic synthesis, custom question count, even random split & per-topic default timers!)
+  // Inject Grade Topic Stream pills, THCS Number vs Geometry Split, 3-Tier Difficulty Progression & Smart Primary/Secondary Timer Bar!
   function renderTopicPillsForGrade(gradeNum, applyTiming = false) {
     const host = $('#gradeTopicsWrap');
     const g = Number(gradeNum);
@@ -1540,46 +1625,91 @@
     if (!list) {
       host.hidden = true;
       host.innerHTML = '';
-      if (typeof config !== 'undefined') { config.topic = 'all'; config.topics = []; }
+      if (typeof config !== 'undefined') { config.topic = 'all'; config.topics = []; config.domainFilter = 'all'; }
       return;
     }
     if (presetCountGrade !== g) {
       presetManualCount = null;
       presetCountGrade = g;
     }
-    const validIds = new Set(list.filter(x => x.id !== 'all').map(x => x.id));
+    const isSecondary = g >= 6;
+    const activeDomain = isSecondary && ['all', 'number', 'geometry'].includes(config?.domainFilter)
+      ? config.domainFilter
+      : 'all';
+    const activeDiffMode = ['progressive', 'easy', 'medium', 'hard'].includes(config?.difficultyMode)
+      ? config.difficultyMode
+      : 'progressive';
+    if (typeof config !== 'undefined') {
+      config.domainFilter = activeDomain;
+      config.difficultyMode = activeDiffMode;
+    }
+
+    const allSpecialized = list.filter(x => x.id !== 'all');
+    const validIds = new Set(allSpecialized.map(x => x.id));
+    const numberTopics = allSpecialized.filter(x => x.domain !== 'geometry');
+    const geomTopics = allSpecialized.filter(x => x.domain === 'geometry');
+    const domainFilteredIds = isSecondary && activeDomain !== 'all'
+      ? allSpecialized.filter(x => x.domain === activeDomain).map(x => x.id)
+      : allSpecialized.map(x => x.id);
+
     let selectedList = Array.isArray(config?.topics) ? config.topics.filter(id => validIds.has(id)) : [];
     if (!selectedList.length && config?.topic && validIds.has(config.topic)) {
       selectedList = [config.topic];
     }
+
+    const effectiveTimingIds = selectedList.length ? selectedList : (activeDomain !== 'all' ? domainFilteredIds : []);
     const curRec = applyTiming
-      ? applySmartTimingToForm(g, selectedList)
+      ? applySmartTimingToForm(g, effectiveTimingIds)
       : {
-          ...getRecommendedTiming(g, selectedList),
-          count: Number(config?.count) || getRecommendedTiming(g, selectedList).count
+          ...getRecommendedTiming(g, effectiveTimingIds),
+          count: Number(config?.count) || getRecommendedTiming(g, effectiveTimingIds).count
         };
     const activeCount = curRec.count;
     const isAllMode = selectedList.length === 0;
     const mentalIds = list.filter(x => x.kind === 'mental').map(x => x.id);
     const colIds = list.filter(x => x.col).map(x => x.id);
     const knowledgeIds = list.filter(x => x.kind === 'knowledge').map(x => x.id);
-    const activeTopicCount = isAllMode ? validIds.size : selectedList.length;
+    const activeTopicCount = isAllMode ? domainFilteredIds.length : selectedList.length;
     const timeRangeText = formatTimingRange(curRec);
     const splitText = formatSplitHint(activeCount, activeTopicCount);
+
+    const checkedModeEl = $('#config input[name="inputMode"]:checked');
+    const currentInputMode = checkedModeEl ? checkedModeEl.value : (config?.inputMode || 'choices');
+    const isUntimedActive = isSecondary && (currentInputMode === 'numpad' || Boolean(config?.untimed));
+
+    const diffLabelMap = {
+      progressive: t('Dễ → Khó', 'Easy → Hard'),
+      easy: t('Nhận biết (Dễ)', 'Lv1 Easy'),
+      medium: t('Thông hiểu (Vừa)', 'Lv2 Medium'),
+      hard: t('Vận dụng (Khó)', 'Lv3 Hard')
+    };
 
     const updateLessonSummary = (selArr, countNow, recNow) => {
       const sumEl = $('#lessonSummary');
       if (!sumEl) return;
       const tRange = formatTimingRange(recNow);
+      const modeNowEl = $('#config input[name="inputMode"]:checked');
+      const mVal = modeNowEl ? modeNowEl.value : (config?.inputMode || 'choices');
+      const untimedNow = isSecondary && (mVal === 'numpad' || Boolean(config?.untimed));
+      const timeStr = untimedNow
+        ? t('Không giới hạn giờ (Tư duy)', 'Untimed (Deep thinking)')
+        : `${tRange}/${t('câu', 'q')}`;
+      const diffTxt = diffLabelMap[config?.difficultyMode || 'progressive'] || diffLabelMap.progressive;
+
       if (selArr.length === 0) {
-        sumEl.textContent = `${t(`Đề tổng hợp ${validIds.size} dạng Lớp ${g}`, `Grade ${g} Mixed (${validIds.size} formats)`)} · ${countNow} ${t('câu', 'qs')} · ${tRange}/${t('câu', 'q')}`;
+        const domTitle = isSecondary && activeDomain === 'number'
+          ? t(`Số học & Đại số Lớp ${g} (${domainFilteredIds.length} dạng)`, `Grade ${g} Numbers & Algebra (${domainFilteredIds.length})`)
+          : isSecondary && activeDomain === 'geometry'
+            ? t(`Hình học & Đo lường Lớp ${g} (${domainFilteredIds.length} dạng)`, `Grade ${g} Geometry (${domainFilteredIds.length})`)
+            : t(`Đề tổng hợp ${validIds.size} dạng Lớp ${g}`, `Grade ${g} Mixed (${validIds.size} formats)`);
+        sumEl.textContent = `${domTitle} · ${diffTxt} · ${countNow} ${t('câu', 'qs')} · ${timeStr}`;
       } else {
         const names = selArr.slice(0, 2).map(id => {
           const it = list.find(x => x.id === id);
           return it ? (lang === 'en' ? it.en : it.vi) : id;
         });
         const extraTxt = selArr.length > 2 ? ` +${selArr.length - 2}` : '';
-        sumEl.textContent = `${t('Chuyên đề:', 'Topics:')} ${names.join(' · ')}${extraTxt} · ${countNow} ${t('câu', 'qs')} · ${tRange}/${t('câu', 'q')}`;
+        sumEl.textContent = `${t('Chuyên đề:', 'Topics:')} ${names.join(' · ')}${extraTxt} · ${diffTxt} · ${countNow} ${t('câu', 'qs')} · ${timeStr}`;
       }
     };
 
@@ -1598,47 +1728,117 @@
       }
       if (typeof window !== 'undefined') window.config = config;
       if (typeof global !== 'undefined') global.config = config;
-      const rec = applySmartTimingToForm(g, selectedList);
+      const rec = applySmartTimingToForm(g, selectedList.length ? selectedList : (activeDomain !== 'all' ? domainFilteredIds : []));
       renderTopicPillsForGrade(g, false);
       updateLessonSummary(selectedList, rec.count, rec);
     };
 
+    const applyDomainTab = nextDom => {
+      config.domainFilter = nextDom;
+      config.topic = 'all';
+      config.topics = [];
+      if (typeof window !== 'undefined') window.config = config;
+      if (typeof global !== 'undefined') global.config = config;
+      const domIds = nextDom === 'all' ? [] : allSpecialized.filter(x => x.domain === nextDom).map(x => x.id);
+      const rec = applySmartTimingToForm(g, domIds);
+      renderTopicPillsForGrade(g, false);
+      updateLessonSummary([], rec.count, rec);
+    };
+    if (typeof window !== 'undefined') window.applySecondaryDomainFilter = applyDomainTab;
+    if (typeof global !== 'undefined') global.applySecondaryDomainFilter = applyDomainTab;
+
     const statusBadge = isAllMode
-      ? t(`Đang bật Đề tổng hợp (${validIds.size} dạng trộn đều)`, `Full Mixed Exam (${validIds.size} formats)`)
+      ? (isSecondary && activeDomain === 'number'
+          ? t(`Đang chọn trọn bộ Số học & Đại số (${numberTopics.length} chuyên đề)`, `All Numbers & Algebra (${numberTopics.length} topics)`)
+          : isSecondary && activeDomain === 'geometry'
+            ? t(`Đang chọn trọn bộ Hình học & Đo lường (${geomTopics.length} chuyên đề)`, `All Geometry (${geomTopics.length} topics)`)
+            : t(`Đang bật Đề tổng hợp (${validIds.size} dạng trộn đều)`, `Full Mixed Exam (${validIds.size} formats)`))
       : t(`Đang chọn ${selectedList.length}/${validIds.size} dạng (chạm thêm để ghép nhiều dạng)`, `${selectedList.length}/${validIds.size} selected (tap more to combine)`);
 
-    const timingChipLabel = activeTopicCount > 1
-      ? `⏱ ${t('Thời gian mặc định theo từng dạng:', 'Per-topic default timer:')} ${timeRangeText}`
-      : `⏱ ${t('Thời gian mặc định:', 'Default timer:')} ${timeRangeText}/${t('câu', 'q')}`;
+    const timingChipLabel = isUntimedActive
+      ? `🧠 ${t('Chế độ Tự luận / Tư duy THCS: Không giới hạn thời gian', 'Secondary Free-Input / Thinking Mode: Untimed')}`
+      : g <= 5
+        ? `⏱ ${t('Rèn phản xạ nhanh Tiểu học:', 'Primary fast-reflex timer:')} ${timeRangeText}/${t('câu', 'q')}`
+        : `⏱ ${t('Trắc nghiệm THCS:', 'Secondary MCQ timer:')} ${timeRangeText}/${t('câu', 'q')}`;
 
     const splitPillHtml = activeTopicCount > 1
-      ? `<span class="preset-split-badge">🎲 ${isAllMode ? t(`Random đều ${validIds.size} dạng`, `Balanced across ${validIds.size} topics`) : t(`Chia đều ${activeTopicCount} dạng`, `Even split (${activeTopicCount} topics)`)} (${splitText})</span>`
-      : `<span class="preset-split-badge">⏱ ${timeRangeText}/${t('câu', 'q')}</span>`;
+      ? `<span class="preset-split-badge">🎲 ${isAllMode ? t(`Chia đều ${activeTopicCount} dạng`, `Balanced across ${activeTopicCount} topics`) : t(`Chia đều ${activeTopicCount} dạng`, `Even split (${activeTopicCount} topics)`)} (${splitText})</span>`
+      : `<span class="preset-split-badge">${isUntimedActive ? '🧠 ' + t('Không giới hạn giờ', 'Untimed') : '⏱ ' + timeRangeText + '/' + t('câu', 'q')}</span>`;
 
     const sameSet = (a, b) => a.length > 0 && a.length === b.length && a.every(x => b.includes(x));
     const quickCounts = [5, 8, 10, 12, 15, 20];
+
+    const renderPillBtn = tp => {
+      const active = tp.id === 'all' ? (isAllMode && activeDomain === 'all') : selectedList.includes(tp.id);
+      const prefix = tp.id === 'all'
+        ? '✨ '
+        : tp.col
+          ? '📐 '
+          : isSecondary
+            ? (tp.domain === 'geometry' ? '📐 ' : '🔢 ')
+            : '';
+      const secTag = !isUntimedActive && tp.seconds ? ` <small class="tp-sec-tag">${tp.seconds}s</small>` : '';
+      const tip = `${tp.count} ${t('câu', 'qs')}${isUntimedActive ? ' · ' + t('Không giới hạn giờ', 'Untimed') : ' · ' + tp.seconds + 's/' + t('câu', 'q')}`;
+      return `<button type="button" class="grade-topic-pill ${tp.domain === 'geometry' && isSecondary ? 'is-geom-pill' : ''} ${active ? 'active' : ''}" data-grade-topic="${esc(tp.id)}" title="${esc(tip)}">${prefix}${esc(typeof lang !== 'undefined' && lang === 'en' ? tp.en : tp.vi)}${secTag}</button>`;
+    };
+
+    const secondaryGroupedTopicsHtml = () => {
+      if (activeDomain === 'number') {
+        return `<div class="grade-topics-list">${numberTopics.map(renderPillBtn).join('')}</div>`;
+      }
+      if (activeDomain === 'geometry') {
+        return `<div class="grade-topics-list">${geomTopics.map(renderPillBtn).join('')}</div>`;
+      }
+      const allBtn = list.find(x => x.id === 'all');
+      return `
+        <div class="grade-topics-list" style="margin-bottom:8px">${allBtn ? renderPillBtn(allBtn) : ''}</div>
+        <div class="sec-stream-group">
+          <div class="sec-stream-lbl">🔢 ${t(`Phần Số học & Đại số (${numberTopics.length} chuyên đề)`, `Part 1: Numbers & Algebra (${numberTopics.length} topics)`)}</div>
+          <div class="grade-topics-list">${numberTopics.map(renderPillBtn).join('')}</div>
+        </div>
+        <div class="sec-stream-group" style="margin-top:9px">
+          <div class="sec-stream-lbl is-geom">📐 ${t(`Phần Hình học & Đo lường (${geomTopics.length} chuyên đề)`, `Part 2: Geometry & Measurement (${geomTopics.length} topics)`)}</div>
+          <div class="grade-topics-list">${geomTopics.map(renderPillBtn).join('')}</div>
+        </div>
+      `;
+    };
 
     host.hidden = false;
     host.innerHTML = `
       <div class="grade-topics-head">
         <div class="grade-topics-title">
-          <span>🎯 ${t(`Luồng chuyên đề Lớp ${g} (Chọn 1 hoặc ghép nhiều dạng):`, `Grade ${g} Exam Topics (Pick 1 or combine many):`)}</span>
-          <span class="grade-topics-status">${statusBadge} · <strong class="grade-timing-chip">${timingChipLabel}</strong></span>
+          <span>🎯 ${t(`Hệ thống chuyên đề Lớp ${g} chuẩn GDPT 2018:`, `Grade ${g} Curriculum Topics (GDPT 2018):`)}</span>
+          <span class="grade-topics-status">${statusBadge} · <strong class="grade-timing-chip ${isUntimedActive ? 'is-untimed' : ''}">${timingChipLabel}</strong></span>
         </div>
         <div class="grade-topics-quick-row">
-          ${mentalIds.length ? `<button type="button" class="grade-topics-quick-btn ${sameSet(selectedList, mentalIds) ? 'is-on' : ''}" id="quickMentalTopicsBtn">⚡ ${t('Tính nhẩm nhanh', 'Mental Math')}</button>` : ''}
-          ${colIds.length ? `<button type="button" class="grade-topics-quick-btn ${sameSet(selectedList, colIds) ? 'is-on' : ''}" id="quickColTopicsBtn">📐 ${t('Đặt tính', 'Column')}</button>` : ''}
-          ${knowledgeIds.length ? `<button type="button" class="grade-topics-quick-btn ${sameSet(selectedList, knowledgeIds) ? 'is-on' : ''}" id="quickKnowTopicsBtn">📚 ${t('Ôn kiến thức', 'Knowledge Review')}</button>` : ''}
+          <button type="button" class="grade-topics-quick-btn kh-open-btn" id="openGradeKnowledgeBtn">📖 ${t(`Kiến thức & Công thức Lớp ${g}`, `Gr ${g} Study Notes`)}</button>
+          ${!isSecondary && mentalIds.length ? `<button type="button" class="grade-topics-quick-btn ${sameSet(selectedList, mentalIds) ? 'is-on' : ''}" id="quickMentalTopicsBtn">⚡ ${t('Tính nhẩm nhanh', 'Mental Math')}</button>` : ''}
+          ${!isSecondary && colIds.length ? `<button type="button" class="grade-topics-quick-btn ${sameSet(selectedList, colIds) ? 'is-on' : ''}" id="quickColTopicsBtn">📐 ${t('Đặt tính', 'Column')}</button>` : ''}
+          ${!isSecondary && knowledgeIds.length ? `<button type="button" class="grade-topics-quick-btn ${sameSet(selectedList, knowledgeIds) ? 'is-on' : ''}" id="quickKnowTopicsBtn">📚 ${t('Toán giải & Ôn tập', 'Word & Review')}</button>` : ''}
+          ${isSecondary && currentInputMode !== 'numpad' ? `<button type="button" class="grade-topics-quick-btn ${config?.untimed ? 'is-on' : ''}" id="toggleSecUntimedBtn">♾️ ${config?.untimed ? t('Đang tắt đếm giờ', 'Untimed ON') : t('Bỏ giới hạn giờ', 'No Timer')}</button>` : ''}
         </div>
       </div>
-      <div class="grade-topics-list">
-        ${list.map(tp => {
-          const active = tp.id === 'all' ? isAllMode : selectedList.includes(tp.id);
-          const prefix = tp.id === 'all' ? '✨ ' : tp.col ? '📐 ' : '';
-          const tip = `${tp.count} ${t('câu', 'qs')} · ${tp.seconds}s/${t('câu', 'q')}`;
-          return `<button type="button" class="grade-topic-pill ${active ? 'active' : ''}" data-grade-topic="${esc(tp.id)}" title="${esc(tip)}">${prefix}${esc(typeof lang !== 'undefined' && lang === 'en' ? tp.en : tp.vi)} <small class="tp-sec-tag">${tp.seconds}s</small></button>`;
-        }).join('')}
+
+      ${isSecondary ? `
+        <div class="sec-domain-bar" role="tablist" aria-label="${t('Phân môn Toán THCS', 'Secondary Math Branches')}">
+          <button type="button" class="sec-dom-tab ${activeDomain === 'all' && isAllMode ? 'active' : ''}" data-sec-dom="all">✨ ${t(`Tổng hợp Số + Hình (${allSpecialized.length})`, `All Mixed (${allSpecialized.length})`)}</button>
+          <button type="button" class="sec-dom-tab ${activeDomain === 'number' ? 'active' : ''}" data-sec-dom="number">🔢 ${t(`Phần Số học & Đại số (${numberTopics.length})`, `Numbers & Algebra (${numberTopics.length})`)}</button>
+          <button type="button" class="sec-dom-tab is-geom ${activeDomain === 'geometry' ? 'active' : ''}" data-sec-dom="geometry">📐 ${t(`Phần Hình học & Đo lường (${geomTopics.length})`, `Geometry (${geomTopics.length})`)}</button>
+        </div>
+      ` : ''}
+
+      ${isSecondary ? secondaryGroupedTopicsHtml() : `<div class="grade-topics-list">${list.map(renderPillBtn).join('')}</div>`}
+
+      <div class="preset-diff-bar" id="presetDiffBar">
+        <span class="preset-count-lbl">📊 ${t('Mức độ bài tập:', 'Difficulty:')}</span>
+        <div class="preset-diff-chips">
+          <button type="button" class="preset-diff-chip ${activeDiffMode === 'progressive' ? 'active' : ''}" data-diff-mode="progressive" title="${t('40% Nhận biết → 35% Thông hiểu → 25% Vận dụng thực tế', '40% Easy -> 35% Medium -> 25% Hard')}">📈 ${t('Lộ trình Dễ → Khó (Chuẩn đề thi)', 'Progressive (Easy → Hard)')}</button>
+          <button type="button" class="preset-diff-chip ${activeDiffMode === 'easy' ? 'active' : ''}" data-diff-mode="easy">🌱 ${t('Nhận biết (Dễ)', 'Lv1 Easy')}</button>
+          <button type="button" class="preset-diff-chip ${activeDiffMode === 'medium' ? 'active' : ''}" data-diff-mode="medium">📘 ${t('Thông hiểu (Vừa)', 'Lv2 Medium')}</button>
+          <button type="button" class="preset-diff-chip ${activeDiffMode === 'hard' ? 'active' : ''}" data-diff-mode="hard">🏆 ${t('Vận dụng & Bài giải (Khó)', 'Lv3 Hard & Word')}</button>
+        </div>
       </div>
+
       <div class="preset-count-bar" id="presetCountBar">
         <span class="preset-count-lbl">📝 ${t('Số câu luyện:', 'Questions:')}</span>
         <div class="preset-count-chips">
@@ -1653,6 +1853,7 @@
       btn.onclick = () => {
         const chosen = btn.dataset.gradeTopic;
         if (chosen === 'all') {
+          config.domainFilter = 'all';
           syncConfigTopics([]);
           return;
         }
@@ -1663,11 +1864,39 @@
       };
     });
 
+    $$('[data-sec-dom]').forEach(btn => {
+      btn.onclick = () => applyDomainTab(btn.dataset.secDom || 'all');
+    });
+
+    $$('[data-diff-mode]').forEach(btn => {
+      btn.onclick = () => {
+        config.difficultyMode = btn.dataset.diffMode || 'progressive';
+        if (typeof window !== 'undefined') window.config = config;
+        if (typeof global !== 'undefined') global.config = config;
+        renderTopicPillsForGrade(g, false);
+        updateLessonSummary(selectedList, activeCount, curRec);
+      };
+    });
+
+    $('#openGradeKnowledgeBtn')?.addEventListener('click', () => {
+      if (typeof window !== 'undefined' && typeof window.openKnowledgeModal === 'function') {
+        window.openKnowledgeModal(g, isSecondary ? activeDomain : 'all');
+      }
+    });
+
+    $('#toggleSecUntimedBtn')?.addEventListener('click', () => {
+      config.untimed = !config.untimed;
+      if (typeof window !== 'undefined') window.config = config;
+      if (typeof global !== 'undefined') global.config = config;
+      renderTopicPillsForGrade(g, false);
+      updateLessonSummary(selectedList, activeCount, curRec);
+    });
+
     const applyPickedCount = nextCount => {
       const clean = Math.max(1, Math.min(50, Math.round(Number(nextCount) || 10)));
       presetManualCount = clean;
       presetCountGrade = g;
-      const recNow = getRecommendedTiming(g, selectedList);
+      const recNow = getRecommendedTiming(g, effectiveTimingIds);
       syncPresetCountToForm(clean, recNow);
       renderTopicPillsForGrade(g, false);
       updateLessonSummary(selectedList, clean, recNow);
@@ -1687,6 +1916,8 @@
     if (quickCol && colIds.length) quickCol.onclick = () => syncConfigTopics(colIds);
     const quickKnow = $('#quickKnowTopicsBtn');
     if (quickKnow && knowledgeIds.length) quickKnow.onclick = () => syncConfigTopics(knowledgeIds);
+
+    updateLessonSummary(selectedList, activeCount, curRec);
   }
 
   const resetTopicsOnGrade = gk => {
@@ -1695,6 +1926,8 @@
     if (typeof config !== 'undefined') {
       config.topic = 'all';
       config.topics = [];
+      config.domainFilter = 'all';
+      if (gk !== 'custom' && Number(gk) <= 5) config.untimed = false;
     }
     renderTopicPillsForGrade(gk === 'custom' ? null : gk, gk !== 'custom');
   };
@@ -1712,6 +1945,21 @@
         wrap.className = 'grade-topics-wrap';
         box.append(wrap);
       }
+      $$('#config input[name="inputMode"]').forEach(r => {
+        r.addEventListener('change', () => {
+          config.inputMode = r.value;
+          if (typeof window !== 'undefined') window.config = config;
+          if (typeof global !== 'undefined') global.config = config;
+          if (config.grade && config.grade !== 'custom') {
+            renderTopicPillsForGrade(config.grade, false);
+          }
+        });
+      });
+      // Update Tự luận radio label dynamically with clear hint for Primary vs Secondary!
+      const numpadSpan = $('#config input[name="inputMode"][value="numpad"] + span');
+      if (numpadSpan) {
+        numpadSpan.textContent = t('Tự luận (Gõ/Bấm số · THCS tự bỏ giới hạn giờ)', 'Free input (Numpad · Untimed for Gr 6–9)');
+      }
       renderTopicPillsForGrade(config.grade, Boolean(config.grade && config.grade !== 'custom'));
     };
     if (typeof window !== 'undefined') window.setup = setup;
@@ -1727,26 +1975,51 @@
       .grade-topics-title{display:flex;flex-direction:column;gap:3px;font-size:12.5px;font-weight:800;color:#2f533c}
       .grade-topics-status{font-size:11.5px;font-weight:700;color:#4f7a60;line-height:1.45}
       .grade-timing-chip{display:inline-block;padding:1px 7px;border-radius:999px;background:#e6f4ea;color:#1b5a3c;font-weight:800}
+      .grade-timing-chip.is-untimed{background:#e0f2fe;color:#0369a1}
       .grade-topics-quick-row{display:flex;flex-wrap:wrap;gap:5px}
       .grade-topics-quick-btn{min-height:28px!important;padding:4px 10px!important;border-radius:999px!important;border:1.5px solid #c2dcc6!important;background:#eef8f0!important;color:#1f583c!important;font-size:11.5px!important;font-weight:800!important;cursor:pointer}
+      .grade-topics-quick-btn.kh-open-btn{background:#fff8eb!important;border-color:#f2d194!important;color:#9a4d0c!important}
       .grade-topics-quick-btn:hover{background:#dcf1e2!important;border-color:#74ad86!important}
       .grade-topics-quick-btn.is-on,.grade-topics-quick-btn.is-on:hover{background:#235c43!important;border-color:#194432!important;color:#fff!important}
+      .sec-domain-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:6px;padding:5px;margin-bottom:10px;border-radius:12px;background:#edf5ee;border:1px solid #d5e6d7}
+      .sec-dom-tab{min-height:34px!important;padding:5px 10px!important;border-radius:9px!important;border:1.5px solid transparent!important;background:transparent!important;color:#2c543c!important;font-size:12px!important;font-weight:800!important;cursor:pointer}
+      .sec-dom-tab.active,.sec-dom-tab.active:hover{background:#ffffff!important;border-color:#9fc9ac!important;color:#154c32!important;box-shadow:0 2px 6px rgba(24,78,50,.10)}
+      .sec-dom-tab.is-geom.active{border-color:#93c5fd!important;color:#1e40af!important}
+      .sec-stream-lbl{font-size:12px;font-weight:900;color:#1e5236;margin-bottom:5px;display:flex;align-items:center;gap:5px}
+      .sec-stream-lbl.is-geom{color:#1e40af}
       .grade-topics-list{display:flex;flex-wrap:wrap;gap:6px}
       .grade-topic-pill{display:inline-flex;align-items:center;gap:5px;min-height:34px;padding:6px 11px;border-radius:999px;border:1.5px solid #d4e3cc;background:#f7fbf5;color:#2e4e3a;font-size:12.5px;font-weight:700;cursor:pointer;transition:all .15s ease}
+      .grade-topic-pill.is-geom-pill{background:#f5f9ff;border-color:#cfe0f7;color:#1e3a8a}
       .grade-topic-pill .tp-sec-tag{font-size:10.5px;font-weight:800;padding:1px 5px;border-radius:999px;background:#e4f0e0;color:#3d6b4f}
+      .grade-topic-pill.is-geom-pill .tp-sec-tag{background:#dbeafe;color:#1e40af}
       .grade-topic-pill:hover:not(.active){background:#eaf4e6;border-color:#8cb685}
       .grade-topic-pill.active,.grade-topic-pill.active:hover{background:#2d6a51!important;border-color:#1f4f3c!important;color:#fff!important;box-shadow:0 2px 8px rgba(45,106,81,.22)}
-      .grade-topic-pill.active .tp-sec-tag{background:rgba(255,255,255,0.22);color:#fff}
-      body.dark-mode .grade-topics-wrap{border-top-color:#2b4637}
+      .grade-topic-pill.is-geom-pill.active,.grade-topic-pill.is-geom-pill.active:hover{background:#1d4ed8!important;border-color:#1e3a8a!important;color:#fff!important;box-shadow:0 2px 8px rgba(29,78,216,.22)}
+      .grade-topic-pill.active .tp-sec-tag{background:rgba(255,255,255,0.22)!important;color:#fff!important}
+      .preset-diff-bar{margin-top:11px;padding-top:10px;border-top:1.5px dashed #dce8d6;display:flex;align-items:center;flex-wrap:wrap;gap:7px}
+      .preset-diff-chips{display:flex;flex-wrap:wrap;gap:5px}
+      .preset-diff-chip{min-height:30px!important;padding:4px 10px!important;border-radius:999px!important;border:1.5px solid #d1e2cc!important;background:#f8fcf6!important;color:#2b4f39!important;font-size:11.5px!important;font-weight:800!important;cursor:pointer}
+      .preset-diff-chip.active,.preset-diff-chip.active:hover{background:#2d6a51!important;border-color:#1e4d3a!important;color:#fff!important}
+      body.dark-mode .grade-topics-wrap,.body.dark-mode .preset-diff-bar{border-top-color:#2b4637}
       body.dark-mode .grade-topics-title{color:#c9e4d4}
       body.dark-mode .grade-topics-status{color:#8dc1a3}
       body.dark-mode .grade-timing-chip{background:#1b3828;color:#9ee3bc}
+      body.dark-mode .grade-timing-chip.is-untimed{background:#153147;color:#93c5fd}
       body.dark-mode .grade-topics-quick-btn{background:#193225!important;border-color:#35614a!important;color:#9ee3bc!important}
+      body.dark-mode .grade-topics-quick-btn.kh-open-btn{background:#302312!important;border-color:#694a20!important;color:#fcd34d!important}
       body.dark-mode .grade-topics-quick-btn.is-on{background:#2d6a51!important;color:#fff!important}
+      body.dark-mode .sec-domain-bar{background:#15241c;border-color:#2b4637}
+      body.dark-mode .sec-dom-tab{color:#a8cdb7!important}
+      body.dark-mode .sec-dom-tab.active{background:#22392c!important;border-color:#437559!important;color:#fff!important}
+      body.dark-mode .sec-stream-lbl{color:#9ee3bc}
+      body.dark-mode .sec-stream-lbl.is-geom{color:#93c5fd}
       body.dark-mode .grade-topic-pill{background:#18271f;border-color:#2d4a3a;color:#cde4d6}
+      body.dark-mode .grade-topic-pill.is-geom-pill{background:#152236;border-color:#29436b;color:#bfdbfe}
       body.dark-mode .grade-topic-pill .tp-sec-tag{background:#233b2e;color:#9cc9b0}
       body.dark-mode .grade-topic-pill.active{background:#2d6a51!important;border-color:#4ba880!important;color:#fff!important}
-      .preset-count-bar{margin-top:12px;padding-top:11px;border-top:1.5px dashed #dce8d6;display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+      body.dark-mode .preset-diff-chip{background:#18271f!important;border-color:#2d4a3a!important;color:#cde4d6!important}
+      body.dark-mode .preset-diff-chip.active{background:#2d6a51!important;color:#fff!important}
+      .preset-count-bar{margin-top:11px;padding-top:10px;border-top:1.5px dashed #dce8d6;display:flex;align-items:center;flex-wrap:wrap;gap:8px}
       .preset-count-lbl{font-size:12.5px;font-weight:800;color:#274c36;white-space:nowrap}
       .preset-count-chips{display:flex;flex-wrap:wrap;gap:5px}
       .preset-cnt-chip{min-height:30px!important;min-width:36px!important;padding:3px 10px!important;border-radius:999px!important;border:1.5px solid #cde0c7!important;background:#f7fbf5!important;color:#284d37!important;font-size:12.5px!important;font-weight:800!important;cursor:pointer;transition:all .14s ease}
@@ -1771,7 +2044,14 @@
     document.head.append(style);
   }
 
-  const exp = { NUMI_GRADE_TOPICS, generateTopicQuestion, getRecommendedTiming, buildBalancedTopicPlan };
+  const exp = {
+    NUMI_GRADE_TOPICS,
+    generateTopicQuestion,
+    getRecommendedTiming,
+    buildBalancedTopicPlan,
+    buildProgressiveTierSchedule,
+    getCandidateTopicIdsForGrade
+  };
   if (typeof window !== 'undefined') Object.assign(window, exp);
   if (typeof global !== 'undefined') Object.assign(global, exp);
 })();

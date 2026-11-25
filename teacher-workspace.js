@@ -7,6 +7,11 @@
     getStudentsForTeacher, createClassForTeacher, addStudentToClass, removeStudentFromClass, buildClassJoinLink, ui,
   } = window.NumiClasses;
   let activeTeacherLevelFilter = 'all'; // 'all' | 'primary' | 'secondary'
+  const rerenderTeacherWorkspace = () => (typeof window !== 'undefined' && typeof window.renderTeacherWorkspace === 'function' ? window.renderTeacherWorkspace() : renderTeacherWorkspace());
+  const formatClassTitle = name => {
+    const s = String(name || '').trim();
+    return /^lớp\b/i.test(s) ? s : `lớp ${s}`;
+  };
 
   function openClassPrintReport(cls, students) {
     const todayStr = new Date().toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -107,10 +112,16 @@
         </label>
       </div>
 
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+      <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:8px">
         <label>${t('Khối lớp:', 'Grade:')}
-          <select name="grade">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(g => `<option value="${g}" ${Number(cls.grade) === g ? 'selected' : ''}>${t('Lớp', 'Gr')} ${g}</option>`).join('')}</select>
+          <select name="grade" id="tchAssignGrade">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(g => `<option value="${g}" ${Number(cls.grade) === g ? 'selected' : ''}>${t('Lớp', 'Gr')} ${g}</option>`).join('')}</select>
         </label>
+        <label>${t('Chuyên đề GDPT 2018:', 'GDPT 2018 Topic:')}
+          <select name="topic" id="tchAssignTopic"></select>
+        </label>
+      </div>
+
+      <div id="tchAssignCustomRow" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <label>${t('Kiểu câu hỏi:', 'Style:')}
           <select name="questionStyle">
             <option value="normal">${t('Tính thường', 'Standard')}</option>
@@ -131,18 +142,35 @@
         </label>
       </div>
 
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <label>${t('Hình thức làm bài:', 'Answer Mode:')}
+          <select name="inputMode" id="tchAssignInputMode">
+            <option value="choices">${t('Trắc nghiệm (4 đáp án)', 'Multiple Choice')}</option>
+            <option value="numpad">${t('Tự luận (THCS tự bỏ giới hạn giờ)', 'Free Input (Untimed in Gr 6–9)')}</option>
+          </select>
+        </label>
+        <label>${t('Mức độ câu hỏi:', 'Difficulty:')}
+          <select name="difficultyMode">
+            <option value="progressive">${t('Lộ trình Dễ → Khó (Chuẩn đề thi)', 'Progressive (Easy → Hard)')}</option>
+            <option value="easy">${t('Mức 1: Nhận biết (Dễ)', 'Lv1: Easy')}</option>
+            <option value="medium">${t('Mức 2: Thông hiểu (Vừa)', 'Lv2: Medium')}</option>
+            <option value="hard">${t('Mức 3: Vận dụng & Toán giải (Khó)', 'Lv3: Hard & Word')}</option>
+          </select>
+        </label>
+      </div>
+
       <div style="display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:8px;align-items:end">
-        <div>
+        <div id="tchAssignOpsWrap">
           <span style="display:block;font-size:12px;font-weight:700;margin-bottom:6px">${t('Phép tính:', 'Operations:')}</span>
           <div class="adm-ops-row" style="display:flex;gap:10px;flex-wrap:nowrap;align-items:center;min-height:47px">
             ${[['+', '+'], ['-', '−'], ['*', '×'], ['/', '÷']].map(([v, lbl]) => `<label style="display:inline-flex;align-items:center;gap:4px;font-size:14px;white-space:nowrap;cursor:pointer"><input type="checkbox" name="ops" value="${v}" style="width:16px;height:16px;min-height:16px;margin:0" ${v === '+' || v === '-' ? 'checked' : ''}>${lbl}</label>`).join('')}
           </div>
         </div>
         <label>${t('Số câu:', 'Questions:')}
-          <select name="count">${[5, 10, 15, 20].map(c => `<option value="${c}" ${c === 10 ? 'selected' : ''}>${c} ${t('câu', 'qs')}</option>`).join('')}</select>
+          <select name="count" id="tchAssignCount">${[5, 8, 10, 12, 15, 20].map(c => `<option value="${c}" ${c === 10 ? 'selected' : ''}>${c} ${t('câu', 'qs')}</option>`).join('')}</select>
         </label>
-        <label>${t('Giây/câu:', 'Sec/Q:')}
-          <select name="seconds">${[15, 20, 30, 45].map(s => `<option value="${s}" ${s === 20 ? 'selected' : ''}>${s}s</option>`).join('')}</select>
+        <label id="tchAssignSecLabel">${t('Giây/câu:', 'Sec/Q:')}
+          <select name="seconds" id="tchAssignSeconds">${[15, 20, 25, 30, 40, 45, 50, 60].map(s => `<option value="${s}" ${s === 20 ? 'selected' : ''}>${s}s</option>`).join('')}</select>
         </label>
       </div>
 
@@ -151,6 +179,68 @@
         <button type="button" onclick="$('#modal').close()">${t('Hủy', 'Cancel')}</button>
       </div>
     </form>`);
+
+    const gradeSel = $('#tchAssignGrade');
+    const topicSel = $('#tchAssignTopic');
+    const customRow = $('#tchAssignCustomRow');
+    const opsWrap = $('#tchAssignOpsWrap');
+    const countSel = $('#tchAssignCount');
+    const secSel = $('#tchAssignSeconds');
+    const secLbl = $('#tchAssignSecLabel');
+    const modeSel = $('#tchAssignInputMode');
+
+    const syncAssignTopicUI = () => {
+      if (!topicSel) return;
+      const val = topicSel.value || 'custom';
+      const isTopicMode = val !== 'custom';
+      const g = Number(gradeSel?.value || cls.grade || 4);
+      const isSecFreeInput = g >= 6 && modeSel && modeSel.value === 'numpad';
+      if (customRow) customRow.style.display = isTopicMode ? 'none' : 'grid';
+      if (opsWrap) opsWrap.style.opacity = isTopicMode ? '0.45' : '1';
+      if (secSel) secSel.disabled = isSecFreeInput;
+      if (secLbl) secLbl.style.opacity = isSecFreeInput ? '0.45' : '1';
+      if (isTopicMode && typeof NUMI_GRADE_TOPICS !== 'undefined') {
+        const list = NUMI_GRADE_TOPICS[g] || [];
+        const tp = list.find(x => x.id === val);
+        if (tp) {
+          if (countSel && tp.count) {
+            const closestCnt = [5, 8, 10, 12, 15, 20].reduce((a, b) => Math.abs(b - tp.count) < Math.abs(a - tp.count) ? b : a, 10);
+            countSel.value = String(closestCnt);
+          }
+          if (secSel && tp.seconds) {
+            const closestSec = [15, 20, 25, 30, 40, 45, 50, 60].reduce((a, b) => Math.abs(b - tp.seconds) < Math.abs(a - tp.seconds) ? b : a, 30);
+            secSel.value = String(closestSec);
+          }
+        }
+      }
+    };
+
+    const populateAssignTopics = g => {
+      if (!topicSel) return;
+      const list = typeof NUMI_GRADE_TOPICS !== 'undefined' && Array.isArray(NUMI_GRADE_TOPICS[g]) ? NUMI_GRADE_TOPICS[g] : [];
+      const isSec = Number(g) >= 6;
+      const domainBundles = isSec ? [
+        `<option value="domain:number">🔢 ${t('Trọn bộ Phần Số học & Đại số', 'All Numbers & Algebra')}</option>`,
+        `<option value="domain:geometry">📐 ${t('Trọn bộ Phần Hình học & Đo lường', 'All Geometry & Measurement')}</option>`
+      ] : [];
+      const optsHtml = [
+        `<option value="custom">⚙️ ${t('Tự chọn phép tính / loại số cơ bản', 'Custom basic operations')}</option>`,
+        ...(list.length && list[0].id === 'all' ? [`<option value="all">✨ ${esc(typeof lang !== 'undefined' && lang === 'en' ? list[0].en : list[0].vi)}</option>`] : []),
+        ...domainBundles,
+        ...list.filter(tp => tp.id !== 'all').map(tp => {
+          const prefix = tp.col ? '📐 ' : (isSec ? (tp.domain === 'geometry' ? '📐 [Hình] ' : '🔢 [Số] ') : '🎯 ');
+          const lbl = typeof lang !== 'undefined' && lang === 'en' ? tp.en : tp.vi;
+          return `<option value="${esc(tp.id)}">${prefix}${esc(lbl)}${tp.seconds ? ` (${tp.seconds}s)` : ''}</option>`;
+        })
+      ].join('');
+      topicSel.innerHTML = optsHtml;
+      topicSel.value = list.length ? 'all' : 'custom';
+      syncAssignTopicUI();
+    };
+    populateAssignTopics(Number(gradeSel?.value || cls.grade || 4));
+    if (gradeSel) gradeSel.onchange = () => populateAssignTopics(Number(gradeSel.value) || 4);
+    if (topicSel) topicSel.onchange = syncAssignTopicUI;
+    if (modeSel) modeSel.onchange = syncAssignTopicUI;
 
     $('#tchPickAll')?.addEventListener('click', () => {
       $$('#teacherAssignForm input[name="targetStudents"]').forEach(cb => { cb.checked = true; });
@@ -165,27 +255,39 @@
         e.preventDefault();
         const fd = new FormData(form);
         const targets = fd.getAll('targetStudents');
+        const pickedTopic = String(fd.get('topic') || 'custom');
+        const isTopicMode = pickedTopic !== 'custom';
         const ops = fd.getAll('ops');
         if (!targets.length) { toast(t('Vui lòng chọn ít nhất 1 học sinh!', 'Select at least 1 student!')); return; }
-        if (!ops.length) { toast(t('Chọn ít nhất 1 phép tính!', 'Select at least 1 operation!')); return; }
+        if (!isTopicMode && !ops.length) { toast(t('Chọn ít nhất 1 phép tính!', 'Select at least 1 operation!')); return; }
         const grade = Number(fd.get('grade')) || cls.grade || 4;
         const type = fd.get('type') || 'natural';
         const gDef = typeof NUMI_GRADES !== 'undefined' && NUMI_GRADES[grade] ? NUMI_GRADES[grade] : null;
+        const isDomainBundle = pickedTopic === 'domain:number' || pickedTopic === 'domain:geometry';
+        const domainFilter = pickedTopic === 'domain:number' ? 'number' : pickedTopic === 'domain:geometry' ? 'geometry' : 'all';
+        const chosenInputMode = fd.get('inputMode') || 'choices';
         if (typeof createTargetedAssignment === 'function') {
+          const asgCfg = {
+            grade,
+            type: isTopicMode ? (gDef?.types?.[0] || 'natural') : type,
+            types: isTopicMode ? (gDef?.types ? [...gDef.types] : ['natural']) : [type],
+            ops: isTopicMode ? (gDef?.ops ? [...gDef.ops] : ['+', '-', '*', '/']) : ops,
+            questionStyle: isTopicMode ? 'normal' : (fd.get('questionStyle') || 'normal'),
+            digits: gDef ? [...gDef.digits] : [1, 2],
+            count: Number(fd.get('count')) || 10,
+            seconds: Number(fd.get('seconds')) || 20,
+            inputMode: chosenInputMode,
+            difficultyMode: fd.get('difficultyMode') || 'progressive',
+            domainFilter,
+            untimed: Boolean(grade >= 6 && chosenInputMode === 'numpad'),
+            topic: isTopicMode && !isDomainBundle ? pickedTopic : 'all',
+            topics: isTopicMode && pickedTopic !== 'all' && !isDomainBundle ? [pickedTopic] : []
+          };
           const asg = createTargetedAssignment({
             title: fd.get('title'),
             dueDate: fd.get('dueDate'),
             targetStudents: targets,
-            config: {
-              grade,
-              type,
-              types: [type],
-              ops,
-              questionStyle: fd.get('questionStyle') || 'normal',
-              digits: gDef ? [...gDef.digits] : [1, 2],
-              count: Number(fd.get('count')) || 10,
-              seconds: Number(fd.get('seconds')) || 20
-            }
+            config: asgCfg
           });
           const allAsg = loadTargetedAssignments();
           const saved = allAsg.find(a => a.id === asg.id);
@@ -196,8 +298,8 @@
             saveTargetedAssignments(allAsg);
           }
           $('#modal').close();
-          toast(t(`Đã giao bài cho ${targets.length} học sinh lớp ${cls.name}!`, `Assigned to ${targets.length} students!`));
-          renderTeacherWorkspace();
+          toast(t(`Đã giao bài cho ${targets.length} học sinh ${formatClassTitle(cls.name)}!`, `Assigned to ${targets.length} students!`));
+          rerenderTeacherWorkspace();
         }
       };
     }
@@ -274,7 +376,7 @@
           addStudentToClass(cls.id, username);
           $('#modal').close();
           toast(t(`Đã tạo và thêm ${name} vào ${cls.name}!`, `Created and enrolled ${name} in ${cls.name}!`));
-          renderTeacherWorkspace();
+          rerenderTeacherWorkspace();
         } catch (err) {
           if (errEl) errEl.textContent = err.message;
         }
@@ -312,7 +414,7 @@
         picked.forEach(u => addStudentToClass(cls.id, u));
         $('#modal').close();
         toast(t(`Đã thêm ${picked.length} học sinh vào ${cls.name}!`, `Added ${picked.length} students to ${cls.name}!`));
-        if (isCurrentUserTeacher()) renderTeacherWorkspace();
+        if (isCurrentUserTeacher()) rerenderTeacherWorkspace();
         else if (typeof renderAdmin === 'function') renderAdmin();
       };
     }
@@ -377,7 +479,7 @@
           ui.activeTeacherClassId = cls.id;
           $('#modal').close();
           toast(t(`✅ Đã tạo ${cls.name} (${levelShortBadge(cls.level)}) · Mã lớp đã lưu: ${cls.code}!`, `✅ Created ${cls.name} · Saved code: ${cls.code}!`));
-          renderTeacherWorkspace();
+          rerenderTeacherWorkspace();
         } catch (err) {
           if (errEl) errEl.textContent = err.message;
         }
@@ -532,7 +634,7 @@
       <div class="card admin-table-card" style="margin-bottom:18px">
         <div class="row" style="flex-wrap:wrap;margin-bottom:14px">
           <div>
-            <h3 style="margin:0">👥 ${t(`Học sinh lớp ${activeCls.name} (${students.length})`, `Students in ${activeCls.name} (${students.length})`)}</h3>
+            <h3 style="margin:0">👥 ${t(`Học sinh ${formatClassTitle(activeCls.name)} (${students.length})`, `Students in ${activeCls.name} (${students.length})`)}</h3>
             <p class="muted" style="margin:2px 0 0;font-size:13px">${t('Học sinh tự vào bằng Mã lớp sẽ hiện ngay tại đây, hoặc Thầy/Cô có thể tạo tài khoản mới trực tiếp cho em.', 'Students joining with your Class Code appear here automatically, or add a new student directly.')}</p>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -632,13 +734,13 @@
     $$('[data-tch-lvl]').forEach(btn => {
       btn.onclick = () => {
         activeTeacherLevelFilter = btn.dataset.tchLvl;
-        renderTeacherWorkspace();
+        rerenderTeacherWorkspace();
       };
     });
     $$('[data-tch-class]').forEach(btn => {
       btn.onclick = () => {
         ui.activeTeacherClassId = btn.dataset.tchClass;
-        renderTeacherWorkspace();
+        rerenderTeacherWorkspace();
       };
     });
 
@@ -693,7 +795,7 @@
           if (!confirm(t(`Gỡ học sinh @${uname} khỏi ${activeCls.name}? (Tài khoản học sinh vẫn được giữ nguyên)`, `Remove @${uname} from ${activeCls.name}?`))) return;
           removeStudentFromClass(activeCls.id, uname);
           toast(t('Đã gỡ học sinh khỏi lớp.', 'Removed student from class.'));
-          renderTeacherWorkspace();
+          rerenderTeacherWorkspace();
         };
       });
       $$('[data-tch-remedial]').forEach(btn => {
@@ -711,7 +813,7 @@
               saveTargetedAssignments(allAsg);
             }
             toast(t('Đã giao bài phụ đạo riêng cho học sinh!', 'Remedial homework assigned!'));
-            renderTeacherWorkspace();
+            rerenderTeacherWorkspace();
           } catch (err) {
             toast(err.message);
           }
@@ -733,7 +835,7 @@
         btn.onclick = () => {
           if (!confirm(t('Xóa bài tập đã giao này?', 'Delete this assignment?'))) return;
           if (typeof deleteTargetedAssignment === 'function') deleteTargetedAssignment(btn.dataset.tchDelHw);
-          renderTeacherWorkspace();
+          rerenderTeacherWorkspace();
         };
       });
     }

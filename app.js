@@ -166,10 +166,10 @@ const NUMI_GRADES={
   3:{id:3,name:'Lớp 3',enName:'Grade 3',icon:'',descVi:'Chuẩn GDPT 2018: Bảng nhân chia 2–9, nhân/chia số 2–3 chữ số với 1 chữ số, chia có dư & biểu thức có ngoặc',descEn:'MOET Grade 3: Times tables 2–9, 2–3 digit ×/÷ 1 digit, division with remainders & brackets',ops:['+','-','*','/'],types:['natural','remainder'],digits:[1,2,3],seconds:16,count:10,inputMode:'choices'},
   4:{id:4,name:'Lớp 4',enName:'Grade 4',icon:'',descVi:'Chuẩn GDPT 2018: Số tự nhiên nhiều chữ số, tính bằng cách thuận tiện nhất (phân phối), phép tính phân số',descEn:'MOET Grade 4: Multi-digit natural numbers, distributive mental math & fractions (+, −, ×, ÷)',ops:['+','-','*','/'],types:['natural','fraction'],digits:[2,3],seconds:20,count:15,inputMode:'choices'},
   5:{id:5,name:'Lớp 5',enName:'Grade 5',icon:'',descVi:'Chuẩn GDPT 2018: Số thập phân (+, −, ×, ÷, nhân chia 10/100), tỉ số phần trăm (%) và ôn phân số',descEn:'MOET Grade 5: Decimals (+, −, ×, ÷, ×10/100), percentages (%) & fraction review',ops:['+','-','*','/'],types:['decimal','fraction','natural'],digits:[1,2],seconds:20,count:15,inputMode:'choices'},
-  6:{id:6,name:'Lớp 6',enName:'Grade 6',icon:'',descVi:'Chuẩn GDPT 2018: Số nguyên âm Z (+, −, ×, ÷), lũy thừa số mũ tự nhiên (aⁿ), phân số & số thập phân',descEn:'MOET Grade 6: Signed integers Z, natural-exponent powers (aⁿ), signed fractions & decimals',ops:['+','-','*','/'],types:['negative','fraction','decimal','natural'],digits:[1,2],seconds:16,count:15,inputMode:'choices'},
-  7:{id:7,name:'Lớp 7',enName:'Grade 7',icon:'',descVi:'Chuẩn GDPT 2018: Số hữu tỉ Q, lũy thừa, căn bậc hai số học (√), giá trị tuyệt đối & tính giá trị biểu thức',descEn:'MOET Grade 7: Rational numbers Q, powers, square roots (√), absolute value & algebraic expressions',ops:['+','-','*','/'],types:['negative','fraction','decimal'],digits:[1,2],seconds:16,count:15,inputMode:'choices'},
-  8:{id:8,name:'Lớp 8',enName:'Grade 8',icon:'',descVi:'Chuẩn GDPT 2018: Tính nhanh bằng Hằng đẳng thức đáng nhớ (a²−b², (a±b)²), lũy thừa, phương trình bậc nhất một ẩn & ôn số hữu tỉ',descEn:'MOET Grade 8: Fast identities (a²−b², (a±b)²), powers, linear equations & rational review',ops:['+','-','*','/'],types:['negative','fraction','decimal'],digits:[2,3],seconds:15,count:15,inputMode:'choices'},
-  9:{id:9,name:'Lớp 9',enName:'Grade 9',icon:'',descVi:'Chuẩn GDPT 2018: Biến đổi căn bậc hai (đưa thừa số ra ngoài dấu căn), căn bậc ba (∛), nhẩm nghiệm phương trình bậc hai (Vi-ét) ôn thi vào 10',descEn:'MOET Grade 9: Simplifying square roots, cube roots (∛), quadratic roots via Vieta & grade-10 entrance prep',ops:['+','-','*','/'],types:['negative','fraction','decimal'],digits:[2,3],seconds:14,count:20,inputMode:'choices'}
+  6:{id:6,name:'Lớp 6',enName:'Grade 6',icon:'',descVi:'Chuẩn GDPT 2018 (Số học & Hình học): Tập hợp ℕ, ƯCLN–BCNN, số nguyên ℤ, phân số, tỉ số %; Chu vi–diện tích hình phẳng, đối xứng, đoạn thẳng & góc',descEn:'MOET Grade 6 (Numbers & Geometry): Sets, GCD/LCM, integers ℤ, fractions, %; Flat shapes, symmetry, segments & angles',ops:['+','-','*','/'],types:['negative','fraction','decimal','natural'],digits:[1,2],seconds:16,count:15,inputMode:'choices'},
+  7:{id:7,name:'Lớp 7',enName:'Grade 7',icon:'',descVi:'Chuẩn GDPT 2018 (Đại số & Hình học): Số hữu tỉ ℚ, căn bậc hai, trị tuyệt đối, tỉ lệ thức, đa thức P(x); Đường song song, tam giác, đồng quy & lăng trụ đứng',descEn:'MOET Grade 7 (Algebra & Geometry): Rationals ℚ, √x, |x|, proportions, polynomials; Parallel lines, triangles & prisms',ops:['+','-','*','/'],types:['negative','fraction','decimal'],digits:[1,2],seconds:16,count:15,inputMode:'choices'},
+  8:{id:8,name:'Lớp 8',enName:'Grade 8',icon:'',descVi:'Chuẩn GDPT 2018 (Đại số & Hình học): Đa thức nhiều biến, 7 Hằng đẳng thức, phân thức, lập PT, hàm số y=ax+b; Pythagore, tứ giác, Thalès, đồng dạng & hình chóp đều',descEn:'MOET Grade 8 (Algebra & Geometry): Polynomials, 7 identities, equations, y=ax+b; Pythagoras, Thales, similarity & pyramids',ops:['+','-','*','/'],types:['negative','fraction','decimal'],digits:[2,3],seconds:15,count:15,inputMode:'choices'},
+  9:{id:9,name:'Lớp 9',enName:'Grade 9',icon:'',descVi:'Chuẩn GDPT 2018 & Thi vào 10 (Đại số & Hình học): Căn thức, hệ PT, bất phương trình, parabol y=ax², hệ thức Viète; Lượng giác, đường tròn & trụ–nón–cầu',descEn:'MOET Grade 9 & Gr-10 Prep (Algebra & Geometry): Radicals, systems, quadratics/Vieta; Trigonometry, circles & 3D solids',ops:['+','-','*','/'],types:['negative','fraction','decimal'],digits:[2,3],seconds:14,count:20,inputMode:'choices'}
 };
 if(typeof window!=='undefined')window.NUMI_GRADES=NUMI_GRADES;
 if(typeof global!=='undefined')global.NUMI_GRADES=NUMI_GRADES;
@@ -231,7 +231,7 @@ function antiTrickOptions(answer,cands=[],o={}){
     const pref=[];
     for(const c of cands){const cm=String(c).match(/^(-?\d+)\/(\d+)$/);if(cm&&+cm[2]===d&&okN(+cm[1])&&!seen.has(+cm[1])){seen.add(+cm[1]);pref.push(+cm[1])}}
     const pool=[...pref];
-    for(let k=1;k<=12;k++)for(const m of [n+k,n-k])if(okN(m)&&!seen.has(m)){seen.add(m);pool.push(m)}
+    for(let k=1;k<=40;k++)for(const m of [n+k,n-k])if(okN(m)&&!seen.has(m)){seen.add(m);pool.push(m)}
     const nums=pickRanked(n,pool,pref);
     if(nums.length===3)return shuffle([ans,...nums.map(m=>`${m}/${d}`)]);
   }
@@ -373,7 +373,7 @@ function generateUniqueQuestions(count,cfg){
 }
 if(typeof window!=='undefined')window.generateUniqueQuestions=generateUniqueQuestions;
 if(typeof global!=='undefined')global.generateUniqueQuestions=generateUniqueQuestions;
-function startQuiz(){if(typeof currentAuthUser==='function'&&!currentAuthUser()){toast(t('Vui lòng đăng nhập để bắt đầu học và lưu tiến độ nhé!','Please sign in to learn and save your progress!'));if(typeof openAccount==='function')openAccount('login');return}stop();view='quiz';if(typeof window!=='undefined')window.config=config;if(typeof global!=='undefined')global.config=config;if(typeof document!=='undefined'&&document.body)document.body.dataset.view='quiz';session={kind:'practice',questions:generateUniqueQuestions(config.count,config),index:0,results:[],combo:0,done:false};if(typeof window!=='undefined')window.session=session;if(typeof global!=='undefined')global.session=session;if(typeof window!=='undefined'&&window.scrollTo)window.scrollTo(0,0);showQuiz()}
+function startQuiz(){if(typeof currentAuthUser==='function'&&!currentAuthUser()){toast(t('Vui lòng đăng nhập để bắt đầu học và lưu tiến độ nhé!','Please sign in to learn and save your progress!'));if(typeof openAccount==='function')openAccount('login');return}stop();view='quiz';if(typeof window!=='undefined'&&window.config&&window.config!==config)config=window.config;if(typeof window!=='undefined')window.config=config;if(typeof global!=='undefined')global.config=config;if(typeof document!=='undefined'&&document.body)document.body.dataset.view='quiz';session={kind:'practice',questions:generateUniqueQuestions(config.count,config),index:0,results:[],combo:0,done:false};if(typeof window!=='undefined')window.session=session;if(typeof global!=='undefined')global.session=session;if(typeof window!=='undefined'&&window.scrollTo)window.scrollTo(0,0);showQuiz()}
 let currentNumpad='';
 function handleNumpad(k,q){
   if(session?.answered)return;
@@ -401,6 +401,24 @@ function handleNumpad(k,q){
   const el=$('#numpadVal');
   if(el)el.textContent=currentNumpad||'?';
 }
+function isUntimedQuizSession(cfgObj,qObj){
+  const cfg=cfgObj||config||defaults;
+  if(session?.kind==='battle'||session?.kind==='challenge')return false;
+  const rawG=cfg?.grade&&cfg.grade!=='custom'?cfg.grade:(qObj?.config?.grade&&qObj.config.grade!=='custom'?qObj.config.grade:null);
+  const g=rawG?Number(rawG):null;
+  // Primary (Grades 1-5): ALWAYS keep countdown timer so kids train fast mental reflexes
+  if(g>=1&&g<=5)return false;
+  // Secondary (Grades 6-9): Tự luận (numpad) or explicit untimed toggle removes countdown timer for deep thinking
+  const qType=String(qObj?.skill||'').split(':')[0];
+  if(g>=6&&g<=9){
+    if(cfg?.untimed)return true;
+    if(cfg?.inputMode==='numpad'&&qType!=='remainder')return true;
+    return false;
+  }
+  return Boolean(cfg?.untimed);
+}
+if(typeof window!=='undefined')window.isUntimedQuizSession=isUntimedQuizSession;
+if(typeof global!=='undefined')global.isUntimedQuizSession=isUntimedQuizSession;
 function formatQuestionPrompt(qStr){
   const s=String(qStr||'').trim();
   return (s.includes('?')||s.includes('='))?mathMarkup(s):`${mathMarkup(s)} = ?`;
@@ -408,7 +426,7 @@ function formatQuestionPrompt(qStr){
 if(typeof window!=='undefined')window.formatQuestionPrompt=formatQuestionPrompt;
 if(typeof global!=='undefined')global.formatQuestionPrompt=formatQuestionPrompt;
 function showQuiz(){
-  cancelQuizAdvance();const s=session;s.answered=false;if(s.index>=s.questions.length){finishPractice();return}
+  cancelQuizAdvance();if(typeof window!=='undefined'&&window.config&&window.config!==config)config=window.config;const s=session;s.answered=false;if(s.index>=s.questions.length){finishPractice();return}
   if(typeof document!=='undefined'&&document.activeElement&&typeof document.activeElement.blur==='function')document.activeElement.blur();
   if(typeof window!=='undefined'&&window.scrollTo)window.scrollTo(0,0);
   const q=s.questions[s.index];currentNumpad='';const type=q.skill.split(':')[0],isNumpad=config.inputMode==='numpad'&&s.kind!=='battle'&&type!=='remainder';
@@ -481,7 +499,24 @@ function showQuiz(){
   }else{
     $$('[data-answer]').forEach(b=>b.onclick=()=>answerQuiz(q.options[+b.dataset.answer],q.id));
   }
-  s.started=performance.now();s.extra=false;const qSec=q.topicSeconds||q.config?.seconds||config.seconds;startClock(qSec,()=>{if(s.kind==='challenge'){answerQuiz(null,q.id);return}modal(`<h2>${t('Hết giờ rồi','Time is up')}</h2><p>${t('Thêm thời gian hoặc bỏ qua để ôn lại trong game.','Add time or skip to review in the game.')}</p><div class="actions"><button id="extra">+${qSec}s</button><button id="skip">${t('Bỏ qua','Skip')}</button></div>`);$('#closeModal').hidden=true;$('#extra').onclick=()=>{s.extra=true;$('#closeModal').hidden=false;$('#modal').close();startClock(qSec,()=>timeoutAgain(qSec))};$('#skip').onclick=()=>{$('#closeModal').hidden=false;$('#modal').close();answerQuiz(null)}});translate();
+  s.started=performance.now();s.extra=false;
+  const untimed=isUntimedQuizSession(config,q);
+  if(untimed){
+    clearInterval(tick);
+    const clk=$('#clock');
+    if(clk){
+      clk.classList.add('timer-untimed');
+      clk.textContent=`🧠 ${t('Không giới hạn giờ','Untimed')}`;
+    }
+  }else{
+    const clk=$('#clock');
+    if(clk)clk.classList.remove('timer-untimed');
+    let qSec=q.topicSeconds||q.config?.seconds||config.seconds;
+    const gNow=Number(config.grade||q.config?.grade||0);
+    if(gNow>=1&&gNow<=5&&q.difficulty==='hard')qSec=Math.min(60,qSec+10);
+    startClock(qSec,()=>{if(s.kind==='challenge'){answerQuiz(null,q.id);return}modal(`<h2>${t('Hết giờ rồi','Time is up')}</h2><p>${t('Thêm thời gian hoặc bỏ qua để ôn lại trong game.','Add time or skip to review in the game.')}</p><div class="actions"><button id="extra">+${qSec}s</button><button id="skip">${t('Bỏ qua','Skip')}</button></div>`);$('#closeModal').hidden=true;$('#extra').onclick=()=>{s.extra=true;$('#closeModal').hidden=false;$('#modal').close();startClock(qSec,()=>timeoutAgain(qSec))};$('#skip').onclick=()=>{$('#closeModal').hidden=false;$('#modal').close();answerQuiz(null)}});
+  }
+  translate();
   setTimeout(()=>{const curDot=$('.stepper-dot.is-current');if(curDot&&curDot.scrollIntoView)curDot.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});},40);
 }
 function timeoutAgain(sec){const addSec=sec||config.seconds;clearInterval(tick);modal(`<h2>${t('Cần thêm thời gian?','Need more time?')}</h2><div class="actions"><button id="extra">+${addSec}s</button><button id="skip">${t('Bỏ qua','Skip')}</button></div>`);$('#closeModal').hidden=true;$('#extra').onclick=()=>{$('#closeModal').hidden=false;$('#modal').close();startClock(addSec,()=>timeoutAgain(addSec))};$('#skip').onclick=()=>{$('#closeModal').hidden=false;$('#modal').close();answerQuiz(null)}}
@@ -507,7 +542,7 @@ function answerQuiz(ans,questionId){
   s.answered=true;clearInterval(tick);cancelQuizAdvance();
   const norm=str=>String(str||'').trim().replace(/\s+/g,'').replace(/−/g,'-').replace('.',',').toLowerCase();
   const correct=isAnswerMatch(ans,q.answer),elapsed=(performance.now()-s.started)/1000;
-  s.results.push({correct,elapsed,extra:s.extra});track(q,correct,elapsed,'practice');
+  s.results.push({correct,elapsed,extra:s.extra,givenAnswer:ans,difficulty:q.difficulty||null,domain:q.domain||null});track(q,correct,elapsed,'practice');
 
   if(correct){
     s.combo=(s.combo||0)+1;
@@ -546,7 +581,7 @@ function answerQuiz(ans,questionId){
   const explain=!correct;
   let hasNextBtn=false;
   if(explain){
-    const panel=$('#workedAnswer');if(panel){panel.hidden=false;panel.innerHTML=`<b>${t('Hướng dẫn tính nhẩm:','Mental math steps:')}</b><br>${mathMarkup(hint(q)).replace(/\n/g,'<br>')}<br><button type="button" id="nextQuizBtn" class="primary" style="margin-top:12px;font-size:14px">${t('Đã hiểu, câu tiếp theo →','Got it, next question →')}</button>`;$('#nextQuizBtn').onclick=()=>{cancelQuizAdvance();showQuiz()};hasNextBtn=true}
+    const panel=$('#workedAnswer');if(panel){panel.hidden=false;panel.innerHTML=`<b>${t('Bài giải & Hướng dẫn từng bước:','Step-by-step solution:')}</b><br>${mathMarkup(hint(q)).replace(/\n/g,'<br>')}<br><button type="button" id="nextQuizBtn" class="primary" style="margin-top:12px;font-size:14px">${t('Đã hiểu, câu tiếp theo →','Got it, next question →')}</button>`;$('#nextQuizBtn').onclick=()=>{cancelQuizAdvance();showQuiz()};hasNextBtn=true}
   }
   s.index++;if(!hasNextBtn)quizAdvanceTimer=setTimeout(showQuiz,explain?4500:700);
 }
@@ -675,7 +710,7 @@ function renderGuide(activeTab = 'student'){
 function startReview(){}
 function award(n){state.pieces[state.selected]=(state.pieces[state.selected]||0)+n;save()}
 function atlas(){if(typeof teaRenderGoals==='function')teaRenderGoals()}
-function stats(){let h=state.history,correct=h.reduce((a,b)=>a+b.correct,0),total=h.reduce((a,b)=>a+b.total,0),weak=Object.entries(state.mastery).filter(([,a])=>a.length>=5&&avg(a)<.6);$('#app').innerHTML=`<span class="eyebrow">${t('NHẬT KÝ HÀNH TRÌNH','YOUR JOURNEY LOG')}</span><h1>${t('Giỏi hơn từng ngày.','Growing every day.')}</h1><div class="metrics"><div class="metric"><small>${t('Độ chính xác lần đầu','First-try accuracy')}</small><strong>${total?Math.round(correct/total*100):0}%</strong></div><div class="metric"><small>${t('Thời gian TB / câu','Average seconds / question')}</small><strong>${avg(h.map(x=>x.time)).toFixed(1)}s</strong></div><div class="metric"><small>${t('Cấp nhà thám hiểm','Explorer level')}</small><strong>${level()}</strong></div><div class="metric"><small>${t('Câu cần ôn','Pending review')}</small><strong>${state.mistakes.length}</strong>${state.mistakes.length?`<button type="button" class="primary" style="margin-top:8px;padding:6px 12px;min-height:34px;font-size:12px;width:100%" onclick="startReview()">${t('Ôn bằng Vườn hoa →','Review in Garden →')}</button>`:''}</div></div><div class="grid"><section class="card"><h3>${t('10 lượt gần nhất','Last 10 sessions')}</h3><div class="chart">${h.slice(-10).map(x=>`<div style="height:${Math.round(x.correct/x.total*100)}%" title="${x.correct}/${x.total}"></div>`).join('')}</div><p>${t('Chiều cao cột = tỉ lệ trả lời đúng.','Bar height = correct answer percentage.')}</p></section><section class="card"><h3>${t('Kỹ năng cần củng cố','Skills to strengthen')}</h3>${weak.length?weak.map(([k,a])=>`<p>${esc(skillName(k))}: ${Math.round(avg(a)*100)}%</p><button data-weak="${esc(k)}">${t('Ôn có hướng dẫn','Guided review')}</button><button data-retest="${esc(k)}">${t('Kiểm tra lại · 5 câu','Retest · 5 questions')}</button>`).join(''):`<p>${t('Chưa có kỹ năng yếu được xác định. Cần ít nhất 5 câu mỗi dạng để đánh giá.','No weak skills identified. At least 5 answers per skill are needed.')}</p>`}</section><section class="card"><h3>${t('Giữ lại hành trình','Keep your journey')}</h3><p>${t('Dữ liệu lưu trên trình duyệt này. Xuất bản sao lưu trước khi đổi máy hoặc xóa dữ liệu.','Progress is saved in this browser. Export before changing devices or clearing browser data.')}</p><button id="backup">↓ ${t('Xuất sao lưu','Export backup')}</button><button id="import">↑ ${t('Nhập sao lưu','Import backup')}</button></section></div>    <section class="card section"><h3>${t('Lịch sử luyện tập','Practice history')}</h3>${h.length?`<table class="history"><thead><tr><th>${t('Ngày','Date')}</th><th>${t('Chế độ','Mode')}</th><th>${t('Đúng','Correct')}</th><th>${t('TB','Avg')}</th><th>${t('Thêm giờ','Extra time')}</th></tr></thead><tbody>${h.slice(-20).reverse().map(x=>`<tr><td>${new Date(x.date).toLocaleDateString(lang==='vi'?'vi-VN':'en-US')}</td><td>${x.mode==='sprint60'?t('Thi đấu 60s','60s Sprint'):x.mode==='assigned'?t('Bài được giao','Assigned'):t('Tự luyện','Practice')}</td><td>${x.correct}/${x.total}</td><td>${x.time.toFixed(1)}s</td><td>${x.extra?x.extra+'×':'—'}</td></tr>`).join('')}</tbody></table>`:`<div class="empty">${t('Hành trình của em bắt đầu từ lượt đầu tiên.','Your journey starts with your first session.')}</div>`}</section>`;$('#backup').onclick=()=>download(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),'NumiQuest-backup.json');$('#import').onclick=()=>$('#restore').click();$$('[data-weak]').forEach(b=>b.onclick=()=>{let k=b.dataset.weak,q=generate({...defaults,type:k.split(':')[0],ops:[k.split(':')[1]]});modal(`<h2>${esc(skillName(k))}</h2><p style="white-space:pre-line">${esc(hint(q))}</p><p>${t('Sau khi đọc, em có thể làm bài kiểm tra lại 5 câu.','After reading, try a 5-question retest.')}</p>`)});$$('[data-retest]').forEach(b=>b.onclick=()=>{if(state.mistakes.length){startReview();return}let [type,op]=b.dataset.retest.split(':');const u=typeof currentAuthUser==='function'?currentAuthUser():null;const gId=config.grade||u?.grade||1;config={...defaults,...config,type,types:[type],ops:[op],count:5,grade:gId};startQuiz()})}
+function stats(){let h=state.history,correct=h.reduce((a,b)=>a+b.correct,0),total=h.reduce((a,b)=>a+b.total,0),weak=Object.entries(state.mastery).filter(([,a])=>a.length>=5&&avg(a)<.6);$('#app').innerHTML=`<span class="eyebrow">${t('NHẬT KÝ HÀNH TRÌNH','YOUR JOURNEY LOG')}</span><h1>${t('Giỏi hơn từng ngày.','Growing every day.')}</h1><div class="metrics"><div class="metric"><small>${t('Độ chính xác lần đầu','First-try accuracy')}</small><strong>${total?Math.round(correct/total*100):0}%</strong></div><div class="metric"><small>${t('Thời gian TB / câu','Average seconds / question')}</small><strong>${avg(h.map(x=>x.time)).toFixed(1)}s</strong></div><div class="metric"><small>${t('Cấp nhà thám hiểm','Explorer level')}</small><strong>${level()}</strong></div><div class="metric"><small>${t('Câu cần ôn','Pending review')}</small><strong>${state.mistakes.length}</strong>${state.mistakes.length?`<button type="button" class="primary" style="margin-top:8px;padding:6px 12px;min-height:34px;font-size:12px;width:100%" onclick="startReview()">${t('Ôn bằng Vườn hoa →','Review in Garden →')}</button>`:''}</div></div><div class="grid"><section class="card"><h3>${t('10 lượt gần nhất','Last 10 sessions')}</h3><div class="chart">${h.slice(-10).map(x=>`<div style="height:${Math.round(x.correct/x.total*100)}%" title="${x.correct}/${x.total}"></div>`).join('')}</div><p>${t('Chiều cao cột = tỉ lệ trả lời đúng.','Bar height = correct answer percentage.')}</p></section><section class="card"><h3>${t('Kỹ năng cần củng cố','Skills to strengthen')}</h3>${weak.length?weak.map(([k,a])=>`<p>${esc(skillName(k))}: ${Math.round(avg(a)*100)}%</p><button data-weak="${esc(k)}">${t('Ôn có hướng dẫn','Guided review')}</button><button data-retest="${esc(k)}">${t('Kiểm tra lại · 5 câu','Retest · 5 questions')}</button>`).join(''):`<p>${t('Chưa có kỹ năng yếu được xác định. Cần ít nhất 5 câu mỗi dạng để đánh giá.','No weak skills identified. At least 5 answers per skill are needed.')}</p>`}</section><section class="card"><h3>${t('Giữ lại hành trình','Keep your journey')}</h3><p>${t('Dữ liệu lưu trên trình duyệt này. Xuất bản sao lưu trước khi đổi máy hoặc xóa dữ liệu.','Progress is saved in this browser. Export before changing devices or clearing browser data.')}</p><button id="backup">↓ ${t('Xuất sao lưu','Export backup')}</button><button id="import">↑ ${t('Nhập sao lưu','Import backup')}</button></section></div>    <section class="card section"><h3>${t('Lịch sử luyện tập','Practice history')}</h3>${h.length?`<table class="history"><thead><tr><th>${t('Ngày','Date')}</th><th>${t('Chế độ','Mode')}</th><th>${t('Đúng','Correct')}</th><th>${t('TB','Avg')}</th><th>${t('Thêm giờ','Extra time')}</th></tr></thead><tbody>${h.slice(-20).reverse().map(x=>`<tr><td>${new Date(x.date).toLocaleDateString(lang==='vi'?'vi-VN':'en-US')}</td><td>${x.mode==='sprint60'?t('Thi đấu 60s','60s Sprint'):x.mode==='assigned'?t('Bài được giao','Assigned'):t('Tự luyện','Practice')}</td><td>${x.correct}/${x.total}</td><td>${x.time.toFixed(1)}s</td><td>${x.extra?x.extra+'×':'—'}</td></tr>`).join('')}</tbody></table>`:`<div class="empty">${t('Hành trình của em bắt đầu từ lượt đầu tiên.','Your journey starts with your first session.')}</div>`}</section>`;$('#backup').onclick=()=>download(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),'NumiQuest-backup.json');$('#import').onclick=()=>$('#restore').click();$$('[data-weak]').forEach(b=>b.onclick=()=>{let k=b.dataset.weak,q=generate({...defaults,type:k.split(':')[0],ops:[k.split(':')[1]]});modal(`<h2>${esc(skillName(k))}</h2><p style="white-space:pre-line">${esc(hint(q))}</p><p>${t('Sau khi đọc, em có thể làm bài kiểm tra lại 5 câu.','After reading, try a 5-question retest.')}</p>`)});$$('[data-retest]').forEach(b=>b.onclick=()=>{if(state.mistakes.length){startReview();return}let [type,op]=b.dataset.retest.split(':');const u=typeof currentAuthUser==='function'?currentAuthUser():null;const gId=config.grade||u?.grade||1;config={...defaults,...config,type,types:[type],ops:[op],count:5,grade:gId};if(typeof window!=='undefined')window.config=config;if(typeof global!=='undefined')global.config=config;startQuiz()})}
 function skillName(k){let [type,op]=k.split(':');return ({natural:t('Số tự nhiên','Whole numbers'),remainder:t('Chia dư','Remainders'),decimal:t('Thập phân','Decimals'),negative:t('Số nguyên','Integers'),fraction:t('Phân số','Fractions')}[type]||type)+' '+({'+':'+','-':'−','*':'×','/':'÷',missing:t('Tìm số (?)','Missing (?)'),word:t('Toán đố','Word problem'),convenient:t('Tính thuận tiện','Regrouping'),expression:t('Biểu thức','Expression')}[op]||op)}
 function validBackup(x){
   if(!x||typeof x!=='object'||x.version!==1)return false;

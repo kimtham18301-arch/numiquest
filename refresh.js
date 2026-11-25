@@ -75,6 +75,35 @@ finishPractice=function(){
     if(typeof triggerConfetti==='function')triggerConfetti();
   }
   const avgSpeed=avg(s.results.map(x=>x.elapsed)).toFixed(1);
+  const tierSummary=(()=>{
+    const buckets={easy:{ok:0,tot:0,lbl:t('🌱 Nhận biết','🌱 Lv1')},medium:{ok:0,tot:0,lbl:t('📘 Thông hiểu','📘 Lv2')},hard:{ok:0,tot:0,lbl:t('🏆 Vận dụng','🏆 Lv3')}};
+    s.results.forEach((r,idx)=>{
+      const d=r.difficulty||s.questions?.[idx]?.difficulty;
+      if(d&&buckets[d]){buckets[d].tot++;if(r.correct)buckets[d].ok++;}
+    });
+    const active=Object.values(buckets).filter(b=>b.tot>0);
+    if(!active.length)return '';
+    return `<div style="display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin-top:10px">${active.map(b=>`<span style="padding:4px 10px;border-radius:999px;background:#eef6ef;border:1px solid #cbe2ce;font-size:12px;font-weight:800;color:#1e4d35">${b.lbl}: ${b.ok}/${b.tot}</span>`).join('')}</div>`;
+  })();
+  const reviewAccordion=(()=>{
+    if(!Array.isArray(s.questions)||!s.questions.length)return '';
+    const rows=s.questions.map((q,idx)=>{
+      const r=s.results[idx]||{};
+      const ok=Boolean(r.correct);
+      const userAns=r.givenAnswer!==undefined&&r.givenAnswer!==null?String(r.givenAnswer):t('Bỏ qua / Hết giờ','Skipped');
+      const expHtml=mathMarkup(typeof hint==='function'?hint(q):(q.explanation||'')).replace(/\n/g,'<br>');
+      return `<div style="text-align:left;padding:10px 12px;border-radius:12px;border:1.5px solid ${ok?'#c3e6cb':'#f5c2c7'};background:${ok?'rgba(43,138,62,0.05)':'rgba(224,49,49,0.05)'};margin-top:8px">
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px">
+          <b style="font-size:13px;color:${ok?'#2b8a3e':'#c92a2a'}">${ok?'✓':'✕'} ${t('Câu','Q')} ${idx+1}${q.difficultyLabel?' · '+esc(q.difficultyLabel):''}</b>
+          <small style="font-weight:700;opacity:.75">${r.elapsed?r.elapsed.toFixed(1)+'s':''}</small>
+        </div>
+        <div style="font-weight:800;font-size:14px;margin-bottom:4px">${typeof formatQuestionPrompt==='function'?formatQuestionPrompt(q.q):esc(q.q)}</div>
+        <div style="font-size:12.5px;margin-bottom:6px">${t('Bài làm:','Your answer:')} <b>${esc(userAns)}</b> · ${t('Đáp án đúng:','Correct:')} <b style="color:#1b6e3c">${mathMarkup(q.answer)}</b></div>
+        <div style="font-size:12.5px;line-height:1.45;padding:7px 10px;border-radius:8px;background:rgba(52,118,92,0.08)"><b>💡 ${t('Bài giải chi tiết:','Solution:')}</b><br>${expHtml}</div>
+      </div>`;
+    }).join('');
+    return `<details style="margin-top:14px;text-align:left"><summary style="cursor:pointer;padding:9px 12px;border-radius:11px;background:#f2f8f3;border:1.5px solid #cfe2d2;font-weight:800;font-size:13.5px;color:#1f5137;text-align:center">📋 ${t('Xem lại đề & Bài giải chi tiết từng câu','Review Questions & Step-by-Step Solutions')} (${s.questions.length})</summary><div style="margin-top:6px;max-height:380px;overflow-y:auto;padding-right:2px">${rows}</div></details>`;
+  })();
 
   $('#app').innerHTML=`<section class="narrow card home-v2-result quiz-finish-card">
     <span class="home-v2-eyebrow">${t('LƯỢT LUYỆN HOÀN THÀNH','PRACTICE COMPLETE')}</span>
@@ -92,11 +121,13 @@ finishPractice=function(){
         <span>(${pct}%)</span>
       </div>
       <div class="finish-stat-box">
-        <small>${t('Tốc độ TB','Avg Speed')}</small>
+        <small>${t('Thời gian TB','Avg Time')}</small>
         <strong>${avgSpeed}s</strong>
         <span>/${t('câu','question')}</span>
       </div>
     </div>
+    ${tierSummary}
+    ${reviewAccordion}
 
     <div class="finish-actions" style="margin-top:16px">
       ${state.mistakes.length?`<button class="primary wide" onclick="startReview()">${t('Ôn '+state.mistakes.length+' câu sai bằng Vườn hoa','Review '+state.mistakes.length+' mistakes')} →</button>`:''}
@@ -114,11 +145,36 @@ const numiOldSetup=setup;setup=function(){numiOldSetup();const form=$('#config')
  const advanced=form.querySelector('.advanced-picks');if(advanced){const hints=advanced.querySelectorAll('.settings-hint');hints.forEach((x,i)=>{if(i===0){x.hidden=true;const d=document.createElement('details');d.className='advanced-help';d.innerHTML=`<summary>${t('Giải thích ngắn','Quick help')}</summary><p>${t('“Tính thuận tiện” giúp ghép số cho dễ tính. “Biểu thức” có nhiều phép tính và có thể dùng ngoặc. Chỉ chọn loại số bé đã học.','Regrouping makes sums easier. Expressions combine operations and may use brackets. Choose only number types already learned.')}</p>`;x.insertAdjacentElement('afterend',d)}else x.hidden=true});const labs=advanced.querySelectorAll('label');if(labs[0])labs[0].firstChild.textContent=t('Dạng bài','Mode');if(labs[1])labs[1].firstChild.textContent=t('Số phép tính','Number of terms')}};
 // A missed problem returns as a fresh equivalent question so the learner cannot rely on the old answer.
 function numiReviewVariant(old){
- const skill=String(old.skill||''),parts=skill.split(':'),type=parts[0]||old.config?.type||'natural';let op=parts[1]||'+',c={...(old.config||config)};
- if(type==='natural'&&op==='convenient')c.questionStyle='convenient';else if(type==='natural'&&op==='expression')c.questionStyle='expression';else c.questionStyle='normal';
- c.type=type;c.types=[type];c.ops=op==='convenient'||op==='expression'?(c.ops||['+','-','*']):[op];
- let freshQ;for(let i=0;i<40;i++){freshQ=generate(c);if(freshQ.q!==old.q&&freshQ.answer!==old.answer)break}
- return {...freshQ,id:old.id,originalSkill:old.skill,config:{...(freshQ.config||c),type}};
+ if(!old)return old;
+ const validFresh=q=>Boolean(q&&q.q&&q.answer!==undefined&&q.answer!==null&&!/undefined|NaN/.test(String(q.q))&&!/undefined|NaN/.test(String(q.answer)));
+ const topicId=(old.topicId&&old.topicId!=='all')?old.topicId:(old.config?.topic&&old.config.topic!=='all'?old.config.topic:null);
+ if(topicId&&typeof generateTopicQuestion==='function'){
+  const baseCfg={...(typeof defaults!=='undefined'?defaults:{}),...(typeof config!=='undefined'?config:{}),...(old.config||{}),topic:topicId,topics:[topicId]};
+  let freshQ=null;
+  for(let i=0;i<25;i++){
+   const cand=generateTopicQuestion(topicId,baseCfg);
+   if(validFresh(cand)){freshQ=cand;if(cand.q!==old.q&&cand.answer!==old.answer)break}
+  }
+  if(validFresh(freshQ))return {...freshQ,id:old.id,originalSkill:old.skill,topicId,config:{...(freshQ.config||baseCfg),topic:topicId,topics:[topicId]}};
+ }
+ const skill=String(old.skill||''),parts=skill.split(':'),type=parts[0]||old.config?.type||'natural',op=parts[1]||'+';
+ const validTypes=new Set(['natural','fraction','decimal','negative','remainder']);
+ const validOps=new Set(['+','-','*','/','convenient','expression','missing','word']);
+ if(validTypes.has(type)&&validOps.has(op)){
+  const baseDef=typeof defaults!=='undefined'?defaults:{};
+  const c={...baseDef,...(typeof config!=='undefined'?config:{}),...(old.config||{}),grade:'custom',topic:'all',topics:[]};
+  c.digits=Array.isArray(c.digits)&&c.digits.length?c.digits:[1];
+  c.questionStyle=(op==='convenient'||op==='expression'||op==='missing'||op==='word')?op:'normal';
+  c.type=type;c.types=[type];
+  c.ops=(op==='convenient'||op==='expression'||op==='missing'||op==='word')?(Array.isArray(c.ops)&&c.ops.length?c.ops:['+','-','*']):[op];
+  let freshQ=null;
+  for(let i=0;i<40;i++){
+   const cand=generate(c);
+   if(validFresh(cand)){freshQ=cand;if(cand.q!==old.q&&cand.answer!==old.answer)break}
+  }
+  if(validFresh(freshQ))return {...freshQ,id:old.id,originalSkill:old.skill,config:{...(freshQ.config||c),type}};
+ }
+ return {...old,id:old.id,originalSkill:old.skill};
 }
 const numiOriginalStartReview=startReview;startReview=function(){if(!currentAuthUser()){openAccount('login');return}if(!state.mistakes.length)return numiOriginalStartReview();const saved=state.mistakes;state.mistakes=saved.map(numiReviewVariant);try{numiOriginalStartReview()}finally{state.mistakes=saved}};
 // Prevent natural-number practice and distractors from displaying negative values.
@@ -225,9 +281,9 @@ function numiSyncBuddyIdentity(root=document.querySelector('#app')){
   replacement.setAttribute('class',old.getAttribute('class')||'animal');replacement.dataset.buddySync=syncKey;old.replaceWith(replacement);
  });
  const homeMark=root.querySelector('.home-v2-wordmark>span');if(homeMark)homeMark.textContent=name;
- if(name&&name!=='Numi'&&!/\bNumi\b/.test(name)){
+ if(name&&name!=='Numi'&&!/\bNumi\b/.test(name)&&!(typeof view!=='undefined'&&view==='guide')){
   const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let node;const nodes=[];
-  while(node=walker.nextNode()){if(node.parentElement?.closest('script,style,.brand,.buddy-choices,.buddy-picker,.play-buddies,.profile-buddy-chips,.buddy-chip-icon,.family-chip'))continue;if(/\bNumi\b/.test(node.nodeValue))nodes.push(node)}
+  while(node=walker.nextNode()){if(node.parentElement?.closest('script,style,.brand,.buddy-choices,.buddy-picker,.play-buddies,.profile-buddy-chips,.buddy-chip-icon,.family-chip,.guide-view,.guide-cards,.guide-card,.guide-hero,.auth-gate-card'))continue;if(/\bNumi\b/.test(node.nodeValue))nodes.push(node)}
   for(const item of nodes){const next=item.nodeValue.replace(/\bNumi\b/g,()=>name);if(next!==item.nodeValue)item.nodeValue=next;}
  }
 }

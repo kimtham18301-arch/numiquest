@@ -263,7 +263,9 @@
       ...assignment.config,
       ops: Array.isArray(assignment.config.ops) && assignment.config.ops.length ? [...assignment.config.ops] : ['+'],
       types: Array.isArray(assignment.config.types) && assignment.config.types.length ? [...assignment.config.types] : [assignment.config.type || 'natural'],
-      digits: Array.isArray(assignment.config.digits) && assignment.config.digits.length ? [...assignment.config.digits] : [1]
+      digits: Array.isArray(assignment.config.digits) && assignment.config.digits.length ? [...assignment.config.digits] : [1],
+      topic: assignment.config.topic || 'all',
+      topics: Array.isArray(assignment.config.topics) ? [...assignment.config.topics] : []
     };
     config.type = config.types[0] || 'natural';
     if (typeof window !== 'undefined') window.config = config;
