@@ -764,11 +764,11 @@ test('v2.11.1: reloading page while signed in as teacher boots directly into Tea
   assert.ok(ctx.document.querySelector('#app').innerHTML.includes('Lớp học của Cô Lan'), 'Teacher workspace content should render on reload');
 });
 
-test('v2.12.1: A4 worksheet PDF composer separates Student Exam (no answers) and Answer Key (with answers) sheets cleanly', () => {
+test('v2.12.3: A4 worksheet PDF composer separates Student Exam (no pre-filled column tables, no answers) and Answer Key sheets', () => {
   const ctx = loadAppContext();
   const qs = ctx.generateWorksheetQuestions(2, ['g2_col100', 'g2_word'], 10);
   assert.equal(qs.length, 10, 'Should generate exact requested question count');
-  assert.ok(qs.some(q => q.colSpec), 'Grade 2 column topic should include printable column grid specs');
+  assert.ok(qs.some(q => q.isColumnExercise), 'Grade 2 column topic should flag column exercises');
 
   for (const fmtMode of ['mixed', 'essay', 'mcq']) {
     const baseState = {
@@ -785,11 +785,12 @@ test('v2.12.1: A4 worksheet PDF composer separates Student Exam (no answers) and
     const ansHtml = ctx.buildWorksheetSheetHTML(baseState, { withAnswers: true, interactivePreview: false });
 
     assert.ok(examHtml.includes('ws-paper-exam'), `Exam sheet marker missing in ${fmtMode}`);
-    assert.ok(!examHtml.includes('ws-filled-ans') && !examHtml.includes('ws-quick-key-grid'), `Exam sheet must NOT leak answers in ${fmtMode}`);
+    assert.ok(!examHtml.includes('ws-col-tbl') && !ansHtml.includes('ws-col-tbl'), 'Pre-filled column tables must NOT appear in printed PDF (scratchpad only)');
+    assert.ok(!examHtml.includes('ws-essay-sol') && !examHtml.includes('ws-quick-key-grid'), `Exam sheet must NOT leak answers in ${fmtMode}`);
     assert.ok(ansHtml.includes('ws-paper-answers') && ansHtml.includes('ws-quick-key-grid'), `Answer sheet missing answers/key in ${fmtMode}`);
     if (fmtMode !== 'mcq') {
-      assert.ok(examHtml.includes('ws-blank'), `Exam sheet column grid should have blank cells in ${fmtMode}`);
-      assert.ok(ansHtml.includes('ws-filled-ans'), `Answer sheet column grid should have filled digits in ${fmtMode}`);
+      assert.ok(examHtml.includes('ws-blank-workbox'), `Exam sheet should provide blank squared workbox for self column work in ${fmtMode}`);
+      assert.ok(ansHtml.includes('ws-essay-sol'), `Answer sheet should include concise solutions in ${fmtMode}`);
     } else {
       assert.ok(ansHtml.includes('ws-opt-hit'), 'Answer sheet MCQ should highlight correct option');
     }

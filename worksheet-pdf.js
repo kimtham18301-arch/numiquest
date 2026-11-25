@@ -42,10 +42,9 @@
     };
     const q = typeof generate === 'function' ? generate(cfg) : null;
     if (!q) return null;
-    const colSpec = typeof parseColumnArithmetic === 'function' ? parseColumnArithmetic(q.q) : null;
     return {
       ...q,
-      colSpec: (colSpec && (colSpec.hasDec || colSpec.totalCols >= 2 || g <= 5)) ? colSpec : null
+      isColumnExercise: Boolean(q.columnReady)
     };
   }
 
@@ -63,67 +62,6 @@
       out.push(q);
     }
     return out;
-  }
-
-  function buildPrintPlaceHeaders(spec) {
-    const intVi = ['Đ.vị', 'Chục', 'Trăm', 'Nghìn', 'C.ng', 'Tr.ng', 'Tr'];
-    const decVi = ['P.10', 'P.100', 'P.1000'];
-    const intCount = spec.commaCol >= 0 ? spec.commaCol : spec.totalCols;
-    const out = [];
-    for (let c = 0; c < spec.totalCols; c++) {
-      if (c === spec.commaCol) out.push(',');
-      else if (c < intCount) out.push(intVi[intCount - 1 - c] || '');
-      else out.push(decVi[c - spec.commaCol - 1] || '');
-    }
-    return out;
-  }
-
-  function buildExpectedColumnCells(spec) {
-    const intCount = spec.commaCol >= 0 ? spec.commaCol : spec.totalCols;
-    if (spec.commaCol >= 0) {
-      const formatted = Number(spec.expected).toFixed(spec.decLen).replace('.', ',');
-      const [intR, decR = ''] = formatted.split(',');
-      return [...intR.padStart(intCount, ' ').split(''), ',', ...decR.padEnd(spec.decLen, '0').split('')];
-    }
-    return String(Math.round(spec.expected)).padStart(spec.totalCols, ' ').split('');
-  }
-
-  function renderPrintableColumnGrid(spec, withAnswers = false) {
-    const headers = buildPrintPlaceHeaders(spec);
-    const ansRowChars = withAnswers ? buildExpectedColumnCells(spec) : null;
-    return `<table class="ws-col-tbl">
-      <thead>
-        <tr>
-          <th class="ws-op-h">Hàng</th>
-          ${headers.map((h, c) => `<th class="${c === spec.commaCol ? 'ws-cm' : ''}">${esc(h)}</th>`).join('')}
-        </tr>
-      </thead>
-      <tbody>
-        <tr class="ws-carry-r">
-          <td class="ws-op-c ws-carry-t">Nhớ</td>
-          ${headers.map((_, c) => `<td class="${c === spec.commaCol ? 'ws-cm' : ''}">&nbsp;</td>`).join('')}
-        </tr>
-        <tr>
-          <td class="ws-op-c">&nbsp;</td>
-          ${spec.rowA.map((ch, c) => `<td class="${c === spec.commaCol ? 'ws-cm ws-cm-g' : 'ws-d'}">${ch === ' ' ? '&nbsp;' : esc(ch)}</td>`).join('')}
-        </tr>
-        <tr>
-          <td class="ws-op-c ws-op-sym">${esc(spec.op)}</td>
-          ${spec.rowB.map((ch, c) => `<td class="${c === spec.commaCol ? 'ws-cm ws-cm-g' : 'ws-d'}">${ch === ' ' ? '&nbsp;' : esc(ch)}</td>`).join('')}
-        </tr>
-        <tr class="ws-ans-r">
-          <td class="ws-op-c ws-op-sym">=</td>
-          ${headers.map((_, c) => {
-            if (c === spec.commaCol) return '<td class="ws-cm ws-cm-g">,</td>';
-            if (withAnswers && ansRowChars) {
-              const ch = ansRowChars[c];
-              return `<td class="ws-filled-ans">${ch === ' ' ? '&nbsp;' : esc(ch)}</td>`;
-            }
-            return '<td class="ws-blank">&nbsp;</td>';
-          }).join('')}
-        </tr>
-      </tbody>
-    </table>`;
   }
 
   function formatPromptPlain(qStr) {
@@ -171,8 +109,9 @@
         <span class="ws-q-text">${formatPromptPlain(q.q)}</span>
         ${renderSwapBtn(i)}
       </div>
-      ${renderPrintableColumnGrid(q.colSpec, withAnswers)}
-      ${withAnswers ? `<div class="ws-col-sol-tag">${t('Đáp án:', 'Ans:')} <b>${esc(String(q.answer))}</b></div>` : ''}
+      ${withAnswers
+        ? `<div class="ws-essay-sol" style="width:100%;box-sizing:border-box"><b>✓ ${t('Đáp án:', 'Ans:')} ${esc(String(q.answer))}</b>${q.explanation ? `<div style="margin-top:3px;font-size:11.5px;color:#2b573e">${esc(String(q.explanation).replace(/\n/g, ' · '))}</div>` : ''}</div>`
+        : `<div class="ws-blank-workbox" aria-label="${t('Ô trống tự đặt tính', 'Blank space for written calculation')}"></div>`}
     </div>`;
 
     const renderEssayItem = (q, i) => `<div class="ws-essay-item ${withAnswers ? 'is-ans-box' : ''}">
@@ -197,7 +136,7 @@
       const colItems = [];
       const textItems = [];
       qs.forEach((q, i) => {
-        if (q.colSpec) colItems.push({ q, i });
+        if (q.isColumnExercise) colItems.push({ q, i });
         else textItems.push({ q, i });
       });
       if (colItems.length) {
@@ -213,7 +152,7 @@
       const part1 = [];
       const half = Math.ceil(qs.length / 2);
       qs.forEach((q, i) => {
-        if (q.colSpec) part2.push({ q, i });
+        if (q.isColumnExercise) part2.push({ q, i });
         else if (part1.length < half) part1.push({ q, i });
         else part2.push({ q, i });
       });
@@ -222,8 +161,8 @@
           <div class="ws-mcq-grid">${part1.map(({ q, i }) => renderMcqCard(q, i)).join('')}</div>`;
       }
       if (part2.length) {
-        const colPart = part2.filter(x => x.q.colSpec);
-        const essayPart = part2.filter(x => !x.q.colSpec);
+        const colPart = part2.filter(x => x.q.isColumnExercise);
+        const essayPart = part2.filter(x => !x.q.isColumnExercise);
         bodyHtml += `<div class="ws-section-title">${t('PHẦN II. ĐẶT TÍNH RỒI TÍNH & TỰ LUẬN', 'PART II. COLUMN ARITHMETIC & WRITTEN')}</div>`;
         if (colPart.length) {
           bodyHtml += `<div class="ws-col-grid">${colPart.map(({ q, i }) => renderColCard(q, i)).join('')}</div>`;
@@ -333,8 +272,8 @@
           </label>
           <label>${t('Hình thức đề', 'Format')}
             <select id="wsFormatSel">
-              <option value="mixed" ${wsState.format === 'mixed' ? 'selected' : ''}>${t('Kết hợp (Trắc nghiệm + Đặt tính & Tự luận)', 'Mixed (MCQ + Column + Essay)')}</option>
-              <option value="essay" ${wsState.format === 'essay' ? 'selected' : ''}>${t('Tự luận + Kẻ bảng đặt tính ô ly', 'Written + Column Grids')}</option>
+              <option value="mixed" ${wsState.format === 'mixed' ? 'selected' : ''}>${t('Kết hợp (Trắc nghiệm + Tự luận)', 'Mixed (MCQ + Written)')}</option>
+              <option value="essay" ${wsState.format === 'essay' ? 'selected' : ''}>${t('100% Tự luận (Kèm ô trống tự trình bày)', '100% Written Exercises')}</option>
               <option value="mcq" ${wsState.format === 'mcq' ? 'selected' : ''}>${t('100% Trắc nghiệm (A, B, C, D)', '100% Multiple Choice')}</option>
             </select>
           </label>
@@ -600,20 +539,9 @@
       .ws-opt-hit{background:#e4f7ea;color:#115e35;font-weight:900;border:1.5px solid #2e8b57;border-radius:6px;padding:1px 6px}
       .ws-inline-sol{margin-top:5px;padding-top:4px;border-top:1px dashed #d3e5d7;font-size:11.5px;color:#2e5b42}
       .ws-col-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-      .ws-col-card{border:1px solid #d5e2d6;border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;align-items:center;break-inside:avoid}
+      .ws-col-card{border:1px solid #d5e2d6;border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;align-items:stretch;break-inside:avoid}
       .ws-col-card .ws-q-head{width:100%}
-      .ws-col-tbl{border-collapse:collapse;border:1.8px solid #527e62;margin:4px auto 2px;table-layout:fixed}
-      .ws-col-tbl th,.ws-col-tbl td{border:1px solid #9ab9a3;text-align:center;vertical-align:middle;width:30px;height:24px;padding:0;font-size:15px;font-weight:800}
-      .ws-col-tbl th{background:#ecf5ec;color:#1f4d35;font-size:9.5px;height:19px}
-      .ws-col-tbl .ws-op-h,.ws-col-tbl .ws-op-c{width:30px;background:#f6faf5;font-size:10px;color:#2a5c42}
-      .ws-col-tbl .ws-op-sym{font-size:16px;font-weight:900}
-      .ws-col-tbl .ws-carry-r td{height:19px;background:#fffdf6}
-      .ws-col-tbl .ws-carry-t{font-size:9px;color:#9a6b1e}
-      .ws-col-tbl .ws-cm{width:14px!important;background:#fff5e6}
-      .ws-col-tbl .ws-cm-g{color:#c2410c;font-weight:900}
-      .ws-col-tbl .ws-ans-r td{border-top:2.4px solid #1b4b32!important;height:28px;background:#ffffff}
-      .ws-col-tbl .ws-filled-ans{background:#e7f8ec!important;color:#125c35!important;font-weight:900!important}
-      .ws-col-sol-tag{margin-top:5px;font-size:12px;color:#145c36;background:#eaf8ee;padding:2px 8px;border-radius:999px}
+      .ws-blank-workbox{width:100%;height:96px;border:1px dashed #b9ccb9;border-radius:6px;background-image:linear-gradient(to right,rgba(60,110,80,.08) 1px,transparent 1px),linear-gradient(to bottom,rgba(60,110,80,.08) 1px,transparent 1px);background-size:16px 16px;background-color:#ffffff;margin-top:4px}
       .ws-essay-list{display:grid;gap:10px}
       .ws-essay-item{border:1px solid #dce6dd;border-radius:8px;padding:8px 12px;break-inside:avoid}
       .ws-write-lines{display:grid;gap:8px;margin-top:6px;font-size:12.5px;color:#6b7280}
