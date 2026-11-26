@@ -1060,3 +1060,28 @@ test('v2.16.0: Custom PDF worksheet generates 100% pure mental-math calculations
   assert.ok(reformHtml.includes('Kết nối tri thức') && reformHtml.includes('Chân trời sáng tạo') && reformHtml.includes('Cánh Diều'), 'Reform view must compare all 3 approved textbook series');
 });
 
+test('v2.16.1: Home primary CTA says Tùy chỉnh / Bài tập tính nhẩm and opens the operation selection board immediately even when mistakes exist', async () => {
+  const ctx = loadAppContext();
+  await ctx.localSignIn('minhkhoi', '1234');
+  // Seed an old mistake to ensure Setup never blocks the operation picker board
+  ctx.state.mistakes = [{ id: 'm1', q: '7 + 8', answer: '15', options: ['15', '14', '16', '17'], config: { seconds: 20, type: 'natural' }, skill: 'natural:+' }];
+  ctx.nav('home');
+  const homeHtml = ctx.document.querySelector('#app')?.innerHTML || '';
+  assert.ok(homeHtml.includes('Tùy chỉnh / Bài tập tính nhẩm'), 'Home primary CTA must say Tùy chỉnh / Bài tập tính nhẩm');
+  assert.equal(homeHtml.includes('>Luyện ngay'), false, 'Ambiguous Luyện ngay label must be replaced');
+
+  // Clicking Home primary CTA opens Custom setup with the operation selector board (+, −, ×, ÷)
+  ctx.numiOpenCustomPractice();
+  assert.equal(ctx.view, 'setup', 'Clicking Tùy chỉnh / Bài tập tính nhẩm must open setup view');
+  assert.equal(ctx.config.grade, 'custom', 'Must switch config.grade to custom');
+  const setupHtml = ctx.document.querySelector('#app')?.innerHTML || '';
+  assert.ok(setupHtml.includes('id="config"') && setupHtml.includes('Chọn phép tính cần luyện tập'), 'Operation picker board (#config) must render immediately even when old mistakes exist');
+  assert.ok(setupHtml.includes('operation-picks'), 'Operation checkboxes (+, −, ×, ÷) must be visible');
+
+  // Secondary Home button opens the student school grade review board
+  ctx.numiOpenGradePractice();
+  assert.equal(ctx.view, 'setup');
+  assert.equal(ctx.config.grade, 4, 'Minh Khôi school grade button should open Grade 4 curriculum review');
+});
+
+

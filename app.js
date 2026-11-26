@@ -813,46 +813,46 @@ function gardenFinish(){clearInterval(gardenTimer);garden.active=null;$('#app').
 const navBeforeGarden=nav;nav=function(v){if(view==='garden'&&session&&!session.done){if(!confirm(t('Rời vườn hoa? Những câu đã ôn đúng vẫn được lưu.','Leave the garden? Completed matches will remain saved.')))return;session.done=true}if(view==='garden'){clearInterval(gardenTimer);gardenGhost?.remove();gardenGhost=null}navBeforeGarden(v)};
 function home(){}
 function setup(){
-  if(state.mistakes.length){
-    $('#app').innerHTML=`<div class="narrow card"><div class="intro-animal">${animal(buddy())}</div><h2>${t('Cùng chăm những chậu hoa còn lại nhé!','Let’s help the remaining flowers bloom!')}</h2><p>${state.mistakes.length} ${t('câu cần ôn. Sai bao nhiêu câu, mình ghép bấy nhiêu chậu.','questions to review. Each missed question gets its own pot.')}</p><button class="primary wide" onclick="startReview()">${t('Vào vườn hoa','Visit the flower garden')}</button></div>`;
-    return;
-  }
   const curGrade = config.grade && NUMI_GRADES[config.grade] ? config.grade : 'custom';
   const gradeInfo = NUMI_GRADES[curGrade];
   const chosenTypes = config.types || [config.type || 'natural'];
   const chosenDigits = config.digits || [1];
   let activeLevel = curGrade === 'custom' ? 'custom' : (curGrade >= 6 ? 'secondary' : 'primary');
+  const mistakeBannerHtml = state.mistakes.length
+    ? `<div class="setup-mistake-banner"><div><b>${t(`Đang có ${state.mistakes.length} câu sai cần ôn lại`, `You have ${state.mistakes.length} missed questions to review`)}</b><small>${t('Em có thể ôn lại trong Vườn hoa hoặc chọn bài mới bên dưới.', 'Review them in the Flower Garden or pick a new practice set below.')}</small></div><div class="setup-mistake-actions"><button type="button" class="primary" onclick="startReview()">${t('Vào Vườn hoa','Review')} →</button><button type="button" id="clearMistakesPractice">${t('Xóa câu sai cũ','Clear')}</button></div></div>`
+    : '';
 
   function renderGradeButtons(lvl, current){
     if(lvl === 'custom'){
-      return `<div class="grade-custom-banner"><div><b>${t('Chế độ Tùy chỉnh — Luyện tính nhẩm & Phản xạ phép tính','Custom Mode — Pure Mental Math & Calculation Drill')}</b><p>${t('Chỉ sinh thuần các bài tính toán số học (+, −, ×, ÷, biểu thức, tính thuận tiện, tìm số thiếu) theo đúng cấu hình mục 1–6 bên dưới để bé rèn tốc độ tính nhẩm — không trộn toán lời văn hay hình học.', 'Generates 100% pure arithmetic & mental-math calculations from sections 1–6 below — no word problems or geometry.')}</p></div></div>`;
+      return `<div class="grade-custom-banner"><div><b>${t('Chế độ Tùy chỉnh — Bài tập tính nhẩm & Phản xạ phép tính','Custom Mode — Mental Math & Calculation Practice')}</b><p>${t('Chọn các phép tính (+, −, ×, ÷), loại số và số chữ số bên dưới để luyện tính nhẩm thuần túy — không trộn toán lời văn hay hình học.', 'Select operations (+, −, ×, ÷), number types and digits below for pure mental-math practice.')}</p></div></div>`;
     }
     const grades = lvl === 'secondary' ? [6,7,8,9] : [1,2,3,4,5];
     return grades.map(g=>`<button type="button" class="grade-tab ${current===g?'active':''}" data-grade="${g}">${lang==='vi'?NUMI_GRADES[g].name:NUMI_GRADES[g].enName}</button>`).join('');
   }
 
   $('#app').innerHTML=`<div class="narrow">
+    ${mistakeBannerHtml}
     <div class="guide-bubble">${animal(buddy())}<div><b>${t('Mình chọn bài rồi cùng học nhé!','Pick your questions and let’s learn!')}</b><p>${t('Tiểu học & THCS để ôn tập kiến thức trên trường và làm bài tập bổ sung; Tùy chỉnh để rèn phản xạ tính nhẩm thuần túy.','Primary & Secondary review school curriculum topics; Custom drills pure mental-math calculations.')}</p></div></div>
     
     <div class="grade-picker-box card">
       <div class="grade-header">
-        <span class="grade-title">${t('Lớp học theo chuẩn GDPT 2018:','Grade level (Curriculum Grades 1–9):')}</span>
-        <span class="grade-badge" id="gradeActiveBadge">${gradeInfo ? (lang==='vi'?gradeInfo.name:gradeInfo.enName) : t('Tùy chỉnh','Custom')}</span>
+        <span class="grade-title">${t('Chế độ & Lớp học (Chuẩn GDPT 2018):','Mode & Grade level (Grades 1–9):')}</span>
+        <span class="grade-badge" id="gradeActiveBadge">${gradeInfo ? (lang==='vi'?gradeInfo.name:gradeInfo.enName) : t('Tùy chỉnh · Tính nhẩm','Custom · Mental Math')}</span>
       </div>
       <div class="level-seg-control" role="tablist" aria-label="${t('Bậc học','Education level')}">
         <button type="button" class="level-seg-btn ${activeLevel==='primary'?'active':''}" data-level="primary" role="tab" aria-selected="${activeLevel==='primary'}">${t('Tiểu học <span class="seg-sub">(Lớp 1–5)</span>','Primary <span class="seg-sub">(Grades 1–5)</span>')}</button>
         <button type="button" class="level-seg-btn ${activeLevel==='secondary'?'active':''}" data-level="secondary" role="tab" aria-selected="${activeLevel==='secondary'}">${t('THCS <span class="seg-sub">(Lớp 6–9)</span>','Secondary <span class="seg-sub">(Grades 6–9)</span>')}</button>
-        <button type="button" class="level-seg-btn ${activeLevel==='custom'?'active':''}" data-level="custom" role="tab" aria-selected="${activeLevel==='custom'}">${t('Tùy chỉnh','Custom')}</button>
+        <button type="button" class="level-seg-btn ${activeLevel==='custom'?'active':''}" data-level="custom" role="tab" aria-selected="${activeLevel==='custom'}">${t('Tùy chỉnh <span class="seg-sub">(Tính nhẩm)</span>','Custom <span class="seg-sub">(Mental Math)</span>')}</button>
       </div>
       <div class="grade-subgrid" id="gradeSubgrid">
         ${renderGradeButtons(activeLevel, curGrade)}
       </div>
-      <p class="grade-desc" id="gradeDesc">${gradeInfo ? (lang==='vi'?gradeInfo.descVi:gradeInfo.descEn) : t('Tùy ý kết hợp các phép tính, loại số và số chữ số.','Freely combine operations, number types and digits.')}</p>
+      <p class="grade-desc" id="gradeDesc">${gradeInfo ? (lang==='vi'?gradeInfo.descVi:gradeInfo.descEn) : t('Tùy ý kết hợp các phép tính, loại số và số chữ số để rèn tốc độ tính nhẩm.','Freely combine operations, number types and digits to build mental math speed.')}</p>
     </div>
 
     <form id="config" class="card lesson-settings">
       <fieldset>
-        <legend><span>1</span>${t('Em muốn tính gì?','What shall we practice?')}</legend>
+        <legend><span>1</span>${t('Chọn phép tính cần luyện tập','Choose operations to practice')}</legend>
         <div class="checks operation-picks">
           ${['+','−','×','÷'].map((symbol,i)=>`<label><input type="checkbox" name="op" value="${['+','-','*','/'][i]}" ${config.ops.includes(['+','-','*','/'][i])?'checked':''}><span>${symbol}</span></label>`).join('')}
         </div>
@@ -917,7 +917,14 @@ function setup(){
 
   const form=$('#config');
   function refresh(){
-    const f=new FormData(form),count=+f.get('count'),seconds=+f.get('seconds'),digits=f.getAll('digits'),types=f.getAll('type'),ops=f.getAll('op'),modeLabel=f.get('inputMode')==='numpad'?t('Tự nhập','Numpad'):t('Trắc nghiệm','Choices');
+    const f=typeof FormData==='function'?new FormData(form):null;
+    const count=f?+f.get('count'):(config.count||10);
+    const seconds=f?+f.get('seconds'):(config.seconds||15);
+    const digits=f?f.getAll('digits'):(config.digits||[1]);
+    const types=f?f.getAll('type'):(config.types||['natural']);
+    const ops=f?f.getAll('op'):(config.ops||['+']);
+    const modeVal=f?f.get('inputMode'):(config.inputMode||'choices');
+    const modeLabel=modeVal==='numpad'?t('Tự nhập','Numpad'):t('Trắc nghiệm','Choices');
     $$('[data-count]').forEach(b=>b.classList.toggle('chosen',+b.dataset.count===count));
     $$('[data-seconds]').forEach(b=>b.classList.toggle('chosen',+b.dataset.seconds===seconds));
     $('#randomDigits').classList.toggle('chosen',digits.length===6);

@@ -130,7 +130,8 @@ setup=function(){
   const form=$('#config');if(!form)return;
   const field=document.createElement('fieldset');field.className='advanced-picks';
   field.innerHTML=`<legend><span>4</span>${t('Kiểu bài nâng cao','Challenge style')}</legend><div class="formgrid"><label>${t('Dạng luyện','Practice mode')}<select name="questionStyle"><option value="normal">${t('Tính từng phép tính','One calculation at a time')}</option><option value="convenient">${t('Tính thuận tiện · gộp số tròn','Regroup to make round numbers')}</option><option value="expression">${t('Biểu thức nhiều phép tính','Multi-operation expressions')}</option></select></label><label>${t('Số phép tính','Number of operations')}<select name="termCount">${[2,3,4,5,6].map(n=>`<option value="${n}">${n}</option>`).join('')}</select></label></div><p class="settings-hint small">${t('App tự thêm ngoặc khi cần để biểu thức dễ đọc. Bé chỉ cần tự tính.','The app adds brackets when useful to make expressions clear. Just work them out.')}</p>`;
-  form.insertBefore(field,form.querySelector('.session-size'));
+  if(typeof form.insertBefore==='function')form.insertBefore(field,form.querySelector('.session-size'));
+  else if(typeof form.append==='function')form.append(field);
   const stepSpans=form.querySelectorAll('fieldset legend span');
   if(stepSpans&&stepSpans.length){
     stepSpans.forEach((sp,idx)=>{sp.textContent=String(idx+1)});
@@ -158,9 +159,11 @@ setup=function(){
     if(typeof global!=='undefined')global.config=config;
     startQuiz();
   };
-  const style=form.elements.questionStyle,terms=form.elements.termCount;
-  style.value=config.questionStyle||'normal';terms.value=config.termCount||3;
-  style.onchange=()=>{terms.disabled=style.value==='normal'};style.onchange();
+  const style=form.elements?.questionStyle,terms=form.elements?.termCount;
+  if(style&&terms){
+    style.value=config.questionStyle||'normal';terms.value=config.termCount||3;
+    style.onchange=()=>{terms.disabled=style.value==='normal'};style.onchange();
+  }
 };
 
 const PAUSED_LESSON_KEY='numi-paused-lesson-v1';

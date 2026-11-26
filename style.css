@@ -2504,3 +2504,17 @@ body.dark-mode .teacher-class-banner{background:linear-gradient(135deg,#18281f,#
 body.dark-mode .teacher-admin-item,body.dark-mode .student-enrolled-item,body.dark-mode .cls-report-kpis>div{background:#17251d;border-color:#2b4637}
 body.dark-mode .student-class-pill{background:#193024;border-color:#315943;color:#bfead2}
 body.dark-mode .cls-report-kpis strong{color:#daf2e4}
+
+/* v2.16.1: Clear Home CTA for Custom / Mental Math & non-blocking Setup mistake banner */
+.home-v2-cta{font-size:18px!important;gap:16px!important;padding:14px 22px!important;max-width:100%;text-align:left;line-height:1.25}
+.home-v2-grade-btn{display:inline-flex!important;align-items:center;gap:6px;margin-top:11px!important;padding:8px 14px!important;border-radius:12px!important;border:1.5px solid color-mix(in srgb,var(--green) 32%,white)!important;background:#ffffff!important;color:var(--green)!important;font-size:13.5px!important;font-weight:800!important;text-decoration:none!important;box-shadow:0 2px 6px rgba(0,0,0,.04)}
+.home-v2-grade-btn:hover{background:color-mix(in srgb,var(--mint) 65%,white)!important;border-color:var(--green)!important}
+body.dark-mode .home-v2-grade-btn{background:#1b2e24!important;border-color:#355c47!important;color:#8ee4b0!important}
+.setup-mistake-banner{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:13px 16px;margin-bottom:14px;border-radius:16px;background:#fff4f6;border:1.5px solid #f2b8c6;color:#6e273d}
+.setup-mistake-banner b{display:block;font-size:14px;margin-bottom:2px}
+.setup-mistake-banner small{display:block;font-size:12.5px;color:#8a4358}
+.setup-mistake-actions{display:flex;gap:8px;flex-wrap:wrap}
+.setup-mistake-actions button{min-height:36px!important;padding:6px 12px!important;font-size:12.5px!important;border-radius:10px!important}
+body.dark-mode .setup-mistake-banner{background:#2c1b22;border-color:#683546;color:#ffd9e2}
+body.dark-mode .setup-mistake-banner small{color:#e6a8b8}
+
