@@ -268,9 +268,10 @@
     if (!meta || meta.id === 'all') return '';
     const label = typeof lang !== 'undefined' && lang === 'en' ? meta.en : meta.vi;
     const g = Number(gradeHint || cfgHint?.grade || 0);
-    const icon = meta.col ? '📐 ' : (g >= 6 ? (meta.domain === 'geometry' ? '📐 ' : '🔢 ') : '🎯 ');
-    const untimed = typeof isUntimedQuizSession === 'function' && isUntimedQuizSession(cfgHint || (typeof config !== 'undefined' ? config : null), { config: { grade: g } });
-    return `${icon}${label}${!untimed && meta.seconds ? ` · ${meta.seconds}s` : ''}`;
+    const effCfg = cfgHint || (typeof config !== 'undefined' ? config : null);
+    const untimed = typeof isUntimedQuizSession === 'function' && isUntimedQuizSession(effCfg, { config: { grade: g } });
+    const secVal = Number(effCfg?.customPresetSeconds) || meta.seconds;
+    return `${label}${!untimed && secVal ? ` · ${secVal}s` : ''}`;
   }
 
   function makeQ(q, answer, near, skill, cfg, explanation, extra = {}) {
@@ -1675,7 +1676,8 @@
 
     const checkedModeEl = $('#config input[name="inputMode"]:checked');
     const currentInputMode = checkedModeEl ? checkedModeEl.value : (config?.inputMode || 'choices');
-    const isUntimedActive = isSecondary && (currentInputMode === 'numpad' || Boolean(config?.untimed));
+    const customSecOverride = Number(config?.customPresetSeconds) > 0 ? Number(config.customPresetSeconds) : null;
+    const isUntimedActive = Boolean(config?.untimed) || (!customSecOverride && isSecondary && currentInputMode === 'numpad');
 
     const diffLabelMap = {
       progressive: t('Dễ → Khó', 'Easy → Hard'),
@@ -1684,23 +1686,33 @@
       hard: t('Vận dụng (Khó)', 'Lv3 Hard')
     };
 
+    const effectiveTimeDisplay = () => {
+      if (Boolean(config?.untimed)) return t('Không giới hạn giờ', 'Untimed');
+      if (customSecOverride) return `${customSecOverride}s/${t('câu', 'q')}`;
+      const modeNowEl = $('#config input[name="inputMode"]:checked');
+      const mVal = modeNowEl ? modeNowEl.value : (config?.inputMode || 'choices');
+      if (isSecondary && mVal === 'numpad') return t('Không giới hạn giờ', 'Untimed');
+      return `${timeRangeText}/${t('câu', 'q')}`;
+    };
+
     const updateLessonSummary = (selArr, countNow, recNow) => {
       const sumEl = $('#lessonSummary');
       if (!sumEl) return;
       const tRange = formatTimingRange(recNow);
       const modeNowEl = $('#config input[name="inputMode"]:checked');
       const mVal = modeNowEl ? modeNowEl.value : (config?.inputMode || 'choices');
-      const untimedNow = isSecondary && (mVal === 'numpad' || Boolean(config?.untimed));
+      const customSecNow = Number(config?.customPresetSeconds) > 0 ? Number(config.customPresetSeconds) : null;
+      const untimedNow = Boolean(config?.untimed) || (!customSecNow && isSecondary && mVal === 'numpad');
       const timeStr = untimedNow
-        ? t('Không giới hạn giờ (Tư duy)', 'Untimed (Deep thinking)')
-        : `${tRange}/${t('câu', 'q')}`;
+        ? t('Không giới hạn giờ', 'Untimed')
+        : `${customSecNow ? customSecNow + 's' : tRange}/${t('câu', 'q')}`;
       const diffTxt = diffLabelMap[config?.difficultyMode || 'progressive'] || diffLabelMap.progressive;
 
       if (selArr.length === 0) {
         const domTitle = isSecondary && activeDomain === 'number'
-          ? t(`Số học & Đại số Lớp ${g} (${domainFilteredIds.length} dạng)`, `Grade ${g} Numbers & Algebra (${domainFilteredIds.length})`)
+          ? t(`Số học Lớp ${g} (${domainFilteredIds.length} dạng)`, `Grade ${g} Numbers & Algebra (${domainFilteredIds.length})`)
           : isSecondary && activeDomain === 'geometry'
-            ? t(`Hình học & Đo lường Lớp ${g} (${domainFilteredIds.length} dạng)`, `Grade ${g} Geometry (${domainFilteredIds.length})`)
+            ? t(`Hình học Lớp ${g} (${domainFilteredIds.length} dạng)`, `Grade ${g} Geometry (${domainFilteredIds.length})`)
             : t(`Đề tổng hợp ${validIds.size} dạng Lớp ${g}`, `Grade ${g} Mixed (${validIds.size} formats)`);
         sumEl.textContent = `${domTitle} · ${diffTxt} · ${countNow} ${t('câu', 'qs')} · ${timeStr}`;
       } else {
@@ -1749,37 +1761,33 @@
 
     const statusBadge = isAllMode
       ? (isSecondary && activeDomain === 'number'
-          ? t(`Đang chọn trọn bộ Số học & Đại số (${numberTopics.length} chuyên đề)`, `All Numbers & Algebra (${numberTopics.length} topics)`)
+          ? t(`Đang chọn Số học (${numberTopics.length} chuyên đề)`, `All Numbers & Algebra (${numberTopics.length} topics)`)
           : isSecondary && activeDomain === 'geometry'
-            ? t(`Đang chọn trọn bộ Hình học & Đo lường (${geomTopics.length} chuyên đề)`, `All Geometry (${geomTopics.length} topics)`)
+            ? t(`Đang chọn Hình học (${geomTopics.length} chuyên đề)`, `All Geometry (${geomTopics.length} topics)`)
             : t(`Đang bật Đề tổng hợp (${validIds.size} dạng trộn đều)`, `Full Mixed Exam (${validIds.size} formats)`))
       : t(`Đang chọn ${selectedList.length}/${validIds.size} dạng (chạm thêm để ghép nhiều dạng)`, `${selectedList.length}/${validIds.size} selected (tap more to combine)`);
 
     const timingChipLabel = isUntimedActive
-      ? `🧠 ${t('Chế độ Tự luận / Tư duy THCS: Không giới hạn thời gian', 'Secondary Free-Input / Thinking Mode: Untimed')}`
-      : g <= 5
-        ? `⏱ ${t('Rèn phản xạ nhanh Tiểu học:', 'Primary fast-reflex timer:')} ${timeRangeText}/${t('câu', 'q')}`
-        : `⏱ ${t('Trắc nghiệm THCS:', 'Secondary MCQ timer:')} ${timeRangeText}/${t('câu', 'q')}`;
+      ? t('Thời gian: Không giới hạn giờ', 'Timer: Untimed')
+      : customSecOverride
+        ? `${t('Thời gian tự đặt:', 'Custom timer:')} ${customSecOverride}s/${t('câu', 'q')}`
+        : `${t('Thời gian mặc định:', 'Default timer:')} ${timeRangeText}/${t('câu', 'q')}`;
 
     const splitPillHtml = activeTopicCount > 1
-      ? `<span class="preset-split-badge">🎲 ${isAllMode ? t(`Chia đều ${activeTopicCount} dạng`, `Balanced across ${activeTopicCount} topics`) : t(`Chia đều ${activeTopicCount} dạng`, `Even split (${activeTopicCount} topics)`)} (${splitText})</span>`
-      : `<span class="preset-split-badge">${isUntimedActive ? '🧠 ' + t('Không giới hạn giờ', 'Untimed') : '⏱ ' + timeRangeText + '/' + t('câu', 'q')}</span>`;
+      ? `<span class="preset-split-badge">${t(`Chia đều ${activeTopicCount} dạng`, `Even split (${activeTopicCount} topics)`)} (${splitText})</span>`
+      : `<span class="preset-split-badge">${effectiveTimeDisplay()}</span>`;
 
     const sameSet = (a, b) => a.length > 0 && a.length === b.length && a.every(x => b.includes(x));
     const quickCounts = [5, 8, 10, 12, 15, 20];
+    const quickSecPresets = [20, 30, 45, 60, 90];
+    const isDefaultTimerMode = !Boolean(config?.untimed) && !customSecOverride;
 
     const renderPillBtn = tp => {
       const active = tp.id === 'all' ? (isAllMode && activeDomain === 'all') : selectedList.includes(tp.id);
-      const prefix = tp.id === 'all'
-        ? '✨ '
-        : tp.col
-          ? '📐 '
-          : isSecondary
-            ? (tp.domain === 'geometry' ? '📐 ' : '🔢 ')
-            : '';
-      const secTag = !isUntimedActive && tp.seconds ? ` <small class="tp-sec-tag">${tp.seconds}s</small>` : '';
-      const tip = `${tp.count} ${t('câu', 'qs')}${isUntimedActive ? ' · ' + t('Không giới hạn giờ', 'Untimed') : ' · ' + tp.seconds + 's/' + t('câu', 'q')}`;
-      return `<button type="button" class="grade-topic-pill ${tp.domain === 'geometry' && isSecondary ? 'is-geom-pill' : ''} ${active ? 'active' : ''}" data-grade-topic="${esc(tp.id)}" title="${esc(tip)}">${prefix}${esc(typeof lang !== 'undefined' && lang === 'en' ? tp.en : tp.vi)}${secTag}</button>`;
+      const shownSec = customSecOverride || tp.seconds;
+      const secTag = !isUntimedActive && shownSec ? ` <small class="tp-sec-tag">${shownSec}s</small>` : '';
+      const tip = `${tp.count} ${t('câu', 'qs')}${isUntimedActive ? ' · ' + t('Không giới hạn giờ', 'Untimed') : ' · ' + shownSec + 's/' + t('câu', 'q')}`;
+      return `<button type="button" class="grade-topic-pill ${tp.domain === 'geometry' && isSecondary ? 'is-geom-pill' : ''} ${active ? 'active' : ''}" data-grade-topic="${esc(tp.id)}" title="${esc(tip)}">${esc(typeof lang !== 'undefined' && lang === 'en' ? tp.en : tp.vi)}${secTag}</button>`;
     };
 
     const secondaryGroupedTopicsHtml = () => {
@@ -1793,11 +1801,11 @@
       return `
         <div class="grade-topics-list" style="margin-bottom:8px">${allBtn ? renderPillBtn(allBtn) : ''}</div>
         <div class="sec-stream-group">
-          <div class="sec-stream-lbl">🔢 ${t(`Phần Số học & Đại số (${numberTopics.length} chuyên đề)`, `Part 1: Numbers & Algebra (${numberTopics.length} topics)`)}</div>
+          <div class="sec-stream-lbl">${t(`Số học (${numberTopics.length} chuyên đề)`, `Numbers & Algebra (${numberTopics.length} topics)`)}</div>
           <div class="grade-topics-list">${numberTopics.map(renderPillBtn).join('')}</div>
         </div>
         <div class="sec-stream-group" style="margin-top:9px">
-          <div class="sec-stream-lbl is-geom">📐 ${t(`Phần Hình học & Đo lường (${geomTopics.length} chuyên đề)`, `Part 2: Geometry & Measurement (${geomTopics.length} topics)`)}</div>
+          <div class="sec-stream-lbl is-geom">${t(`Hình học (${geomTopics.length} chuyên đề)`, `Geometry (${geomTopics.length} topics)`)}</div>
           <div class="grade-topics-list">${geomTopics.map(renderPillBtn).join('')}</div>
         </div>
       `;
@@ -1807,45 +1815,53 @@
     host.innerHTML = `
       <div class="grade-topics-head">
         <div class="grade-topics-title">
-          <span>🎯 ${t(`Hệ thống chuyên đề Lớp ${g} chuẩn GDPT 2018:`, `Grade ${g} Curriculum Topics (GDPT 2018):`)}</span>
+          <span>${t(`Ôn tập & Bổ sung bài tập Lớp ${g} (Chuẩn SGK GDPT 2018):`, `Grade ${g} School Review & Practice (GDPT 2018):`)}</span>
           <span class="grade-topics-status">${statusBadge} · <strong class="grade-timing-chip ${isUntimedActive ? 'is-untimed' : ''}">${timingChipLabel}</strong></span>
         </div>
         <div class="grade-topics-quick-row">
-          <button type="button" class="grade-topics-quick-btn kh-open-btn" id="openGradeKnowledgeBtn">📖 ${t(`Kiến thức & Công thức Lớp ${g}`, `Gr ${g} Study Notes`)}</button>
-          ${!isSecondary && mentalIds.length ? `<button type="button" class="grade-topics-quick-btn ${sameSet(selectedList, mentalIds) ? 'is-on' : ''}" id="quickMentalTopicsBtn">⚡ ${t('Tính nhẩm nhanh', 'Mental Math')}</button>` : ''}
-          ${!isSecondary && colIds.length ? `<button type="button" class="grade-topics-quick-btn ${sameSet(selectedList, colIds) ? 'is-on' : ''}" id="quickColTopicsBtn">📐 ${t('Đặt tính', 'Column')}</button>` : ''}
-          ${!isSecondary && knowledgeIds.length ? `<button type="button" class="grade-topics-quick-btn ${sameSet(selectedList, knowledgeIds) ? 'is-on' : ''}" id="quickKnowTopicsBtn">📚 ${t('Toán giải & Ôn tập', 'Word & Review')}</button>` : ''}
-          ${isSecondary && currentInputMode !== 'numpad' ? `<button type="button" class="grade-topics-quick-btn ${config?.untimed ? 'is-on' : ''}" id="toggleSecUntimedBtn">♾️ ${config?.untimed ? t('Đang tắt đếm giờ', 'Untimed ON') : t('Bỏ giới hạn giờ', 'No Timer')}</button>` : ''}
+          <button type="button" class="grade-topics-quick-btn kh-open-btn" id="openGradeKnowledgeBtn">${t(`Lý thuyết & Công thức Lớp ${g}`, `Gr ${g} Study Notes`)}</button>
+          ${!isSecondary && mentalIds.length ? `<button type="button" class="grade-topics-quick-btn ${sameSet(selectedList, mentalIds) ? 'is-on' : ''}" id="quickMentalTopicsBtn">${t('Tính nhẩm nhanh', 'Mental Math')}</button>` : ''}
+          ${!isSecondary && colIds.length ? `<button type="button" class="grade-topics-quick-btn ${sameSet(selectedList, colIds) ? 'is-on' : ''}" id="quickColTopicsBtn">${t('Đặt tính', 'Column')}</button>` : ''}
+          ${!isSecondary && knowledgeIds.length ? `<button type="button" class="grade-topics-quick-btn ${sameSet(selectedList, knowledgeIds) ? 'is-on' : ''}" id="quickKnowTopicsBtn">${t('Toán giải & Ôn tập', 'Word & Review')}</button>` : ''}
         </div>
       </div>
 
       ${isSecondary ? `
         <div class="sec-domain-bar" role="tablist" aria-label="${t('Phân môn Toán THCS', 'Secondary Math Branches')}">
-          <button type="button" class="sec-dom-tab ${activeDomain === 'all' && isAllMode ? 'active' : ''}" data-sec-dom="all">✨ ${t(`Tổng hợp Số + Hình (${allSpecialized.length})`, `All Mixed (${allSpecialized.length})`)}</button>
-          <button type="button" class="sec-dom-tab ${activeDomain === 'number' ? 'active' : ''}" data-sec-dom="number">🔢 ${t(`Phần Số học & Đại số (${numberTopics.length})`, `Numbers & Algebra (${numberTopics.length})`)}</button>
-          <button type="button" class="sec-dom-tab is-geom ${activeDomain === 'geometry' ? 'active' : ''}" data-sec-dom="geometry">📐 ${t(`Phần Hình học & Đo lường (${geomTopics.length})`, `Geometry (${geomTopics.length})`)}</button>
+          <button type="button" class="sec-dom-tab ${activeDomain === 'all' && isAllMode ? 'active' : ''}" data-sec-dom="all">${t(`Tất cả (${allSpecialized.length})`, `All (${allSpecialized.length})`)}</button>
+          <button type="button" class="sec-dom-tab ${activeDomain === 'number' ? 'active' : ''}" data-sec-dom="number">${t(`Số học (${numberTopics.length})`, `Numbers & Algebra (${numberTopics.length})`)}</button>
+          <button type="button" class="sec-dom-tab is-geom ${activeDomain === 'geometry' ? 'active' : ''}" data-sec-dom="geometry">${t(`Hình học (${geomTopics.length})`, `Geometry (${geomTopics.length})`)}</button>
         </div>
       ` : ''}
 
       ${isSecondary ? secondaryGroupedTopicsHtml() : `<div class="grade-topics-list">${list.map(renderPillBtn).join('')}</div>`}
 
       <div class="preset-diff-bar" id="presetDiffBar">
-        <span class="preset-count-lbl">📊 ${t('Mức độ bài tập:', 'Difficulty:')}</span>
+        <span class="preset-count-lbl">${t('Mức độ bài tập:', 'Difficulty:')}</span>
         <div class="preset-diff-chips">
-          <button type="button" class="preset-diff-chip ${activeDiffMode === 'progressive' ? 'active' : ''}" data-diff-mode="progressive" title="${t('40% Nhận biết → 35% Thông hiểu → 25% Vận dụng thực tế', '40% Easy -> 35% Medium -> 25% Hard')}">📈 ${t('Lộ trình Dễ → Khó (Chuẩn đề thi)', 'Progressive (Easy → Hard)')}</button>
-          <button type="button" class="preset-diff-chip ${activeDiffMode === 'easy' ? 'active' : ''}" data-diff-mode="easy">🌱 ${t('Nhận biết (Dễ)', 'Lv1 Easy')}</button>
-          <button type="button" class="preset-diff-chip ${activeDiffMode === 'medium' ? 'active' : ''}" data-diff-mode="medium">📘 ${t('Thông hiểu (Vừa)', 'Lv2 Medium')}</button>
-          <button type="button" class="preset-diff-chip ${activeDiffMode === 'hard' ? 'active' : ''}" data-diff-mode="hard">🏆 ${t('Vận dụng & Bài giải (Khó)', 'Lv3 Hard & Word')}</button>
+          <button type="button" class="preset-diff-chip ${activeDiffMode === 'progressive' ? 'active' : ''}" data-diff-mode="progressive" title="${t('40% Nhận biết → 35% Thông hiểu → 25% Vận dụng thực tế', '40% Easy -> 35% Medium -> 25% Hard')}">${t('Lộ trình Dễ → Khó (Chuẩn đề kiểm tra)', 'Progressive (Easy → Hard)')}</button>
+          <button type="button" class="preset-diff-chip ${activeDiffMode === 'easy' ? 'active' : ''}" data-diff-mode="easy">${t('Nhận biết (Dễ)', 'Lv1 Easy')}</button>
+          <button type="button" class="preset-diff-chip ${activeDiffMode === 'medium' ? 'active' : ''}" data-diff-mode="medium">${t('Thông hiểu (Vừa)', 'Lv2 Medium')}</button>
+          <button type="button" class="preset-diff-chip ${activeDiffMode === 'hard' ? 'active' : ''}" data-diff-mode="hard">${t('Vận dụng & Bài giải (Khó)', 'Lv3 Hard & Word')}</button>
         </div>
       </div>
 
       <div class="preset-count-bar" id="presetCountBar">
-        <span class="preset-count-lbl">📝 ${t('Số câu luyện:', 'Questions:')}</span>
+        <span class="preset-count-lbl">${t('Số câu luyện:', 'Questions:')}</span>
         <div class="preset-count-chips">
           ${quickCounts.map(n => `<button type="button" class="preset-cnt-chip ${activeCount === n ? 'active' : ''}" data-preset-count="${n}">${n}</button>`).join('')}
         </div>
         <input type="number" id="presetCountInput" class="preset-cnt-input" min="1" max="50" value="${activeCount}" aria-label="${t('Nhập số câu', 'Question count')}" inputmode="numeric">
         ${splitPillHtml}
+      </div>
+
+      <div class="preset-count-bar preset-timer-bar" id="presetTimerBar">
+        <span class="preset-count-lbl">${t('Thời gian mỗi câu:', 'Time per question:')}</span>
+        <div class="preset-count-chips">
+          <button type="button" class="preset-cnt-chip ${isDefaultTimerMode ? 'active' : ''}" data-preset-timer="auto">${t('Mặc định từng dạng', 'Per-topic default')} (${timeRangeText})</button>
+          ${quickSecPresets.map(s => `<button type="button" class="preset-cnt-chip ${!Boolean(config?.untimed) && customSecOverride === s ? 'active' : ''}" data-preset-timer="${s}">${s}s</button>`).join('')}
+          <button type="button" class="preset-cnt-chip ${Boolean(config?.untimed) ? 'active' : ''}" data-preset-timer="untimed">${t('Không giới hạn', 'Untimed')}</button>
+        </div>
       </div>
     `;
 
@@ -1884,12 +1900,27 @@
       }
     });
 
-    $('#toggleSecUntimedBtn')?.addEventListener('click', () => {
-      config.untimed = !config.untimed;
-      if (typeof window !== 'undefined') window.config = config;
-      if (typeof global !== 'undefined') global.config = config;
-      renderTopicPillsForGrade(g, false);
-      updateLessonSummary(selectedList, activeCount, curRec);
+    $$('[data-preset-timer]').forEach(btn => {
+      btn.onclick = () => {
+        const mode = btn.dataset.presetTimer;
+        if (mode === 'untimed') {
+          config.untimed = true;
+          config.customPresetSeconds = null;
+        } else if (mode === 'auto') {
+          config.untimed = false;
+          config.customPresetSeconds = null;
+        } else {
+          const s = Number(mode) || 30;
+          config.untimed = false;
+          config.customPresetSeconds = s;
+          config.seconds = s;
+          if ($('#lessonSeconds')) $('#lessonSeconds').value = s;
+        }
+        if (typeof window !== 'undefined') window.config = config;
+        if (typeof global !== 'undefined') global.config = config;
+        renderTopicPillsForGrade(g, false);
+        updateLessonSummary(selectedList, activeCount, curRec);
+      };
     });
 
     const applyPickedCount = nextCount => {
@@ -1927,7 +1958,8 @@
       config.topic = 'all';
       config.topics = [];
       config.domainFilter = 'all';
-      if (gk !== 'custom' && Number(gk) <= 5) config.untimed = false;
+      config.customPresetSeconds = null;
+      config.untimed = false;
     }
     renderTopicPillsForGrade(gk === 'custom' ? null : gk, gk !== 'custom');
   };

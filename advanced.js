@@ -153,7 +153,7 @@ setup=function(){
       types=types.filter(x=>['natural','fraction'].includes(x));
       if(!types.length)types=['natural'];
     }
-    config={...defaults,ops,types,type:types[0]||'natural',digits,count:+f.get('count'),seconds:+f.get('seconds'),inputMode:f.get('inputMode')||config.inputMode||'choices',questionStyle:style,termCount:+f.get('termCount'),grade:config.grade,topic:config.topic||'all',topics:Array.isArray(config.topics)?[...config.topics]:[],domainFilter:config.domainFilter||'all',difficultyMode:config.difficultyMode||'progressive',untimed:Boolean(config.untimed)};
+    config={...defaults,ops,types,type:types[0]||'natural',digits,count:+f.get('count'),seconds:+f.get('seconds'),inputMode:f.get('inputMode')||config.inputMode||'choices',questionStyle:style,termCount:+f.get('termCount'),grade:config.grade,topic:config.topic||'all',topics:Array.isArray(config.topics)?[...config.topics]:[],domainFilter:config.domainFilter||'all',difficultyMode:config.difficultyMode||'progressive',untimed:Boolean(config.untimed),customPresetSeconds:config.grade==='custom'?null:(config.customPresetSeconds||null)};
     if(typeof window!=='undefined')window.config=config;
     if(typeof global!=='undefined')global.config=config;
     startQuiz();

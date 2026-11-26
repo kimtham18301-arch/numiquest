@@ -38,9 +38,9 @@
   }
   function difficultyBadgeLabel(tier) {
     const isEn = typeof lang !== 'undefined' && lang === 'en';
-    if (tier === 'easy') return isEn ? '🌱 Lv1 · Foundation' : '🌱 Mức 1 · Nhận biết';
-    if (tier === 'medium') return isEn ? '📘 Lv2 · Comprehension' : '📘 Mức 2 · Thông hiểu';
-    return isEn ? '🏆 Lv3 · Application' : '🏆 Mức 3 · Vận dụng';
+    if (tier === 'easy') return isEn ? 'Lv1 · Foundation' : 'Mức 1 · Nhận biết';
+    if (tier === 'medium') return isEn ? 'Lv2 · Comprehension' : 'Mức 2 · Thông hiểu';
+    return isEn ? 'Lv3 · Application' : 'Mức 3 · Vận dụng';
   }
 
   function makeExtQ(q, answer, near, skill, cfg, explanation, extra = {}) {
@@ -116,68 +116,85 @@
       { id: 'g6_int', vi: 'Số nguyên ℤ (+, −, ×, ÷ & Quy tắc ngoặc)', en: 'Signed Integers ℤ & Brackets', kind: 'mental', domain: 'number', count: 12, seconds: 25 },
       { id: 'g6_findx', vi: 'Tìm x trong ℤ (Chuyển vế, Lũy thừa)', en: 'Solve for Integer x', kind: 'knowledge', domain: 'number', count: 10, seconds: 35 },
       { id: 'g6_frac', vi: 'Phân số & Hai bài toán phân số cơ bản', en: 'Fractions & Core Word Problems', kind: 'knowledge', domain: 'number', count: 10, seconds: 40 },
+      { id: 'g6_mixed_expr', vi: 'Hỗn số, Biểu thức phối hợp & Dãy phân số quy luật', en: 'Mixed Numbers & Telescoping Sums', kind: 'knowledge', domain: 'number', count: 10, seconds: 45 },
       { id: 'g6_dec_pct', vi: 'Số thập phân, Làm tròn & Tỉ số phần trăm', en: 'Decimals, Rounding & Percentages', kind: 'knowledge', domain: 'number', count: 10, seconds: 40 },
-      { id: 'g6_word_stat', vi: 'Toán thực tế Lớp 6, Thống kê & Xác suất', en: 'Real-Life Math, Stats & Probability', kind: 'knowledge', domain: 'number', count: 10, seconds: 45 },
+      { id: 'g6_stat_chart', vi: 'Bảng thống kê, Biểu đồ tranh, Cột & Cột kép', en: 'Data Tables & Double Bar Charts', kind: 'knowledge', domain: 'number', count: 10, seconds: 35 },
+      { id: 'g6_word_stat', vi: 'Toán thực tế Lớp 6 & Xác suất thực nghiệm', en: 'Real-Life Math & Experimental Prob', kind: 'knowledge', domain: 'number', count: 10, seconds: 45 },
       // --- PHẦN HÌNH HỌC (Geometry & Measurement) ---
       { id: 'g6_geom_flat', vi: 'Chu vi & Diện tích (Thoi, Bình hành, Thang cân)', en: 'Perimeter & Area of Special Shapes', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 40 },
       { id: 'g6_geom_sym', vi: 'Trục đối xứng & Tâm đối xứng hình phẳng', en: 'Line & Rotational Symmetry', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 25 },
+      { id: 'g6_geom_3d', vi: 'Hình hộp chữ nhật & Lập phương trực quan (Sxq, V)', en: '3D Boxes & Cubes in Real Life', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 40 },
       { id: 'g6_geom_seg', vi: 'Điểm, Đoạn thẳng & Trung điểm đoạn thẳng', en: 'Segments & Midpoints', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 35 },
       { id: 'g6_geom_angle', vi: 'Số đo góc, Tia nằm giữa & Lát gạch thực tế', en: 'Angles & Tiling Word Problems', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 40 }
     ],
     7: [
-      { id: 'all', vi: 'Tổng hợp tất cả chuyên đề Lớp 7', en: 'All Grade 7 Mixed', kind: 'all', domain: 'all', count: 12, seconds: 35 },
+      { id: 'all', vi: 'Tổng hợp tất cả chuyên đề Lớp 7', en: 'All Grade 7 Mixed', kind: 'all', domain: 'all', count: 12, seconds: 40 },
       // --- PHẦN SỐ HỌC & ĐẠI SỐ ---
-      { id: 'g7_rat', vi: 'Số hữu tỉ ℚ, Lũy thừa & Tính hợp lý', en: 'Rationals ℚ & Powers', kind: 'mental', domain: 'number', count: 12, seconds: 25 },
-      { id: 'g7_sqrt_abs', vi: 'Số thực ℝ, Căn bậc hai & Trị tuyệt đối |x|', en: 'Square Roots, |x| & Min/Max', kind: 'mental', domain: 'number', count: 12, seconds: 25 },
-      { id: 'g7_findx', vi: 'Tìm x hữu tỉ (Chuyển vế, Lũy thừa, |x|)', en: 'Rational & Absolute Equations', kind: 'knowledge', domain: 'number', count: 10, seconds: 35 },
-      { id: 'g7_ratio', vi: 'Tỉ lệ thức & Dãy tỉ số bằng nhau', en: 'Proportions & Equal Ratios', kind: 'knowledge', domain: 'number', count: 10, seconds: 40 },
-      { id: 'g7_prop_word', vi: 'Bài giải Đại lượng tỉ lệ thuận & Tỉ lệ nghịch', en: 'Direct & Inverse Proportion Problems', kind: 'knowledge', domain: 'number', count: 10, seconds: 45 },
+      { id: 'g7_rat', vi: 'Số hữu tỉ ℚ, Lũy thừa & Tính hợp lý', en: 'Rationals ℚ & Powers', kind: 'mental', domain: 'number', count: 12, seconds: 30 },
+      { id: 'g7_dec_periodic', vi: 'Số thập phân tuần hoàn & Làm tròn độ chính xác d', en: 'Repeating Decimals & Precision Rounding', kind: 'knowledge', domain: 'number', count: 10, seconds: 35 },
+      { id: 'g7_sqrt_abs', vi: 'Số thực ℝ, Căn bậc hai & Trị tuyệt đối |x|', en: 'Square Roots, |x| & Min/Max', kind: 'mental', domain: 'number', count: 12, seconds: 30 },
+      { id: 'g7_findx', vi: 'Tìm x hữu tỉ (Chuyển vế, Lũy thừa, |x|)', en: 'Rational & Absolute Equations', kind: 'knowledge', domain: 'number', count: 10, seconds: 40 },
+      { id: 'g7_ratio', vi: 'Tỉ lệ thức & Dãy tỉ số bằng nhau', en: 'Proportions & Equal Ratios', kind: 'knowledge', domain: 'number', count: 10, seconds: 45 },
+      { id: 'g7_prop_word', vi: 'Bài giải Đại lượng tỉ lệ thuận & Tỉ lệ nghịch', en: 'Direct & Inverse Proportion Problems', kind: 'knowledge', domain: 'number', count: 10, seconds: 50 },
       { id: 'g7_alg', vi: 'Biểu thức đại số & Đa thức một biến P(x)', en: 'Single-Variable Polynomials P(x)', kind: 'knowledge', domain: 'number', count: 10, seconds: 40 },
-      { id: 'g7_prob_stat', vi: 'Biểu đồ quạt tròn & Xác suất biến cố', en: 'Pie Charts & Event Probability', kind: 'knowledge', domain: 'number', count: 10, seconds: 40 },
-      { id: 'g7_real_math', vi: 'Toán thực tế Lớp 7 (Giảm giá, VAT, Taxi)', en: 'Real-World Consumer Math', kind: 'knowledge', domain: 'number', count: 10, seconds: 45 },
+      { id: 'g7_poly_muldiv', vi: 'Nhân, chia Đa thức một biến & Nghiệm đa thức', en: 'Polynomial Ops & Finding Roots', kind: 'knowledge', domain: 'number', count: 10, seconds: 45 },
+      { id: 'g7_prob_stat', vi: 'Biểu đồ quạt tròn, Đoạn thẳng & Xác suất biến cố', en: 'Charts & Event Probability', kind: 'knowledge', domain: 'number', count: 10, seconds: 40 },
+      { id: 'g7_real_math', vi: 'Toán thực tế Lớp 7 (Giảm giá, Lãi suất, Taxi)', en: 'Real-World Consumer Math', kind: 'knowledge', domain: 'number', count: 10, seconds: 50 },
       // --- PHẦN HÌNH HỌC ---
       { id: 'g7_geom_para', vi: 'Góc đối đỉnh, Phân giác & Hai đường song song', en: 'Bisectors & Parallel Lines', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 35 },
       { id: 'g7_geom_tri', vi: 'Tổng 3 góc tam giác, Tam giác cân & Bằng nhau', en: 'Triangle Angles & Congruence', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 40 },
+      { id: 'g7_geom_right_tri', vi: 'Tam giác vuông bằng nhau & Tam giác vuông cân', en: 'Right Triangle Congruence', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 40 },
       { id: 'g7_geom_ineq', vi: 'Quan hệ góc–cạnh & Bất đẳng thức tam giác', en: 'Triangle Inequality & Sides', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 35 },
-      { id: 'g7_geom_lines', vi: 'Đường đồng quy (Trọng tâm G, Phân giác, Trực tâm)', en: 'Centroid, Incenter & Orthocenter', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 40 },
+      { id: 'g7_geom_lines', vi: 'Đường đồng quy (Trọng tâm G, Phân giác, Trực tâm)', en: 'Centroid, Incenter & Orthocenter', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 45 },
       { id: 'g7_geom_prism', vi: 'Hình hộp & Hình lăng trụ đứng (Sxq, Thể tích)', en: 'Prisms & Boxes (Area & Volume)', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 45 }
     ],
     8: [
-      { id: 'all', vi: 'Tổng hợp tất cả chuyên đề Lớp 8', en: 'All Grade 8 Mixed', kind: 'all', domain: 'all', count: 12, seconds: 40 },
+      { id: 'all', vi: 'Tổng hợp tất cả chuyên đề Lớp 8', en: 'All Grade 8 Mixed', kind: 'all', domain: 'all', count: 12, seconds: 45 },
       // --- PHẦN SỐ HỌC & ĐẠI SỐ ---
       { id: 'g8_mono_poly', vi: 'Đơn thức & Đa thức nhiều biến (Bậc, Thu gọn)', en: 'Multivariable Monomials & Polynomials', kind: 'knowledge', domain: 'number', count: 10, seconds: 35 },
-      { id: 'g8_id', vi: '7 Hằng đẳng thức, Tính nhanh & GTNN/GTLN', en: '7 Identities & Quadratic Min/Max', kind: 'mental', domain: 'number', count: 12, seconds: 30 },
-      { id: 'g8_factor', vi: 'Phân tích đa thức thành nhân tử & Nghiệm', en: 'Factoring Polynomials & Roots', kind: 'knowledge', domain: 'number', count: 10, seconds: 40 },
-      { id: 'g8_poly', vi: 'Phân thức đại số (ĐKXĐ, Rút gọn, Giá trị)', en: 'Algebraic Fractions & Simplifying', kind: 'knowledge', domain: 'number', count: 10, seconds: 40 },
-      { id: 'g8_eq', vi: 'Giải phương trình bậc nhất một ẩn', en: 'Linear Equations in One Variable', kind: 'knowledge', domain: 'number', count: 10, seconds: 35 },
-      { id: 'g8_word_eq', vi: 'Giải bài toán bằng cách lập phương trình', en: 'Word Problems via Linear Equations', kind: 'knowledge', domain: 'number', count: 8, seconds: 50 },
-      { id: 'g8_func', vi: 'Hàm số y = ax + b, Tọa độ Oxy & Hệ số góc', en: 'Linear Functions, Oxy & Slope', kind: 'knowledge', domain: 'number', count: 10, seconds: 35 },
-      { id: 'g8_rat', vi: 'Ôn tập Số hữu tỉ & Lũy thừa tính nhanh', en: 'Rationals & Powers Review', kind: 'mental', domain: 'number', count: 12, seconds: 25 },
-      { id: 'g8_prob_stat', vi: 'Thống kê dữ liệu & Xác suất lý thuyết Lớp 8', en: 'Data Statistics & Theoretical Prob', kind: 'knowledge', domain: 'number', count: 10, seconds: 40 },
+      { id: 'g8_poly_ops', vi: 'Nhân, chia Đa thức nhiều biến & Rút gọn', en: 'Multiplying & Dividing Polynomials', kind: 'knowledge', domain: 'number', count: 10, seconds: 40 },
+      { id: 'g8_id', vi: '7 Hằng đẳng thức, Tính nhanh & GTNN/GTLN', en: '7 Identities & Quadratic Min/Max', kind: 'mental', domain: 'number', count: 12, seconds: 35 },
+      { id: 'g8_factor', vi: 'Phân tích đa thức thành nhân tử & Nghiệm', en: 'Factoring Polynomials & Roots', kind: 'knowledge', domain: 'number', count: 10, seconds: 45 },
+      { id: 'g8_poly', vi: 'Phân thức đại số (ĐKXĐ, Rút gọn, Giá trị)', en: 'Algebraic Fractions & Simplifying', kind: 'knowledge', domain: 'number', count: 10, seconds: 45 },
+      { id: 'g8_eq', vi: 'Giải phương trình bậc nhất một ẩn', en: 'Linear Equations in One Variable', kind: 'knowledge', domain: 'number', count: 10, seconds: 40 },
+      { id: 'g8_word_eq', vi: 'Giải bài toán bằng cách lập phương trình', en: 'Word Problems via Linear Equations', kind: 'knowledge', domain: 'number', count: 8, seconds: 55 },
+      { id: 'g8_func', vi: 'Hàm số y = ax + b, Tọa độ Oxy & Hệ số góc', en: 'Linear Functions, Oxy & Slope', kind: 'knowledge', domain: 'number', count: 10, seconds: 40 },
+      { id: 'g8_rat', vi: 'Ôn tập Số hữu tỉ & Lũy thừa tính nhanh', en: 'Rationals & Powers Review', kind: 'mental', domain: 'number', count: 12, seconds: 30 },
+      { id: 'g8_stat_chart', vi: 'Phân loại dữ liệu, Biểu đồ đoạn thẳng & Cột kép', en: 'Data Types & Line/Bar Charts', kind: 'knowledge', domain: 'number', count: 10, seconds: 40 },
+      { id: 'g8_prob_stat', vi: 'Xác suất lý thuyết & Xác suất thực nghiệm Lớp 8', en: 'Theoretical & Experimental Probability', kind: 'knowledge', domain: 'number', count: 10, seconds: 45 },
       // --- PHẦN HÌNH HỌC ---
-      { id: 'g8_geom_pytha', vi: 'Định lý Pythagore & Toán đo đạc thực tế', en: 'Pythagorean Theorem & Real Math', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 40 },
-      { id: 'g8_geom_quad', vi: 'Tứ giác, Thang cân, Bình hành, HCN, Thoi', en: 'Quadrilaterals & Special Properties', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 40 },
-      { id: 'g8_geom_thales', vi: 'Định lý Thalès, Đường trung bình & Phân giác', en: 'Thales, Midsegment & Angle Bisector', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 45 },
-      { id: 'g8_geom_sim', vi: 'Tam giác đồng dạng & Đo chiều cao bóng nắng', en: 'Similar Triangles & Shadow Problems', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 45 },
-      { id: 'g8_geom_pyramid', vi: 'Hình chóp tam giác đều & Tứ giác đều (Sxq, V)', en: 'Regular Pyramids (Area & Volume)', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 45 }
+      { id: 'g8_geom_pytha', vi: 'Định lý Pythagore & Toán đo đạc thực tế', en: 'Pythagorean Theorem & Real Math', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 45 },
+      { id: 'g8_geom_quad', vi: 'Tứ giác, Thang cân, Bình hành, HCN, Thoi, Vuông', en: 'Quadrilaterals & Special Properties', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 45 },
+      { id: 'g8_geom_mid_med', vi: 'Trung tuyến cạnh huyền & Đường trung bình', en: 'Hypotenuse Median & Midsegments', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 40 },
+      { id: 'g8_geom_thales', vi: 'Định lý Thalès, Hệ quả & Đường phân giác', en: 'Thales Theorem & Angle Bisector', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 45 },
+      { id: 'g8_geom_sim', vi: 'Tam giác đồng dạng, Tỉ số k² & Đo bóng nắng', en: 'Similar Triangles & Area Ratio k²', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 45 },
+      { id: 'g8_geom_pyramid', vi: 'Hình chóp tam giác đều & Tứ giác đều (Sxq, V)', en: 'Regular Pyramids (Area & Volume)', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 50 }
     ],
     9: [
-      { id: 'all', vi: 'Tổng hợp tất cả chuyên đề Lớp 9 (Thi vào 10)', en: 'All Grade 9 Mixed (Gr-10 Prep)', kind: 'all', domain: 'all', count: 12, seconds: 40 },
+      { id: 'all', vi: 'Tổng hợp tất cả chuyên đề Lớp 9 (Thi vào 10)', en: 'All Grade 9 Mixed (Gr-10 Prep)', kind: 'all', domain: 'all', count: 12, seconds: 50 },
       // --- PHẦN SỐ HỌC & ĐẠI SỐ ---
-      { id: 'g9_sqrt', vi: 'Căn bậc hai, Trục căn thức & Rút gọn căn', en: 'Radicals, Rationalizing & Simplifying', kind: 'mental', domain: 'number', count: 12, seconds: 30 },
-      { id: 'g9_cbrt', vi: 'Căn bậc ba (∛) & Hằng đẳng thức √(A²) = |A|', en: 'Cube Roots (∛) & √(A²) = |A|', kind: 'mental', domain: 'number', count: 12, seconds: 25 },
+      { id: 'g9_linear2_eq', vi: 'Phương trình bậc nhất hai ẩn ax + by = c', en: 'Linear Equations in Two Variables', kind: 'knowledge', domain: 'number', count: 10, seconds: 40 },
       { id: 'g9_sys_eq', vi: 'Hệ hai phương trình bậc nhất hai ẩn (x, y)', en: 'Systems of Two Linear Equations', kind: 'knowledge', domain: 'number', count: 10, seconds: 45 },
-      { id: 'g9_ineq_eq', vi: 'PT tích, PT chứa ẩn ở mẫu & Bất phương trình', en: 'Product/Rational Eq & Inequalities', kind: 'knowledge', domain: 'number', count: 10, seconds: 40 },
-      { id: 'g9_eq', vi: 'PT vô tỷ, PT bậc hai, Δ & Hệ thức Viète', en: 'Quadratics, Discriminant & Vieta', kind: 'knowledge', domain: 'number', count: 10, seconds: 45 },
-      { id: 'g9_func', vi: 'Hàm số y = ax + b & Parabol (P): y = ax²', en: 'Linear Functions & Parabola y = ax²', kind: 'knowledge', domain: 'number', count: 10, seconds: 40 },
-      { id: 'g9_word_sys', vi: 'Giải bài toán bằng cách lập PT / Hệ PT', en: 'Word Problems via Systems & Equations', kind: 'knowledge', domain: 'number', count: 8, seconds: 55 },
-      { id: 'g9_real_10', vi: 'Toán thực tế thi vào 10 & Tần số tương đối', en: 'Grade-10 Real Math, Optimization & Stats', kind: 'knowledge', domain: 'number', count: 8, seconds: 55 },
+      { id: 'g9_ineq_eq', vi: 'Phương trình tích & Phương trình chứa ẩn ở mẫu', en: 'Product & Rational Equations', kind: 'knowledge', domain: 'number', count: 10, seconds: 45 },
+      { id: 'g9_ineq_linear', vi: 'Bất đẳng thức, Bất phương trình & Toán thực tế', en: 'Inequalities & Budget Optimization', kind: 'knowledge', domain: 'number', count: 10, seconds: 45 },
+      { id: 'g9_sqrt', vi: 'Căn bậc hai, Trục căn thức & Liên hợp', en: 'Radicals & Rationalizing', kind: 'mental', domain: 'number', count: 12, seconds: 35 },
+      { id: 'g9_cbrt', vi: 'Căn bậc ba (∛) & Hằng đẳng thức √(A²) = |A|', en: 'Cube Roots (∛) & √(A²) = |A|', kind: 'mental', domain: 'number', count: 12, seconds: 30 },
+      { id: 'g9_rad_reduce', vi: 'Rút gọn biểu thức chứa √x, Tìm x nguyên & Cực trị', en: 'Simplifying √x, Integer Values & Min/Max', kind: 'knowledge', domain: 'number', count: 10, seconds: 55 },
+      { id: 'g9_func', vi: 'Parabol (P): y = ax² & Tương giao với đường thẳng', en: 'Parabola y = ax² & Line Intersections', kind: 'knowledge', domain: 'number', count: 10, seconds: 45 },
+      { id: 'g9_eq', vi: 'Phương trình bậc hai, Biệt thức Δ & Định lý Viète', en: 'Quadratics, Discriminant & Vieta', kind: 'knowledge', domain: 'number', count: 10, seconds: 45 },
+      { id: 'g9_vieta_param', vi: 'Tham số m trong PT bậc hai & Đối xứng Viète nâng cao', en: 'Parameter m & Advanced Symmetric Vieta', kind: 'knowledge', domain: 'number', count: 10, seconds: 55 },
+      { id: 'g9_word_sys', vi: 'Giải bài toán bằng cách lập PT / Hệ PT (Thi vào 10)', en: 'Word Problems via Systems & Equations', kind: 'knowledge', domain: 'number', count: 8, seconds: 60 },
+      { id: 'g9_stat_grouped', vi: 'Bảng tần số, Tần số tương đối & Mẫu ghép nhóm [a; b)', en: 'Relative Frequency & Grouped Data [a; b)', kind: 'knowledge', domain: 'number', count: 10, seconds: 45 },
+      { id: 'g9_prob_omega', vi: 'Không gian mẫu Ω & Xác suất biến cố thi vào 10', en: 'Sample Space Ω & Exam Probability', kind: 'knowledge', domain: 'number', count: 10, seconds: 50 },
+      { id: 'g9_real_10', vi: 'Toán thực tế Tài chính, Lãi kép & Tối ưu bậc hai', en: 'Compound Interest & Revenue Optimization', kind: 'knowledge', domain: 'number', count: 8, seconds: 60 },
       // --- PHẦN HÌNH HỌC ---
       { id: 'g9_geom_trig', vi: 'Hệ thức lượng & Tỉ số lượng giác (sin, cos, tan)', en: 'Right Triangle Trig & Elevation Angles', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 45 },
-      { id: 'g9_geom_chord', vi: 'Đường tròn: Dây cung, Khoảng cách & Tiếp tuyến', en: 'Chords, Center Distance & Tangents', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 45 },
-      { id: 'g9_geom_angle', vi: 'Góc ở tâm, Góc nội tiếp & Tứ giác nội tiếp', en: 'Inscribed Angles & Cyclic Quads', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 40 },
-      { id: 'g9_geom_arc', vi: 'Độ dài cung tròn & Diện tích quạt tròn, vành khuyên', en: 'Arc Length, Sectors & Annulus Area', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 45 },
-      { id: 'g9_geom_solid', vi: 'Hình trụ, Hình nón & Hình cầu (Sxq, V thực tế)', en: 'Cylinders, Cones & Spheres (3D)', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 45 }
+      { id: 'g9_geom_chord', vi: 'Đường tròn: Dây cung, Khoảng cách tâm & Tiếp tuyến', en: 'Chords, Center Distance & Tangents', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 45 },
+      { id: 'g9_geom_pos_cir', vi: 'Vị trí tương đối Đường thẳng – Đường tròn & Hai đường tròn', en: 'Line-Circle & Two-Circle Positions', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 45 },
+      { id: 'g9_geom_angle', vi: 'Góc ở tâm, Góc nội tiếp & Tứ giác nội tiếp', en: 'Inscribed Angles & Cyclic Quads', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 45 },
+      { id: 'g9_geom_poly_rot', vi: 'Đa giác đều, Ngoại/Nội tiếp & Phép quay (Mới 2018)', en: 'Regular Polygons, Circumcircle & Rotation', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 45 },
+      { id: 'g9_geom_arc', vi: 'Độ dài cung tròn, Quạt tròn & Hình vành khuyên', en: 'Arc Length, Sectors & Annulus Area', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 45 },
+      { id: 'g9_geom_solid', vi: 'Hình trụ, Hình nón & Hình cầu (Sxq, V thực tế)', en: 'Cylinders, Cones & Spheres (3D)', kind: 'knowledge', domain: 'geometry', count: 10, seconds: 50 }
     ]
   };
 
@@ -1877,6 +1894,518 @@
           `Công thức diện tích mặt cầu: S = 4πR² ≈ 4 · 3,14 · ${rSphere}² = ${sSphere} (cm²).`, ex({ domain: 'geometry' })
         );
       }
+      // ==================== NEW v2.16.0 THCS & GRADE 9 EXPANSION ====================
+      case 'g6_mixed_expr': {
+        if (tier === 'easy') {
+          const w = rInt(1, 5), pairs = [[1, 2], [1, 3], [2, 3], [1, 4], [3, 4], [2, 5]];
+          const [n, d] = pickAny(pairs), num = w * d + n, ans = `${num}/${d}`;
+          return makeExtQ(
+            t(`Đổi hỗn số ${w} và ${n}/${d} ra phân số tối giản?`, `Convert mixed number ${w} ${n}/${d} to an improper fraction`),
+            ans, [`${w * n + d}/${d}`, `${num + 1}/${d}`, `${Math.max(1, num - 1)}/${d}`], 'fraction:mixed', cfg,
+            `Tử số = Phần nguyên × Mẫu + Tử = ${w} · ${d} + ${n} = ${num} ⇒ Phân số là ${ans}.`, ex()
+          );
+        }
+        if (tier === 'medium') {
+          // Mixed fraction + decimal expression: e.g. 3/4 + 1,25 * 2 = 0,75 + 2,5 = 3,25 or (1/2 + 0,5) * k
+          const k = rInt(3, 12), extra = pickAny([0.25, 0.5, 0.75]);
+          const fracMap = { 0.25: '1/4', 0.5: '1/2', 0.75: '3/4' };
+          const ans = fmtDec(k + extra);
+          return makeExtQ(
+            t(`Tính giá trị biểu thức: ${fracMap[extra]} + 0,5 × ${2 * k}`, `Evaluate: ${fracMap[extra]} + 0.5 × ${2 * k}`),
+            ans, [fmtDec(k + extra + 1), fmtDec(k + extra + 2), fmtDec(Math.max(0.25, k + extra - 1))], 'decimal:expr', cfg,
+            `Đổi ${fracMap[extra]} = ${fmtDec(extra)}; tính nhân trước: 0,5 × ${2 * k} = ${k} ⇒ ${fmtDec(extra)} + ${k} = ${ans}.`, ex()
+          );
+        }
+        // Telescoping fraction sum: 1/(1*2) + 1/(2*3) + ... + 1/(n*(n+1)) = n/(n+1)!
+        const n = rInt(5, 19), ans = `${n}/${n + 1}`;
+        return makeExtQ(
+          t(`Tính tổng dãy phân số quy luật: S = 1/(1·2) + 1/(2·3) + 1/(3·4) + ... + 1/(${n}·${n + 1})`, `Evaluate telescoping sum: 1/(1·2) + 1/(2·3) + ... + 1/(${n}·${n + 1})`),
+          ans, [`${n - 1}/${n + 1}`, `1/${n + 1}`, `${n}/${n + 2}`], 'fraction:telescoping', cfg,
+          `Áp dụng quy luật khử liên tiếp 1/[k(k+1)] = 1/k − 1/(k+1):\nS = (1 − 1/2) + (1/2 − 1/3) + ... + (1/${n} − 1/${n + 1}) = 1 − 1/${n + 1} = ${ans}.`, ex()
+        );
+      }
+      case 'g6_stat_chart': {
+        if (tier === 'easy') {
+          const perIcon = pickAny([5, 10]), iconsA = rInt(3, 7), iconsB = rInt(2, 6), ans = (iconsA + iconsB) * perIcon;
+          return makeExtQ(
+            t(`Biểu đồ tranh số sách quyên góp: Tổ 1 có ${iconsA} biểu tượng 📖, Tổ 2 có ${iconsB} biểu tượng 📖 (mỗi 📖 ứng với ${perIcon} quyển). Cả hai tổ góp bao nhiêu quyển?`, `Pictograph: Team 1 has ${iconsA} icons, Team 2 has ${iconsB} icons (1 icon = ${perIcon} books). Total = ?`),
+            ans, [ans + perIcon, Math.max(5, ans - perIcon), iconsA + iconsB], 'stat:pictograph', cfg,
+            `Tổng số biểu tượng: ${iconsA} + ${iconsB} = ${iconsA + iconsB} ⇒ Số quyển sách = ${iconsA + iconsB} · ${perIcon} = ${ans} (quyển).`, ex()
+          );
+        }
+        if (tier === 'medium') {
+          const hk1 = rInt(12, 22), inc = rInt(4, 11), hk2 = hk1 + inc;
+          return makeExtQ(
+            t(`Biểu đồ cột kép số HS Giỏi lớp 6A: Học kỳ I có ${hk1} em, Học kỳ II có ${hk2} em. Số HS Giỏi Học kỳ II tăng thêm bao nhiêu em so với Học kỳ I?`, `Double bar chart: Term 1 had ${hk1} honor students, Term 2 had ${hk2}. Increase = ?`),
+            inc, [inc + 2, Math.max(1, inc - 2), hk1 + hk2], 'stat:doublebar', cfg,
+            `Số học sinh giỏi tăng thêm ở Học kỳ II: ${hk2} − ${hk1} = ${inc} (học sinh).`, ex()
+          );
+        }
+        const a = rInt(10, 18), b = rInt(12, 20), c = rInt(8, 16), d = 50 - (a + b + c);
+        return makeExtQ(
+          t(`Bảng thống kê môn thể thao yêu thích của 50 học sinh khối 6: Bóng đá: ${a}, Cầu lông: ${b}, Bơi lội: ${c}, Cờ vua: x. Tìm x?`, `Table of 50 students: Football ${a}, Badminton ${b}, Swimming ${c}, Chess x. Find x`),
+          d, [d + 2, Math.max(1, d - 2), d + 5], 'stat:table', cfg,
+          `Tổng số học sinh bằng 50 ⇒ x = 50 − (${a} + ${b} + ${c}) = 50 − ${a + b + c} = ${d}.`, ex()
+        );
+      }
+      case 'g6_geom_3d': {
+        if (tier === 'easy') {
+          const bank = [
+            { q: t('Hình hộp chữ nhật có tất cả bao nhiêu cạnh?', 'How many edges does a rectangular box have?'), a: 12, near: [6, 8, 10], exp: 'Hình hộp chữ nhật (và hình lập phương) có 8 đỉnh, 6 mặt và 12 cạnh.' },
+            { q: t('Hình lập phương có tất cả bao nhiêu đỉnh?', 'How many vertices does a cube have?'), a: 8, near: [6, 10, 12], exp: 'Hình lập phương có 8 đỉnh, 6 mặt vuông bằng nhau và 12 cạnh bằng nhau.' },
+            { q: t('Mỗi mặt của hình lập phương là hình gì? (Chọn số cạnh của mặt đó)', 'How many equal sides does each face of a cube have?'), a: 4, near: [3, 5, 6], exp: 'Mỗi mặt của hình lập phương là một hình vuông có 4 cạnh bằng nhau.' }
+          ];
+          const it = pickAny(bank);
+          return makeExtQ(it.q, it.a, it.near, 'geom:3d', cfg, it.exp, ex({ domain: 'geometry' }));
+        }
+        if (tier === 'medium') {
+          const edge = rInt(3, 12), wire = 12 * edge;
+          return makeExtQ(
+            t(`Người ta uốn dây thép làm khung một hình lập phương có cạnh ${edge} cm (không tính mối nối). Cần bao nhiêu cm dây thép?`, `Wire needed to build the 12-edge frame of a cube with edge ${edge} cm = ?`),
+            wire, [6 * edge * edge, 4 * edge, wire + 12], 'geom:3d', cfg,
+            `Hình lập phương có 12 cạnh bằng nhau ⇒ Tổng độ dài dây thép = 12 · ${edge} = ${wire} (cm).`, ex({ domain: 'geometry' })
+          );
+        }
+        const l = rInt(6, 12), w = rInt(4, 8), h = rInt(3, 6), vol = l * w * h;
+        return makeExtQ(
+          t(`Một bể cá dạng hình hộp chữ nhật dài ${l} dm, rộng ${w} dm, mực nước cao ${h} dm. Trong bể đang chứa bao nhiêu lít nước (1 dm³ = 1 lít)?`, `Fish tank ${l} dm × ${w} dm with water height ${h} dm holds how many liters?`),
+          vol, [(l + w) * 2 * h, vol + 20, Math.max(10, vol - 20)], 'geom:3d', cfg,
+          `Thể tích nước trong bể: V = ${l} · ${w} · ${h} = ${vol} (dm³) = ${vol} (lít).`, ex({ domain: 'geometry' })
+        );
+      }
+
+      case 'g7_dec_periodic': {
+        if (tier === 'easy') {
+          const pairs = [['0,(3)', '1/3', ['3/10', '1/9', '2/3']], ['0,(6)', '2/3', ['3/5', '6/9', '1/3']], ['0,(1)', '1/9', ['1/10', '1/11', '2/9']], ['0,(9)', '1', ['9/10', '9/11', '0']]];
+          const [decS, ans, near] = pickAny(pairs);
+          if (decS === '0,(9)') {
+            return makeExtQ(t('Số thập phân vô hạn tuần hoàn 0,(5) viết dưới dạng phân số tối giản là?', 'Write repeating decimal 0.(5) as a fraction in simplest form'), '5/9', ['1/2', '5/10', '4/9'], 'number:periodic', cfg, 'Vì 0,(1) = 1/9 nên 0,(5) = 5 · (1/9) = 5/9.', ex());
+          }
+          return makeExtQ(
+            t(`Viết số thập phân vô hạn tuần hoàn ${decS} dưới dạng phân số tối giản?`, `Write repeating decimal ${decS} as a simplified fraction`),
+            ans, near, 'number:periodic', cfg,
+            `Ta có 0,(1) = 1/9 ⇒ ${decS} rút gọn tối giản bằng ${ans}.`, ex()
+          );
+        }
+        if (tier === 'medium') {
+          // Rounding with precision d = 0,05 -> round to tenths (hàng phần mười)!
+          const whole = rInt(3, 28), t10 = rInt(1, 8), h100 = pickAny([2, 3, 4, 6, 7, 8]);
+          const orig = fmtDec(Number((whole + t10 / 10 + h100 / 100).toFixed(2)));
+          const ans = fmtDec(Number((whole + (h100 >= 5 ? t10 + 1 : t10) / 10).toFixed(1)));
+          return makeExtQ(
+            t(`Làm tròn số ${orig} với độ chính xác d = 0,05 ta được kết quả nào?`, `Round ${orig} with precision d = 0.05`),
+            ans, [fmtDec(Number((whole + t10 / 10 + 1).toFixed(1))), fmtDec(whole), fmtDec(Number((whole + (h100 >= 5 ? t10 : t10 + 1) / 10).toFixed(1)))], 'number:precision', cfg,
+            `Quy tắc SGK mới Lớp 7: Độ chính xác d = 0,05 (nửa đơn vị hàng phần mười) ⇒ làm tròn đến hàng phần mười → ${ans}.`, ex()
+          );
+        }
+        // Precision d = 50 -> round to hundreds (hàng trăm)!
+        const hund = rInt(12, 85) * 100, rem = pickAny([18, 29, 37, 44, 58, 67, 74, 86]);
+        const origN = hund + rem, ansN = rem >= 50 ? hund + 100 : hund;
+        return makeExtQ(
+          t(`Làm tròn số ${origN} với độ chính xác d = 50 ta được số nào?`, `Round ${origN} with precision d = 50`),
+          ansN, [ansN + 100, Math.max(100, ansN - 100), Math.round(origN / 10) * 10], 'number:precision', cfg,
+          `Độ chính xác d = 50 là nửa đơn vị hàng trăm ⇒ ta làm tròn số ${origN} đến hàng trăm được ${ansN}.`, ex()
+        );
+      }
+      case 'g7_poly_muldiv': {
+        if (tier === 'easy') {
+          const a = rInt(2, 6), b = rInt(1, 9), rootStr = b % a === 0 ? String(b / a) : fracStr(b, a);
+          const rootInt = rInt(-7, 9) || 3, k = rInt(2, 5), rhs = -k * rootInt;
+          const signS = rhs >= 0 ? `+ ${rhs}` : `− ${Math.abs(rhs)}`;
+          return makeExtQ(
+            t(`Tìm nghiệm của đa thức một biến P(x) = ${k}x ${signS}?`, `Find the root of P(x) = ${k}x ${signS}`),
+            rootInt, [-rootInt, rootInt + 1, rootInt - 1], 'algebra:root', cfg,
+            `Cho P(x) = 0 ⇔ ${k}x ${signS} = 0 ⇔ ${k}x = ${-rhs} ⇔ x = ${rootInt}.`, ex({ allowNeg: true })
+          );
+        }
+        if (tier === 'medium') {
+          // Coefficient of x in (x + a)(x - b) = x^2 + (a - b)x - ab
+          const a = rInt(2, 8), b = rInt(1, 7), coefX = a - b;
+          return makeExtQ(
+            t(`Khi khai triển tích hai đa thức (x + ${a})(x − ${b}) = x² + mx − ${a * b}, hệ số m của x bằng bao nhiêu?`, `In (x + ${a})(x − ${b}) = x² + mx − ${a * b}, find m`),
+            coefX, [a + b, -coefX || 2, coefX + 2], 'algebra:poly_mul', cfg,
+            `Nhân hai đa thức một biến: (x + ${a})(x − ${b}) = x² − ${b}x + ${a}x − ${a * b} = x² + (${coefX})x − ${a * b} ⇒ m = ${coefX}.`, ex({ allowNeg: true })
+          );
+        }
+        // Remainder theorem / exact division (x^2 + bx + m) divisible by (x - r) -> P(r) = 0 -> m = -r^2 - b*r
+        const r = rInt(1, 4), b = rInt(-5, 4) || 2, mVal = -(r * r + b * r);
+        const bTerm = b >= 0 ? `+ ${b}x` : `− ${Math.abs(b)}x`;
+        return makeExtQ(
+          t(`Tìm m để đa thức P(x) = x² ${bTerm} + m chia hết cho đa thức (x − ${r})?`, `Find m so P(x) = x² ${bTerm} + m is divisible by (x − ${r})`),
+          mVal, [-mVal || 3, mVal + 2, mVal - 2], 'algebra:poly_div', cfg,
+          `P(x) chia hết cho (x − ${r}) khi và chỉ khi x = ${r} là nghiệm của P(x):\nP(${r}) = ${r}² + (${b})·${r} + m = 0 ⇒ ${r * r + b * r} + m = 0 ⇒ m = ${mVal}.`, ex({ allowNeg: true })
+        );
+      }
+      case 'g7_geom_right_tri': {
+        if (tier === 'easy') {
+          return makeExtQ(
+            t('Tam giác ABC vuông cân tại A thì mỗi góc nhọn B và C có số đo bằng bao nhiêu độ?', 'In an isosceles right triangle △ABC at A, find ∠B (°)'),
+            45, [30, 60, 90], 'geom:right_tri', cfg,
+            'Tam giác vuông cân tại A có ∠A = 90° và ∠B = ∠C = (180° − 90°) ÷ 2 = 45°.', ex({ domain: 'geometry', visualKind: 'right_tri' })
+          );
+        }
+        if (tier === 'medium') {
+          const angB = rInt(24, 68), angF = 90 - angB;
+          return makeExtQ(
+            t(`Cho △ABC vuông tại A và △DEF vuông tại D biết △ABC = △DEF và ∠B = ${angB}°. Tính số đo ∠F (độ)?`, `Right △ABC ≅ △DEF (at A, D) with ∠B = ${angB}°. Find ∠F (°)`),
+            angF, [angB, 180 - angB, angF + 10], 'geom:right_tri', cfg,
+            `Vì △ABC = △DEF nên ∠E = ∠B = ${angB}°.\nTrong △DEF vuông tại D: ∠F = 90° − ∠E = 90° − ${angB}° = ${angF}°.`, ex({ domain: 'geometry', visualKind: 'right_tri' })
+          );
+        }
+        const bd = rInt(5, 16);
+        return makeExtQ(
+          t(`Cho góc nhọn xOy, Oz là tia phân giác. Lấy điểm M trên Oz, kẻ MA ⊥ Ox và MB ⊥ Oy. Biết MA = ${bd} cm, tính độ dài đoạn MB (cm)?`, `Point M on angle bisector Oz of ∠xOy has MA ⊥ Ox, MB ⊥ Oy with MA = ${bd} cm. Find MB (cm)`),
+          bd, [bd * 2, Math.max(1, bd - 2), bd + 3], 'geom:right_tri', cfg,
+          `Xét hai tam giác vuông △OAM và △OBM có cạnh huyền OM chung và ∠AOM = ∠BOM ⇒ △OAM = △OBM (cạnh huyền – góc nhọn) ⇒ MB = MA = ${bd} (cm).`, ex({ domain: 'geometry' })
+        );
+      }
+
+      case 'g8_poly_ops': {
+        if (tier === 'easy') {
+          const c1 = rInt(6, 18) * 2, c2 = 2, pX = rInt(3, 6), pY = rInt(2, 5);
+          const qCoef = c1 / c2;
+          return makeExtQ(
+            t(`Khi chia đơn thức ${c1}x^${pX}y^${pY} cho đơn thức ${c2}x²y, hệ số của thương bằng bao nhiêu?`, `Coefficient of (${c1}x^${pX}y^${pY}) ÷ (${c2}x²y) = ?`),
+            qCoef, [c1 - c2, qCoef + 2, Math.max(1, qCoef - 2)], 'algebra:poly_ops', cfg,
+            `Chia hệ số cho hệ số: ${c1} ÷ ${c2} = ${qCoef} (phần biến là x^${pX - 2}y^${pY - 1}).`, ex()
+          );
+        }
+        if (tier === 'medium') {
+          // Simplify (x + a)(x - a) - x^2 = -a^2
+          const a = rInt(2, 9), k = rInt(1, 12), ans = k - a * a;
+          return makeExtQ(
+            t(`Rút gọn biểu thức A = (x + ${a})(x − ${a}) − x² + ${k} ta được hằng số bằng bao nhiêu?`, `Simplify A = (x + ${a})(x − ${a}) − x² + ${k}`),
+            ans, [k + a * a, -ans || 4, ans + 2], 'algebra:poly_ops', cfg,
+            `Áp dụng hằng đẳng thức (x + ${a})(x − ${a}) = x² − ${a * a} ⇒ A = x² − ${a * a} − x² + ${k} = ${ans}.`, ex({ allowNeg: true })
+          );
+        }
+        // Evaluate x(x - y) + y(x + y) = x^2 + y^2 at given x, y
+        const xv = rInt(2, 6), yv = rInt(2, 5), ans = xv * xv + yv * yv;
+        return makeExtQ(
+          t(`Rút gọn rồi tính giá trị của biểu thức P = x(x − y) + y(x + y) tại x = ${xv} và y = −${yv}?`, `Evaluate P = x(x − y) + y(x + y) at x = ${xv}, y = −${yv}`),
+          ans, [xv * xv - yv * yv, (xv - yv) ** 2, ans + 4], 'algebra:poly_ops', cfg,
+          `Rút gọn: P = x² − xy + xy + y² = x² + y².\nThay x = ${xv}, y = −${yv}: P = ${xv}² + (−${yv})² = ${xv * xv} + ${yv * yv} = ${ans}.`, ex()
+        );
+      }
+      case 'g8_stat_chart': {
+        if (tier === 'easy') {
+          const t1 = rInt(20, 28), t2 = t1 + rInt(3, 8), diff = t2 - t1;
+          return makeExtQ(
+            t(`Biểu đồ đoạn thẳng nhiệt độ trung bình: Tháng 3 là ${t1}°C, Tháng 6 là ${t2}°C. Nhiệt độ Tháng 6 tăng thêm bao nhiêu °C so với Tháng 3?`, `Line chart: March is ${t1}°C, June is ${t2}°C. Temperature increase (°C) = ?`),
+            diff, [diff + 2, Math.max(1, diff - 2), Math.round((t1 + t2) / 2)], 'stat:line', cfg,
+            `Độ tăng nhiệt độ: ${t2} − ${t1} = ${diff} (°C).`, ex()
+          );
+        }
+        if (tier === 'medium') {
+          const oldV = pickAny([40, 50, 80, 100]), pctInc = pickAny([15, 20, 25, 30]), newV = oldV + (oldV * pctInc) / 100;
+          return makeExtQ(
+            t(`Biểu đồ doanh thu quý I đạt ${oldV} triệu đồng, quý II đạt ${newV} triệu đồng. Doanh thu quý II tăng bao nhiêu phần trăm so với quý I?`, `Revenue rose from ${oldV}M to ${newV}M. Percentage increase = ?%`),
+            pctInc, [newV - oldV, pctInc + 5, Math.max(5, pctInc - 5)], 'stat:pct', cfg,
+            `Mức tăng = ${newV} − ${oldV} = ${newV - oldV} (triệu) ⇒ Tỉ lệ phần trăm tăng: (${newV - oldV} / ${oldV}) · 100% = ${pctInc}%.`, ex()
+          );
+        }
+        const a = rInt(12, 22), b = rInt(14, 24), c = rInt(16, 26), d = rInt(10, 20);
+        const sum = a + b + c + d;
+        const adjustD = d + ((4 - (sum % 4)) % 4);
+        const avg4 = (a + b + c + adjustD) / 4;
+        return makeExtQ(
+          t(`Biểu đồ lượng mưa 4 tuần (mm): Tuần 1: ${a}, Tuần 2: ${b}, Tuần 3: ${c}, Tuần 4: ${adjustD}. Lượng mưa trung bình mỗi tuần là bao nhiêu mm?`, `Weekly rainfall (mm): ${a}, ${b}, ${c}, ${adjustD}. Mean rainfall = ?`),
+          avg4, [avg4 + 3, Math.max(2, avg4 - 3), a + b], 'stat:mean', cfg,
+          `Trung bình cộng = (${a} + ${b} + ${c} + ${adjustD}) ÷ 4 = ${avg4 * 4} ÷ 4 = ${avg4} (mm).`, ex()
+        );
+      }
+      case 'g8_geom_mid_med': {
+        if (tier === 'easy') {
+          const bc = rInt(6, 22) * 2, am = bc / 2;
+          return makeExtQ(
+            t(`Tam giác ABC vuông tại A có cạnh huyền BC = ${bc} cm. Độ dài đường trung tuyến AM ứng với cạnh huyền bằng bao nhiêu cm?`, `Right △ABC at A has hypotenuse BC = ${bc} cm. Median AM (cm) = ?`),
+            am, [bc, am + 2, Math.max(2, am - 2)], 'geom:median', cfg,
+            `Định lý: Trong tam giác vuông, đường trung tuyến ứng với cạnh huyền bằng nửa cạnh huyền ⇒ AM = BC / 2 = ${bc} / 2 = ${am} (cm).`, ex({ domain: 'geometry', visualKind: 'right_tri', visualData: { c: bc } })
+          );
+        }
+        if (tier === 'medium') {
+          const [ab, ac, bc] = pickAny([[6, 8, 10], [12, 16, 20], [10, 24, 26], [16, 30, 34]]);
+          const am = bc / 2;
+          return makeExtQ(
+            t(`Tam giác ABC vuông tại A có AB = ${ab} cm, AC = ${ac} cm, M là trung điểm BC. Tính độ dài đoạn AM (cm)?`, `Right △ABC at A has AB = ${ab} cm, AC = ${ac} cm, midpoint M of BC. Find AM (cm)`),
+            am, [bc, (ab + ac) / 2, am + 2], 'geom:median', cfg,
+            `• Áp dụng Pythagore: BC = √(${ab}² + ${ac}²) = ${bc} (cm).\n• Trung tuyến ứng với cạnh huyền: AM = BC / 2 = ${am} (cm).`, ex({ domain: 'geometry', visualKind: 'right_tri', visualData: { a: ab, b: ac, c: bc } })
+          );
+        }
+        // Midsegment of trapezoid: MN = (a + b) / 2 -> find bottom base b = 2*MN - a
+        const topA = rInt(6, 14), midMN = topA + rInt(3, 8), botB = 2 * midMN - topA;
+        return makeExtQ(
+          t(`Hình thang ABCD (AB // CD) có đáy nhỏ AB = ${topA} cm và đường trung bình MN = ${midMN} cm. Tính độ dài đáy lớn CD (cm)?`, `Trapezoid ABCD has top base AB = ${topA} cm and midsegment MN = ${midMN} cm. Bottom base CD (cm) = ?`),
+          botB, [midMN + topA, Math.round((topA + midMN) / 2), botB + 2], 'geom:midsegment', cfg,
+          `Đường trung bình hình thang bằng nửa tổng hai đáy: MN = (AB + CD) / 2 ⇒ CD = 2·MN − AB = 2·${midMN} − ${topA} = ${botB} (cm).`, ex({ domain: 'geometry', visualKind: 'trapezoid', visualData: { b: topA, a: '?' } })
+        );
+      }
+
+      // ==================== GRADE 9 NEW CHAPTERS & GRADE-10 EXAM TOPICS ====================
+      case 'g9_linear2_eq': {
+        if (tier === 'easy') {
+          const a = rInt(2, 5), xv = rInt(1, 5), yv = rInt(2, 6), c = a * xv + yv;
+          return makeExtQ(
+            t(`Cặp số (${xv}; y) là một nghiệm của phương trình bậc nhất hai ẩn ${a}x + y = ${c}. Tìm y?`, `If (${xv}, y) satisfies ${a}x + y = ${c}, find y`),
+            yv, [yv + 1, Math.max(0, yv - 1), c - xv], 'equation:linear2', cfg,
+            `Thay x = ${xv} vào phương trình: ${a}·${xv} + y = ${c} ⇒ y = ${c} − ${a * xv} = ${yv}.`, ex()
+          );
+        }
+        if (tier === 'medium') {
+          // Line ax + by = c passes through M(x0, y0) -> find m
+          const xv = rInt(2, 5), yv = rInt(-4, 4) || 2, mVal = rInt(-3, 5) || 2;
+          const rhs = mVal * xv + 2 * yv;
+          return makeExtQ(
+            t(`Tìm tham số m biết đường thẳng biểu diễn nghiệm của phương trình mx + 2y = ${rhs} đi qua điểm A(${xv}; ${yv})?`, `Find m if line mx + 2y = ${rhs} passes through A(${xv}, ${yv})`),
+            mVal, [-mVal || 3, mVal + 1, mVal - 1], 'equation:linear2', cfg,
+            `Thay x = ${xv}, y = ${yv} vào phương trình: m·${xv} + 2·(${yv}) = ${rhs} ⇒ ${xv}m = ${rhs - 2 * yv} ⇒ m = ${mVal}.`, ex({ allowNeg: true })
+          );
+        }
+        // Count positive integer solutions (x, y ∈ N*) of 2x + 3y = C
+        const cases = [
+          { eq: '2x + 3y = 13', c: 13, cnt: 2, list: '(5; 1) và (2; 3)' },
+          { eq: '2x + 3y = 19', c: 19, cnt: 3, list: '(8; 1), (5; 3) và (2; 5)' },
+          { eq: '3x + 2y = 16', c: 16, cnt: 2, list: '(2; 5) và (4; 2)' },
+          { eq: 'x + 2y = 9', c: 9, cnt: 4, list: '(7;1), (5;2), (3;3), (1;4)' }
+        ];
+        const it = pickAny(cases);
+        return makeExtQ(
+          t(`Phương trình bậc nhất hai ẩn ${it.eq} có bao nhiêu nghiệm nguyên dương (x, y ∈ ℕ*)?`, `How many positive integer solutions (x, y ≥ 1) does ${it.eq} have?`),
+          it.cnt, [it.cnt + 1, Math.max(0, it.cnt - 1), it.cnt + 2], 'equation:diophantine', cfg,
+          `Thử các giá trị nguyên dương phù hợp ta được ${it.cnt} cặp nghiệm (x; y) nguyên dương là: ${it.list}.`, ex()
+        );
+      }
+      case 'g9_ineq_linear': {
+        if (tier === 'easy') {
+          const a = rInt(2, 6), bound = rInt(2, 8), b = a * bound;
+          return makeExtQ(
+            t(`Tìm nghiệm nguyên lớn nhất của bất phương trình −${a}x + ${b} > 0?`, `Largest integer solution of −${a}x + ${b} > 0`),
+            bound - 1, [bound, bound + 1, bound - 2], 'ineq:linear', cfg,
+            `Chuyển vế và chia cho số âm −${a} (nhớ ĐỔI CHIỀU bất đẳng thức!):\n−${a}x > −${b} ⇔ x < ${bound} ⇒ Số nguyên lớn nhất thỏa mãn là x = ${bound - 1}.`, ex({ allowNeg: true })
+          );
+        }
+        if (tier === 'medium') {
+          // Smallest integer x satisfying 3x - a >= x + b -> 2x >= a + b
+          const k = rInt(3, 11), sumAB = 2 * k - 1, a = rInt(3, 10), b = sumAB - a;
+          const bStr = b >= 0 ? `+ ${b}` : `− ${Math.abs(b)}`;
+          return makeExtQ(
+            t(`Tìm số nguyên x nhỏ nhất thỏa mãn bất phương trình: 3x − ${a} ≥ x ${bStr}?`, `Smallest integer x satisfying 3x − ${a} ≥ x ${bStr}`),
+            k, [k - 1, k + 1, k - 2], 'ineq:linear', cfg,
+            `Chuyển vế: 3x − x ≥ ${a} + (${b}) ⇔ 2x ≥ ${sumAB} ⇔ x ≥ ${fmtDec(sumAB / 2)} ⇒ Số nguyên x nhỏ nhất là ${k}.`, ex({ allowNeg: true })
+          );
+        }
+        // Real-world Grade-9 budget inequality (SGK Kết nối tri thức / Chân trời sáng tạo Chương 2!)
+        const penCost = 5, noteCost = 12, pens = 2, budget = pickAny([100, 120, 150]);
+        const rem = budget - penCost * pens, maxNotes = Math.floor(rem / noteCost);
+        return makeExtQ(
+          t(`An mang ${budget} nghìn đồng đi nhà sách, mua ${pens} chiếc bút giá ${penCost} nghìn/chiếc và x quyển vở giá ${noteCost} nghìn/quyển. Hỏi An mua được tối đa bao nhiêu quyển vở?`, `With ${budget}k VND, An buys ${pens} pens at ${penCost}k each and notebooks at ${noteCost}k each. Max notebooks = ?`),
+          maxNotes, [maxNotes + 1, Math.max(1, maxNotes - 1), maxNotes + 2], 'ineq:word', cfg,
+          `Lập bất phương trình theo số tiền: ${penCost * pens} + ${noteCost}x ≤ ${budget} ⇔ ${noteCost}x ≤ ${rem} ⇔ x ≤ ${fmtDec(Number((rem / noteCost).toFixed(2)))}.\nVì x ∈ ℕ nên An mua được tối đa ${maxNotes} quyển vở.`, ex()
+        );
+      }
+      case 'g9_rad_reduce': {
+        if (tier === 'easy') {
+          // Evaluate P = (x - a^2) / (sqrt(x) + a) = sqrt(x) - a at x = m^2
+          const a = rInt(1, 5), m = rInt(a + 1, a + 7), xVal = m * m, ans = m - a;
+          return makeExtQ(
+            t(`Rút gọn biểu thức P = (x − ${a * a}) / (√x + ${a}) (với x ≥ 0) rồi tính giá trị của P tại x = ${xVal}?`, `Simplify P = (x − ${a * a})/(√x + ${a}) and evaluate at x = ${xVal}`),
+            ans, [m + a, xVal - a, ans + 2], 'radical:reduce', cfg,
+            `Dùng hằng đẳng thức x − ${a * a} = (√x − ${a})(√x + ${a}) ⇒ Rút gọn P = √x − ${a}.\nTại x = ${xVal}: P = √${xVal} − ${a} = ${m} − ${a} = ${ans}.`, ex()
+          );
+        }
+        if (tier === 'medium') {
+          // Classic Grade-10 Sub-question: How many non-negative integers x make P = k / (sqrt(x) + 1) an integer?
+          const items = [
+            { k: 4, divisors: '1; 2; 4', xs: '0; 1; 9', cnt: 3 },
+            { k: 6, divisors: '1; 2; 3; 6', xs: '0; 1; 4; 25', cnt: 4 },
+            { k: 5, divisors: '1; 5', xs: '0; 16', cnt: 2 },
+            { k: 9, divisors: '1; 3; 9', xs: '0; 4; 64', cnt: 3 }
+          ];
+          const it = pickAny(items);
+          return makeExtQ(
+            t(`Cho biểu thức P = ${it.k} / (√x + 1) với x ≥ 0. Có bao nhiêu giá trị nguyên của x để P nhận giá trị nguyên?`, `For x ≥ 0, how many integers x make P = ${it.k}/(√x + 1) an integer?`),
+            it.cnt, [it.cnt + 1, Math.max(1, it.cnt - 1), it.cnt * 2], 'radical:int', cfg,
+            `Vì x ∈ ℤ, x ≥ 0 nên √x + 1 ≥ 1 và phải là ước dương của ${it.k} (gồm: ${it.divisors}) ⇒ tìm được x ∈ {${it.xs}} ⇒ Có ${it.cnt} giá trị nguyên của x.`, ex()
+          );
+        }
+        // Min value via AM-GM (Cauchy): P = x + a^2 / x (x > 0) or sqrt(x) + a^2 / sqrt(x) >= 2a!
+        const a = rInt(2, 6), minVal = 2 * a;
+        return makeExtQ(
+          t(`Với x > 0, tìm giá trị nhỏ nhất của biểu thức P = √x + ${a * a}/√x?`, `For x > 0, find the minimum value of P = √x + ${a * a}/√x`),
+          minVal, [a, a * a + 1, minVal + 2], 'radical:minmax', cfg,
+          `Áp dụng bất đẳng thức AM-GM (Cauchy) cho hai số dương √x và ${a * a}/√x:\nP = √x + ${a * a}/√x ≥ 2·√(√x · ${a * a}/√x) = 2·${a} = ${minVal} (dấu "=" xảy ra khi √x = ${a} ⇔ x = ${a * a}).`, ex()
+        );
+      }
+      case 'g9_vieta_param': {
+        if (tier === 'easy') {
+          // Double root condition: x^2 - 2*k*x + m = 0 has double root <=> Delta' = k^2 - m = 0 => m = k^2
+          const k = rInt(2, 6), mAns = k * k;
+          return makeExtQ(
+            t(`Tìm tham số m để phương trình bậc hai x² − ${2 * k}x + m = 0 có nghiệm kép?`, `Find m so that x² − ${2 * k}x + m = 0 has a double root`),
+            mAns, [2 * k, -mAns, mAns + 4], 'equation:vieta_m', cfg,
+            `Phương trình có nghiệm kép khi và chỉ khi Δ' = (−${k})² − 1·m = 0 ⇔ ${mAns} − m = 0 ⇔ m = ${mAns}.`, ex({ allowNeg: true })
+          );
+        }
+        if (tier === 'medium') {
+          // Opposite-sign roots x1 * x2 < 0 or find m given x1^2 + x2^2 = val:
+          // x^2 - S*x + m = 0 has x1^2 + x2^2 = S^2 - 2m = target -> m = (S^2 - target)/2 (ensure Delta >= 0 -> S^2 - 4m >= 0)
+          const r1 = rInt(1, 4), r2 = rInt(2, 5), S = r1 + r2, mAns = r1 * r2, sumSq = r1 * r1 + r2 * r2;
+          return makeExtQ(
+            t(`Tìm m để phương trình x² − ${S}x + m = 0 có hai nghiệm x₁, x₂ thỏa mãn x₁² + x₂² = ${sumSq}?`, `Find m so roots of x² − ${S}x + m = 0 satisfy x₁² + x₂² = ${sumSq}`),
+            mAns, [mAns + 2, Math.max(0, mAns - 2), S * S - sumSq], 'equation:vieta_m', cfg,
+            `Theo hệ thức Viète: x₁ + x₂ = ${S}, x₁·x₂ = m.\nTa có x₁² + x₂² = (x₁ + x₂)² − 2x₁x₂ ⇔ ${S}² − 2m = ${sumSq} ⇔ 2m = ${S * S - sumSq} ⇔ m = ${mAns} (thỏa Δ = ${S * S - 4 * mAns} ≥ 0).`, ex({ allowNeg: true })
+          );
+        }
+        // Symmetric cubic x1^3 + x2^3 = S^3 - 3SP
+        const x1 = rInt(1, 3), x2 = rInt(2, 4), S = x1 + x2, P = x1 * x2, ans = x1 ** 3 + x2 ** 3;
+        return makeExtQ(
+          t(`Gọi x₁, x₂ là hai nghiệm của phương trình x² − ${S}x + ${P} = 0. Không giải phương trình, tính A = x₁³ + x₂³?`, `Roots x₁, x₂ of x² − ${S}x + ${P} = 0. Evaluate x₁³ + x₂³`),
+          ans, [S ** 3, S ** 3 - S * P, ans + 6], 'equation:vieta_sym', cfg,
+          `Theo Viète: S = x₁ + x₂ = ${S}, P = x₁x₂ = ${P}.\nÁp dụng hằng đẳng thức: x₁³ + x₂³ = S³ − 3SP = ${S}³ − 3·${S}·${P} = ${S ** 3} − ${3 * S * P} = ${ans}.`, ex()
+        );
+      }
+      case 'g9_stat_grouped': {
+        if (tier === 'easy') {
+          const left = pickAny([140, 150, 160, 20, 40]), width = pickAny([10, 20]), right = left + width, rep = (left + right) / 2;
+          return makeExtQ(
+            t(`Trong bảng tần số ghép nhóm, giá trị đại diện của nhóm [${left}; ${right}) bằng bao nhiêu?`, `Representative midpoint of grouped interval [${left}, ${right}) = ?`),
+            rep, [width, left, right], 'stat:grouped', cfg,
+            `Công thức SGK Toán 9 mới: Giá trị đại diện của nhóm [a; b) bằng trung bình cộng hai đầu mút: (${left} + ${right}) / 2 = ${rep}.`, ex()
+          );
+        }
+        if (tier === 'medium') {
+          const N = pickAny([40, 50]), freq = rInt(6, 18), relPct = (freq * 100) / N;
+          return makeExtQ(
+            t(`Khảo sát chiều cao (cm) của ${N} học sinh lớp 9A, nhóm [160; 165) có tần số m = ${freq}. Tần số tương đối của nhóm này bằng bao nhiêu %?`, `In a sample of ${N} students, group [160, 165) has frequency ${freq}. Relative frequency (%) = ?`),
+            relPct, [freq, relPct + 5, Math.max(2, relPct - 5)], 'stat:grouped', cfg,
+            `Tần số tương đối f = (m / N) · 100% = (${freq} / ${N}) · 100% = ${relPct}%.`, ex()
+          );
+        }
+        // Weighted mean from grouped data table (3 groups)!
+        // Groups [0;10)->rep 5, [10;20)->rep 15, [20;30)->rep 25 with total N = 10 or 20
+        const f1 = 2, f2 = 5, f3 = 3, meanVal = (5 * f1 + 15 * f2 + 25 * f3) / 10; // (10 + 75 + 75)/10 = 16!
+        const shift = pickAny([0, 10, 20]);
+        const g1 = `[${shift}; ${shift + 10})`, g2 = `[${shift + 10}; ${shift + 20})`, g3 = `[${shift + 20}; ${shift + 30})`;
+        const exactMean = meanVal + shift;
+        return makeExtQ(
+          t(`Thời gian tự học (phút) của 10 bạn ghép thành 3 nhóm: ${g1}: 2 bạn; ${g2}: 5 bạn; ${g3}: 3 bạn. Ước lượng số trung bình cộng của mẫu số liệu ghép nhóm?`, `Grouped data for 10 students: ${g1}: 2, ${g2}: 5, ${g3}: 3. Estimated mean = ?`),
+          exactMean, [exactMean - 1, exactMean + 2, shift + 15], 'stat:grouped_mean', cfg,
+          `Giá trị đại diện 3 nhóm lần lượt là ${shift + 5}; ${shift + 15}; ${shift + 25}.\nSố trung bình x̄ = [2·${shift + 5} + 5·${shift + 15} + 3·${shift + 25}] / 10 = ${exactMean}.`, ex()
+        );
+      }
+      case 'g9_prob_omega': {
+        if (tier === 'easy') {
+          const bank = [
+            { q: t('Gieo đồng thời hai con xúc xắc cân đối và đồng chất. Số phần tử của không gian mẫu n(Ω) bằng bao nhiêu?', 'Roll two fair 6-sided dice simultaneously. Size of sample space n(Ω) = ?'), a: 36, near: [12, 6, 24], exp: 'Mỗi con xúc xắc có 6 kết quả ⇒ Gieo 2 con có n(Ω) = 6 · 6 = 36 kết quả đồng khả năng.' },
+            { q: t('Tung đồng thời hai đồng xu cân đối. Số phần tử của không gian mẫu n(Ω) bằng bao nhiêu?', 'Toss two fair coins simultaneously. Size of sample space n(Ω) = ?'), a: 4, near: [2, 6, 8], exp: 'Ω = {SS, SN, NS, NN} ⇒ n(Ω) = 2 · 2 = 4.' }
+          ];
+          const it = pickAny(bank);
+          return makeExtQ(it.q, it.a, it.near, 'prob:omega', cfg, it.exp, ex());
+        }
+        if (tier === 'medium') {
+          const targets = [
+            { sum: 7, fav: 6, ans: '1/6', near: ['5/36', '7/36', '1/12'] },
+            { sum: 6, fav: 5, ans: '5/36', near: ['1/6', '1/9', '7/36'] },
+            { sum: 9, fav: 4, ans: '1/9', near: ['1/6', '5/36', '1/12'] },
+            { sum: 11, fav: 2, ans: '1/18', near: ['1/36', '1/12', '1/9'] }
+          ];
+          const it = pickAny(targets);
+          return makeExtQ(
+            t(`Gieo đồng thời 2 con xúc xắc cân đối. Tính xác suất của biến cố "Tổng số chấm xuất hiện trên hai con xúc xắc bằng ${it.sum}" (phân số tối giản)?`, `Roll two fair dice. Probability that the sum of dots equals ${it.sum} = ?`),
+            it.ans, it.near, 'prob:dice2', cfg,
+            `Không gian mẫu n(Ω) = 36. Số cặp chấm có tổng bằng ${it.sum} là n(A) = ${it.fav} ⇒ P(A) = ${it.fav}/36 = ${it.ans}.`, ex()
+          );
+        }
+        // Drawing 2 cards without replacement from n cards (classic Grade-10 entrance exam!)
+        // Box has 5 balls: 3 red, 2 blue -> n(Omega) = C(5,2) = 10; both red = C(3,2) = 3 -> P = 3/10!
+        const scenarios = [
+          { tot: 5, red: 3, blue: 2, omega: 10, fav: 3, ans: '3/10', near: ['1/5', '2/5', '3/5'], ask: 'cả 2 quả đều màu đỏ' },
+          { tot: 6, red: 4, blue: 2, omega: 15, fav: 6, ans: '2/5', near: ['1/5', '3/5', '4/15'], ask: 'cả 2 quả đều màu đỏ' },
+          { tot: 5, red: 3, blue: 2, omega: 10, fav: 6, ans: '3/5', near: ['2/5', '3/10', '1/2'], ask: '2 quả khác màu' }
+        ];
+        const sc = pickAny(scenarios);
+        return makeExtQ(
+          t(`Một hộp có ${sc.red} quả bóng đỏ và ${sc.blue} quả bóng xanh. Lấy ngẫu nhiên đồng thời 2 quả bóng từ hộp. Tính xác suất của biến cố "${sc.ask}"?`, `Box has ${sc.red} red & ${sc.blue} blue balls; draw 2 at random. Probability of (${sc.ask}) = ?`),
+          sc.ans, sc.near, 'prob:combo', cfg,
+          `Số cách chọn 2 quả từ ${sc.tot} quả là n(Ω) = ${sc.tot}·${sc.tot - 1}/2 = ${sc.omega}. Số kết quả thuận lợi n(A) = ${sc.fav} ⇒ P(A) = ${sc.fav}/${sc.omega} = ${sc.ans}.`, ex()
+        );
+      }
+      case 'g9_geom_pos_cir': {
+        if (tier === 'easy') {
+          const R = rInt(5, 14), r = rInt(2, R - 1), dist = R + r;
+          return makeExtQ(
+            t(`Hai đường tròn (O; ${R} cm) và (O'; ${r} cm) tiếp xúc ngoài với nhau. Độ dài đoạn nối tâm OO' bằng bao nhiêu cm?`, `Circles (O; ${R} cm) and (O'; ${r} cm) are externally tangent. Find OO' (cm)`),
+            dist, [R - r, dist + 2, Math.max(1, dist - 2)], 'geom:two_circles', cfg,
+            `Hai đường tròn tiếp xúc ngoài khi và chỉ khi khoảng cách nối tâm bằng tổng hai bán kính: OO' = R + r = ${R} + ${r} = ${dist} (cm).`, ex({ domain: 'geometry', visualKind: 'circle', visualData: { R } })
+          );
+        }
+        if (tier === 'medium') {
+          const R = rInt(7, 16), r = rInt(2, R - 2), dist = R - r;
+          return makeExtQ(
+            t(`Hai đường tròn (O; ${R} cm) và (O'; ${r} cm) tiếp xúc trong với nhau. Tính khoảng cách giữa hai tâm OO' (cm)?`, `Circles (O; ${R} cm) and (O'; ${r} cm) are internally tangent. Find OO' (cm)`),
+            dist, [R + r, dist + 2, Math.max(1, dist - 2)], 'geom:two_circles', cfg,
+            `Hai đường tròn tiếp xúc trong khi và chỉ khi OO' = |R − r| = ${R} − ${r} = ${dist} (cm).`, ex({ domain: 'geometry', visualKind: 'circle', visualData: { R } })
+          );
+        }
+        // Number of common tangents based on OO' vs R, r!
+        const cases = [
+          { R: 6, r: 4, d: 12, ans: 4, why: 'OO\' = 12 > R + r = 10 ⇒ hai đường tròn ở ngoài nhau nên có 4 tiếp tuyến chung.' },
+          { R: 7, r: 3, d: 10, ans: 3, why: 'OO\' = 10 = R + r ⇒ hai đường tròn tiếp xúc ngoài nên có 3 tiếp tuyến chung.' },
+          { R: 6, r: 4, d: 8, ans: 2, why: 'R − r = 2 < OO\' = 8 < R + r = 10 ⇒ hai đường tròn cắt nhau nên có 2 tiếp tuyến chung.' },
+          { R: 8, r: 3, d: 5, ans: 1, why: 'OO\' = 5 = R − r ⇒ hai đường tròn tiếp xúc trong nên có 1 tiếp tuyến chung.' }
+        ];
+        const it = pickAny(cases);
+        return makeExtQ(
+          t(`Cho hai đường tròn (O; ${it.R} cm) và (O'; ${it.r} cm) có đoạn nối tâm OO' = ${it.d} cm. Hai đường tròn này có bao nhiêu tiếp tuyến chung?`, `Circles (O; ${it.R}) and (O'; ${it.r}) with OO' = ${it.d} have how many common tangents?`),
+          it.ans, [0, 1, 2, 3, 4].filter(v => v !== it.ans).slice(0, 3), 'geom:two_circles', cfg,
+          it.why, ex({ domain: 'geometry', visualKind: 'circle', visualData: { R: it.R } })
+        );
+      }
+      case 'g9_geom_poly_rot': {
+        if (tier === 'easy') {
+          // Minimum positive rotation angle mapping regular n-gon onto itself = 360 / n!
+          const polys = [
+            { name: 'tam giác đều', en: 'equilateral triangle', n: 3, deg: 120 },
+            { name: 'hình vuông', en: 'square', n: 4, deg: 90 },
+            { name: 'ngũ giác đều', en: 'regular pentagon', n: 5, deg: 72 },
+            { name: 'lục giác đều', en: 'regular hexagon', n: 6, deg: 60 },
+            { name: 'bát giác đều', en: 'regular octagon', n: 8, deg: 45 }
+          ];
+          const p = pickAny(polys);
+          return makeExtQ(
+            t(`Phép quay thuận chiều tâm O góc α° nhỏ nhất (α > 0) biến ${p.name} tâm O thành chính nó có α bằng bao nhiêu độ?`, `Smallest positive rotation angle α° mapping a ${p.en} onto itself = ?°`),
+            p.deg, [Math.round(180 / p.n), p.deg + 15, Math.max(15, p.deg - 15)], 'geom:rotation', cfg,
+            `Đa giác đều ${p.n} cạnh nội tiếp đường tròn tâm O tự trùng khít qua phép quay góc nhỏ nhất α = 360° ÷ ${p.n} = ${p.deg}°.`, ex({ domain: 'geometry', visualKind: 'circle', visualData: { R: '' } })
+          );
+        }
+        if (tier === 'medium') {
+          // Regular hexagon inscribed in (O; R) has side length a = R! Or interior angle of regular n-gon = (n-2)*180/n
+          if (Math.random() < 0.5) {
+            const R = rInt(4, 18), perim = 6 * R;
+            return makeExtQ(
+              t(`Lục giác đều ABCDEF nội tiếp đường tròn (O; ${R} cm). Tính chu vi của lục giác đều đó (cm)?`, `Regular hexagon inscribed in circle (O; ${R} cm). Perimeter (cm) = ?`),
+              perim, [4 * R, 3 * R, perim + 6], 'geom:reg_poly', cfg,
+              `Cạnh của lục giác đều nội tiếp (O; R) đúng bằng bán kính R = ${R} cm ⇒ Chu vi = 6 · ${R} = ${perim} (cm).`, ex({ domain: 'geometry', visualKind: 'circle', visualData: { R } })
+            );
+          }
+          const nPairs = [[5, 108], [6, 120], [8, 135], [10, 144], [12, 150]];
+          const [n, ang] = pickAny(nPairs);
+          return makeExtQ(
+            t(`Mỗi góc trong của một đa giác đều ${n} cạnh có số đo bằng bao nhiêu độ?`, `Interior angle of a regular ${n}-gon (°) = ?`),
+            ang, [360 / n, ang - 12, ang + 12], 'geom:reg_poly', cfg,
+            `Tổng các góc của đa giác ${n} cạnh là (${n} − 2)·180° ⇒ Mỗi góc của đa giác đều ${n} cạnh bằng (${n - 2} · 180°) ÷ ${n} = ${ang}°.`, ex({ domain: 'geometry' })
+          );
+        }
+        // Inradius r vs Circumradius R of equilateral triangle or square!
+        // Equilateral triangle of side a = 6*k*sqrt(3)? Keep rational! If R = 2k, inradius r = k (since R = 2r in equilateral triangle!)
+        const rIn = rInt(3, 14), rOut = 2 * rIn;
+        return makeExtQ(
+          t(`Tam giác đều ABC có bán kính đường tròn nội tiếp r = ${rIn} cm. Bán kính đường tròn ngoại tiếp R của tam giác đều đó bằng bao nhiêu cm?`, `Equilateral △ABC has inradius r = ${rIn} cm. Circumradius R (cm) = ?`),
+          rOut, [rIn * 3, rIn + 2, rOut + 2], 'geom:reg_poly', cfg,
+          `Trong tam giác đều, tâm đường tròn ngoại tiếp và nội tiếp trùng với trọng tâm G nên R = (2/3)h và r = (1/3)h ⇒ R = 2r = 2 · ${rIn} = ${rOut} (cm).`, ex({ domain: 'geometry', visualKind: 'circle', visualData: { R: rOut } })
+        );
+      }
+
       default:
         return null;
     }

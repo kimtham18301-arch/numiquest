@@ -76,7 +76,7 @@ finishPractice=function(){
   }
   const avgSpeed=avg(s.results.map(x=>x.elapsed)).toFixed(1);
   const tierSummary=(()=>{
-    const buckets={easy:{ok:0,tot:0,lbl:t('🌱 Nhận biết','🌱 Lv1')},medium:{ok:0,tot:0,lbl:t('📘 Thông hiểu','📘 Lv2')},hard:{ok:0,tot:0,lbl:t('🏆 Vận dụng','🏆 Lv3')}};
+    const buckets={easy:{ok:0,tot:0,lbl:t('Nhận biết','Lv1')},medium:{ok:0,tot:0,lbl:t('Thông hiểu','Lv2')},hard:{ok:0,tot:0,lbl:t('Vận dụng','Lv3')}};
     s.results.forEach((r,idx)=>{
       const d=r.difficulty||s.questions?.[idx]?.difficulty;
       if(d&&buckets[d]){buckets[d].tot++;if(r.correct)buckets[d].ok++;}

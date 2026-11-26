@@ -3,10 +3,17 @@
   'use strict';
 
   let wsState = {
-    grade: 3,
+    grade: 3, // 1..9 or 'custom'
     topics: [],
     domainFilter: 'all', // 'all' | 'number' | 'geometry'
     difficultyMode: 'progressive', // 'progressive' | 'easy' | 'medium' | 'hard'
+    customCfg: {
+      ops: ['+', '-', '*', '/'],
+      types: ['natural'],
+      digits: [2],
+      questionStyle: 'normal',
+      termCount: 3
+    },
     count: 10,
     format: 'mixed', // 'mixed' | 'essay' | 'mcq'
     previewTab: 'exam', // 'exam' (no answers) | 'answers' (with answers)
@@ -18,21 +25,70 @@
   };
 
   function defaultTitleFor(grade, topics, domainFilter = 'all') {
+    if (grade === 'custom') {
+      return t('PHIẾU LUYỆN TÍNH NHẨM & PHẢN XẠ PHÉP TÍNH', 'CUSTOM MENTAL MATH & CALCULATION WORKSHEET');
+    }
     const g = Number(grade) || 1;
     if (topics && topics.length === 1 && typeof NUMI_GRADE_TOPICS !== 'undefined' && NUMI_GRADE_TOPICS[g]) {
       const meta = NUMI_GRADE_TOPICS[g].find(x => x.id === topics[0]);
       if (meta) return t(`PHIẾU LUYỆN TẬP TOÁN LỚP ${g} — ${meta.vi.toUpperCase()}`, `GRADE ${g} MATH WORKSHEET — ${meta.en.toUpperCase()}`);
     }
     if (g >= 6 && domainFilter === 'number') {
-      return t(`ĐỀ KIỂM TRA PHẦN SỐ HỌC & ĐẠI SỐ LỚP ${g}`, `GRADE ${g} NUMBERS & ALGEBRA WORKSHEET`);
+      return t(`ĐỀ KIỂM TRA SỐ HỌC LỚP ${g}`, `GRADE ${g} NUMBERS & ALGEBRA WORKSHEET`);
     }
     if (g >= 6 && domainFilter === 'geometry') {
-      return t(`ĐỀ KIỂM TRA PHẦN HÌNH HỌC & ĐO LƯỜNG LỚP ${g}`, `GRADE ${g} GEOMETRY WORKSHEET`);
+      return t(`ĐỀ KIỂM TRA HÌNH HỌC LỚP ${g}`, `GRADE ${g} GEOMETRY WORKSHEET`);
     }
     return t(`ĐỀ ÔN TẬP TỔNG HỢP TOÁN LỚP ${g}`, `GRADE ${g} COMPREHENSIVE MATH WORKSHEET`);
   }
 
+  function makePureCustomCalcQuestion(customCfg = {}) {
+    const ops = Array.isArray(customCfg.ops) && customCfg.ops.length ? [...customCfg.ops] : ['+', '-'];
+    const rawTypes = Array.isArray(customCfg.types) && customCfg.types.length ? [...customCfg.types] : ['natural'];
+    const digits = Array.isArray(customCfg.digits) && customCfg.digits.length ? customCfg.digits.map(Number) : [2];
+    let style = customCfg.questionStyle || 'normal';
+    if (style === 'word') style = 'normal'; // Never generate word problems in Custom calculation mode!
+    let types = [...rawTypes];
+    if (style === 'convenient') types = ['natural'];
+    else if (style === 'expression') {
+      types = types.filter(x => x === 'natural' || x === 'fraction');
+      if (!types.length) types = ['natural'];
+    }
+    const cfg = {
+      ...(typeof defaults !== 'undefined' ? defaults : {}),
+      grade: 'custom',
+      ops,
+      types,
+      type: types[0] || 'natural',
+      digits,
+      questionStyle: style,
+      termCount: Number(customCfg.termCount) || 3,
+      topic: 'all',
+      topics: []
+    };
+    let q = null;
+    if (style === 'missing' && typeof generateMissingNumber === 'function') {
+      q = generateMissingNumber(cfg);
+    } else if ((style === 'convenient' || style === 'expression') && typeof customGenerate === 'function') {
+      q = customGenerate(cfg);
+    } else if (typeof plainGenerate === 'function') {
+      q = plainGenerate(cfg);
+    } else if (typeof generate === 'function') {
+      q = generate(cfg);
+    }
+    if (!q) return null;
+    return {
+      ...q,
+      isCustomCalc: true,
+      columnReady: false,
+      isColumnExercise: false
+    };
+  }
+
   function makeSingleWorksheetQuestion(grade, topics, opts = {}) {
+    if (grade === 'custom') {
+      return makePureCustomCalcQuestion(opts.customCfg || wsState.customCfg);
+    }
     const g = Number(grade) || 1;
     const gDef = (typeof NUMI_GRADES !== 'undefined' && NUMI_GRADES[g]) ? NUMI_GRADES[g] : { ops: ['+', '-'], types: ['natural'], digits: [1, 2] };
     const cleanTopics = Array.isArray(topics) ? topics.filter(id => id && id !== 'all') : [];
@@ -59,6 +115,22 @@
   }
 
   function generateWorksheetQuestions(grade, topics, count, opts = {}) {
+    if (grade === 'custom') {
+      const out = [];
+      const seenQ = new Set();
+      let tries = 0;
+      const targetCnt = Math.max(1, Number(count) || 10);
+      while (out.length < targetCnt && tries < targetCnt * 12) {
+        tries++;
+        const q = makePureCustomCalcQuestion(opts.customCfg || wsState.customCfg);
+        if (!q) break;
+        const key = String(q.q || '').trim();
+        if (seenQ.has(key) && tries < targetCnt * 8) continue;
+        seenQ.add(key);
+        out.push(q);
+      }
+      return out;
+    }
     const g = Number(grade) || 1;
     const gDef = (typeof NUMI_GRADES !== 'undefined' && NUMI_GRADES[g]) ? NUMI_GRADES[g] : { ops: ['+', '-'], types: ['natural'], digits: [1, 2] };
     const cleanTopics = Array.isArray(topics) ? topics.filter(id => id && id !== 'all') : [];
@@ -118,9 +190,12 @@
     const withAnswers = Boolean(typeof options === 'boolean' ? false : options.withAnswers);
     const interactivePreview = Boolean(typeof options === 'boolean' ? options : options.interactivePreview);
     const qs = stateObj.questions || [];
-    const g = Number(stateObj.grade) || 1;
-    const title = (stateObj.title || defaultTitleFor(g, stateObj.topics)).trim();
-    const subtitle = (stateObj.subtitle || t(`Môn: Toán · Lớp ${g} (Chuẩn GDPT 2018)`, `Subject: Maths · Grade ${g}`)).trim();
+    const isCustom = stateObj.grade === 'custom';
+    const g = isCustom ? 'custom' : (Number(stateObj.grade) || 1);
+    const title = (stateObj.title || defaultTitleFor(g, stateObj.topics, stateObj.domainFilter)).trim();
+    const subtitle = (stateObj.subtitle || (isCustom
+      ? t('Chế độ: Tùy chỉnh — Luyện phản xạ tính nhẩm', 'Mode: Custom — Mental Math Speed Drill')
+      : t(`Môn: Toán · Lớp ${g} (Chuẩn GDPT 2018)`, `Subject: Maths · Grade ${g}`))).trim();
     const today = new Date().toLocaleDateString('vi-VN');
 
     const renderSwapBtn = origIdx => interactivePreview
@@ -303,73 +378,124 @@
   }
 
   function openWorksheetComposer(preset = {}) {
-    const startGrade = Number(preset.grade || (typeof config !== 'undefined' && config.grade && config.grade !== 'custom' ? config.grade : 3)) || 3;
+    const isPresetCustom = preset.grade === 'custom' || (!preset.grade && typeof config !== 'undefined' && config.grade === 'custom');
+    const startGrade = isPresetCustom
+      ? 'custom'
+      : (Number(preset.grade || (typeof config !== 'undefined' && config.grade && config.grade !== 'custom' ? config.grade : 3)) || 3);
     const startTopics = Array.isArray(preset.topics)
       ? [...preset.topics]
       : (typeof config !== 'undefined' && Array.isArray(config.topics) && config.topics.length ? [...config.topics] : []);
-    const startCount = Number(preset.count || (startGrade <= 2 ? 10 : 12));
+    const startCount = Number(preset.count || (startGrade === 'custom' ? 15 : startGrade <= 2 ? 10 : 12));
     const startDom = preset.domainFilter || (typeof config !== 'undefined' && config.domainFilter ? config.domainFilter : 'all');
     const startDiff = preset.difficultyMode || (typeof config !== 'undefined' && config.difficultyMode ? config.difficultyMode : 'progressive');
+    const initCustom = preset.customCfg || {
+      ops: Array.isArray(config?.ops) && config.ops.length ? [...config.ops] : ['+', '-'],
+      types: Array.isArray(config?.types) && config.types.length ? [...config.types] : [config?.type || 'natural'],
+      digits: Array.isArray(config?.digits) && config.digits.length ? config.digits.map(Number) : [2],
+      questionStyle: (config?.questionStyle && config.questionStyle !== 'word') ? config.questionStyle : 'normal',
+      termCount: Number(config?.termCount) || 3
+    };
 
     wsState = {
       grade: startGrade,
       topics: startTopics,
-      domainFilter: startGrade >= 6 ? startDom : 'all',
+      domainFilter: startGrade !== 'custom' && startGrade >= 6 ? startDom : 'all',
       difficultyMode: startDiff,
-      count: [8, 10, 12, 15, 20].includes(startCount) ? startCount : 10,
-      format: 'mixed',
+      customCfg: initCustom,
+      count: [8, 10, 12, 15, 20, 30].includes(startCount) ? startCount : 12,
+      format: startGrade === 'custom' ? 'essay' : 'mixed',
       previewTab: 'exam',
-      title: defaultTitleFor(startGrade, startTopics, startGrade >= 6 ? startDom : 'all'),
-      subtitle: t(`Môn: Toán · Lớp ${startGrade} (Chuẩn GDPT 2018)`, `Subject: Maths · Grade ${startGrade}`),
-      durationMin: startGrade <= 2 ? 15 : startGrade >= 6 ? 45 : 25,
+      title: defaultTitleFor(startGrade, startTopics, startGrade !== 'custom' && startGrade >= 6 ? startDom : 'all'),
+      subtitle: startGrade === 'custom'
+        ? t('Môn: Toán · Phiếu Luyện tính nhẩm & Phản xạ phép tính (Tùy chỉnh)', 'Subject: Maths · Pure Mental Math & Calculation Drill')
+        : t(`Môn: Toán · Lớp ${startGrade} (Chuẩn GDPT 2018)`, `Subject: Maths · Grade ${startGrade}`),
+      durationMin: startGrade === 'custom' ? 15 : (startGrade <= 2 ? 15 : startGrade >= 6 ? 45 : 25),
       examCode: '01',
       questions: []
     };
-    const wsOpts = () => ({ domainFilter: wsState.domainFilter, difficultyMode: wsState.difficultyMode });
+    const wsOpts = () => ({ domainFilter: wsState.domainFilter, difficultyMode: wsState.difficultyMode, customCfg: wsState.customCfg });
     wsState.questions = generateWorksheetQuestions(wsState.grade, wsState.topics, wsState.count, wsOpts());
 
     const renderComposerModal = () => {
-      const fullList = (typeof NUMI_GRADE_TOPICS !== 'undefined' && NUMI_GRADE_TOPICS[wsState.grade]) || [];
-      const isSec = wsState.grade >= 6;
+      const isCustomMode = wsState.grade === 'custom';
+      const fullList = !isCustomMode && (typeof NUMI_GRADE_TOPICS !== 'undefined' && NUMI_GRADE_TOPICS[wsState.grade]) ? NUMI_GRADE_TOPICS[wsState.grade] : [];
+      const isSec = !isCustomMode && wsState.grade >= 6;
       const topicList = isSec && wsState.domainFilter !== 'all'
         ? fullList.filter(tp => tp.id === 'all' || tp.domain === wsState.domainFilter)
         : fullList;
       const isAllTopics = wsState.topics.length === 0;
       const showAnswers = wsState.previewTab === 'answers';
+      const cc = wsState.customCfg || {};
+
+      const customCalcStripHtml = `
+        <div class="ws-custom-calc-box">
+          <div class="ws-topic-strip-lbl">${t('Cấu hình bài tính toán thuần túy (Luyện tính nhẩm — không trộn lời văn / hình học):', 'Pure Calculation Drill Settings (Mental math only):')}</div>
+          <div class="ws-custom-row">
+            <div>
+              <small>${t('Phép tính:', 'Operations:')}</small>
+              <div class="ws-topic-pills">
+                ${[['+', '+'], ['-', '−'], ['*', '×'], ['/', '÷']].map(([v, sym]) => `<button type="button" class="ws-tp-pill ${(cc.ops || []).includes(v) ? 'active' : ''}" data-ws-op="${v}">${sym}</button>`).join('')}
+              </div>
+            </div>
+            <div>
+              <small>${t('Loại số:', 'Number types:')}</small>
+              <div class="ws-topic-pills">
+                ${[['natural', 'Tự nhiên', 'Whole'], ['decimal', 'Thập phân', 'Decimal'], ['fraction', 'Phân số', 'Fraction'], ['negative', 'Số âm', 'Signed'], ['remainder', 'Chia dư', 'Remainder']].map(([k, vi, en]) => `<button type="button" class="ws-tp-pill ${(cc.types || []).includes(k) ? 'active' : ''}" data-ws-type="${k}">${t(vi, en)}</button>`).join('')}
+              </div>
+            </div>
+            <div>
+              <small>${t('Số chữ số:', 'Digits:')}</small>
+              <div class="ws-topic-pills">
+                ${[1, 2, 3, 4, 5].map(d => `<button type="button" class="ws-tp-pill ${(cc.digits || []).includes(d) ? 'active' : ''}" data-ws-digit="${d}">${d}</button>`).join('')}
+              </div>
+            </div>
+            <div>
+              <small>${t('Dạng tính nhẩm:', 'Calc style:')}</small>
+              <select id="wsCustomStyleSel" class="ws-inline-sel">
+                <option value="normal" ${cc.questionStyle === 'normal' ? 'selected' : ''}>${t('Tính từng phép tính', 'Single calculation')}</option>
+                <option value="convenient" ${cc.questionStyle === 'convenient' ? 'selected' : ''}>${t('Tính thuận tiện (gộp tròn)', 'Convenient regrouping')}</option>
+                <option value="expression" ${cc.questionStyle === 'expression' ? 'selected' : ''}>${t('Biểu thức nhiều phép tính', 'Multi-op expressions')}</option>
+                <option value="missing" ${cc.questionStyle === 'missing' ? 'selected' : ''}>${t('Tìm số còn thiếu (?)', 'Missing number (?)')}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      `;
 
       modal(`<div class="ws-composer">
         <div class="ws-comp-top">
           <div>
             <span class="eyebrow">NUMIQUICK · ${t('SOẠN ĐỀ & IN PHIẾU PDF (KHỔ A4)', 'A4 WORKSHEET & PDF COMPOSER')}</span>
-            <h2 style="margin:2px 0 0">🖨️ ${t('Soạn đề sẵn & In 2 bản PDF riêng biệt', 'Compose & Print Separate Exam & Key PDFs')}</h2>
+            <h2 style="margin:2px 0 0">${t('Soạn đề sẵn & In 2 bản PDF riêng biệt', 'Compose & Print Separate Exam & Key PDFs')}</h2>
           </div>
           <div class="ws-comp-actions">
-            <button type="button" class="ws-btn-sec" id="wsRegenAllBtn">🔄 ${t('Đổi mã đề mới', 'New Version')}</button>
-            <button type="button" class="primary ws-btn-print-exam" id="wsPrintExamOnlyBtn">📄 ${t('In đề (Không đáp án)', 'Print Exam Only')}</button>
-            <button type="button" class="ws-btn-print-ans" id="wsPrintWithAnswersBtn">✅ ${t('In bản Có đáp án', 'Print Answer Key')}</button>
+            <button type="button" class="ws-btn-sec" id="wsRegenAllBtn">${t('Đổi mã đề mới', 'New Version')}</button>
+            <button type="button" class="primary ws-btn-print-exam" id="wsPrintExamOnlyBtn">${t('In đề (Không đáp án)', 'Print Exam Only')}</button>
+            <button type="button" class="ws-btn-print-ans" id="wsPrintWithAnswersBtn">${t('In bản Có đáp án', 'Print Answer Key')}</button>
             <button type="button" class="ws-btn-sec" id="wsCloseModalBtn">✕</button>
           </div>
         </div>
 
         <div class="ws-controls-bar">
-          <label>${t('Khối lớp', 'Grade')}
+          <label>${t('Chế độ / Khối lớp', 'Mode / Grade')}
             <select id="wsGradeSel">
+              <option value="custom" ${isCustomMode ? 'selected' : ''}>${t('Tùy chỉnh — Luyện tính nhẩm', 'Custom — Pure Mental Math')}</option>
               ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(g => `<option value="${g}" ${wsState.grade === g ? 'selected' : ''}>${t('Lớp', 'Grade')} ${g}</option>`).join('')}
             </select>
           </label>
           <label>${t('Số câu', 'Questions')}
             <select id="wsCountSel">
-              ${[8, 10, 12, 15, 20].map(n => `<option value="${n}" ${wsState.count === n ? 'selected' : ''}>${n} ${t('câu', 'qs')}</option>`).join('')}
+              ${[8, 10, 12, 15, 20, 30].map(n => `<option value="${n}" ${wsState.count === n ? 'selected' : ''}>${n} ${t('câu', 'qs')}</option>`).join('')}
             </select>
           </label>
-          <label>${t('Mức độ đề', 'Difficulty')}
+          ${!isCustomMode ? `<label>${t('Mức độ đề', 'Difficulty')}
             <select id="wsDiffSel">
               <option value="progressive" ${wsState.difficultyMode === 'progressive' ? 'selected' : ''}>${t('Ma trận chuẩn (Dễ → Khó)', 'Progressive (Easy → Hard)')}</option>
               <option value="easy" ${wsState.difficultyMode === 'easy' ? 'selected' : ''}>${t('Mức 1: Nhận biết (Dễ)', 'Lv1: Foundation')}</option>
               <option value="medium" ${wsState.difficultyMode === 'medium' ? 'selected' : ''}>${t('Mức 2: Thông hiểu (Vừa)', 'Lv2: Comprehension')}</option>
               <option value="hard" ${wsState.difficultyMode === 'hard' ? 'selected' : ''}>${t('Mức 3: Vận dụng & Toán giải', 'Lv3: Application & Word')}</option>
             </select>
-          </label>
+          </label>` : ''}
           <label>${t('Hình thức đề', 'Format')}
             <select id="wsFormatSel">
               <option value="mixed" ${wsState.format === 'mixed' ? 'selected' : ''}>${t('Kết hợp (Trắc nghiệm + Tự luận)', 'Mixed (MCQ + Written)')}</option>
@@ -385,27 +511,28 @@
           </label>
         </div>
 
-        <div class="ws-topic-strip">
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
-            <span class="ws-topic-strip-lbl">${t('Chọn chuyên đề đưa vào đề:', 'Topics in worksheet:')}</span>
-            ${isSec ? `<div style="display:flex;gap:5px;flex-wrap:wrap">
-              <button type="button" class="ws-tp-pill ${wsState.domainFilter === 'all' ? 'active' : ''}" data-ws-dom="all">✨ ${t('Số + Hình', 'All')}</button>
-              <button type="button" class="ws-tp-pill ${wsState.domainFilter === 'number' ? 'active' : ''}" data-ws-dom="number">🔢 ${t('Phần Số học & Đại số', 'Numbers & Algebra')}</button>
-              <button type="button" class="ws-tp-pill ${wsState.domainFilter === 'geometry' ? 'active' : ''}" data-ws-dom="geometry">📐 ${t('Phần Hình học', 'Geometry')}</button>
-            </div>` : ''}
+        ${isCustomMode ? customCalcStripHtml : `
+          <div class="ws-topic-strip">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
+              <span class="ws-topic-strip-lbl">${t('Chọn chuyên đề đưa vào đề:', 'Topics in worksheet:')}</span>
+              ${isSec ? `<div style="display:flex;gap:5px;flex-wrap:wrap">
+                <button type="button" class="ws-tp-pill ${wsState.domainFilter === 'all' ? 'active' : ''}" data-ws-dom="all">${t('Tất cả', 'All')}</button>
+                <button type="button" class="ws-tp-pill ${wsState.domainFilter === 'number' ? 'active' : ''}" data-ws-dom="number">${t('Số học', 'Numbers & Algebra')}</button>
+                <button type="button" class="ws-tp-pill ${wsState.domainFilter === 'geometry' ? 'active' : ''}" data-ws-dom="geometry">${t('Hình học', 'Geometry')}</button>
+              </div>` : ''}
+            </div>
+            <div class="ws-topic-pills">
+              ${topicList.map(tp => {
+                const on = tp.id === 'all' ? isAllTopics : wsState.topics.includes(tp.id);
+                return `<button type="button" class="ws-tp-pill ${on ? 'active' : ''}" data-ws-topic="${esc(tp.id)}">${esc(typeof lang !== 'undefined' && lang === 'en' ? tp.en : tp.vi)}</button>`;
+              }).join('')}
+            </div>
           </div>
-          <div class="ws-topic-pills">
-            ${topicList.map(tp => {
-              const on = tp.id === 'all' ? isAllTopics : wsState.topics.includes(tp.id);
-              const pfx = tp.id === 'all' ? '✨ ' : tp.col ? '📐 ' : (isSec ? (tp.domain === 'geometry' ? '📐 ' : '🔢 ') : '');
-              return `<button type="button" class="ws-tp-pill ${on ? 'active' : ''}" data-ws-topic="${esc(tp.id)}">${pfx}${esc(typeof lang !== 'undefined' && lang === 'en' ? tp.en : tp.vi)}</button>`;
-            }).join('')}
-          </div>
-        </div>
+        `}
 
         <div class="ws-preview-tabs" id="wsPreviewTabs" role="tablist">
-          <button type="button" class="ws-tab-btn ${!showAnswers ? 'active' : ''}" id="wsTabExam" data-ws-tab="exam" role="tab" aria-selected="${!showAnswers}">📄 ${t('Bảng 1: Đề phát học sinh (Không đáp án)', 'Sheet 1: Student Exam (No Answers)')}</button>
-          <button type="button" class="ws-tab-btn ${showAnswers ? 'active' : ''}" id="wsTabAnswers" data-ws-tab="answers" role="tab" aria-selected="${showAnswers}">✅ ${t('Bảng 2: Bản Có đáp án & Lời giải (Chấm bài)', 'Sheet 2: Answer Key & Solutions')}</button>
+          <button type="button" class="ws-tab-btn ${!showAnswers ? 'active' : ''}" id="wsTabExam" data-ws-tab="exam" role="tab" aria-selected="${!showAnswers}">${t('Bảng 1: Đề phát học sinh (Không đáp án)', 'Sheet 1: Student Exam (No Answers)')}</button>
+          <button type="button" class="ws-tab-btn ${showAnswers ? 'active' : ''}" id="wsTabAnswers" data-ws-tab="answers" role="tab" aria-selected="${showAnswers}">${t('Bảng 2: Bản Có đáp án & Lời giải (Chấm bài)', 'Sheet 2: Answer Key & Solutions')}</button>
         </div>
 
         <div class="ws-preview-stage" id="wsPreviewStage">
@@ -476,13 +603,48 @@
       });
 
       $('#wsGradeSel')?.addEventListener('change', e => {
-        wsState.grade = Number(e.target.value) || 1;
+        const rawVal = e.target.value;
+        wsState.grade = rawVal === 'custom' ? 'custom' : (Number(rawVal) || 1);
         wsState.topics = [];
         wsState.domainFilter = 'all';
-        wsState.durationMin = wsState.grade <= 2 ? 15 : wsState.grade >= 6 ? 45 : 25;
+        wsState.durationMin = wsState.grade === 'custom' ? 15 : (wsState.grade <= 2 ? 15 : wsState.grade >= 6 ? 45 : 25);
         wsState.title = defaultTitleFor(wsState.grade, [], 'all');
-        wsState.subtitle = t(`Môn: Toán · Lớp ${wsState.grade} (Chuẩn GDPT 2018)`, `Subject: Maths · Grade ${wsState.grade}`);
+        wsState.subtitle = wsState.grade === 'custom'
+          ? t('Môn: Toán · Phiếu Luyện tính nhẩm & Phản xạ phép tính (Tùy chỉnh)', 'Subject: Maths · Pure Mental Math & Calculation Drill')
+          : t(`Môn: Toán · Lớp ${wsState.grade} (Chuẩn GDPT 2018)`, `Subject: Maths · Grade ${wsState.grade}`);
         wsState.questions = generateWorksheetQuestions(wsState.grade, wsState.topics, wsState.count, wsOpts());
+        renderComposerModal();
+      });
+
+      const toggleArrItem = (arr, item) => {
+        const cur = Array.isArray(arr) ? arr : [];
+        if (cur.includes(item)) return cur.length > 1 ? cur.filter(x => x !== item) : cur;
+        return [...cur, item];
+      };
+      $$('[data-ws-op]').forEach(btn => {
+        btn.onclick = () => {
+          wsState.customCfg.ops = toggleArrItem(wsState.customCfg.ops, btn.dataset.wsOp);
+          wsState.questions = generateWorksheetQuestions('custom', [], wsState.count, wsOpts());
+          renderComposerModal();
+        };
+      });
+      $$('[data-ws-type]').forEach(btn => {
+        btn.onclick = () => {
+          wsState.customCfg.types = toggleArrItem(wsState.customCfg.types, btn.dataset.wsType);
+          wsState.questions = generateWorksheetQuestions('custom', [], wsState.count, wsOpts());
+          renderComposerModal();
+        };
+      });
+      $$('[data-ws-digit]').forEach(btn => {
+        btn.onclick = () => {
+          wsState.customCfg.digits = toggleArrItem(wsState.customCfg.digits, Number(btn.dataset.wsDigit));
+          wsState.questions = generateWorksheetQuestions('custom', [], wsState.count, wsOpts());
+          renderComposerModal();
+        };
+      });
+      $('#wsCustomStyleSel')?.addEventListener('change', e => {
+        wsState.customCfg.questionStyle = e.target.value || 'normal';
+        wsState.questions = generateWorksheetQuestions('custom', [], wsState.count, wsOpts());
         renderComposerModal();
       });
 
@@ -557,12 +719,38 @@
         btn.type = 'button';
         btn.id = 'openWorksheetPdfBtn';
         btn.className = 'ws-launch-btn wide';
-        btn.innerHTML = `🖨️ ${t('Soạn đề sẵn & In phiếu PDF (A4)', 'Compose & Print A4 PDF Worksheet')}`;
+        btn.innerHTML = `${t('Soạn đề sẵn & In phiếu PDF (A4)', 'Compose & Print A4 PDF Worksheet')}`;
         btn.onclick = () => {
+          const cnt = Number($('#lessonCount')?.value || config?.count || 12);
+          if (config?.grade === 'custom') {
+            let customCfg = {
+              ops: Array.isArray(config?.ops) && config.ops.length ? [...config.ops] : ['+', '-'],
+              types: Array.isArray(config?.types) && config.types.length ? [...config.types] : [config?.type || 'natural'],
+              digits: Array.isArray(config?.digits) && config.digits.length ? config.digits.map(Number) : [2],
+              questionStyle: (config?.questionStyle && config.questionStyle !== 'word') ? config.questionStyle : 'normal',
+              termCount: Number(config?.termCount) || 3
+            };
+            if (form && typeof FormData !== 'undefined') {
+              try {
+                const fd = new FormData(form);
+                const fOps = fd.getAll('op');
+                const fTypes = fd.getAll('type');
+                const fDigits = fd.getAll('digits').map(Number).filter(Boolean);
+                const fStyle = fd.get('questionStyle');
+                const fTerms = Number(fd.get('termCount')) || 3;
+                if (fOps.length) customCfg.ops = fOps;
+                if (fTypes.length) customCfg.types = fTypes;
+                if (fDigits.length) customCfg.digits = fDigits;
+                if (fStyle && fStyle !== 'word') customCfg.questionStyle = String(fStyle);
+                customCfg.termCount = fTerms;
+              } catch {}
+            }
+            openWorksheetComposer({ grade: 'custom', customCfg, count: cnt });
+            return;
+          }
           const u = typeof currentAuthUser === 'function' ? currentAuthUser() : null;
           const g = config?.grade && config.grade !== 'custom' ? Number(config.grade) : (Number(u?.grade) || 4);
           const tps = Array.isArray(config?.topics) && config.topics.length ? [...config.topics] : (config?.topic && config.topic !== 'all' ? [config.topic] : []);
-          const cnt = Number($('#lessonCount')?.value || config?.count || 10);
           openWorksheetComposer({ grade: g, topics: tps, count: cnt });
         };
         if (typeof submitBtn.insertAdjacentElement === 'function') {
@@ -655,6 +843,18 @@
       .ws-tab-btn{min-height:38px!important;padding:6px 12px!important;border-radius:9px!important;border:1.5px solid transparent!important;background:transparent!important;color:#355943!important;font-size:13px!important;font-weight:800!important;cursor:pointer}
       .ws-tab-btn.active,.ws-tab-btn.active:hover{background:#ffffff!important;border-color:#b8d7be!important;color:#174f34!important;box-shadow:0 2px 6px rgba(24,78,50,.1)}
 
+      .ws-custom-calc-box{background:#f6faf4;border:1.5px solid #dfebd9;border-radius:14px;padding:10px 12px;display:grid;gap:8px}
+      .ws-custom-row{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:flex-end}
+      .ws-custom-row small{display:block;font-size:11.5px;font-weight:800;color:#2d523c;margin-bottom:4px}
+      .ws-inline-sel{min-height:30px!important;padding:4px 10px!important;border-radius:9px!important;border:1.5px solid #c9dec4!important;font-size:12.5px!important;font-weight:700!important;background:#fff!important;color:#1f3d2d!important}
+      body.dark-mode .ws-controls-bar,body.dark-mode .ws-custom-calc-box{background:#15251c;border-color:#2b4937}
+      body.dark-mode .ws-controls-bar label,body.dark-mode .ws-topic-strip-lbl,body.dark-mode .ws-custom-row small{color:#b8dec7}
+      body.dark-mode .ws-controls-bar select,body.dark-mode .ws-controls-bar input,body.dark-mode .ws-inline-sel{background:#101d16!important;border-color:#345944!important;color:#e3f3ea!important}
+      body.dark-mode .ws-tp-pill{background:#182b20!important;border-color:#2f523e!important;color:#cbe5d6!important}
+      body.dark-mode .ws-tp-pill.active{background:#2d6a51!important;border-color:#4ba880!important;color:#fff!important}
+      body.dark-mode .ws-preview-tabs{background:#15251c}
+      body.dark-mode .ws-tab-btn{color:#a8ceb7!important}
+      body.dark-mode .ws-tab-btn.active{background:#223b2d!important;border-color:#3d6b50!important;color:#fff!important}
       .ws-preview-stage{background:#e7eee8;border-radius:14px;padding:16px;max-height:none;overflow:visible;display:block}
       body.dark-mode .ws-preview-stage{background:#122018}
 

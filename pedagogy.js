@@ -241,10 +241,10 @@
       const select = $('#config select[name="questionStyle"]');
       if (select && !select.querySelector('option[value="missing"]')) {
         select.insertAdjacentHTML('beforeend', `
-          <option value="missing">${t('Tìm số còn thiếu (?)', 'Missing number (?)')}</option>
-          <option value="word">${t('Toán đố ngắn', 'Short word problems')}</option>
+          <option value="missing">${t('Tìm thành phần phép tính còn thiếu (?)', 'Missing number in calculation (?)')}</option>
         `);
-        if (config.questionStyle === 'missing' || config.questionStyle === 'word') {
+        if (config.questionStyle === 'word') config.questionStyle = 'normal';
+        if (config.questionStyle === 'missing') {
           select.value = config.questionStyle;
         }
       }

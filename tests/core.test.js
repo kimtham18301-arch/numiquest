@@ -866,7 +866,7 @@ test('v2.14.1: review variants handle all 80 topics without undefined, teacher w
       checked++;
     }
   }
-  assert.equal(checked, 126, 'Expected all 126 specialized GDPT 2018 topics checked');
+  assert.equal(checked, 143, 'Expected all 143 specialized GDPT 2018 topics checked');
 
   // Seeded fraction mistake stays a fraction question
   const fracRv = ctx.numiReviewVariant({ id: 'm1', q: '3/4 + 1/2', answer: '5/4', options: ['5/4', '4/6', '3/6', '7/4'], config: { seconds: 20, type: 'fraction' }, skill: 'fraction:+' });
@@ -1005,3 +1005,58 @@ test('v2.15.0: THCS Number vs Geometry split, 3-tier progressive difficulty (Eas
   const geomSvg = ctx.buildVisualMathSvg(pythaQ);
   assert.ok(geomSvg.includes('<svg') && geomSvg.includes('visual-math-svg'), 'Pythagorean geometry question should render SVG diagram');
 });
+
+test('v2.16.0: Custom PDF worksheet generates 100% pure mental-math calculations, clean icon-free labels, flexible timer overrides, expanded THCS/Grade 9 topics, and MOET circulars guide', async () => {
+  const ctx = loadAppContext();
+
+  // 1. Custom mode PDF worksheet strictly generates pure arithmetic calculations (zero prose word problems)
+  const customCfg = { ops: ['+', '*'], types: ['natural'], digits: [2], questionStyle: 'normal', termCount: 2 };
+  const customWs = ctx.generateWorksheetQuestions('custom', [], 12, { customCfg });
+  assert.equal(customWs.length, 12, 'Custom PDF worksheet must generate 12 questions');
+  for (const q of customWs) {
+    assert.equal(q.isCustomCalc, true, 'Every Custom PDF question must be flagged isCustomCalc');
+    assert.equal(q.isColumnExercise, false, 'Custom mental-math PDF questions must not turn into column boxes');
+    assert.ok(!/Ca nô|Một cửa hàng|Chu vi|Diện tích|Tam giác|Đường tròn/i.test(String(q.q)), `Custom PDF must not leak curriculum prose/geometry: ${q.q}`);
+    assert.ok(/[+\-×÷*\/=]/.test(String(q.q)), `Custom PDF question must be an arithmetic expression: ${q.q}`);
+  }
+
+  // Open Worksheet Composer in custom mode and verify interactive custom calculation bar + title
+  ctx.openWorksheetComposer({ grade: 'custom', count: 10, customCfg });
+  const modalHtml = ctx.document.querySelector('#modalBody')?.innerHTML || '';
+  assert.ok(modalHtml.includes('PHIẾU LUYỆN TÍNH NHẨM'), 'Custom PDF sheet should default to PHIẾU LUYỆN TÍNH NHẨM');
+  assert.ok(modalHtml.includes('ws-custom-calc-box'), 'Custom PDF modal must render interactive custom calculation controls');
+
+  // 2. Expanded Grade 9 (21 specialized topics) & THCS coverage
+  const g9Topics = (ctx.NUMI_GRADE_TOPICS[9] || []).filter(tp => tp.id !== 'all');
+  assert.equal(g9Topics.length, 21, `Expected 21 specialized Grade 9 topics, got ${g9Topics.length}`);
+  const requiredG9 = ['g9_linear2_eq', 'g9_ineq_linear', 'g9_rad_reduce', 'g9_vieta_param', 'g9_stat_grouped', 'g9_prob_omega', 'g9_geom_pos_cir', 'g9_geom_poly_rot'];
+  for (const id of requiredG9) {
+    assert.ok(g9Topics.some(tp => tp.id === id), `Grade 9 must include topic ${id}`);
+  }
+
+  // 3. Clean domain tabs without decorative emojis + explicit timer picker in Setup
+  await ctx.localSignIn('minhkhoi', '1234');
+  ctx.config.grade = 9;
+  ctx.setup();
+  const topicsHtml = ctx.document.querySelector('#gradeTopicsWrap')?.innerHTML || '';
+  assert.ok(topicsHtml.includes('presetTimerBar'), 'Setup must render explicit #presetTimerBar for flexible per-question timing');
+  assert.ok(topicsHtml.includes('Số học') && topicsHtml.includes('Hình học'), 'THCS setup must show clean Số học and Hình học tabs');
+  assert.equal(topicsHtml.includes('🔢 Số học'), false, 'Decorative icon must be removed from Số học tab');
+  assert.equal(topicsHtml.includes('📐 Hình học'), false, 'Decorative icon must be removed from Hình học tab');
+
+  // Verify custom timer override & explicit untimed override on Primary / Secondary
+  assert.equal(ctx.isUntimedQuizSession({ grade: 4, inputMode: 'choices', untimed: true }, { skill: 'natural:+' }), true, 'Primary explicit untimed=true must disable timer');
+  ctx.config = { ...ctx.defaults, ...ctx.NUMI_GRADES[5], grade: 5, inputMode: 'choices', count: 5, topic: 'g5_pct', topics: ['g5_pct'], customPresetSeconds: 60, seconds: 60, untimed: false };
+  ctx.startQuiz();
+  const clkOverride = ctx.document.querySelector('#clock')?.textContent || '';
+  assert.ok(clkOverride.startsWith('60'), `Custom preset timer 60s must override topic default 35s, got: ${clkOverride}`);
+  ctx.stop();
+
+  // 4. MOET Circulars, Exam Structure & Textbook Reform tab in Knowledge Hub
+  const reformHtml = ctx.buildKnowledgeCardHtml(9, 'reform');
+  assert.ok(reformHtml.includes('32/2018/TT-BGDĐT'), 'Reform view must cover Thông tư 32/2018');
+  assert.ok(reformHtml.includes('7991/BGDĐT-GDTrH'), 'Reform view must cover Công văn 7991 (4 dạng thức đề kiểm tra mới)');
+  assert.ok(reformHtml.includes('30/2024/TT-BGDĐT'), 'Reform view must cover Thông tư 30/2024 (Tuyển sinh vào lớp 10)');
+  assert.ok(reformHtml.includes('Kết nối tri thức') && reformHtml.includes('Chân trời sáng tạo') && reformHtml.includes('Cánh Diều'), 'Reform view must compare all 3 approved textbook series');
+});
+

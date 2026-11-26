@@ -404,18 +404,19 @@ function handleNumpad(k,q){
 function isUntimedQuizSession(cfgObj,qObj){
   const cfg=cfgObj||config||defaults;
   if(session?.kind==='battle'||session?.kind==='challenge')return false;
+  if(cfg?.untimed===true)return true;
+  if(Number(cfg?.customPresetSeconds)>0)return false;
   const rawG=cfg?.grade&&cfg.grade!=='custom'?cfg.grade:(qObj?.config?.grade&&qObj.config.grade!=='custom'?qObj.config.grade:null);
   const g=rawG?Number(rawG):null;
-  // Primary (Grades 1-5): ALWAYS keep countdown timer so kids train fast mental reflexes
+  // Primary (Grades 1-5): default keeps countdown timer so kids train fast mental reflexes
   if(g>=1&&g<=5)return false;
-  // Secondary (Grades 6-9): Tự luận (numpad) or explicit untimed toggle removes countdown timer for deep thinking
+  // Secondary (Grades 6-9): Tự luận (numpad) defaults to untimed for multi-step algebra/geometry thinking
   const qType=String(qObj?.skill||'').split(':')[0];
   if(g>=6&&g<=9){
-    if(cfg?.untimed)return true;
     if(cfg?.inputMode==='numpad'&&qType!=='remainder')return true;
     return false;
   }
-  return Boolean(cfg?.untimed);
+  return false;
 }
 if(typeof window!=='undefined')window.isUntimedQuizSession=isUntimedQuizSession;
 if(typeof global!=='undefined')global.isUntimedQuizSession=isUntimedQuizSession;
@@ -506,14 +507,14 @@ function showQuiz(){
     const clk=$('#clock');
     if(clk){
       clk.classList.add('timer-untimed');
-      clk.textContent=`🧠 ${t('Không giới hạn giờ','Untimed')}`;
+      clk.textContent=t('Không giới hạn giờ','Untimed');
     }
   }else{
     const clk=$('#clock');
     if(clk)clk.classList.remove('timer-untimed');
-    let qSec=q.topicSeconds||q.config?.seconds||config.seconds;
+    let qSec=Number(config.customPresetSeconds)||q.topicSeconds||q.config?.seconds||config.seconds;
     const gNow=Number(config.grade||q.config?.grade||0);
-    if(gNow>=1&&gNow<=5&&q.difficulty==='hard')qSec=Math.min(60,qSec+10);
+    if(!config.customPresetSeconds&&gNow>=1&&gNow<=5&&q.difficulty==='hard')qSec=Math.min(60,qSec+10);
     startClock(qSec,()=>{if(s.kind==='challenge'){answerQuiz(null,q.id);return}modal(`<h2>${t('Hết giờ rồi','Time is up')}</h2><p>${t('Thêm thời gian hoặc bỏ qua để ôn lại trong game.','Add time or skip to review in the game.')}</p><div class="actions"><button id="extra">+${qSec}s</button><button id="skip">${t('Bỏ qua','Skip')}</button></div>`);$('#closeModal').hidden=true;$('#extra').onclick=()=>{s.extra=true;$('#closeModal').hidden=false;$('#modal').close();startClock(qSec,()=>timeoutAgain(qSec))};$('#skip').onclick=()=>{$('#closeModal').hidden=false;$('#modal').close();answerQuiz(null)}});
   }
   translate();
@@ -824,14 +825,14 @@ function setup(){
 
   function renderGradeButtons(lvl, current){
     if(lvl === 'custom'){
-      return `<div class="grade-custom-banner"><div><b>${t('Chế độ Tùy chỉnh tự do','Free Custom Mode')}</b><p>${t('Tự do kết hợp phép tính (+, −, ×, ÷), loại số và số chữ số ở các mục 1–5 bên dưới.','Freely combine operations (+, −, ×, ÷), number types and digits in sections 1–5 below.')}</p></div></div>`;
+      return `<div class="grade-custom-banner"><div><b>${t('Chế độ Tùy chỉnh — Luyện tính nhẩm & Phản xạ phép tính','Custom Mode — Pure Mental Math & Calculation Drill')}</b><p>${t('Chỉ sinh thuần các bài tính toán số học (+, −, ×, ÷, biểu thức, tính thuận tiện, tìm số thiếu) theo đúng cấu hình mục 1–6 bên dưới để bé rèn tốc độ tính nhẩm — không trộn toán lời văn hay hình học.', 'Generates 100% pure arithmetic & mental-math calculations from sections 1–6 below — no word problems or geometry.')}</p></div></div>`;
     }
     const grades = lvl === 'secondary' ? [6,7,8,9] : [1,2,3,4,5];
     return grades.map(g=>`<button type="button" class="grade-tab ${current===g?'active':''}" data-grade="${g}">${lang==='vi'?NUMI_GRADES[g].name:NUMI_GRADES[g].enName}</button>`).join('');
   }
 
   $('#app').innerHTML=`<div class="narrow">
-    <div class="guide-bubble">${animal(buddy())}<div><b>${t('Mình chọn bài rồi cùng học nhé!','Pick your questions and let’s learn!')}</b><p>${t('Chọn nhanh theo Lớp học hoặc tùy ý điều chỉnh bên dưới.','Quickly select by Grade or customize freely below.')}</p></div></div>
+    <div class="guide-bubble">${animal(buddy())}<div><b>${t('Mình chọn bài rồi cùng học nhé!','Pick your questions and let’s learn!')}</b><p>${t('Tiểu học & THCS để ôn tập kiến thức trên trường và làm bài tập bổ sung; Tùy chỉnh để rèn phản xạ tính nhẩm thuần túy.','Primary & Secondary review school curriculum topics; Custom drills pure mental-math calculations.')}</p></div></div>
     
     <div class="grade-picker-box card">
       <div class="grade-header">
@@ -954,8 +955,8 @@ function setup(){
       updateLevelSegButtons('custom');
       const subgrid=$('#gradeSubgrid');
       if(subgrid)subgrid.innerHTML=renderGradeButtons('custom','custom');
-      $('#gradeActiveBadge').textContent=t('Tùy chỉnh','Custom');
-      $('#gradeDesc').textContent=t('Tùy ý kết hợp các phép tính, loại số và số chữ số.','Freely combine operations, number types and digits.');
+      $('#gradeActiveBadge').textContent=t('Tùy chỉnh · Tính nhẩm','Custom · Mental Math');
+      $('#gradeDesc').textContent=t('Luyện tính nhẩm thuần túy: chỉ gồm các phép tính số học theo đúng phép tính, loại số và số chữ số bạn chọn (không trộn toán lời văn hay hình học).','Pure mental-math practice: arithmetic calculations only, matching your chosen operations, number types and digits.');
       if(typeof window!=='undefined'&&typeof window.onGradeApplied==='function')window.onGradeApplied('custom');
       refresh();
       return;
