@@ -36,12 +36,92 @@
   }
 
   function generateMissingNumber(cfg = {}) {
-    const grade = cfg.grade ? Number(cfg.grade) : null;
+    const grade = cfg.grade && cfg.grade !== 'custom' ? Number(cfg.grade) : null;
     let ops = (Array.isArray(cfg.ops) && cfg.ops.length ? cfg.ops : ['+', '-', '*']).filter(op => ['+', '-', '*', '/'].includes(op));
     if (grade === 1) ops = ops.filter(op => op === '+' || op === '-');
     const op = pickOne(ops.length ? ops : ['+']);
-    const [lo, hi] = grade === 1 ? [1, 9] : grade === 2 ? [2, 30] : rangeForDigits(cfg.digits);
+    const rawTypes = Array.isArray(cfg.types) && cfg.types.length ? cfg.types : [cfg.type || 'natural'];
+    const canFrac = (!grade || grade >= 4) && rawTypes.includes('fraction');
+    const chosenType = canFrac && (rawTypes.length === 1 || Math.random() < 1 / rawTypes.length) ? 'fraction' : 'natural';
     const hideFirst = Math.random() < 0.5;
+
+    if (chosenType === 'fraction' && typeof gcd === 'function' && typeof frac === 'function') {
+      const fam = pickOne([[2, 4], [3, 6], [2, 3, 6], [3, 4, 12], [2, 5, 10], [4, 8]]);
+      const pickCoprime = d => {
+        const cands = [];
+        for (let x = 1; x <= Math.min(9, d * 2 - 1); x++) if (gcd(x, d) === 1) cands.push(x);
+        return cands.length ? pickOne(cands) : 1;
+      };
+      for (let tries = 0; tries < 25; tries++) {
+        const dA = pickOne(fam), dB = pickOne(fam);
+        const nA = pickCoprime(dA), nB = pickCoprime(dB);
+        let qStr = '', ansStr = '', expStr = '';
+        if (op === '+') {
+          const sumStr = frac(nA * dB + nB * dA, dA * dB);
+          if (!sumStr.includes('/')) continue;
+          if (hideFirst) {
+            ansStr = `${nA}/${dA}`;
+            qStr = `? + ${nB}/${dB} = ${sumStr}`;
+            expStr = `${sumStr} − ${nB}/${dB} = ${ansStr}`;
+          } else {
+            ansStr = `${nB}/${dB}`;
+            qStr = `${nA}/${dA} + ? = ${sumStr}`;
+            expStr = `${sumStr} − ${nA}/${dA} = ${ansStr}`;
+          }
+        } else if (op === '-') {
+          const totStr = frac(nA * dB + nB * dA, dA * dB);
+          if (!totStr.includes('/')) continue;
+          if (hideFirst) {
+            ansStr = totStr;
+            qStr = `? − ${nA}/${dA} = ${nB}/${dB}`;
+            expStr = `${nB}/${dB} + ${nA}/${dA} = ${ansStr}`;
+          } else {
+            ansStr = `${nA}/${dA}`;
+            qStr = `${totStr} − ? = ${nB}/${dB}`;
+            expStr = `${totStr} − ${nB}/${dB} = ${ansStr}`;
+          }
+        } else if (op === '*') {
+          const prodStr = frac(nA * nB, dA * dB);
+          if (!prodStr.includes('/')) continue;
+          if (hideFirst) {
+            ansStr = `${nA}/${dA}`;
+            qStr = `? × ${nB}/${dB} = ${prodStr}`;
+            expStr = `${prodStr} ÷ ${nB}/${dB} = ${ansStr}`;
+          } else {
+            ansStr = `${nB}/${dB}`;
+            qStr = `${nA}/${dA} × ? = ${prodStr}`;
+            expStr = `${prodStr} ÷ ${nA}/${dA} = ${ansStr}`;
+          }
+        } else {
+          const quotStr = frac(nA * dB, dA * nB);
+          if (!quotStr.includes('/')) continue;
+          if (hideFirst) {
+            ansStr = `${nA}/${dA}`;
+            qStr = `? ÷ ${nB}/${dB} = ${quotStr}`;
+            expStr = `${quotStr} × ${nB}/${dB} = ${ansStr}`;
+          } else {
+            ansStr = `${nB}/${dB}`;
+            qStr = `${nA}/${dA} ÷ ? = ${quotStr}`;
+            expStr = `${nA}/${dA} ÷ ${quotStr} = ${ansStr}`;
+          }
+        }
+        const fm = ansStr.match(/^(\d+)\/(\d+)$/);
+        if (fm) {
+          const an = +fm[1], ad = +fm[2];
+          return {
+            id: typeof uid === 'function' ? uid() : 'm_' + Math.random().toString(36).slice(2),
+            q: qStr,
+            answer: ansStr,
+            options: uniqueOptions(ansStr, [frac(an + 1, ad), frac(Math.max(1, an - 1), ad), frac(an + 2, ad)]),
+            skill: 'fraction:missing',
+            config: { ...cfg, type: 'fraction', questionStyle: 'missing' },
+            explanation: expStr
+          };
+        }
+      }
+    }
+
+    const [lo, hi] = grade === 1 ? [1, 9] : grade === 2 ? [2, 30] : rangeForDigits(cfg.digits);
     let q = '', ans = 0, explanation = '';
 
     if (op === '+') {
@@ -268,7 +348,8 @@
       const qBefore = session?.questions?.[session.index];
       answerBeforePedagogy(ans, questionId);
       const panel = $('#workedAnswer');
-      if (panel && !panel.hidden && qBefore && !panel.querySelector('.visual-math-box')) {
+      const cardHasFigure = Boolean($('#quizCard .q-inline-figure'));
+      if (panel && !panel.hidden && qBefore && !cardHasFigure && !panel.querySelector('.visual-math-box')) {
         const svgHtml = buildVisualMathSvg(qBefore);
         if (svgHtml) {
           const btn = panel.querySelector('#nextQuizBtn');

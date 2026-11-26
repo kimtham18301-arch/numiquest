@@ -902,7 +902,11 @@
               : `Số bé = (Tổng − Hiệu) ÷ 2 = (${sum} − ${diff}) ÷ 2 = ${sum - diff} ÷ 2 = ${small}`
           );
         } else {
-          const d = pickAny([3, 4, 5, 6, 8]), n = rInt(2, d - 1), unit = rInt(4, 15), total = d * unit, ans = n * unit;
+          const d = pickAny([3, 4, 5, 6, 8]);
+          const coprimes = [];
+          for (let x = 2; x < d; x++) if (gcd2(x, d) === 1) coprimes.push(x);
+          const n = coprimes.length ? pickAny(coprimes) : d - 1;
+          const unit = rInt(4, 15), total = d * unit, ans = n * unit;
           res = makeQ(t(`Tìm ${n}/${d} của ${total}`, `Find ${n}/${d} of ${total}`), ans, [ans + 10, Math.max(2, ans - 10), unit], 'fraction:of', cfg, `Muốn tìm ${n}/${d} của ${total}, ta tính: ${total} ÷ ${d} × ${n} = ${unit} × ${n} = ${ans}`);
         }
         break;
@@ -963,7 +967,10 @@
           const ans = `${n}/${d}`;
           res = makeQ(t(`Rút gọn phân số ${n * k}/${d * k} về phân số tối giản`, `Simplify ${n * k}/${d * k}`), ans, [`${n + 1}/${d}`, `${Math.max(1, n - 1)}/${d}`, `${n + 2}/${d}`], 'ratio:simplify', cfg, `Chia cả tử và mẫu cho ${k}: (${n * k} ÷ ${k}) / (${d * k} ÷ ${k}) = ${ans}`);
         } else {
-          const d1 = pickAny([3, 4, 5, 6, 8]), n1 = rInt(1, d1 - 1), k = rInt(2, 6);
+          const d1 = pickAny([3, 4, 5, 6, 8]);
+          const coprimes = [];
+          for (let x = 1; x < d1; x++) if (gcd2(x, d1) === 1) coprimes.push(x);
+          const n1 = coprimes.length ? pickAny(coprimes) : 1, k = rInt(2, 6);
           const ans = n1 * k, d2 = d1 * k;
           res = makeQ(t(`Điền số thích hợp: ${n1}/${d1} = ?/${d2}`, `Fill in: ${n1}/${d1} = ?/${d2}`), ans, [ans + 1, Math.max(1, ans - 1), ans + d1], 'ratio:frac', cfg, `Mẫu tăng ${k} lần (${d1} × ${k} = ${d2}) nên tử cũng nhân ${k}: ${n1} × ${k} = ${ans}`);
         }
@@ -1122,7 +1129,8 @@
       case 'g5_sum_ratio': {
         const kind = pickAny(['sumRatio', 'diffRatio', 'mixedDec']);
         if (kind === 'sumRatio') {
-          const p1 = rInt(1, 3), p2 = rInt(p1 + 1, 5), unit = rInt(4, 14), sum = (p1 + p2) * unit;
+          const [p1, p2] = pickAny([[1, 2], [1, 3], [1, 4], [2, 3], [2, 5], [3, 4], [3, 5]]);
+          const unit = rInt(4, 14), sum = (p1 + p2) * unit;
           const askSmall = Math.random() < 0.55;
           const ans = askSmall ? p1 * unit : p2 * unit;
           res = makeQ(

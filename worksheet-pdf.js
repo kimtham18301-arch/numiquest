@@ -169,15 +169,20 @@
     return out;
   }
 
+  function wsMath(val) {
+    const s = String(val ?? '');
+    return typeof mathMarkup === 'function' ? mathMarkup(s) : esc(s);
+  }
+
   function formatPromptPlain(qStr) {
     const s = String(qStr || '').trim();
     const hasProse = /[a-zA-ZÀ-ỹ]{2,}/.test(s);
     if (!hasProse) {
-      return (s.includes('?') || s.includes('=')) ? esc(s) : `${esc(s)} = ?`;
+      return (s.includes('?') || s.includes('=')) ? wsMath(s) : `${wsMath(s)} = ?`;
     }
     // For Vietnamese/English word problems & knowledge prompts, replace standalone placeholder " ?" with clean exam blanks " ……"
     const cleaned = s.replace(/(^|\s)\?(?=\s|$|[.,;:])/g, '$1……');
-    return esc(cleaned);
+    return wsMath(cleaned);
   }
 
   function isOptCorrect(opt, answer) {
@@ -202,19 +207,25 @@
       ? `<button type="button" class="ws-swap-btn no-print" data-ws-swap="${origIdx}" title="${t('Đổi câu khác', 'Swap this question')}">↻</button>`
       : '';
 
+    const showFigs = stateObj.showDiagrams !== false;
+    const renderFig = q => (showFigs && typeof buildQuestionFigureSvg === 'function')
+      ? buildQuestionFigureSvg(q, { forPrint: true })
+      : '';
+
     const renderMcqCard = (q, displayNum, origIdx) => `<div class="ws-q-box ${withAnswers ? 'is-ans-box' : ''}">
       <div class="ws-q-head">
         <span class="ws-q-num">${t('Câu', 'Q')} ${displayNum}.</span>
         <span class="ws-q-text">${formatPromptPlain(q.q)}</span>
         ${renderSwapBtn(origIdx)}
       </div>
+      ${renderFig(q)}
       <div class="ws-mcq-opts">
         ${(q.options || []).map((opt, oi) => {
           const hit = withAnswers && isOptCorrect(opt, q.answer);
-          return `<span class="${hit ? 'ws-opt-hit' : ''}"><b>${'ABCD'[oi]}.</b> ${esc(String(opt))}${hit ? ' ✓' : ''}</span>`;
+          return `<span class="ws-opt-item ${hit ? 'ws-opt-hit' : ''}"><b>${'ABCD'[oi]}.</b> ${wsMath(opt)}${hit ? ' ✓' : ''}</span>`;
         }).join('')}
       </div>
-      ${withAnswers && q.explanation ? `<div class="ws-inline-sol">💡 ${esc(String(q.explanation).replace(/\n/g, ' · '))}</div>` : ''}
+      ${withAnswers && q.explanation ? `<div class="ws-inline-sol">💡 ${wsMath(String(q.explanation).replace(/\n/g, ' · '))}</div>` : ''}
     </div>`;
 
     const renderColCard = (q, displayNum, origIdx) => `<div class="ws-col-card ${withAnswers ? 'is-ans-box' : ''}">
@@ -224,7 +235,7 @@
         ${renderSwapBtn(origIdx)}
       </div>
       ${withAnswers
-        ? `<div class="ws-essay-sol" style="width:100%;box-sizing:border-box"><b>✓ ${t('Đáp án:', 'Ans:')} ${esc(String(q.answer))}</b>${q.explanation ? `<div style="margin-top:3px;font-size:11.5px;color:#2b573e">${esc(String(q.explanation).replace(/\n/g, ' · '))}</div>` : ''}</div>`
+        ? `<div class="ws-essay-sol" style="width:100%;box-sizing:border-box"><b>✓ ${t('Đáp án:', 'Ans:')} ${wsMath(q.answer)}</b>${q.explanation ? `<div style="margin-top:3px;font-size:11.5px;color:#2b573e">${wsMath(String(q.explanation).replace(/\n/g, ' · '))}</div>` : ''}</div>`
         : `<div class="ws-blank-workbox" aria-label="${t('Ô trống tự đặt tính', 'Blank space for written calculation')}"></div>`}
     </div>`;
 
@@ -239,8 +250,9 @@
         <span class="ws-q-text">${formatPromptPlain(q.q)}${tierTag}</span>
         ${renderSwapBtn(origIdx)}
       </div>
+      ${renderFig(q)}
       ${withAnswers
-        ? `<div class="ws-essay-sol"><b>✓ ${t('Đáp án:', 'Answer:')} ${esc(String(q.answer))}</b>${q.explanation ? ` — <span>${esc(String(q.explanation).replace(/\n/g, ' · '))}</span>` : ''}</div>`
+        ? `<div class="ws-essay-sol"><b>✓ ${t('Đáp án:', 'Answer:')} ${wsMath(q.answer)}</b>${q.explanation ? ` — <span>${wsMath(String(q.explanation).replace(/\n/g, ' · '))}</span>` : ''}</div>`
         : `<div class="ws-write-lines">
             <div class="ws-write-row"><span class="ws-write-lbl">${t('Bài làm / Trả lời:', 'Answer:')}</span><span class="ws-dot-fill"></span></div>
             ${Array.from({ length: extraLines }, () => '<div class="ws-write-row"><span class="ws-dot-fill"></span></div>').join('')}
@@ -335,7 +347,7 @@
       <div class="ws-quick-key-wrap">
         <div class="ws-section-title">📋 ${t('BẢNG TRA ĐÁP ÁN NHANH (CHẤM BÀI)', 'QUICK ANSWER SUMMARY TABLE')}</div>
         <div class="ws-quick-key-grid">
-          ${displayOrder.map(({ q, displayNum }) => `<div class="ws-qk-cell"><small>${t('Câu', 'Q')} ${displayNum}</small><b>${esc(String(q.answer))}</b></div>`).join('')}
+          ${displayOrder.map(({ q, displayNum }) => `<div class="ws-qk-cell"><small>${t('Câu', 'Q')} ${displayNum}</small><b>${wsMath(q.answer)}</b></div>`).join('')}
         </div>
       </div>
     ` : '';
@@ -404,6 +416,7 @@
       customCfg: initCustom,
       count: [8, 10, 12, 15, 20, 30].includes(startCount) ? startCount : 12,
       format: startGrade === 'custom' ? 'essay' : 'mixed',
+      showDiagrams: true,
       previewTab: 'exam',
       title: defaultTitleFor(startGrade, startTopics, startGrade !== 'custom' && startGrade >= 6 ? startDom : 'all'),
       subtitle: startGrade === 'custom'
@@ -515,11 +528,12 @@
           <div class="ws-topic-strip">
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
               <span class="ws-topic-strip-lbl">${t('Chọn chuyên đề đưa vào đề:', 'Topics in worksheet:')}</span>
-              ${isSec ? `<div style="display:flex;gap:5px;flex-wrap:wrap">
-                <button type="button" class="ws-tp-pill ${wsState.domainFilter === 'all' ? 'active' : ''}" data-ws-dom="all">${t('Tất cả', 'All')}</button>
+              <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+                ${isSec ? `<button type="button" class="ws-tp-pill ${wsState.domainFilter === 'all' ? 'active' : ''}" data-ws-dom="all">${t('Tất cả', 'All')}</button>
                 <button type="button" class="ws-tp-pill ${wsState.domainFilter === 'number' ? 'active' : ''}" data-ws-dom="number">${t('Số học', 'Numbers & Algebra')}</button>
-                <button type="button" class="ws-tp-pill ${wsState.domainFilter === 'geometry' ? 'active' : ''}" data-ws-dom="geometry">${t('Hình học', 'Geometry')}</button>
-              </div>` : ''}
+                <button type="button" class="ws-tp-pill ${wsState.domainFilter === 'geometry' ? 'active' : ''}" data-ws-dom="geometry">${t('Hình học', 'Geometry')}</button>` : ''}
+                <button type="button" class="ws-tp-pill ${wsState.showDiagrams !== false ? 'active' : ''}" id="wsToggleDiagramsBtn">${t('Hình minh họa: Bật', 'Diagrams: On')}</button>
+              </div>
             </div>
             <div class="ws-topic-pills">
               ${topicList.map(tp => {
@@ -586,6 +600,15 @@
       };
 
       $('#wsCloseModalBtn')?.addEventListener('click', closeClean);
+      $('#wsToggleDiagramsBtn')?.addEventListener('click', () => {
+        wsState.showDiagrams = wsState.showDiagrams === false;
+        const btn = $('#wsToggleDiagramsBtn');
+        if (btn) {
+          btn.classList.toggle('active', wsState.showDiagrams);
+          btn.textContent = wsState.showDiagrams ? t('Hình minh họa: Bật', 'Diagrams: On') : t('Hình minh họa: Tắt', 'Diagrams: Off');
+        }
+        refreshPreview();
+      });
       $('#wsPrintExamOnlyBtn')?.addEventListener('click', () => printWorksheetSheet(false));
       $('#wsPrintWithAnswersBtn')?.addEventListener('click', () => printWorksheetSheet(true));
       $('#wsRegenAllBtn')?.addEventListener('click', () => {
@@ -872,13 +895,20 @@
       .ws-section-title{font-size:13.5px;font-weight:900;color:#1b4d33;margin:12px 0 8px;padding:4px 10px;background:#eef6ef;border-left:4px solid #2b6a50;border-radius:4px;max-width:100%;box-sizing:border-box}
       .ws-mcq-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px;min-width:0;max-width:100%}
       .ws-q-box{border:1px solid #dce6dd;border-radius:8px;padding:8px 10px;break-inside:avoid;min-width:0;max-width:100%;box-sizing:border-box}
-      .ws-q-head{display:flex;align-items:flex-start;gap:6px;margin-bottom:6px;font-size:13.5px;min-width:0;width:100%}
+      .ws-q-head{display:flex;align-items:baseline;gap:6px;margin-bottom:6px;font-size:14px;min-width:0;width:100%}
       .ws-q-num{font-weight:900;color:#1b5336;white-space:nowrap;flex-shrink:0}
-      .ws-q-text{font-weight:800;color:#111827;flex:1;min-width:0;overflow-wrap:break-word;word-break:break-word}
-      .ws-swap-btn{min-height:22px!important;width:24px!important;height:22px!important;padding:0!important;border-radius:6px!important;border:1px solid #cdddc9!important;background:#f4faf3!important;color:#2b6346!important;font-size:13px!important;font-weight:800!important;cursor:pointer;flex-shrink:0}
-      .ws-mcq-opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 10px;font-size:13px;color:#1f2937}
-      .ws-opt-hit{background:#e4f7ea;color:#115e35;font-weight:900;border:1.5px solid #2e8b57;border-radius:6px;padding:1px 6px}
-      .ws-inline-sol{margin-top:5px;padding-top:4px;border-top:1px dashed #d3e5d7;font-size:11.5px;color:#2e5b42}
+      .ws-q-text{font-weight:800;color:#111827;flex:1;min-width:0;line-height:1.65;overflow-wrap:break-word;word-break:break-word}
+      .ws-swap-btn{min-height:22px!important;width:24px!important;height:22px!important;padding:0!important;border-radius:6px!important;border:1px solid #cdddc9!important;background:#f4faf3!important;color:#2b6346!important;font-size:13px!important;font-weight:800!important;cursor:pointer;flex-shrink:0;align-self:flex-start}
+      .ws-q-figure{margin:4px auto 6px;padding:3px 6px;border-radius:6px;background:#fafdfb;border:1px solid #e2ece4;text-align:center;break-inside:avoid}
+      .ws-q-figure .q-geom-svg{width:100%;max-width:205px;max-height:86px;height:auto;display:block;margin:0 auto}
+      .ws-essay-item .ws-q-figure .q-geom-svg{max-width:240px;max-height:102px}
+      .ws-mcq-opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 10px;font-size:13.5px;color:#1f2937;align-items:center}
+      .ws-opt-item{display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap;padding:2px 4px;line-height:1.4}
+      .ws-opt-hit{background:#e4f7ea;color:#115e35;font-weight:900;border:1.5px solid #2e8b57;border-radius:6px;padding:2px 6px}
+      .ws-inline-sol{margin-top:5px;padding-top:4px;border-top:1px dashed #d3e5d7;font-size:11.5px;line-height:1.6;color:#2e5b42}
+      .ws-a4-paper .stacked-fraction{display:inline-flex;flex-direction:column;align-items:stretch;justify-content:center;vertical-align:middle;line-height:1.06;text-align:center;margin:.08em .18em;font-size:.92em;min-width:.82em;font-variant-numeric:tabular-nums;white-space:nowrap}
+      .ws-a4-paper .fraction-numerator{border-bottom:1.35px solid currentColor;padding:0 .22em .09em;font-weight:800}
+      .ws-a4-paper .fraction-denominator{padding:.09em .22em 0;font-weight:800}
       .ws-col-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;min-width:0;max-width:100%}
       .ws-col-card{border:1px solid #d5e2d6;border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;align-items:stretch;break-inside:avoid;min-width:0;max-width:100%;box-sizing:border-box}
       .ws-col-card .ws-q-head{width:100%}
@@ -889,12 +919,12 @@
       .ws-write-row{display:flex;align-items:flex-end;gap:8px;min-height:20px;width:100%;min-width:0}
       .ws-write-lbl{white-space:nowrap;flex-shrink:0;font-weight:700;color:#4b5563}
       .ws-dot-fill{flex:1;min-width:40px;height:14px;border-bottom:1.5px dotted #8fa396}
-      .ws-essay-sol{margin-top:5px;padding:5px 9px;border-radius:6px;background:#ebf8ef;border-left:3px solid #267d50;font-size:12.5px;color:#154c30;overflow-wrap:break-word}
+      .ws-essay-sol{margin-top:5px;padding:5px 9px;border-radius:6px;background:#ebf8ef;border-left:3px solid #267d50;font-size:12.5px;line-height:1.65;color:#154c30;overflow-wrap:break-word}
       .ws-quick-key-wrap{margin-top:14px;break-inside:avoid}
       .ws-quick-key-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px}
-      .ws-qk-cell{border:1px solid #c6dccb;border-radius:7px;padding:5px 6px;text-align:center;background:#f7fcf8;display:flex;flex-direction:column;gap:2px}
+      .ws-qk-cell{border:1px solid #c6dccb;border-radius:7px;padding:5px 6px;text-align:center;background:#f7fcf8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
       .ws-qk-cell small{font-size:10.5px;color:#4f6f5b;font-weight:700}
-      .ws-qk-cell b{font-size:13.5px;color:#145a35;font-weight:900}
+      .ws-qk-cell b{font-size:13.5px;color:#145a35;font-weight:900;display:inline-flex;align-items:center;justify-content:center;min-height:22px}
       .ws-footer-note{text-align:center;font-size:12px;font-style:italic;color:#4b5563;margin-top:14px;padding-top:8px;border-top:1px dashed #cbd5cc}
 
       .numi-print-sheet{display:none}

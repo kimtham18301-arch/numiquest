@@ -643,7 +643,11 @@
           }
         }
         if (tier === 'medium') {
-          const d = pickAny([5, 7, 8, 9]), n = rInt(2, d - 1), unit = rInt(6, 18), total = d * unit, part = n * unit;
+          const d = pickAny([5, 7, 8, 9]);
+          const coprimes = [];
+          for (let x = 2; x < d; x++) if (gcd2(x, d) === 1) coprimes.push(x);
+          const n = coprimes.length ? pickAny(coprimes) : d - 1;
+          const unit = rInt(6, 18), total = d * unit, part = n * unit;
           if (Math.random() < 0.5) {
             return makeExtQ(t(`Lớp 6A có ${total} học sinh, trong đó ${n}/${d} là học sinh giỏi. Có bao nhiêu học sinh giỏi?`, `${n}/${d} of ${total} students are honors. Honors count = ?`),
               part, [total - part, part + d, Math.max(2, part - d)], 'fraction:word', cfg,
@@ -845,7 +849,10 @@
           return makeExtQ(`(${n}/${d})^${e}`, ans, [fracStr(-(n ** e), d ** e), fracStr(n * e, d * e), fracStr(n ** e, d)], 'power:rational', cfg,
             `Lũy thừa của số hữu tỉ: (${n}/${d})^${e} = (${n})^${e} / ${d}^${e} = ${ans}.`, ex({ allowNeg: true }));
         }
-        const d1 = pickAny([7, 9, 11]), a = rInt(2, d1 - 2), b = d1 - a, midN = rInt(1, 4), midD = 5;
+        const d1 = pickAny([7, 9, 11]);
+        const coprimes = [];
+        for (let x = 2; x <= d1 - 2; x++) if (gcd2(x, d1) === 1) coprimes.push(x);
+        const a = coprimes.length ? pickAny(coprimes) : 2, b = d1 - a, midN = rInt(1, 4), midD = 5;
         const ans = fracStr(d1 * midD - midN * d1, d1 * midD); // (a/d1 + b/d1) - midN/midD = 1 - midN/midD
         return makeExtQ(
           t(`Tính hợp lý: ${a}/${d1} − ${midN}/${midD} + ${b}/${d1}`, `Compute smartly: ${a}/${d1} − ${midN}/${midD} + ${b}/${d1}`),
@@ -1474,29 +1481,62 @@
       }
       case 'g8_geom_sim': {
         if (tier === 'easy') {
-          const k = pickAny([2, 3, 4, 5]), sSmall = rInt(6, 20), sBig = sSmall * k * k;
+          const mode = rInt(1, 3);
+          if (mode === 1) {
+            const k = pickAny([2, 3, 4, 5]), sSmall = rInt(6, 20), sBig = sSmall * k * k;
+            return makeExtQ(
+              t(`Cho △A'B'C' ∽ △ABC theo tỉ số đồng dạng k = ${k}. Biết diện tích △ABC bằng ${sSmall} cm², tính diện tích △A'B'C' (cm²)?`, `△A'B'C' ~ △ABC with scale factor k = ${k}. If Area(△ABC) = ${sSmall} cm², Area(△A'B'C') = ? cm²`),
+              sBig, [sSmall * k, sBig + 10, Math.round(sSmall / k) || 2], 'geom:similar', cfg,
+              `Tỉ số diện tích của hai tam giác đồng dạng bằng BÌNH PHƯƠNG tỉ số đồng dạng:\nS(A'B'C') / S(ABC) = k² = ${k}² = ${k * k} ⇒ S(A'B'C') = ${sSmall} · ${k * k} = ${sBig} (cm²).`, ex({ domain: 'geometry', visualKind: 'sim_tri' })
+            );
+          }
+          if (mode === 2) {
+            const ab = rInt(4, 12), k = pickAny([2, 3, 4]), abPrime = ab * k;
+            return makeExtQ(
+              t(`Hai tam giác △A'B'C' và △ABC đồng dạng theo tỉ số k = ${k} (như hình vẽ). Biết cạnh AB = ${ab} cm, tính độ dài cạnh tương ứng A'B' (cm)?`, `Given △A'B'C' ~ △ABC with ratio k = ${k} and AB = ${ab} cm, find corresponding side A'B' (cm)`),
+              abPrime, [ab * k * k, ab + k, abPrime + 2], 'geom:similar', cfg,
+              `Vì △A'B'C' ∽ △ABC theo tỉ số k = ${k} nên A'B' / AB = ${k} ⇒ A'B' = ${k} · ${ab} = ${abPrime} (cm).`, ex({ domain: 'geometry', visualKind: 'sim_tri' })
+            );
+          }
+          const k = pickAny([2, 3, 4]), pSmall = rInt(12, 26), pBig = pSmall * k;
           return makeExtQ(
-            t(`Tam giác A'B'C' đồng dạng với tam giác ABC theo tỉ số đồng dạng k = ${k}. Biết diện tích △ABC bằng ${sSmall} cm², tính diện tích △A'B'C' (cm²)?`, `△A'B'C' ~ △ABC with scale factor k = ${k}. If Area(△ABC) = ${sSmall} cm², Area(△A'B'C') = ? cm²`),
-            sBig, [sSmall * k, sBig + 10, Math.round(sSmall / k) || 2], 'geom:similar', cfg,
-            `Tỉ số diện tích của hai tam giác đồng dạng bằng BÌNH PHƯƠNG tỉ số đồng dạng:\nS(A'B'C') / S(ABC) = k² = ${k}² = ${k * k} ⇒ S(A'B'C') = ${sSmall} · ${k * k} = ${sBig} (cm²).`, ex({ domain: 'geometry' })
+            t(`Cho △A'B'C' ∽ △ABC theo tỉ số đồng dạng k = ${k}. Biết chu vi △ABC là ${pSmall} cm, tính chu vi △A'B'C' (cm)?`, `Given △A'B'C' ~ △ABC with ratio k = ${k} and Perimeter(△ABC) = ${pSmall} cm, find Perimeter(△A'B'C') (cm)`),
+            pBig, [pSmall * k * k, pSmall + k, pBig + 4], 'geom:similar', cfg,
+            `Tỉ số chu vi của hai tam giác đồng dạng bằng đúng tỉ số đồng dạng k:\nP(A'B'C') = k · P(ABC) = ${k} · ${pSmall} = ${pBig} (cm).`, ex({ domain: 'geometry', visualKind: 'sim_tri' })
           );
         }
         if (tier === 'medium') {
-          // Sun shadow real-world problem!
-          const poleH = 2, poleShadow = pickAny([1, 2, 4]), ratio = rInt(4, 10);
-          const treeShadow = poleShadow * ratio, treeH = poleH * ratio;
+          if (Math.random() < 0.55) {
+            const poleH = 2, poleShadow = pickAny([1, 2, 4]), ratio = rInt(4, 10);
+            const treeShadow = poleShadow * ratio, treeH = poleH * ratio;
+            return makeExtQ(
+              t(`Cùng một thời điểm, cọc tiêu cao ${poleH} m có bóng trên mặt đất dài ${poleShadow} m, còn một tòa nhà có bóng dài ${treeShadow} m (như hình). Tính chiều cao tòa nhà (m)?`, `At the same moment, a ${poleH} m pole casts a ${poleShadow} m shadow and a building casts a ${treeShadow} m shadow. Building height (m) = ?`),
+              treeH, [treeShadow + poleH, treeH + 4, Math.max(4, treeH - 4)], 'geom:similar', cfg,
+              `Các tia nắng mặt trời song song tạo ra hai tam giác vuông đồng dạng:\nH_nhà / H_cọc = Bóng_nhà / Bóng_cọc ⇒ H_nhà = (${poleH} · ${treeShadow}) ÷ ${poleShadow} = ${treeH} (m).`, ex({ domain: 'geometry', visualKind: 'sim_shadow' })
+            );
+          }
+          const ad = rInt(3, 6), ab = ad * pickAny([2, 3]), de = rInt(4, 9), bc = (de * ab) / ad;
           return makeExtQ(
-            t(`Cùng một thời điểm, cọc tiêu cao ${poleH} m có bóng trên mặt đất dài ${poleShadow} m, còn một tòa nhà có bóng dài ${treeShadow} m. Tính chiều cao tòa nhà (m)?`, `At the same moment, a ${poleH} m pole casts a ${poleShadow} m shadow and a building casts a ${treeShadow} m shadow. Building height (m) = ?`),
-            treeH, [treeShadow + poleH, treeH + 4, Math.max(4, treeH - 4)], 'geom:similar', cfg,
-            `Các tia nắng mặt trời song song tạo ra hai tam giác vuông đồng dạng:\nH_nhà / H_cọc = Bóng_nhà / Bóng_cọc ⇒ H_nhà = (${poleH} · ${treeShadow}) ÷ ${poleShadow} = ${treeH} (m).`, ex({ domain: 'geometry' })
+            t(`Trong △ABC, kẻ DE // BC (D ∈ AB, E ∈ AC) tạo thành △ADE ∽ △ABC. Biết AD = ${ad} cm, AB = ${ab} cm và DE = ${de} cm, tính cạnh BC (cm)?`, `In △ABC with DE // BC, AD = ${ad} cm, AB = ${ab} cm, DE = ${de} cm. Find BC (cm)`),
+            bc, [de + (ab - ad), bc + 3, Math.max(4, bc - 3)], 'geom:similar', cfg,
+            `Vì DE // BC nên △ADE ∽ △ABC:\nAD / AB = DE / BC ⇒ ${ad}/${ab} = ${de}/BC ⇒ BC = (${ab} · ${de}) ÷ ${ad} = ${bc} (cm).`, ex({ domain: 'geometry', visualKind: 'thales' })
           );
         }
-        const p1 = rInt(12, 24), kNum = 3, kDen = 2; // p1 even -> p2 = p1 * 3 / 2
-        const evenP1 = p1 % 2 === 0 ? p1 : p1 + 1, p2 = (evenP1 * kNum) / kDen, sumP = evenP1 + p2;
+        if (Math.random() < 0.5) {
+          const p1 = rInt(12, 24), kNum = 3, kDen = 2;
+          const evenP1 = p1 % 2 === 0 ? p1 : p1 + 1, p2 = (evenP1 * kNum) / kDen, sumP = evenP1 + p2;
+          return makeExtQ(
+            t(`Hai tam giác đồng dạng có tỉ số diện tích bằng 4/9 và tổng chu vi hai tam giác là ${sumP} cm. Tính chu vi của tam giác lớn hơn (cm)?`, `Two similar triangles have area ratio 4/9 and combined perimeter ${sumP} cm. Perimeter of the larger triangle (cm) = ?`),
+            p2, [evenP1, Math.round((sumP * 9) / 13), p2 + 4], 'geom:similar', cfg,
+            `• Tỉ số diện tích bằng 4/9 = (2/3)² ⇒ tỉ số đồng dạng (cũng là tỉ số chu vi) bằng 2/3.\n• Tổng chu vi bằng ${sumP} cm ⇒ Chu vi tam giác lớn = ${sumP} ÷ (2 + 3) · 3 = ${p2} (cm).`, ex({ domain: 'geometry', visualKind: 'sim_tri' })
+          );
+        }
+        // Measuring river width AB using right triangles △ABC ~ △DEC
+        const ce = rInt(3, 6), de = rInt(4, 8), mult = rInt(3, 6), cb = ce * mult, widthAB = de * mult;
         return makeExtQ(
-          t(`Hai tam giác đồng dạng có tỉ số diện tích bằng 4/9 và tổng chu vi hai tam giác là ${sumP} cm. Tính chu vi của tam giác lớn hơn (cm)?`, `Two similar triangles have area ratio 4/9 and combined perimeter ${sumP} cm. Perimeter of the larger triangle (cm) = ?`),
-          p2, [evenP1, Math.round((sumP * 9) / 13), p2 + 4], 'geom:similar', cfg,
-          `• Tỉ số diện tích bằng 4/9 = (2/3)² ⇒ tỉ số đồng dạng (cũng là tỉ số chu vi) bằng 2/3.\n• Tổng chu vi bằng ${sumP} cm ⇒ Chu vi tam giác lớn = ${sumP} ÷ (2 + 3) · 3 = ${p2} (cm).`, ex({ domain: 'geometry' })
+          t(`Để đo chiều rộng khúc sông AB (AB ⊥ BC), người ta ngắm hai tam giác vuông đồng dạng △ABC ∽ △DEC có CE = ${ce} m, DE = ${de} m và CB = ${cb} m. Tính chiều rộng khúc sông AB (m)?`, `To measure river width AB, right triangles △ABC ~ △DEC have CE = ${ce} m, DE = ${de} m, CB = ${cb} m. Find AB (m)`),
+          widthAB, [cb + de, widthAB + 4, Math.max(6, widthAB - 4)], 'geom:similar', cfg,
+          `Vì △ABC ∽ △DEC (g.g) nên AB / DE = CB / CE ⇒ AB = (${de} · ${cb}) ÷ ${ce} = ${widthAB} (m).`, ex({ domain: 'geometry', visualKind: 'sim_tri' })
         );
       }
       case 'g8_geom_pyramid': {

@@ -44,7 +44,72 @@ function customGenerate(c){
   const selectedType=pick(cfg.types?.length?cfg.types:[cfg.type||'natural']);
   const terms=Math.max(2,Math.min(6,+cfg.termCount||3)),digits=cfg.digits?.length?cfg.digits:[1],digit=pick(digits),lo=10**(digit-1),hi=10**digit-1,rand=()=>ri(lo,hi);
   if(cfg.questionStyle==='expression'&&selectedType==='fraction'){
-    const values=Array.from({length:terms},()=>({n:ri(1,9),d:ri(2,12)}));let n=values[0].n,d=values[0].d;for(const v of values.slice(1)){n=n*v.d+v.n*d;d*=v.d}const answer=frac(n,d);let readable=values.map(v=>`${v.n}/${v.d}`).join(' + ');const pairs=(cfg.brackets||'none').split(',');if(pairs[0]!=='none'){const open={round:'(',square:'[',curly:'{'},close={round:')',square:']',curly:'}'};for(const pair of pairs)if(open[pair])readable=`${open[pair]}${readable}${close[pair]}`}return {id:uid(),q:readable,answer,options:generatedOptions(answer,[frac(n+1,d),frac(n-1,d),frac(n,d+1)]),skill:'fraction:+',config:{...cfg,type:'fraction'},explanation:`${readable} = ${answer}`};
+    const gNow=cfg.grade&&cfg.grade!=='custom'?Number(cfg.grade):null;
+    const allowNeg=Boolean(gNow&&gNow>=6);
+    const rawOps=(Array.isArray(cfg.ops)&&cfg.ops.length?cfg.ops:['+']).filter(o=>['+','-','*','/'].includes(o));
+    const opsPool=rawOps.length?rawOps:['+'];
+    const glyph={'+':'+','-':'−','*':'×','/':'÷'};
+    const denFamilies=[[2,3,6],[2,4,8],[3,4,12],[2,3,4,6,12],[3,6,9],[2,5,10],[3,5,15],[4,6,12]];
+    const reduceF=(num,den)=>{if(den<0){num=-num;den=-den}const g=gcd(Math.abs(num),den)||1;return {n:num/g,d:den/g}};
+    const applyFracOp=(a,b,op)=>{
+      if(op==='+')return reduceF(a.n*b.d+b.n*a.d,a.d*b.d);
+      if(op==='-')return reduceF(a.n*b.d-b.n*a.d,a.d*b.d);
+      if(op==='*')return reduceF(a.n*b.n,a.d*b.d);
+      return b.n===0?null:reduceF(a.n*b.d,a.d*b.n);
+    };
+    const pickLowestFrac=(fam,prev)=>{
+      for(let k=0;k<20;k++){
+        const d=pick(fam);
+        const cands=[];
+        const maxN=Math.min(9,d*2-1);
+        for(let x=1;x<=maxN;x++)if(gcd(x,d)===1)cands.push(x);
+        const n=cands.length?pick(cands):1;
+        if(!prev||prev.n!==n||prev.d!==d)return {n,d};
+      }
+      return {n:1,d:fam[0]||2};
+    };
+    const evalTokens=(vals,ops)=>{
+      const vList=vals.map(v=>({...v})),oList=[...ops];
+      for(let i=0;i<oList.length;){
+        if(oList[i]==='*'||oList[i]==='/'){
+          const r=applyFracOp(vList[i],vList[i+1],oList[i]);
+          if(!r||r.d<=0)return null;
+          vList.splice(i,2,r);oList.splice(i,1);
+        }else i++;
+      }
+      let acc=vList[0];
+      for(let i=0;i<oList.length;i++){
+        acc=applyFracOp(acc,vList[i+1],oList[i]);
+        if(!acc||acc.d<=0||(!allowNeg&&acc.n<=0))return null;
+      }
+      return acc;
+    };
+    for(let attempt=0;attempt<35;attempt++){
+      const fam=pick(denFamilies);
+      const chosenOps=Array.from({length:terms-1},()=>pick(opsPool));
+      const smallFam=chosenOps.some(o=>o==='*'||o==='/')?[2,3,4,5,6,8,9]:fam;
+      const values=[];
+      for(let i=0;i<terms;i++)values.push(pickLowestFrac(smallFam,values[i-1]));
+      const res=evalTokens(values,chosenOps);
+      if(!res||(!allowNeg&&res.n<=0)||res.d>120||Math.abs(res.n)>500)continue;
+      const answer=frac(res.n,res.d);
+      let readable=values.map((v,i)=>i===0?`${v.n}/${v.d}`:`${glyph[chosenOps[i-1]]} ${v.n}/${v.d}`).join(' ');
+      const pairs=(cfg.brackets||'none').split(',');
+      if(pairs[0]!=='none'){
+        const open={round:'(',square:'[',curly:'{'},close={round:')',square:']',curly:'}'};
+        for(const pair of pairs)if(open[pair])readable=`${open[pair]}${readable}${close[pair]}`;
+      }
+      const hasMulDiv=chosenOps.some(o=>o==='*'||o==='/')&&chosenOps.some(o=>o==='+'||o==='-');
+      const expNote=hasMulDiv
+        ?`${t('Thực hiện nhân/chia phân số trước, cộng/trừ sau rồi rút gọn tối giản:','Multiply/divide fractions first, then add/subtract and simplify:')}\n${readable} = ${answer}`
+        :`${t('Quy đồng mẫu số chung và thực hiện phép tính rồi rút gọn phân số tối giản:','Find a common denominator, compute, and simplify to lowest terms:')}\n${readable} = ${answer}`;
+      return {id:uid(),q:readable,answer,options:generatedOptions(answer,[frac(res.n+1,res.d),frac(res.n-1,res.d),frac(res.n+res.d,res.d)]),skill:'fraction:'+(chosenOps[0]||'+'),config:{...cfg,type:'fraction'},explanation:expNote};
+    }
+    const fam=[2,3,4,6],values=[];
+    for(let i=0;i<terms;i++)values.push(pickLowestFrac(fam,values[i-1]));
+    let acc=values[0];for(const v of values.slice(1))acc=applyFracOp(acc,v,'+');
+    const answer=frac(acc.n,acc.d),readable=values.map(v=>`${v.n}/${v.d}`).join(' + ');
+    return {id:uid(),q:readable,answer,options:generatedOptions(answer,[frac(acc.n+1,acc.d),frac(acc.n-1,acc.d),frac(acc.n+acc.d,acc.d)]),skill:'fraction:+',config:{...cfg,type:'fraction'},explanation:`${readable} = ${answer}`};
   }
   if(selectedType!=='natural')return plainGenerate(cfg);
   if(cfg.questionStyle==='convenient'){

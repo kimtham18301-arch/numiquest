@@ -170,7 +170,7 @@ finishPractice=function(){
           <small style="font-weight:700;opacity:.75">${r.elapsed?r.elapsed.toFixed(1)+'s':''}</small>
         </div>
         <div style="font-weight:800;font-size:14px;margin-bottom:4px">${typeof formatQuestionPrompt==='function'?formatQuestionPrompt(q.q):esc(q.q)}</div>
-        <div style="font-size:12.5px;margin-bottom:6px">${t('Bài làm:','Your answer:')} <b>${esc(userAns)}</b> · ${t('Đáp án đúng:','Correct:')} <b style="color:#1b6e3c">${mathMarkup(q.answer)}</b></div>
+        <div style="font-size:12.5px;margin-bottom:6px">${t('Bài làm:','Your answer:')} <b>${mathMarkup(userAns)}</b> · ${t('Đáp án đúng:','Correct:')} <b style="color:#1b6e3c">${mathMarkup(q.answer)}</b></div>
         <div style="font-size:12.5px;line-height:1.45;padding:7px 10px;border-radius:8px;background:rgba(52,118,92,0.08)"><b>💡 ${t('Bài giải chi tiết:','Solution:')}</b><br>${expHtml}</div>
       </div>`;
     }).join('');

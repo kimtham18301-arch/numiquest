@@ -763,9 +763,9 @@ function adminViewDetailModal(username) {
           ${mistakes.map((m, idx) => `<div class="mistake-item-card">
             <div style="display:flex;justify-content:space-between;align-items:center">
               <b>${idx+1}. ${typeof formatQuestionPrompt==='function'?formatQuestionPrompt(m.q):(typeof mathMarkup==='function'?mathMarkup(m.q):esc(m.q))}</b>
-              <span class="acc-pill acc-high">${t('Đáp án:','Answer:')} <b>${esc(m.answer)}</b></span>
+              <span class="acc-pill acc-high">${t('Đáp án:','Answer:')} <b>${typeof mathMarkup==='function'?mathMarkup(m.answer):esc(m.answer)}</b></span>
             </div>
-            ${m.explanation ? `<div class="mistake-expl">${esc(m.explanation).replace(/\n/g,'<br>')}</div>` : ''}
+            ${m.explanation ? `<div class="mistake-expl">${(typeof mathMarkup==='function'?mathMarkup(m.explanation):esc(m.explanation)).replace(/\n/g,'<br>')}</div>` : ''}
           </div>`).join('')}
         </div>`}
       </div>

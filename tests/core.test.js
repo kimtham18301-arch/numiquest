@@ -1084,4 +1084,109 @@ test('v2.16.1: Home primary CTA says Tùy chỉnh / Bài tập tính nhẩm and 
   assert.equal(ctx.config.grade, 4, 'Minh Khôi school grade button should open Grade 4 curriculum review');
 });
 
+test('v2.16.2: Geometry & chart questions embed anti-spoiler SVG diagrams directly inside A4 PDF Worksheets and Live Quiz', async () => {
+  const ctx = loadAppContext();
+
+  // 1. Grade 8 similar triangles worksheet embeds crisp SVG figures (.ws-q-figure) in BOTH MCQ and Essay sections without leaking answers
+  const simQs = ctx.generateWorksheetQuestions(8, ['g8_geom_sim'], 10);
+  assert.equal(simQs.length, 10);
+  const simSheet = ctx.buildWorksheetSheetHTML({
+    grade: 8,
+    topics: ['g8_geom_sim'],
+    count: 10,
+    format: 'mixed',
+    showDiagrams: true,
+    questions: simQs
+  }, { withAnswers: false, interactivePreview: true });
+  assert.ok(simSheet.includes('ws-q-figure') && simSheet.includes('q-geom-svg'), 'Geometry worksheet must embed inline SVG figures');
+  // Toggling showDiagrams: false cleanly omits figures
+  const noFigSheet = ctx.buildWorksheetSheetHTML({
+    grade: 8,
+    topics: ['g8_geom_sim'],
+    count: 10,
+    format: 'mixed',
+    showDiagrams: false,
+    questions: simQs
+  }, { withAnswers: false, interactivePreview: true });
+  assert.equal(noFigSheet.includes('ws-q-figure'), false, 'showDiagrams=false must hide worksheet figures');
+
+  // 2. Verify SVG diagrams across diverse Geometry & Chart topics (Pythagoras, Circle, 3D Solids, Grade 5 Shapes, Charts)
+  for (const [g, tid] of [[5, 'g5_geom'], [6, 'g6_geom_3d'], [7, 'g7_geom_prism'], [8, 'g8_geom_pytha'], [8, 'g8_geom_thales'], [9, 'g9_geom_chord'], [9, 'g9_geom_pos_cir'], [9, 'g9_geom_solid']]) {
+    const q = ctx.generateTopicQuestion(tid, { grade: g, difficulty: 'medium' });
+    const fig = ctx.buildQuestionFigureSvg(q, { forPrint: true });
+    assert.ok(fig.includes('<svg'), `Expected SVG diagram for ${tid}, got empty for prompt: "${q.q}"`);
+    const visibleFigText = [...fig.matchAll(/<text[^>]*>([\s\S]*?)<\/text>/g)].map(m => m[1]).join(' ');
+    assert.equal(visibleFigText.includes(String(q.answer)) && String(q.answer).length >= 2 && !String(q.q).includes(String(q.answer)), false, `SVG diagram for ${tid} must never spoil unseen answer "${q.answer}"`);
+  }
+
+  // 3. Pure Custom mental-math worksheet NEVER renders geometry figures
+  const customQs = ctx.generateWorksheetQuestions('custom', [], 8, { customCfg: { ops: ['+', '-'], types: ['natural'], digits: [2] } });
+  for (const q of customQs) {
+    assert.equal(ctx.buildQuestionFigureSvg(q, { forPrint: true }), '', 'Pure custom arithmetic must not attach geometry figures');
+  }
+
+  // 4. Live Quiz renders .q-inline-figure directly inside #quizCard for geometry questions
+  await ctx.localSignIn('minhkhoi', '1234');
+  ctx.state.mistakes = [];
+  ctx.config = { ...ctx.defaults, ...ctx.NUMI_GRADES[8], grade: 8, count: 5, topic: 'g8_geom_sim', topics: ['g8_geom_sim'], inputMode: 'choices' };
+  ctx.startQuiz();
+  const quizHtml = ctx.document.querySelector('#app')?.innerHTML || '';
+  assert.ok(quizHtml.includes('q-inline-figure') && quizHtml.includes('q-geom-svg'), 'Live Quiz must display inline geometry diagram on geometry questions');
+  ctx.stop();
+});
+
+
+test('v2.16.2: A4 PDF worksheets render stacked vertical fractions (never raw a/b slashes) and fraction expression/missing generators strictly produce lowest-terms operands', () => {
+  const ctx = loadAppContext();
+  const gcdLocal = (a, b) => (b ? gcdLocal(b, a % b) : Math.abs(a));
+
+  // 1. Multi-term fraction expressions & missing-number fraction puzzles never produce reducible operands like 8/4 or duplicate adjacent terms
+  for (const style of ['expression', 'missing']) {
+    const fracQs = ctx.generateWorksheetQuestions('custom', [], 25, {
+      customCfg: { ops: ['+', '-', '*', '/'], types: ['fraction'], digits: [1], questionStyle: style, termCount: 3 }
+    });
+    assert.equal(fracQs.length, 25);
+    for (const q of fracQs) {
+      const fracs = [...String(q.q).matchAll(/(-?\d+)\/(\d+)/g)];
+      assert.ok(fracs.length >= 2, `Expected fraction operands in ${style}: "${q.q}"`);
+      for (const f of fracs) {
+        const n = Math.abs(Number(f[1])), d = Number(f[2]);
+        assert.ok(d >= 2, `Denominator must be >= 2 in "${q.q}"`);
+        assert.equal(gcdLocal(n, d), 1, `Operand ${f[0]} in "${q.q}" (${style}) must be in lowest terms (no 8/4, 6/3, etc.)`);
+      }
+      if (style === 'expression') {
+        for (let i = 1; i < fracs.length; i++) {
+          assert.notEqual(fracs[i][0], fracs[i - 1][0], `Adjacent operands should not repeat identically in "${q.q}"`);
+        }
+      }
+    }
+  }
+
+  // 2. Worksheet HTML renders vertical stacked-fraction markup in prompts, MCQ options, solutions, and quick answer key table
+  const sampleQs = ctx.generateWorksheetQuestions('custom', [], 6, {
+    customCfg: { ops: ['+'], types: ['fraction'], digits: [1], questionStyle: 'expression', termCount: 3 }
+  });
+  for (const fmtMode of ['essay', 'mcq', 'mixed']) {
+    const examHtml = ctx.buildWorksheetSheetHTML(
+      { grade: 'custom', topics: [], count: 6, format: fmtMode, title: 'PHIẾU PHÂN SỐ', durationMin: 15, examCode: '01', questions: sampleQs },
+      { withAnswers: false, interactivePreview: false }
+    );
+    const ansHtml = ctx.buildWorksheetSheetHTML(
+      { grade: 'custom', topics: [], count: 6, format: fmtMode, title: 'PHIẾU PHÂN SỐ', durationMin: 15, examCode: '01', questions: sampleQs },
+      { withAnswers: true, interactivePreview: false }
+    );
+    assert.ok(examHtml.includes('class="stacked-fraction"'), `Student exam (${fmtMode}) must render stacked-fraction markup`);
+    assert.ok(!/(?<!\/)\b\d+\/\d+\b(?!\/)/.test(examHtml.replace(/aria-label="[^"]*"/g, '')), `Student exam (${fmtMode}) must not leave raw numeric slash fractions`);
+    assert.ok(ansHtml.includes('class="stacked-fraction"'), `Answer key (${fmtMode}) must render stacked-fraction markup`);
+    assert.ok(!/(?<!\/)\b\d+\/\d+\b(?!\/)/.test(ansHtml.replace(/aria-label="[^"]*"/g, '')), `Answer key (${fmtMode}) must not leave raw numeric slash fractions`);
+  }
+
+  // 3. mathMarkup converts algebraic/missing/telescoping fractions while leaving prose units (km/h) and dates (26/11/2026) untouched
+  assert.ok(ctx.mathMarkup('Điền số: 3/4 = ?/12').includes('stacked-fraction'));
+  assert.ok(ctx.mathMarkup('Tìm x: x/5 = 12/15').includes('stacked-fraction'));
+  assert.ok(ctx.mathMarkup('S = 1/(1·2) + 1/(2·3)').includes('stacked-fraction'));
+  assert.equal(ctx.mathMarkup('Vận tốc 45 km/h ngày 26/11/2026').includes('stacked-fraction'), false);
+});
+
+
 

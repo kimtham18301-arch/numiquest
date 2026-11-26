@@ -8,7 +8,32 @@ const KEY='numiquest-v1';const fresh=()=>({version:1,lang:'vi',name:'Explorer',x
 function uid(){if(typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function'){try{return crypto.randomUUID()}catch{}}return 'id-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10)}
 if(typeof window!=='undefined')window.uid=uid;if(typeof global!=='undefined')global.uid=uid;
 // Keep fractions as strings for arithmetic; render their numerators and denominators visually.
-function mathMarkup(value){const text=String(value);let out='',last=0;const re=/(-?\d+)\/(\d+)/g;for(const m of text.matchAll(re)){out+=esc(text.slice(last,m.index));out+=`<span class="stacked-fraction" role="math" aria-label="${esc(m[1])} ${t('phần','over')} ${esc(m[2])}"><span class="fraction-numerator" aria-hidden="true">${esc(m[1])}</span><span class="fraction-denominator" aria-hidden="true">${esc(m[2])}</span></span>`;last=m.index+m[0].length}out+=esc(text.slice(last));return out.replace(/\^(\d+)/g,'<sup>$1</sup>')}
+function mathMarkup(value){
+  const text=String(value??'');
+  const fmtExp=s=>esc(s).replace(/\^(\d+)/g,'<sup>$1</sup>');
+  const isBlankTok=s=>s==='?'||s==='……'||s==='…';
+  const buildFrac=(nRaw,dRaw)=>{
+    const nStr=String(nRaw).trim(),dStr=String(dRaw).trim();
+    return `<span class="stacked-fraction" role="math" aria-label="${esc(nStr)} ${t('phần','over')} ${esc(dStr)}"><span class="fraction-numerator" aria-hidden="true">${fmtExp(nStr)}</span><span class="fraction-denominator" aria-hidden="true">${fmtExp(dStr)}</span></span>`;
+  };
+  const re=/\(([-+\d.,×÷·*√^xyzabckn\s−?…]{1,28})\)\s*\/\s*\(([-+\d.,×÷·*√^xyzabckn\s−?…]{1,28})\)|(?<![a-zA-ZÀ-ỹ\d/])(-?\d+|\?|……|-?\d*[xyzabckn])\s*\/\s*\(([-+\d.,×÷·*√^xyzabckn\s−?…]{1,28})\)|\(([-+\d.,×÷·*√^xyzabckn\s−?…]{1,28})\)\s*\/\s*(\d+|\?|……|-?\d*[xyzabckn])(?![a-zA-ZÀ-ỹ\d/])|(?<![a-zA-ZÀ-ỹ\d/])(-?\d+|\?|……|-?\d*[xyz])\/(\d+|\?|……)(?![a-zA-ZÀ-ỹ\d/])/g;
+  let out='',last=0;
+  for(const m of text.matchAll(re)){
+    out+=fmtExp(text.slice(last,m.index));
+    const nPart=m[1]??m[3]??m[5]??m[7];
+    const dPart=m[2]??m[4]??m[6]??m[8];
+    if(nPart!==undefined&&dPart!==undefined&&!/[a-zA-ZÀ-ỹ]{2}/.test(nPart)&&!/[a-zA-ZÀ-ỹ]{2}/.test(dPart)&&!(isBlankTok(nPart.trim())&&isBlankTok(dPart.trim()))){
+      out+=buildFrac(nPart,dPart);
+    }else{
+      out+=fmtExp(m[0]);
+    }
+    last=m.index+m[0].length;
+  }
+  out+=fmtExp(text.slice(last));
+  return out;
+}
+if(typeof window!=='undefined')window.mathMarkup=mathMarkup;
+if(typeof global!=='undefined')global.mathMarkup=mathMarkup;
 const countries=[
 ['VN','Việt Nam','Vietnam','🇻🇳','Hà Nội','Hanoi','Châu Á','Asia','Vịnh Hạ Long','Ha Long Bay','⛰️','Vịnh Hạ Long nổi tiếng với các đảo đá vôi.','Ha Long Bay is known for its limestone islands.'],
 ['JP','Nhật Bản','Japan','🇯🇵','Tokyo','Tokyo','Châu Á','Asia','Núi Phú Sĩ','Mount Fuji','🗻','Núi Phú Sĩ là ngọn núi cao nhất Nhật Bản.','Mount Fuji is the highest mountain in Japan.'],
@@ -399,7 +424,7 @@ function handleNumpad(k,q){
     }
   }
   const el=$('#numpadVal');
-  if(el)el.textContent=currentNumpad||'?';
+  if(el)el.innerHTML=currentNumpad?mathMarkup(currentNumpad):'?';
 }
 function isUntimedQuizSession(cfgObj,qObj){
   const cfg=cfgObj||config||defaults;
@@ -488,6 +513,7 @@ function showQuiz(){
 
     <div class="card quiz-card" id="quizCard">
       <div class="${qClass}">${formatQuestionPrompt(q.q)}</div>
+      ${typeof buildQuestionFigureSvg==='function'?buildQuestionFigureSvg(q,{forPrint:false}):''}
       ${isNumpad?numpadHtml:choicesHtml}
       <p id="feedback" class="muted quiz-feedback" role="status" aria-live="polite"></p>
       <div id="workedAnswer" class="worked-example" hidden></div>
@@ -571,14 +597,14 @@ function answerQuiz(ans,questionId){
     if(disp){
       const promptEl=disp.parentElement?.querySelector?.('.numpad-prompt');
       if(promptEl)promptEl.textContent=correct?t('Chính xác:','Correct:'):t('Em vừa nhập:','You entered:');
-      disp.textContent=(ans!==null?ans:t('Hết giờ','Time out'))+(correct?' ✓':' ✕');
+      disp.innerHTML=(ans!==null?mathMarkup(ans):esc(t('Hết giờ','Time out')))+(correct?' ✓':' ✕');
       if(disp.parentElement)disp.parentElement.className='numpad-display '+(correct?'is-correct':'is-wrong');
     }
     const sub=$('#numpadSubmit');if(sub)sub.disabled=true;$$('[data-np]').forEach(b=>b.disabled=true);
   }else{
     const buttons=$$('[data-answer]');buttons.forEach((b,i)=>{b.disabled=true;const option=q.options[i];if(norm(option)===norm(q.answer))b.classList.add('is-correct');if(ans!==null&&norm(option)===norm(ans)&&!correct)b.classList.add('is-wrong')});
   }
-  const feedback=$('#feedback');if(feedback)feedback.textContent=correct?t('Đúng rồi, giỏi lắm!','That’s right! Well done!'):ans===null?t('Hết giờ. Đáp án đúng là: '+q.answer,'Time ran out. Correct answer: '+q.answer):t('Chưa đúng rồi. Đáp án đúng là: '+q.answer,'Not quite. Correct answer: '+q.answer);
+  const feedback=$('#feedback');if(feedback)feedback.innerHTML=correct?esc(t('Đúng rồi, giỏi lắm!','That’s right! Well done!')):ans===null?`${esc(t('Hết giờ. Đáp án đúng là: ','Time ran out. Correct answer: '))}<b>${mathMarkup(q.answer)}</b>`:`${esc(t('Chưa đúng rồi. Đáp án đúng là: ','Not quite. Correct answer: '))}<b>${mathMarkup(q.answer)}</b>`;
   const explain=!correct;
   let hasNextBtn=false;
   if(explain){
@@ -711,7 +737,7 @@ function renderGuide(activeTab = 'student'){
 function startReview(){}
 function award(n){state.pieces[state.selected]=(state.pieces[state.selected]||0)+n;save()}
 function atlas(){if(typeof teaRenderGoals==='function')teaRenderGoals()}
-function stats(){let h=state.history,correct=h.reduce((a,b)=>a+b.correct,0),total=h.reduce((a,b)=>a+b.total,0),weak=Object.entries(state.mastery).filter(([,a])=>a.length>=5&&avg(a)<.6);$('#app').innerHTML=`<span class="eyebrow">${t('NHẬT KÝ HÀNH TRÌNH','YOUR JOURNEY LOG')}</span><h1>${t('Giỏi hơn từng ngày.','Growing every day.')}</h1><div class="metrics"><div class="metric"><small>${t('Độ chính xác lần đầu','First-try accuracy')}</small><strong>${total?Math.round(correct/total*100):0}%</strong></div><div class="metric"><small>${t('Thời gian TB / câu','Average seconds / question')}</small><strong>${avg(h.map(x=>x.time)).toFixed(1)}s</strong></div><div class="metric"><small>${t('Cấp nhà thám hiểm','Explorer level')}</small><strong>${level()}</strong></div><div class="metric"><small>${t('Câu cần ôn','Pending review')}</small><strong>${state.mistakes.length}</strong>${state.mistakes.length?`<button type="button" class="primary" style="margin-top:8px;padding:6px 12px;min-height:34px;font-size:12px;width:100%" onclick="startReview()">${t('Ôn bằng Vườn hoa →','Review in Garden →')}</button>`:''}</div></div><div class="grid"><section class="card"><h3>${t('10 lượt gần nhất','Last 10 sessions')}</h3><div class="chart">${h.slice(-10).map(x=>`<div style="height:${Math.round(x.correct/x.total*100)}%" title="${x.correct}/${x.total}"></div>`).join('')}</div><p>${t('Chiều cao cột = tỉ lệ trả lời đúng.','Bar height = correct answer percentage.')}</p></section><section class="card"><h3>${t('Kỹ năng cần củng cố','Skills to strengthen')}</h3>${weak.length?weak.map(([k,a])=>`<p>${esc(skillName(k))}: ${Math.round(avg(a)*100)}%</p><button data-weak="${esc(k)}">${t('Ôn có hướng dẫn','Guided review')}</button><button data-retest="${esc(k)}">${t('Kiểm tra lại · 5 câu','Retest · 5 questions')}</button>`).join(''):`<p>${t('Chưa có kỹ năng yếu được xác định. Cần ít nhất 5 câu mỗi dạng để đánh giá.','No weak skills identified. At least 5 answers per skill are needed.')}</p>`}</section><section class="card"><h3>${t('Giữ lại hành trình','Keep your journey')}</h3><p>${t('Dữ liệu lưu trên trình duyệt này. Xuất bản sao lưu trước khi đổi máy hoặc xóa dữ liệu.','Progress is saved in this browser. Export before changing devices or clearing browser data.')}</p><button id="backup">↓ ${t('Xuất sao lưu','Export backup')}</button><button id="import">↑ ${t('Nhập sao lưu','Import backup')}</button></section></div>    <section class="card section"><h3>${t('Lịch sử luyện tập','Practice history')}</h3>${h.length?`<table class="history"><thead><tr><th>${t('Ngày','Date')}</th><th>${t('Chế độ','Mode')}</th><th>${t('Đúng','Correct')}</th><th>${t('TB','Avg')}</th><th>${t('Thêm giờ','Extra time')}</th></tr></thead><tbody>${h.slice(-20).reverse().map(x=>`<tr><td>${new Date(x.date).toLocaleDateString(lang==='vi'?'vi-VN':'en-US')}</td><td>${x.mode==='sprint60'?t('Thi đấu 60s','60s Sprint'):x.mode==='assigned'?t('Bài được giao','Assigned'):t('Tự luyện','Practice')}</td><td>${x.correct}/${x.total}</td><td>${x.time.toFixed(1)}s</td><td>${x.extra?x.extra+'×':'—'}</td></tr>`).join('')}</tbody></table>`:`<div class="empty">${t('Hành trình của em bắt đầu từ lượt đầu tiên.','Your journey starts with your first session.')}</div>`}</section>`;$('#backup').onclick=()=>download(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),'NumiQuest-backup.json');$('#import').onclick=()=>$('#restore').click();$$('[data-weak]').forEach(b=>b.onclick=()=>{let k=b.dataset.weak,q=generate({...defaults,type:k.split(':')[0],ops:[k.split(':')[1]]});modal(`<h2>${esc(skillName(k))}</h2><p style="white-space:pre-line">${esc(hint(q))}</p><p>${t('Sau khi đọc, em có thể làm bài kiểm tra lại 5 câu.','After reading, try a 5-question retest.')}</p>`)});$$('[data-retest]').forEach(b=>b.onclick=()=>{if(state.mistakes.length){startReview();return}let [type,op]=b.dataset.retest.split(':');const u=typeof currentAuthUser==='function'?currentAuthUser():null;const gId=config.grade||u?.grade||1;config={...defaults,...config,type,types:[type],ops:[op],count:5,grade:gId};if(typeof window!=='undefined')window.config=config;if(typeof global!=='undefined')global.config=config;startQuiz()})}
+function stats(){let h=state.history,correct=h.reduce((a,b)=>a+b.correct,0),total=h.reduce((a,b)=>a+b.total,0),weak=Object.entries(state.mastery).filter(([,a])=>a.length>=5&&avg(a)<.6);$('#app').innerHTML=`<span class="eyebrow">${t('NHẬT KÝ HÀNH TRÌNH','YOUR JOURNEY LOG')}</span><h1>${t('Giỏi hơn từng ngày.','Growing every day.')}</h1><div class="metrics"><div class="metric"><small>${t('Độ chính xác lần đầu','First-try accuracy')}</small><strong>${total?Math.round(correct/total*100):0}%</strong></div><div class="metric"><small>${t('Thời gian TB / câu','Average seconds / question')}</small><strong>${avg(h.map(x=>x.time)).toFixed(1)}s</strong></div><div class="metric"><small>${t('Cấp nhà thám hiểm','Explorer level')}</small><strong>${level()}</strong></div><div class="metric"><small>${t('Câu cần ôn','Pending review')}</small><strong>${state.mistakes.length}</strong>${state.mistakes.length?`<button type="button" class="primary" style="margin-top:8px;padding:6px 12px;min-height:34px;font-size:12px;width:100%" onclick="startReview()">${t('Ôn bằng Vườn hoa →','Review in Garden →')}</button>`:''}</div></div><div class="grid"><section class="card"><h3>${t('10 lượt gần nhất','Last 10 sessions')}</h3><div class="chart">${h.slice(-10).map(x=>`<div style="height:${Math.round(x.correct/x.total*100)}%" title="${x.correct}/${x.total}"></div>`).join('')}</div><p>${t('Chiều cao cột = tỉ lệ trả lời đúng.','Bar height = correct answer percentage.')}</p></section><section class="card"><h3>${t('Kỹ năng cần củng cố','Skills to strengthen')}</h3>${weak.length?weak.map(([k,a])=>`<p>${esc(skillName(k))}: ${Math.round(avg(a)*100)}%</p><button data-weak="${esc(k)}">${t('Ôn có hướng dẫn','Guided review')}</button><button data-retest="${esc(k)}">${t('Kiểm tra lại · 5 câu','Retest · 5 questions')}</button>`).join(''):`<p>${t('Chưa có kỹ năng yếu được xác định. Cần ít nhất 5 câu mỗi dạng để đánh giá.','No weak skills identified. At least 5 answers per skill are needed.')}</p>`}</section><section class="card"><h3>${t('Giữ lại hành trình','Keep your journey')}</h3><p>${t('Dữ liệu lưu trên trình duyệt này. Xuất bản sao lưu trước khi đổi máy hoặc xóa dữ liệu.','Progress is saved in this browser. Export before changing devices or clearing browser data.')}</p><button id="backup">↓ ${t('Xuất sao lưu','Export backup')}</button><button id="import">↑ ${t('Nhập sao lưu','Import backup')}</button></section></div>    <section class="card section"><h3>${t('Lịch sử luyện tập','Practice history')}</h3>${h.length?`<table class="history"><thead><tr><th>${t('Ngày','Date')}</th><th>${t('Chế độ','Mode')}</th><th>${t('Đúng','Correct')}</th><th>${t('TB','Avg')}</th><th>${t('Thêm giờ','Extra time')}</th></tr></thead><tbody>${h.slice(-20).reverse().map(x=>`<tr><td>${new Date(x.date).toLocaleDateString(lang==='vi'?'vi-VN':'en-US')}</td><td>${x.mode==='sprint60'?t('Thi đấu 60s','60s Sprint'):x.mode==='assigned'?t('Bài được giao','Assigned'):t('Tự luyện','Practice')}</td><td>${x.correct}/${x.total}</td><td>${x.time.toFixed(1)}s</td><td>${x.extra?x.extra+'×':'—'}</td></tr>`).join('')}</tbody></table>`:`<div class="empty">${t('Hành trình của em bắt đầu từ lượt đầu tiên.','Your journey starts with your first session.')}</div>`}</section>`;$('#backup').onclick=()=>download(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),'NumiQuest-backup.json');$('#import').onclick=()=>$('#restore').click();$$('[data-weak]').forEach(b=>b.onclick=()=>{let k=b.dataset.weak,q=generate({...defaults,type:k.split(':')[0],ops:[k.split(':')[1]]});modal(`<h2>${esc(skillName(k))}</h2><p style="white-space:pre-line">${mathMarkup(hint(q))}</p><p>${t('Sau khi đọc, em có thể làm bài kiểm tra lại 5 câu.','After reading, try a 5-question retest.')}</p>`)});$$('[data-retest]').forEach(b=>b.onclick=()=>{if(state.mistakes.length){startReview();return}let [type,op]=b.dataset.retest.split(':');const u=typeof currentAuthUser==='function'?currentAuthUser():null;const gId=config.grade||u?.grade||1;config={...defaults,...config,type,types:[type],ops:[op],count:5,grade:gId};if(typeof window!=='undefined')window.config=config;if(typeof global!=='undefined')global.config=config;startQuiz()})}
 function skillName(k){let [type,op]=k.split(':');return ({natural:t('Số tự nhiên','Whole numbers'),remainder:t('Chia dư','Remainders'),decimal:t('Thập phân','Decimals'),negative:t('Số nguyên','Integers'),fraction:t('Phân số','Fractions')}[type]||type)+' '+({'+':'+','-':'−','*':'×','/':'÷',missing:t('Tìm số (?)','Missing (?)'),word:t('Toán đố','Word problem'),convenient:t('Tính thuận tiện','Regrouping'),expression:t('Biểu thức','Expression')}[op]||op)}
 function validBackup(x){
   if(!x||typeof x!=='object'||x.version!==1)return false;

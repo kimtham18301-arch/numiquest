@@ -840,122 +840,452 @@
   }
 
   // =========================================================================
-  // 2. DYNAMIC GEOMETRY & VISUAL MATH SVG BUILDER (Grades 1–9)
+  // 2. DYNAMIC GEOMETRY & VISUAL MATH SVG BUILDER (Grades 1–9, Anti-Spoiler!)
   // =========================================================================
-  function buildGeometryVisualSvg(q) {
-    if (!q) return '';
+  function rawGeometryFigureSvg(q) {
+    if (!q || q.isCustomCalc || q.isColumnExercise) return '';
     const kind = q.visualKind || '';
-    const d = q.visualData || {};
     const txt = String(q.q || '');
 
-    if (kind === 'thales' || /Thalès|DE\s*\/\/\s*BC|đường trung bình/i.test(txt)) {
-      return `<div class="visual-math-box"><small>📐 ${t('Minh họa Định lý Thalès (DE // BC):', 'Thales Theorem (DE // BC):')}</small>
-        <svg viewBox="0 0 250 116" class="visual-math-svg" role="img" aria-label="Thales triangle diagram">
-          <polygon points="46,98 125,16 204,98" fill="rgba(59,130,246,0.08)" stroke="#1d4ed8" stroke-width="2.2" stroke-linejoin="round"/>
-          <line x1="82" y1="60" x2="168" y2="60" stroke="#dc2626" stroke-width="2.2"/>
-          <text x="125" y="12" font-size="11.5" font-weight="800" text-anchor="middle" fill="#1e3a8a">A</text>
-          <text x="34" y="102" font-size="11.5" font-weight="800" fill="#1e3a8a">B</text>
-          <text x="210" y="102" font-size="11.5" font-weight="800" fill="#1e3a8a">C</text>
-          <text x="68" y="63" font-size="11" font-weight="800" fill="#dc2626">D</text>
-          <text x="174" y="63" font-size="11" font-weight="800" fill="#dc2626">E</text>
-        </svg></div>`;
+    // 1. Sun-shadow real-world similar triangles (Cọc tiêu & Tòa nhà / Cây)
+    if (kind === 'sim_shadow' || /bóng trên mặt đất|bóng dài.*tòa nhà|cọc tiêu cao/i.test(txt)) {
+      return `<svg viewBox="0 0 280 108" class="q-geom-svg" role="img" aria-label="Shadow similarity diagram">
+        <line x1="14" y1="92" x2="266" y2="92" stroke="#475569" stroke-width="2"/>
+        <line x1="42" y1="92" x2="42" y2="58" stroke="#1e40af" stroke-width="2.6"/>
+        <polyline points="42,85 49,85 49,92" fill="none" stroke="#64748b" stroke-width="1.5"/>
+        <line x1="42" y1="58" x2="88" y2="92" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4 3"/>
+        <rect x="144" y="22" width="22" height="70" fill="rgba(30,64,175,0.10)" stroke="#1e40af" stroke-width="2.2"/>
+        <polyline points="166,84 174,84 174,92" fill="none" stroke="#64748b" stroke-width="1.5"/>
+        <line x1="166" y1="22" x2="254" y2="92" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4 3"/>
+        <circle cx="24" cy="20" r="8" fill="rgba(245,158,11,0.22)" stroke="#d97706" stroke-width="1.8"/>
+        <text x="36" y="53" font-size="10.5" font-weight="800" text-anchor="middle" fill="#1e3a8a">Cọc</text>
+        <text x="65" y="103" font-size="10" font-weight="700" text-anchor="middle" fill="#475569">bóng</text>
+        <text x="136" y="60" font-size="11" font-weight="800" text-anchor="end" fill="#dc2626">h = ?</text>
+        <text x="210" y="103" font-size="10" font-weight="700" text-anchor="middle" fill="#475569">bóng nhà</text>
+      </svg>`;
     }
 
+    // 2. Two Similar Triangles (△ABC ~ △A'B'C')
+    if (kind === 'sim_tri' || /đồng dạng|tỉ số đồng dạng/i.test(txt)) {
+      return `<svg viewBox="0 0 280 108" class="q-geom-svg" role="img" aria-label="Similar triangles diagram">
+        <polygon points="24,88 58,34 102,88" fill="rgba(37,99,235,0.08)" stroke="#1d4ed8" stroke-width="2.1" stroke-linejoin="round"/>
+        <path d="M 33 88 A 11 11 0 0 0 30 79" fill="none" stroke="#d97706" stroke-width="1.7"/>
+        <text x="58" y="29" font-size="11" font-weight="800" text-anchor="middle" fill="#1e3a8a">A</text>
+        <text x="14" y="92" font-size="11" font-weight="800" fill="#1e3a8a">B</text>
+        <text x="106" y="92" font-size="11" font-weight="800" fill="#1e3a8a">C</text>
+        <text x="126" y="64" font-size="14" font-weight="900" text-anchor="middle" fill="#2d6a51">∽</text>
+        <polygon points="148,92 196,16 258,92" fill="rgba(45,106,81,0.09)" stroke="#1f6a47" stroke-width="2.3" stroke-linejoin="round"/>
+        <path d="M 161 92 A 13 13 0 0 0 156 80" fill="none" stroke="#d97706" stroke-width="1.7"/>
+        <text x="196" y="12" font-size="11" font-weight="800" text-anchor="middle" fill="#164e32">A'</text>
+        <text x="136" y="96" font-size="11" font-weight="800" fill="#164e32">B'</text>
+        <text x="262" y="96" font-size="11" font-weight="800" fill="#164e32">C'</text>
+      </svg>`;
+    }
+
+    // 3. Angle bisector AD in △ABC or two bisectors BI, CI meeting at I
+    if (/phân giác góc A.*cắt BC|phân giác trong của góc B và góc C/i.test(txt)) {
+      const isIncenter = /góc BIC/i.test(txt);
+      if (isIncenter) {
+        return `<svg viewBox="0 0 240 108" class="q-geom-svg" role="img" aria-label="Incenter angle bisectors diagram">
+          <polygon points="36,92 118,16 204,92" fill="rgba(37,99,235,0.07)" stroke="#1d4ed8" stroke-width="2.2" stroke-linejoin="round"/>
+          <line x1="36" y1="92" x2="120" y2="64" stroke="#dc2626" stroke-width="1.9"/>
+          <line x1="204" y1="92" x2="120" y2="64" stroke="#dc2626" stroke-width="1.9"/>
+          <circle cx="120" cy="64" r="3" fill="#dc2626"/>
+          <text x="118" y="12" font-size="11.5" font-weight="800" text-anchor="middle" fill="#1e3a8a">A</text>
+          <text x="24" y="96" font-size="11.5" font-weight="800" fill="#1e3a8a">B</text>
+          <text x="210" y="96" font-size="11.5" font-weight="800" fill="#1e3a8a">C</text>
+          <text x="120" y="56" font-size="11" font-weight="800" text-anchor="middle" fill="#dc2626">I</text>
+        </svg>`;
+      }
+      return `<svg viewBox="0 0 240 108" class="q-geom-svg" role="img" aria-label="Angle bisector AD diagram">
+        <polygon points="38,92 114,16 204,92" fill="rgba(37,99,235,0.08)" stroke="#1d4ed8" stroke-width="2.2" stroke-linejoin="round"/>
+        <line x1="114" y1="16" x2="108" y2="92" stroke="#dc2626" stroke-width="2"/>
+        <path d="M 103 27 A 15 15 0 0 0 113 31" fill="none" stroke="#d97706" stroke-width="1.6"/>
+        <path d="M 113 34 A 18 18 0 0 0 126 28" fill="none" stroke="#d97706" stroke-width="1.6"/>
+        <text x="114" y="12" font-size="11.5" font-weight="800" text-anchor="middle" fill="#1e3a8a">A</text>
+        <text x="26" y="96" font-size="11.5" font-weight="800" fill="#1e3a8a">B</text>
+        <text x="108" y="105" font-size="11" font-weight="800" text-anchor="middle" fill="#dc2626">D</text>
+        <text x="210" y="96" font-size="11.5" font-weight="800" fill="#1e3a8a">C</text>
+      </svg>`;
+    }
+
+    // 4. Thales theorem (DE // BC) or Triangle Midsegment (MN // BC)
+    if (kind === 'thales' || /Thalès|DE\s*\/\/\s*BC|trung điểm của AB và AC|đường trung bình của △/i.test(txt)) {
+      const useMN = /\bMN\b/.test(txt);
+      const pL = useMN ? 'M' : 'D', pR = useMN ? 'N' : 'E';
+      return `<svg viewBox="0 0 240 108" class="q-geom-svg" role="img" aria-label="Parallel segment in triangle diagram">
+        <polygon points="42,92 120,16 198,92" fill="rgba(59,130,246,0.08)" stroke="#1d4ed8" stroke-width="2.2" stroke-linejoin="round"/>
+        <line x1="81" y1="54" x2="159" y2="54" stroke="#dc2626" stroke-width="2.2"/>
+        <text x="120" y="12" font-size="11.5" font-weight="800" text-anchor="middle" fill="#1e3a8a">A</text>
+        <text x="30" y="96" font-size="11.5" font-weight="800" fill="#1e3a8a">B</text>
+        <text x="204" y="96" font-size="11.5" font-weight="800" fill="#1e3a8a">C</text>
+        <text x="67" y="57" font-size="11" font-weight="800" fill="#dc2626">${pL}</text>
+        <text x="165" y="57" font-size="11" font-weight="800" fill="#dc2626">${pR}</text>
+      </svg>`;
+    }
+
+    // 5. Centroid G on median AM of △ABC
+    if (/trọng tâm.*AM|trọng tâm G/i.test(txt)) {
+      return `<svg viewBox="0 0 240 108" class="q-geom-svg" role="img" aria-label="Triangle centroid diagram">
+        <polygon points="40,90 116,16 200,90" fill="rgba(45,106,81,0.08)" stroke="#1f6a47" stroke-width="2.2" stroke-linejoin="round"/>
+        <line x1="116" y1="16" x2="120" y2="90" stroke="#2563eb" stroke-width="1.9"/>
+        <circle cx="118.7" cy="65.3" r="3.5" fill="#dc2626"/>
+        <line x1="78" y1="86" x2="80" y2="94" stroke="#d97706" stroke-width="1.8"/>
+        <line x1="158" y1="86" x2="160" y2="94" stroke="#d97706" stroke-width="1.8"/>
+        <text x="116" y="12" font-size="11.5" font-weight="800" text-anchor="middle" fill="#164e32">A</text>
+        <text x="28" y="94" font-size="11.5" font-weight="800" fill="#164e32">B</text>
+        <text x="206" y="94" font-size="11.5" font-weight="800" fill="#164e32">C</text>
+        <text x="120" y="103" font-size="11" font-weight="800" text-anchor="middle" fill="#2563eb">M</text>
+        <text x="128" y="65" font-size="11" font-weight="800" fill="#dc2626">G</text>
+      </svg>`;
+    }
+
+    // 6. Altitude AH in right △ABC (∠A = 90°, AH ⊥ BC)
+    if (/vuông tại A.*đường cao AH/i.test(txt)) {
+      return `<svg viewBox="0 0 250 108" class="q-geom-svg" role="img" aria-label="Right triangle altitude AH diagram">
+        <polygon points="36,90 102,20 214,90" fill="rgba(37,99,235,0.08)" stroke="#1e40af" stroke-width="2.2" stroke-linejoin="round"/>
+        <line x1="102" y1="20" x2="102" y2="90" stroke="#dc2626" stroke-width="2"/>
+        <polyline points="102,82 110,82 110,90" fill="none" stroke="#dc2626" stroke-width="1.6"/>
+        <text x="102" y="14" font-size="11.5" font-weight="800" text-anchor="middle" fill="#1e3a8a">A (90°)</text>
+        <text x="24" y="94" font-size="11.5" font-weight="800" fill="#1e3a8a">B</text>
+        <text x="102" y="104" font-size="11" font-weight="800" text-anchor="middle" fill="#dc2626">H</text>
+        <text x="220" y="94" font-size="11.5" font-weight="800" fill="#1e3a8a">C</text>
+      </svg>`;
+    }
+
+    // 7. Median AM to hypotenuse BC in right △ABC
+    if (/vuông tại A.*(trung tuyến AM|M là trung điểm BC)/i.test(txt)) {
+      return `<svg viewBox="0 0 245 108" class="q-geom-svg" role="img" aria-label="Right triangle median AM diagram">
+        <polygon points="48,90 48,22 196,90" fill="rgba(45,106,81,0.09)" stroke="#1f6a47" stroke-width="2.2" stroke-linejoin="round"/>
+        <polyline points="48,81 57,81 57,90" fill="none" stroke="#d97706" stroke-width="1.8"/>
+        <line x1="48" y1="22" x2="122" y2="56" stroke="#dc2626" stroke-width="2"/>
+        <circle cx="122" cy="56" r="3" fill="#dc2626"/>
+        <line x1="82" y1="34" x2="86" y2="42" stroke="#2563eb" stroke-width="1.8"/>
+        <line x1="156" y1="68" x2="160" y2="76" stroke="#2563eb" stroke-width="1.8"/>
+        <text x="36" y="94" font-size="11.5" font-weight="800" fill="#164e32">A</text>
+        <text x="36" y="24" font-size="11.5" font-weight="800" fill="#164e32">B</text>
+        <text x="202" y="94" font-size="11.5" font-weight="800" fill="#164e32">C</text>
+        <text x="128" y="51" font-size="11" font-weight="800" fill="#dc2626">M</text>
+      </svg>`;
+    }
+
+    // 8. Elevation angle / Theodolite tower or Leaning ladder
+    if (/giác kế|góc nâng|tháp truyền hình|chiếc thang.*tường/i.test(txt)) {
+      const isLadder = /thang/i.test(txt);
+      return `<svg viewBox="0 0 250 108" class="q-geom-svg" role="img" aria-label="Practical right triangle diagram">
+        <line x1="24" y1="92" x2="226" y2="92" stroke="#475569" stroke-width="2"/>
+        <line x1="186" y1="18" x2="186" y2="92" stroke="#1e40af" stroke-width="3"/>
+        <polyline points="177,92 177,83 186,83" fill="none" stroke="#d97706" stroke-width="1.7"/>
+        <line x1="56" y1="${isLadder ? 92 : 76}" x2="186" y2="18" stroke="#dc2626" stroke-width="2.3"/>
+        ${!isLadder ? `<line x1="56" y1="76" x2="56" y2="92" stroke="#164e32" stroke-width="2.2"/><line x1="56" y1="76" x2="186" y2="76" stroke="#64748b" stroke-width="1.4" stroke-dasharray="4 3"/><path d="M 80 76 A 24 24 0 0 0 77 66" fill="none" stroke="#d97706" stroke-width="1.7"/><text x="86" y="72" font-size="10" font-weight="800" fill="#b45309">45°</text>` : ''}
+        <text x="193" y="56" font-size="11" font-weight="800" fill="#1e3a8a">${isLadder ? 'h = ?' : 'Tháp'}</text>
+      </svg>`;
+    }
+
+    // 9. Right Triangle (Pythagore, Trig sin/cos/tan, Isosceles right triangle)
+    if (kind === 'right_tri' || /vuông tại A|vuông cân tại A|cạnh huyền|Pythagore|tỉ số sin|tan 45|sin\^2/i.test(txt)) {
+      return `<svg viewBox="0 0 240 106" class="q-geom-svg" role="img" aria-label="Right triangle ABC diagram">
+        <polygon points="52,88 52,20 190,88" fill="rgba(45,106,81,0.09)" stroke="#2b6a50" stroke-width="2.3" stroke-linejoin="round"/>
+        <polyline points="52,78 62,78 62,88" fill="none" stroke="#d97706" stroke-width="1.9"/>
+        <text x="39" y="93" font-size="11.5" font-weight="800" fill="#1e4631">A</text>
+        <text x="39" y="23" font-size="11.5" font-weight="800" fill="#1e4631">B</text>
+        <text x="196" y="93" font-size="11.5" font-weight="800" fill="#1e4631">C</text>
+      </svg>`;
+    }
+
+    // 10. Two Circles (O; R) and (O'; r)
+    if (/hai đường tròn\s*\(O/i.test(txt)) {
+      return `<svg viewBox="0 0 250 104" class="q-geom-svg" role="img" aria-label="Two circles OO' diagram">
+        <circle cx="92" cy="52" r="36" fill="rgba(37,99,235,0.08)" stroke="#2563eb" stroke-width="2.1"/>
+        <circle cx="154" cy="52" r="24" fill="rgba(16,185,129,0.09)" stroke="#1f6a47" stroke-width="2.1"/>
+        <line x1="92" y1="52" x2="154" y2="52" stroke="#dc2626" stroke-width="1.8" stroke-dasharray="4 2"/>
+        <circle cx="92" cy="52" r="2.8" fill="#1e3a8a"/>
+        <circle cx="154" cy="52" r="2.8" fill="#164e32"/>
+        <text x="88" y="45" font-size="11" font-weight="800" fill="#1e3a8a">O</text>
+        <text x="156" y="45" font-size="11" font-weight="800" fill="#164e32">O'</text>
+      </svg>`;
+    }
+
+    // 11. Annulus (Hình vành khuyên)
+    if (/hình vành khuyên/i.test(txt)) {
+      return `<svg viewBox="0 0 220 106" class="q-geom-svg" role="img" aria-label="Annulus concentric circles diagram">
+        <circle cx="110" cy="53" r="42" fill="rgba(37,99,235,0.13)" stroke="#1d4ed8" stroke-width="2.1"/>
+        <circle cx="110" cy="53" r="23" fill="#ffffff" stroke="#d97706" stroke-width="2"/>
+        <circle cx="110" cy="53" r="2.6" fill="#dc2626"/>
+        <line x1="110" y1="53" x2="152" y2="53" stroke="#1d4ed8" stroke-width="1.6"/>
+        <line x1="110" y1="53" x2="110" y2="30" stroke="#d97706" stroke-width="1.6"/>
+        <text x="132" y="49" font-size="10" font-weight="800" fill="#1e3a8a">R</text>
+        <text x="115" y="42" font-size="10" font-weight="800" fill="#b45309">r</text>
+      </svg>`;
+    }
+
+    // 12. Circle Tangents MA, MB from external point M
+    if (/tiếp tuyến MA|hai tiếp tuyến MA/i.test(txt)) {
+      return `<svg viewBox="0 0 250 108" class="q-geom-svg" role="img" aria-label="Circle tangent from M diagram">
+        <circle cx="88" cy="54" r="38" fill="rgba(59,130,246,0.08)" stroke="#2563eb" stroke-width="2.2"/>
+        <circle cx="88" cy="54" r="2.8" fill="#dc2626"/>
+        <circle cx="194" cy="54" r="3" fill="#1e3a8a"/>
+        <line x1="88" y1="54" x2="194" y2="54" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <line x1="102" y1="19" x2="194" y2="54" stroke="#1f6a47" stroke-width="2.1"/>
+        <line x1="102" y1="89" x2="194" y2="54" stroke="#1f6a47" stroke-width="1.6" stroke-dasharray="4 2"/>
+        <line x1="88" y1="54" x2="102" y2="19" stroke="#dc2626" stroke-width="1.8"/>
+        <text x="77" y="57" font-size="11" font-weight="800" fill="#dc2626">O</text>
+        <text x="100" y="13" font-size="11" font-weight="800" fill="#164e32">A</text>
+        <text x="200" y="58" font-size="11.5" font-weight="800" fill="#1e3a8a">M</text>
+      </svg>`;
+    }
+
+    // 13. Cyclic Quadrilateral ABCD or Inscribed & Central Angle
+    if (/tứ giác ABCD nội tiếp/i.test(txt)) {
+      return `<svg viewBox="0 0 220 108" class="q-geom-svg" role="img" aria-label="Cyclic quadrilateral diagram">
+        <circle cx="110" cy="54" r="42" fill="rgba(59,130,246,0.07)" stroke="#2563eb" stroke-width="2.1"/>
+        <polygon points="80,24 144,28 148,78 74,80" fill="rgba(16,185,129,0.09)" stroke="#1f6a47" stroke-width="2"/>
+        <text x="70" y="21" font-size="11" font-weight="800" fill="#164e32">A</text>
+        <text x="150" y="25" font-size="11" font-weight="800" fill="#164e32">B</text>
+        <text x="154" y="85" font-size="11" font-weight="800" fill="#dc2626">C</text>
+        <text x="62" y="86" font-size="11" font-weight="800" fill="#164e32">D</text>
+      </svg>`;
+    }
+    if (/góc nội tiếp|góc ở tâm/i.test(txt)) {
+      return `<svg viewBox="0 0 220 108" class="q-geom-svg" role="img" aria-label="Inscribed and central angle diagram">
+        <circle cx="110" cy="54" r="42" fill="rgba(59,130,246,0.07)" stroke="#2563eb" stroke-width="2.1"/>
+        <circle cx="110" cy="54" r="2.8" fill="#dc2626"/>
+        <polyline points="78,81 110,12 142,81" fill="none" stroke="#1f6a47" stroke-width="2"/>
+        <polyline points="78,81 110,54 142,81" fill="none" stroke="#dc2626" stroke-width="1.9"/>
+        <text x="110" y="10" font-size="10.5" font-weight="800" text-anchor="middle" fill="#164e32">M</text>
+        <text x="110" y="48" font-size="10.5" font-weight="800" text-anchor="middle" fill="#dc2626">O</text>
+        <text x="67" y="88" font-size="11" font-weight="800" fill="#1e3a8a">A</text>
+        <text x="147" y="88" font-size="11" font-weight="800" fill="#1e3a8a">B</text>
+      </svg>`;
+    }
+
+    // 14. Regular Polygon & Rotation (Hexagon / Pentagon / Equilateral Triangle)
+    if (/lục giác đều|ngũ giác đều|bát giác đều|phép quay.*tâm O/i.test(txt)) {
+      return `<svg viewBox="0 0 220 108" class="q-geom-svg" role="img" aria-label="Regular hexagon inscribed in circle diagram">
+        <circle cx="110" cy="54" r="41" fill="none" stroke="#93c5fd" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <polygon points="151,54 130.5,89.5 89.5,89.5 69,54 89.5,18.5 130.5,18.5" fill="rgba(45,106,81,0.09)" stroke="#1f6a47" stroke-width="2.1"/>
+        <circle cx="110" cy="54" r="2.8" fill="#dc2626"/>
+        <line x1="110" y1="54" x2="151" y2="54" stroke="#dc2626" stroke-width="1.6" stroke-dasharray="3 2"/>
+        <text x="103" y="51" font-size="11" font-weight="800" fill="#dc2626">O</text>
+      </svg>`;
+    }
+
+    // 15. General Circle (Chord AB & OH, Arc / Sector, Grade 5 Circle)
+    if (kind === 'circle' || /đường tròn|hình tròn|dây cung|cung\s+\d+°|hình quạt tròn/i.test(txt)) {
+      const isSector = /quạt tròn|độ dài cung/i.test(txt);
+      if (isSector) {
+        return `<svg viewBox="0 0 220 106" class="q-geom-svg" role="img" aria-label="Circular sector diagram">
+          <circle cx="110" cy="54" r="41" fill="rgba(59,130,246,0.05)" stroke="#2563eb" stroke-width="2"/>
+          <path d="M 110 54 L 151 54 A 41 41 0 0 0 130.5 18.5 Z" fill="rgba(245,158,11,0.22)" stroke="#d97706" stroke-width="2"/>
+          <circle cx="110" cy="54" r="2.6" fill="#dc2626"/>
+          <text x="101" y="58" font-size="11" font-weight="800" fill="#dc2626">O</text>
+          <text x="131" y="66" font-size="10.5" font-weight="800" fill="#1e3a8a">R</text>
+        </svg>`;
+      }
+      return `<svg viewBox="0 0 220 106" class="q-geom-svg" role="img" aria-label="Circle O with radius R and chord diagram">
+        <circle cx="110" cy="53" r="41" fill="rgba(59,130,246,0.08)" stroke="#2563eb" stroke-width="2.1"/>
+        <circle cx="110" cy="53" r="2.8" fill="#dc2626"/>
+        <line x1="110" y1="53" x2="146" y2="33" stroke="#dc2626" stroke-width="1.8" stroke-dasharray="4 2"/>
+        ${/dây/i.test(txt) ? `<line x1="77" y1="77" x2="143" y2="77" stroke="#1f6a47" stroke-width="2.1"/><line x1="110" y1="53" x2="110" y2="77" stroke="#d97706" stroke-width="1.7"/><text x="68" y="82" font-size="10.5" font-weight="800" fill="#164e32">A</text><text x="147" y="82" font-size="10.5" font-weight="800" fill="#164e32">B</text>` : ''}
+        <text x="101" y="50" font-size="11" font-weight="800" fill="#dc2626">O</text>
+        <text x="132" y="38" font-size="10.5" font-weight="800" fill="#dc2626">R</text>
+      </svg>`;
+    }
+
+    // 16. 3D Solids: Pyramid, Cone, Cylinder, Sphere, Triangular Prism, Rectangular Box / Cube
     if (kind === 'pyramid' || /hình chóp/i.test(txt)) {
-      return `<div class="visual-math-box"><small>📐 ${t('Minh họa Hình chóp đều (cao h, trung đoạn d):', 'Regular Pyramid diagram:')}</small>
-        <svg viewBox="0 0 250 118" class="visual-math-svg" role="img" aria-label="Regular pyramid diagram">
-          <polygon points="125,14 58,86 144,102 194,74" fill="rgba(14,165,233,0.10)" stroke="#0369a1" stroke-width="2" stroke-linejoin="round"/>
-          <line x1="125" y1="14" x2="144" y2="102" stroke="#0369a1" stroke-width="1.8"/>
-          <line x1="58" y1="86" x2="194" y2="74" stroke="#0369a1" stroke-width="1.2" stroke-dasharray="4 3"/>
-          <line x1="125" y1="14" x2="126" y2="80" stroke="#dc2626" stroke-width="1.8" stroke-dasharray="4 2"/>
-          <line x1="125" y1="14" x2="169" y2="88" stroke="#d97706" stroke-width="1.8"/>
-          <text x="125" y="11" font-size="11" font-weight="800" text-anchor="middle" fill="#0c4a6e">S</text>
-          <text x="116" y="56" font-size="11" font-weight="800" fill="#dc2626">h</text>
-          <text x="156" y="54" font-size="11" font-weight="800" fill="#b45309">d</text>
-        </svg></div>`;
+      return `<svg viewBox="0 0 240 108" class="q-geom-svg" role="img" aria-label="Regular pyramid diagram">
+        <polygon points="120,12 56,80 138,96 186,68" fill="rgba(14,165,233,0.10)" stroke="#0369a1" stroke-width="2" stroke-linejoin="round"/>
+        <line x1="120" y1="12" x2="138" y2="96" stroke="#0369a1" stroke-width="1.8"/>
+        <line x1="56" y1="80" x2="186" y2="68" stroke="#0369a1" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <line x1="120" y1="12" x2="121" y2="74" stroke="#dc2626" stroke-width="1.7" stroke-dasharray="4 2"/>
+        <line x1="120" y1="12" x2="162" y2="82" stroke="#d97706" stroke-width="1.7"/>
+        <text x="120" y="10" font-size="10.5" font-weight="800" text-anchor="middle" fill="#0c4a6e">S</text>
+        <text x="112" y="52" font-size="10.5" font-weight="800" fill="#dc2626">h</text>
+        <text x="149" y="50" font-size="10.5" font-weight="800" fill="#b45309">d</text>
+      </svg>`;
+    }
+    if (/hình nón/i.test(txt)) {
+      return `<svg viewBox="0 0 220 108" class="q-geom-svg" role="img" aria-label="Cone r, h, l diagram">
+        <ellipse cx="110" cy="84" rx="46" ry="13" fill="rgba(59,130,246,0.08)" stroke="#1d4ed8" stroke-width="1.8"/>
+        <polyline points="64,84 110,14 156,84" fill="rgba(59,130,246,0.06)" stroke="#1d4ed8" stroke-width="2.1" stroke-linejoin="round"/>
+        <line x1="110" y1="14" x2="110" y2="84" stroke="#dc2626" stroke-width="1.7" stroke-dasharray="4 2"/>
+        <line x1="110" y1="84" x2="156" y2="84" stroke="#d97706" stroke-width="1.7"/>
+        <text x="102" y="54" font-size="10.5" font-weight="800" fill="#dc2626">h</text>
+        <text x="132" y="81" font-size="10.5" font-weight="800" fill="#b45309">r</text>
+        <text x="140" y="48" font-size="10.5" font-weight="800" fill="#1e3a8a">l</text>
+      </svg>`;
+    }
+    if (/hình trụ/i.test(txt) && !/lăng trụ/i.test(txt)) {
+      return `<svg viewBox="0 0 220 108" class="q-geom-svg" role="img" aria-label="Cylinder r, h diagram">
+        <ellipse cx="110" cy="24" rx="42" ry="11" fill="rgba(16,185,129,0.12)" stroke="#1f6a47" stroke-width="2"/>
+        <path d="M 68 24 L 68 82 A 42 11 0 0 0 152 82 L 152 24" fill="rgba(16,185,129,0.07)" stroke="#1f6a47" stroke-width="2"/>
+        <ellipse cx="110" cy="82" rx="42" ry="11" fill="none" stroke="#1f6a47" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <line x1="110" y1="24" x2="152" y2="24" stroke="#dc2626" stroke-width="1.7"/>
+        <text x="130" y="21" font-size="10.5" font-weight="800" fill="#dc2626">r</text>
+        <text x="160" y="56" font-size="10.5" font-weight="800" fill="#164e32">h</text>
+      </svg>`;
+    }
+    if (/hình cầu|mặt cầu/i.test(txt)) {
+      return `<svg viewBox="0 0 220 106" class="q-geom-svg" role="img" aria-label="Sphere radius R diagram">
+        <circle cx="110" cy="53" r="40" fill="rgba(59,130,246,0.09)" stroke="#1d4ed8" stroke-width="2.1"/>
+        <ellipse cx="110" cy="53" rx="40" ry="12" fill="none" stroke="#2563eb" stroke-width="1.4" stroke-dasharray="4 3"/>
+        <circle cx="110" cy="53" r="2.6" fill="#dc2626"/>
+        <line x1="110" y1="53" x2="148" y2="42" stroke="#dc2626" stroke-width="1.8"/>
+        <text x="128" y="44" font-size="10.5" font-weight="800" fill="#dc2626">R</text>
+      </svg>`;
+    }
+    if (/lăng trụ đứng|lều cắm trại/i.test(txt)) {
+      return `<svg viewBox="0 0 230 108" class="q-geom-svg" role="img" aria-label="Triangular prism diagram">
+        <polygon points="64,34 112,14 156,34" fill="rgba(37,99,235,0.12)" stroke="#1d4ed8" stroke-width="2"/>
+        <line x1="64" y1="34" x2="64" y2="86" stroke="#1d4ed8" stroke-width="2"/>
+        <line x1="156" y1="34" x2="156" y2="86" stroke="#1d4ed8" stroke-width="2"/>
+        <line x1="112" y1="14" x2="112" y2="66" stroke="#1d4ed8" stroke-width="1.4" stroke-dasharray="4 3"/>
+        <polyline points="64,86 156,86" fill="none" stroke="#1d4ed8" stroke-width="2"/>
+        <polyline points="64,86 112,66 156,86" fill="none" stroke="#1d4ed8" stroke-width="1.3" stroke-dasharray="4 3"/>
+        <text x="164" y="64" font-size="10.5" font-weight="800" fill="#dc2626">h</text>
+      </svg>`;
+    }
+    if (/hình hộp chữ nhật|hình lập phương|bể cá|bể nước/i.test(txt)) {
+      return `<svg viewBox="0 0 235 106" class="q-geom-svg" role="img" aria-label="3D rectangular prism / cube diagram">
+        <rect x="54" y="34" width="92" height="56" fill="rgba(45,106,81,0.09)" stroke="#1f6a47" stroke-width="2"/>
+        <polyline points="54,34 84,16 176,16 176,72 146,90" fill="rgba(45,106,81,0.05)" stroke="#1f6a47" stroke-width="2" stroke-linejoin="round"/>
+        <line x1="146" y1="34" x2="176" y2="16" stroke="#1f6a47" stroke-width="2"/>
+        <polyline points="54,90 84,72 176,72" fill="none" stroke="#1f6a47" stroke-width="1.3" stroke-dasharray="4 3"/>
+        <line x1="84" y1="16" x2="84" y2="72" stroke="#1f6a47" stroke-width="1.3" stroke-dasharray="4 3"/>
+      </svg>`;
     }
 
-    if (kind === 'right_tri' || /vuông tại A|cạnh huyền|thang dài|giác kế|Pythagore|sin\s|cos\s|tan\s/i.test(txt)) {
-      const lblA = d.a ? `${d.a}` : 'c';
-      const lblB = d.b ? `${d.b}` : 'b';
-      const lblC = d.c ? `${d.c}` : 'BC';
-      return `<div class="visual-math-box"><small>📐 ${t('Hình minh họa trực quan:', 'Geometry diagram:')}</small>
-        <svg viewBox="0 0 260 118" class="visual-math-svg" role="img" aria-label="Right triangle diagram">
-          <polygon points="56,96 56,22 196,96" fill="rgba(45,106,81,0.10)" stroke="#2b6a50" stroke-width="2.4" stroke-linejoin="round"/>
-          <polyline points="56,84 68,84 68,96" fill="none" stroke="#d97706" stroke-width="2"/>
-          <text x="42" y="102" font-size="12" font-weight="800" fill="#1e4631">A</text>
-          <text x="43" y="22" font-size="12" font-weight="800" fill="#1e4631">B</text>
-          <text x="203" y="102" font-size="12" font-weight="800" fill="#1e4631">C</text>
-          <text x="36" y="62" font-size="11.5" font-weight="800" text-anchor="end" fill="#2563eb">${esc(String(lblA))}</text>
-          <text x="126" y="111" font-size="11.5" font-weight="800" text-anchor="middle" fill="#2563eb">${esc(String(lblB))}</text>
-          <text x="135" y="52" font-size="11.5" font-weight="800" fill="#c2410c">${esc(String(lblC))}</text>
-        </svg></div>`;
-    }
-
-    if (kind === 'circle' || /đường tròn|dây cung|tiếp tuyến|cung tròn|quạt tròn|vành khuyên|góc nội tiếp|tứ giác nội tiếp/i.test(txt)) {
-      const rTxt = d.R ? `R = ${d.R}` : 'R';
-      return `<div class="visual-math-box"><small>📐 ${t('Minh họa Đường tròn (O; R):', 'Circle (O; R) diagram:')}</small>
-        <svg viewBox="0 0 240 116" class="visual-math-svg" role="img" aria-label="Circle geometry diagram">
-          <circle cx="120" cy="58" r="44" fill="rgba(59,130,246,0.08)" stroke="#2563eb" stroke-width="2.3"/>
-          <circle cx="120" cy="58" r="3" fill="#dc2626"/>
-          <line x1="120" y1="58" x2="158" y2="36" stroke="#dc2626" stroke-width="2" stroke-dasharray="4 2"/>
-          <line x1="85" y1="84" x2="155" y2="84" stroke="#1f583c" stroke-width="2.2"/>
-          <line x1="120" y1="58" x2="120" y2="84" stroke="#d97706" stroke-width="1.8"/>
-          <text x="112" y="54" font-size="11.5" font-weight="800" fill="#dc2626">O</text>
-          <text x="145" y="42" font-size="10.5" font-weight="800" fill="#dc2626">${esc(rTxt)}</text>
-          <text x="74" y="90" font-size="11" font-weight="800" fill="#1f583c">A</text>
-          <text x="160" y="90" font-size="11" font-weight="800" fill="#1f583c">B</text>
-        </svg></div>`;
-    }
-
+    // 17. Quadrilaterals & Plane Shapes: Trapezoid, Rhombus, Parallelogram, Rectangle, Square, Triangle
     if (kind === 'trapezoid' || /hình thang/i.test(txt)) {
-      return `<div class="visual-math-box"><small>📐 ${t('Minh họa Hình thang:', 'Trapezoid diagram:')}</small>
-        <svg viewBox="0 0 250 108" class="visual-math-svg" role="img" aria-label="Trapezoid diagram">
-          <polygon points="78,22 172,22 206,88 44,88" fill="rgba(16,185,129,0.10)" stroke="#1f6a47" stroke-width="2.2"/>
-          <line x1="78" y1="22" x2="78" y2="88" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4 3"/>
-          <text x="125" y="16" font-size="11" font-weight="800" text-anchor="middle" fill="#1f583c">${d.b ? d.b : 'b'}</text>
-          <text x="125" y="102" font-size="11" font-weight="800" text-anchor="middle" fill="#1f583c">${d.a ? d.a : 'a'}</text>
-          <text x="84" y="58" font-size="11" font-weight="800" fill="#b45309">h${d.h ? '=' + d.h : ''}</text>
-        </svg></div>`;
+      const hasMid = /đường trung bình MN/i.test(txt);
+      return `<svg viewBox="0 0 240 104" class="q-geom-svg" role="img" aria-label="Trapezoid diagram">
+        <polygon points="74,22 166,22 200,86 40,86" fill="rgba(16,185,129,0.09)" stroke="#1f6a47" stroke-width="2.1"/>
+        ${hasMid
+          ? `<line x1="57" y1="54" x2="183" y2="54" stroke="#dc2626" stroke-width="2"/><text x="45" y="57" font-size="10.5" font-weight="800" fill="#dc2626">M</text><text x="188" y="57" font-size="10.5" font-weight="800" fill="#dc2626">N</text>`
+          : `<line x1="74" y1="22" x2="74" y2="86" stroke="#d97706" stroke-width="1.7" stroke-dasharray="4 3"/><polyline points="74,78 82,78 82,86" fill="none" stroke="#d97706" stroke-width="1.5"/><text x="80" y="56" font-size="10.5" font-weight="800" fill="#b45309">h</text>`}
+        <text x="66" y="18" font-size="10.5" font-weight="800" fill="#164e32">A</text>
+        <text x="170" y="18" font-size="10.5" font-weight="800" fill="#164e32">B</text>
+        <text x="205" y="90" font-size="10.5" font-weight="800" fill="#164e32">C</text>
+        <text x="28" y="90" font-size="10.5" font-weight="800" fill="#164e32">D</text>
+      </svg>`;
     }
-
     if (kind === 'rhombus' || /hình thoi/i.test(txt)) {
-      return `<div class="visual-math-box"><small>📐 ${t('Minh họa Hình thoi (2 đường chéo vuông góc):', 'Rhombus diagram:')}</small>
-        <svg viewBox="0 0 240 112" class="visual-math-svg" role="img" aria-label="Rhombus diagram">
-          <polygon points="120,14 196,56 120,98 44,56" fill="rgba(245,158,11,0.10)" stroke="#b45309" stroke-width="2.2"/>
-          <line x1="44" y1="56" x2="196" y2="56" stroke="#2563eb" stroke-width="1.7" stroke-dasharray="4 2"/>
-          <line x1="120" y1="14" x2="120" y2="98" stroke="#16a34a" stroke-width="1.7" stroke-dasharray="4 2"/>
-          <text x="160" y="51" font-size="10.5" font-weight="800" fill="#2563eb">${d.d1 ? 'd₁=' + d.d1 : 'd₁'}</text>
-          <text x="125" y="36" font-size="10.5" font-weight="800" fill="#16a34a">${d.d2 ? 'd₂=' + d.d2 : 'd₂'}</text>
-        </svg></div>`;
+      return `<svg viewBox="0 0 230 104" class="q-geom-svg" role="img" aria-label="Rhombus diagonals diagram">
+        <polygon points="115,14 190,52 115,90 40,52" fill="rgba(245,158,11,0.10)" stroke="#b45309" stroke-width="2.1"/>
+        <line x1="40" y1="52" x2="190" y2="52" stroke="#2563eb" stroke-width="1.6" stroke-dasharray="4 2"/>
+        <line x1="115" y1="14" x2="115" y2="90" stroke="#16a34a" stroke-width="1.6" stroke-dasharray="4 2"/>
+        <polyline points="115,44 123,44 123,52" fill="none" stroke="#dc2626" stroke-width="1.4"/>
+      </svg>`;
+    }
+    if (/hình bình hành|tứ giác ABCD/i.test(txt)) {
+      return `<svg viewBox="0 0 235 100" class="q-geom-svg" role="img" aria-label="Parallelogram ABCD diagram">
+        <polygon points="68,22 192,22 164,82 40,82" fill="rgba(37,99,235,0.08)" stroke="#1d4ed8" stroke-width="2.1"/>
+        <text x="60" y="18" font-size="10.5" font-weight="800" fill="#1e3a8a">A</text>
+        <text x="196" y="18" font-size="10.5" font-weight="800" fill="#1e3a8a">B</text>
+        <text x="169" y="90" font-size="10.5" font-weight="800" fill="#1e3a8a">C</text>
+        <text x="28" y="90" font-size="10.5" font-weight="800" fill="#1e3a8a">D</text>
+      </svg>`;
+    }
+    if (kind === 'rect' || /hình chữ nhật|hình vuông/i.test(txt)) {
+      const isSq = /hình vuông/i.test(txt) && !/hình chữ nhật/i.test(txt);
+      return `<svg viewBox="0 0 220 96" class="q-geom-svg" role="img" aria-label="${isSq ? 'Square' : 'Rectangle'} diagram">
+        <rect x="${isSq ? 74 : 48}" y="16" width="${isSq ? 72 : 124}" height="${isSq ? 66 : 64}" rx="2" fill="rgba(45,106,81,0.09)" stroke="#2b6a50" stroke-width="2.1"/>
+        <polyline points="${isSq ? 74 : 48},72 ${isSq ? 82 : 56},72 ${isSq ? 82 : 56},80" fill="none" stroke="#d97706" stroke-width="1.6"/>
+      </svg>`;
+    }
+    if (kind === 'triangle' || /hình tam giác|tam giác ABC|tam giác cân|tam giác đều/i.test(txt)) {
+      const showHeight = /chiều cao|diện tích/i.test(txt);
+      return `<svg viewBox="0 0 230 102" class="q-geom-svg" role="img" aria-label="Triangle diagram">
+        <polygon points="44,86 115,16 186,86" fill="rgba(45,106,81,0.09)" stroke="#1f6a47" stroke-width="2.1" stroke-linejoin="round"/>
+        ${showHeight ? `<line x1="115" y1="16" x2="115" y2="86" stroke="#d97706" stroke-width="1.7" stroke-dasharray="4 3"/><polyline points="115,78 123,78 123,86" fill="none" stroke="#d97706" stroke-width="1.5"/><text x="121" y="55" font-size="10.5" font-weight="800" fill="#b45309">h</text>` : ''}
+        <text x="115" y="12" font-size="10.5" font-weight="800" text-anchor="middle" fill="#164e32">A</text>
+        <text x="32" y="90" font-size="10.5" font-weight="800" fill="#164e32">B</text>
+        <text x="191" y="90" font-size="10.5" font-weight="800" fill="#164e32">C</text>
+      </svg>`;
     }
 
-    if (kind === 'segment' || /trung điểm của đoạn thẳng/i.test(txt)) {
-      return `<div class="visual-math-box"><small>📐 ${t('Sơ đồ đoạn thẳng:', 'Segment diagram:')}</small>
-        <svg viewBox="0 0 260 64" class="visual-math-svg" role="img" aria-label="Line segment midpoint diagram">
-          <line x1="34" y1="34" x2="226" y2="34" stroke="#2b6a50" stroke-width="2.6"/>
-          <circle cx="34" cy="34" r="4.5" fill="#1e4631"/>
-          <circle cx="130" cy="34" r="4.5" fill="#d97706"/>
-          <circle cx="226" cy="34" r="4.5" fill="#1e4631"/>
-          <line x1="80" y1="28" x2="84" y2="40" stroke="#d97706" stroke-width="2"/>
-          <line x1="176" y1="28" x2="180" y2="40" stroke="#d97706" stroke-width="2"/>
-          <text x="34" y="22" font-size="11.5" font-weight="800" text-anchor="middle" fill="#1e4631">A</text>
-          <text x="130" y="22" font-size="11.5" font-weight="800" text-anchor="middle" fill="#b45309">M</text>
-          <text x="226" y="22" font-size="11.5" font-weight="800" text-anchor="middle" fill="#1e4631">B</text>
-          ${d.total ? `<text x="130" y="55" font-size="11" font-weight="800" text-anchor="middle" fill="#355240">AB = ${esc(String(d.total))} cm</text>` : ''}
-        </svg></div>`;
+    // 18. Parallel lines a // b, Angles xOy / Kề bù, Segment Midpoint / Polyline
+    if (/a\s*\/\/\s*b|Ax\s*\/\/\s*By|song song/i.test(txt) && (q.domain === 'geometry' || /góc/i.test(txt))) {
+      return `<svg viewBox="0 0 235 96" class="q-geom-svg" role="img" aria-label="Parallel lines cut by transversal diagram">
+        <line x1="28" y1="30" x2="206" y2="30" stroke="#1d4ed8" stroke-width="2.1"/>
+        <line x1="28" y1="70" x2="206" y2="70" stroke="#1d4ed8" stroke-width="2.1"/>
+        <line x1="148" y1="10" x2="86" y2="90" stroke="#dc2626" stroke-width="2"/>
+        <text x="198" y="25" font-size="10.5" font-weight="800" fill="#1e3a8a">a</text>
+        <text x="198" y="65" font-size="10.5" font-weight="800" fill="#1e3a8a">b</text>
+        <text x="153" y="18" font-size="10.5" font-weight="800" fill="#dc2626">c</text>
+      </svg>`;
+    }
+    if (/góc xOy|góc kề bù|góc đối đỉnh/i.test(txt)) {
+      return `<svg viewBox="0 0 230 92" class="q-geom-svg" role="img" aria-label="Angle rays diagram">
+        <line x1="48" y1="78" x2="196" y2="78" stroke="#1f6a47" stroke-width="2.2"/>
+        <line x1="48" y1="78" x2="152" y2="16" stroke="#1f6a47" stroke-width="2.2"/>
+        <line x1="48" y1="78" x2="184" y2="42" stroke="#dc2626" stroke-width="1.9"/>
+        <path d="M 78 78 A 30 30 0 0 0 74 62" fill="none" stroke="#d97706" stroke-width="1.6"/>
+        <text x="36" y="82" font-size="11" font-weight="800" fill="#164e32">O</text>
+        <text x="200" y="82" font-size="11" font-weight="800" fill="#164e32">x</text>
+        <text x="156" y="16" font-size="11" font-weight="800" fill="#164e32">y</text>
+        <text x="188" y="44" font-size="10.5" font-weight="800" fill="#dc2626">z</text>
+      </svg>`;
+    }
+    if (kind === 'segment' || /trung điểm.*đoạn thẳng|trên tia Ox|đường gấp khúc/i.test(txt)) {
+      if (/đường gấp khúc/i.test(txt)) {
+        return `<svg viewBox="0 0 240 78" class="q-geom-svg" role="img" aria-label="Polyline diagram">
+          <polyline points="28,58 92,22 156,60 212,24" fill="none" stroke="#1d4ed8" stroke-width="2.4" stroke-linejoin="round"/>
+          <circle cx="28" cy="58" r="3.5" fill="#dc2626"/><circle cx="92" cy="22" r="3.5" fill="#dc2626"/>
+          <circle cx="156" cy="60" r="3.5" fill="#dc2626"/><circle cx="212" cy="24" r="3.5" fill="#dc2626"/>
+          <text x="24" y="72" font-size="10.5" font-weight="800" fill="#1e3a8a">A</text>
+          <text x="92" y="15" font-size="10.5" font-weight="800" text-anchor="middle" fill="#1e3a8a">B</text>
+          <text x="156" y="74" font-size="10.5" font-weight="800" text-anchor="middle" fill="#1e3a8a">C</text>
+          <text x="216" y="22" font-size="10.5" font-weight="800" fill="#1e3a8a">D</text>
+        </svg>`;
+      }
+      return `<svg viewBox="0 0 240 58" class="q-geom-svg" role="img" aria-label="Line segment diagram">
+        <line x1="34" y1="32" x2="206" y2="32" stroke="#2b6a50" stroke-width="2.5"/>
+        <circle cx="34" cy="32" r="4" fill="#1e4631"/>
+        <circle cx="120" cy="32" r="4" fill="#d97706"/>
+        <circle cx="206" cy="32" r="4" fill="#1e4631"/>
+        <text x="34" y="21" font-size="11" font-weight="800" text-anchor="middle" fill="#1e4631">A</text>
+        <text x="120" y="21" font-size="11" font-weight="800" text-anchor="middle" fill="#b45309">M</text>
+        <text x="206" y="21" font-size="11" font-weight="800" text-anchor="middle" fill="#1e4631">B</text>
+      </svg>`;
     }
 
-    if (kind === 'rect') {
-      return `<div class="visual-math-box"><small>📐 ${t('Sơ đồ Hình chữ nhật:', 'Rectangle diagram:')}</small>
-        <svg viewBox="0 0 240 98" class="visual-math-svg" role="img" aria-label="Rectangle diagram">
-          <rect x="52" y="18" width="136" height="62" rx="3" fill="rgba(45,106,81,0.09)" stroke="#2b6a50" stroke-width="2.2"/>
-          <text x="120" y="13" font-size="11" font-weight="800" text-anchor="middle" fill="#1e4631">${d.l ? 'Dài = ' + d.l : 'a'}</text>
-          <text x="195" y="53" font-size="11" font-weight="800" fill="#2563eb">${d.w ? 'Rộng = ' + d.w : 'b'}</text>
-        </svg></div>`;
+    // 19. Statistical Charts (Biểu đồ cột / cột kép / quạt tròn / đoạn thẳng)
+    if (/biểu đồ quạt tròn/i.test(txt)) {
+      return `<svg viewBox="0 0 210 96" class="q-geom-svg" role="img" aria-label="Pie chart diagram">
+        <circle cx="105" cy="48" r="37" fill="rgba(59,130,246,0.14)" stroke="#1d4ed8" stroke-width="2"/>
+        <path d="M 105 48 L 105 11 A 37 37 0 0 1 142 48 Z" fill="rgba(16,185,129,0.28)" stroke="#1f6a47" stroke-width="1.8"/>
+        <path d="M 105 48 L 142 48 A 37 37 0 0 1 82 77 Z" fill="rgba(245,158,11,0.26)" stroke="#d97706" stroke-width="1.8"/>
+      </svg>`;
+    }
+    if (/biểu đồ cột|biểu đồ đoạn thẳng/i.test(txt)) {
+      const isLine = /đoạn thẳng/i.test(txt);
+      return `<svg viewBox="0 0 220 92" class="q-geom-svg" role="img" aria-label="Statistical chart diagram">
+        <line x1="34" y1="14" x2="34" y2="78" stroke="#475569" stroke-width="1.8"/>
+        <line x1="34" y1="78" x2="196" y2="78" stroke="#475569" stroke-width="1.8"/>
+        ${isLine
+          ? `<polyline points="56,60 98,42 140,48 180,24" fill="none" stroke="#2563eb" stroke-width="2.2"/><circle cx="56" cy="60" r="3" fill="#dc2626"/><circle cx="98" cy="42" r="3" fill="#dc2626"/><circle cx="140" cy="48" r="3" fill="#dc2626"/><circle cx="180" cy="24" r="3" fill="#dc2626"/>`
+          : `<rect x="52" y="42" width="22" height="36" rx="2" fill="rgba(37,99,235,0.28)" stroke="#1d4ed8" stroke-width="1.6"/><rect x="96" y="26" width="22" height="52" rx="2" fill="rgba(16,185,129,0.30)" stroke="#1f6a47" stroke-width="1.6"/><rect x="140" y="34" width="22" height="44" rx="2" fill="rgba(245,158,11,0.30)" stroke="#d97706" stroke-width="1.6"/>`}
+      </svg>`;
     }
 
     return '';
+  }
+
+  function buildQuestionFigureSvg(q, opts = {}) {
+    const svg = rawGeometryFigureSvg(q);
+    if (!svg) return '';
+    if (opts.forPrint) {
+      return `<div class="ws-q-figure">${svg}</div>`;
+    }
+    return `<div class="q-inline-figure">${svg}</div>`;
+  }
+
+  function buildGeometryVisualSvg(q) {
+    const svg = rawGeometryFigureSvg(q);
+    if (!svg) return '';
+    return `<div class="visual-math-box"><small>${t('Hình minh họa trực quan:', 'Geometry diagram:')}</small>${svg.replace('class="q-geom-svg"', 'class="visual-math-svg"')}</div>`;
   }
 
   // Extend buildVisualMathSvg so wrong-answer explanations AND geometry hints automatically include Geometry SVGs!
@@ -1146,11 +1476,14 @@
       body.dark-mode .kh-practice-chip{background:#1f3729!important;border-color:#3b694f!important;color:#b2ebd0!important}
       body.dark-mode .kh-body{color:#d8ece0}
       body.dark-mode .kh-formula{background:rgba(168,229,195,.15);color:#b6f0cf}
+      .q-inline-figure{margin:-8px auto 14px;padding:6px 10px;max-width:300px;border-radius:12px;background:#f8fbf8;border:1px solid #d7e6d8;text-align:center}
+      .q-inline-figure .q-geom-svg{width:100%;max-height:118px;height:auto;display:block;margin:0 auto}
+      body.dark-mode .q-inline-figure{background:#f7fbff;border-color:#3a5c49}
     `;
     document.head.append(style);
   }
 
-  const exp = { NUMI_KNOWLEDGE_BANK, openKnowledgeModal, buildKnowledgeCardHtml, buildMoetReformHtml, buildGeometryVisualSvg, printKnowledgeSheet };
+  const exp = { NUMI_KNOWLEDGE_BANK, openKnowledgeModal, buildKnowledgeCardHtml, buildMoetReformHtml, buildGeometryVisualSvg, buildQuestionFigureSvg, printKnowledgeSheet };
   if (typeof window !== 'undefined') Object.assign(window, exp);
   if (typeof global !== 'undefined') Object.assign(global, exp);
 })();
