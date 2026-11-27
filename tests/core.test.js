@@ -1188,5 +1188,73 @@ test('v2.16.2: A4 PDF worksheets render stacked vertical fractions (never raw a/
   assert.equal(ctx.mathMarkup('Vận tốc 45 km/h ngày 26/11/2026').includes('stacked-fraction'), false);
 });
 
+test('v2.16.4: Topic-to-PDF content alignment (no off-topic rounding/inequality/3D leaks), Setup-to-PDF sync, and Nguyen Kim Tham corner watermark', () => {
+  const ctx = loadAppContext();
+
+  // 1. g7_real_math ("Toán thực tế Lớp 7: Giảm giá, Lãi suất, Taxi") strictly generates consumer real-world math (never d=50 rounding!)
+  const g7RealQs = ctx.generateWorksheetQuestions(7, ['g7_real_math'], 24, { difficultyMode: 'progressive' });
+  assert.equal(g7RealQs.length, 24);
+  const g7AllTxt = g7RealQs.map(q => q.q).join('\n');
+  for (const q of g7RealQs) {
+    assert.ok(!/Làm tròn số|độ chính xác d\s*=/i.test(q.q), `g7_real_math leaked rounding question: "${q.q}"`);
+    assert.ok(/giảm|lãi suất|ngân hàng|tiết kiệm|taxi|km|VAT|khuyến mãi/i.test(q.q), `g7_real_math must stay on consumer math: "${q.q}"`);
+  }
+  assert.ok(/giảm/i.test(g7AllTxt) && /lãi suất/i.test(g7AllTxt) && /taxi/i.test(g7AllTxt), 'g7_real_math should cover Giảm giá, Lãi suất, and Taxi');
+
+  // 2. g9_real_10 never leaks relative frequency, g9_ineq_eq never leaks inequalities, g5_geom never leaks 3D cm³
+  for (let i = 0; i < 20; i++) {
+    const q9Real = ctx.generateTopicQuestion('g9_real_10', { grade: 9, difficulty: 'easy' });
+    assert.ok(!/Tần số tương đối/i.test(q9Real.q), `g9_real_10 easy leaked relative frequency: "${q9Real.q}"`);
+    for (const tier of ['easy', 'medium', 'hard']) {
+      const q9Eq = ctx.generateTopicQuestion('g9_ineq_eq', { grade: 9, difficulty: tier });
+      assert.ok(!/bất phương trình/i.test(q9Eq.q), `g9_ineq_eq (${tier}) leaked inequality: "${q9Eq.q}"`);
+    }
+    const q5Plane = ctx.generateTopicQuestion('g5_geom', { grade: 5 });
+    assert.ok(!/cm³|lập phương|hộp chữ nhật/i.test(q5Plane.q), `g5_geom leaked 3D volume: "${q5Plane.q}"`);
+  }
+
+  // 3. Multi-topic PDF title & topic scope header reflect exact selected topics, and custom counts (e.g. 5 or 16) are preserved
+  ctx.openWorksheetComposer({ grade: 7, topics: ['g7_rat', 'g7_real_math'], count: 5 });
+  const modalHtml = ctx.document.querySelector('#modalBody')?.innerHTML || '';
+  assert.ok(!modalHtml.includes('ĐỀ ÔN TẬP TỔNG HỢP'), '2-topic selection must not label worksheet as ĐỀ ÔN TẬP TỔNG HỢP');
+  assert.ok(modalHtml.includes('ws-topic-scope'), 'Multi-topic PDF should display exact selected topics in header');
+  assert.ok(modalHtml.includes('value="5" selected'), 'Custom count=5 from Setup must be preserved in PDF composer');
+
+  // 4. Corner watermark "Nguyen Kim Tham" appears on Student Exam PDF, Answer Key PDF, and Printable Knowledge Sheet PDF
+  const examHtml = ctx.buildWorksheetSheetHTML(
+    { grade: 7, topics: ['g7_real_math'], count: 6, format: 'mixed', examCode: '01', durationMin: 45, questions: g7RealQs.slice(0, 6) },
+    { withAnswers: false, interactivePreview: false }
+  );
+  const ansHtml = ctx.buildWorksheetSheetHTML(
+    { grade: 7, topics: ['g7_real_math'], count: 6, format: 'mixed', examCode: '01', durationMin: 45, questions: g7RealQs.slice(0, 6) },
+    { withAnswers: true, interactivePreview: false }
+  );
+  assert.ok(examHtml.includes('ws-corner-watermark') && examHtml.includes('Nguyen Kim Tham'), 'Student exam PDF must include Nguyen Kim Tham corner watermark');
+  assert.ok(ansHtml.includes('ws-corner-watermark') && ansHtml.includes('Nguyen Kim Tham'), 'Answer key PDF must include Nguyen Kim Tham corner watermark');
+
+  ctx.window.print = () => {};
+  ctx.printKnowledgeSheet(7);
+  const khPrintHtml = ctx.document.querySelector('#numiPrintSheet')?.innerHTML || '';
+  assert.ok(khPrintHtml.includes('ws-corner-watermark') && khPrintHtml.includes('Nguyen Kim Tham'), 'Knowledge formula PDF must also include Nguyen Kim Tham corner watermark');
+});
+
+test('v2.16.5: Teacher workspace displays prominent Sign-Out buttons (both in persistent top header and workspace header) and cleanly signs out local + cloud sessions', async () => {
+  const ctx = loadAppContext();
+  await ctx.localSignIn('colan', '1234');
+  assert.equal(ctx.view, 'teacher');
+
+  const appHtml = ctx.document.querySelector('#app')?.innerHTML || '';
+  assert.ok(appHtml.includes('id="tchSignOutBtn"') && appHtml.includes('tch-signout-btn'), 'Teacher workspace must render prominent #tchSignOutBtn');
+  const headerOut = ctx.document.querySelector('#headerSignOutBtn');
+  assert.ok(headerOut && headerOut.style.display === 'inline-flex', 'Top header #headerSignOutBtn must be visible while signed in as teacher');
+
+  // Signing out clears local + cloud teacher state and opens login gate (never bouncing back into teacher workspace)
+  await ctx.localSignOut();
+  assert.equal(ctx.currentAuthUser(), null, 'Teacher must be signed out completely');
+  assert.equal(ctx.view, 'account', 'After teacher sign-out, login gate must open');
+  assert.equal(headerOut.style.display, 'none', 'Header sign-out button must hide when signed out');
+});
+
+
 
 

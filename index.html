@@ -24,7 +24,7 @@
   <title>NumiQuick · Luyện tính nhẩm vui</title>
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="style.css?v=2.16.2">
+  <link rel="stylesheet" href="style.css?v=2.16.5">
   <link rel="manifest" href="manifest.json">
 </head>
 <body class="numi-booting">
@@ -79,7 +79,7 @@
 <script src="app.js?v=2.16.3"></script>
 <script src="milktea.js?v=2.13.0"></script>
 <script src="cloud-config.js?v=2.13.0"></script>
-<script src="cloud.js?v=2.14.1"></script>
+<script src="cloud.js?v=2.16.5"></script>
 <script src="admin.js?v=2.16.2"></script>
 <script src="ui.js?v=2.13.0"></script>
 <script src="advanced.js?v=2.16.2"></script>
@@ -94,14 +94,14 @@
 <script src="scratchpad-kbd.js?v=2.13.0"></script>
 <script src="teacher-classes.js?v=2.13.0"></script>
 <script src="teacher-auth-gate.js?v=2.13.0"></script>
-<script src="teacher-workspace.js?v=2.15.0"></script>
+<script src="teacher-workspace.js?v=2.16.5"></script>
 <script src="teacher-integration.js?v=2.13.0"></script>
 <script src="cloud-classes.js?v=2.13.0"></script>
-<script src="curriculum-secondary.js?v=2.16.3"></script>
-<script src="curriculum-knowledge.js?v=2.16.3"></script>
-<script src="curriculum-topics.js?v=2.16.2"></script>
+<script src="curriculum-secondary.js?v=2.16.4"></script>
+<script src="curriculum-knowledge.js?v=2.16.4"></script>
+<script src="curriculum-topics.js?v=2.16.4"></script>
 <script src="column-calc.js?v=2.15.1"></script>
-<script src="worksheet-pdf.js?v=2.16.3"></script>
+<script src="worksheet-pdf.js?v=2.16.4"></script>
 <script>document.body.classList.remove('numi-booting');</script>
 <script>
 if('serviceWorker' in navigator){
@@ -109,9 +109,9 @@ if('serviceWorker' in navigator){
     try{
       if(window.caches){
         const keys=await caches.keys();
-        await Promise.all(keys.filter(k=>k!=='numiquick-v2.16.3').map(k=>caches.delete(k)));
+        await Promise.all(keys.filter(k=>k!=='numiquick-v2.16.5').map(k=>caches.delete(k)));
       }
-      navigator.serviceWorker.register('./sw.js?v=2.16.3').then(r=>r.update()).catch(()=>{});
+      navigator.serviceWorker.register('./sw.js?v=2.16.5').then(r=>r.update()).catch(()=>{});
     }catch{}
   });
 }

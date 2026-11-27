@@ -46,57 +46,44 @@
 
       <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:10px">
         <label>${t('Tên bài tập:', 'Assignment Title:')}
-          <input name="title" maxlength="80" required placeholder="${t('VD: Ôn phép nhân 2 chữ số', 'e.g. 2-digit multiplication')}" value="${preSet.size === 1 && firstSelected ? esc(t(`Bài tập riêng cho ${firstSelected.name}`, `Practice for ${firstSelected.name}`)) : ''}">
+          <input name="title" id="admAssignTitleInput" maxlength="80" required placeholder="${t('VD: Ôn phép nhân 2 chữ số', 'e.g. 2-digit multiplication')}" value="${preSet.size === 1 && firstSelected ? esc(t(`Bài tập riêng cho ${firstSelected.name}`, `Practice for ${firstSelected.name}`)) : ''}">
         </label>
         <label>${t('Hạn nộp:', 'Due Date:')}
           <input name="dueDate" type="date" value="${defaultDue}">
         </label>
       </div>
 
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
-        <label>${t('Khối lớp:', 'Grade:')}
-          <select name="grade">${[1,2,3,4,5,6,7,8,9].map(g => `<option value="${g}" ${Number(defaultGrade) === g ? 'selected' : ''}>${t('Lớp', 'Grade')} ${g}</option>`).join('')}</select>
-        </label>
-        <label>${t('Kiểu câu hỏi:', 'Question Style:')}
-          <select name="questionStyle">
-            <option value="normal">${t('Tính thường', 'Standard')}</option>
-            <option value="missing">${t('Điền số (?)', 'Missing (?)')}</option>
-            <option value="word">${t('Toán đố ngắn', 'Word Problem')}</option>
-            <option value="convenient">${t('Tính thuận tiện', 'Regrouping')}</option>
-            <option value="expression">${t('Biểu thức', 'Expression')}</option>
-          </select>
-        </label>
-        <label>${t('Loại số:', 'Number Type:')}
-          <select name="type">
-            <option value="natural">${t('Số tự nhiên', 'Whole')}</option>
-            <option value="fraction">${t('Phân số', 'Fractions')}</option>
-            <option value="decimal">${t('Thập phân', 'Decimals')}</option>
-            <option value="negative">${t('Số nguyên âm', 'Integers')}</option>
-            <option value="remainder">${t('Chia có dư', 'Remainder')}</option>
-          </select>
-        </label>
-      </div>
-
-      <div style="display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:8px;align-items:end">
-        <div>
-          <span style="display:block;font-size:12px;font-weight:700;margin-bottom:6px">${t('Phép tính:', 'Operations:')}</span>
-          <div class="adm-ops-row" style="display:flex;gap:10px;flex-wrap:nowrap;align-items:center;min-height:47px">
-            ${[['+', '+'], ['-', '−'], ['*', '×'], ['/', '÷']].map(([v, lbl]) => `<label style="display:inline-flex;align-items:center;gap:4px;font-size:14px;white-space:nowrap;cursor:pointer"><input type="checkbox" name="ops" value="${v}" style="width:16px;height:16px;min-height:16px;margin:0" ${v === '+' || v === '-' ? 'checked' : ''}>${lbl}</label>`).join('')}
-          </div>
-        </div>
-        <label>${t('Số câu:', 'Questions:')}
-          <select name="count">${[5, 10, 15, 20].map(c => `<option value="${c}" ${c === 10 ? 'selected' : ''}>${c} ${t('câu', 'qs')}</option>`).join('')}</select>
-        </label>
-        <label>${t('Giây/câu:', 'Sec/Q:')}
-          <select name="seconds">${[15, 20, 30, 45].map(s => `<option value="${s}" ${s === 20 ? 'selected' : ''}>${s}s</option>`).join('')}</select>
-        </label>
-      </div>
+      <div id="admAssignExerciseMount"></div>
 
       <div class="actions" style="margin-top:6px">
         <button type="submit" class="primary">📤 ${t('Giao bài ngay', 'Assign Now')}</button>
         <button type="button" onclick="$('#modal').close()">${t('Hủy', 'Cancel')}</button>
       </div>
     </form>`);
+
+    const modalEl = $('#modal');
+    if (modalEl) {
+      modalEl.classList.add('tch-assign-wide-modal');
+      modalEl.addEventListener('close', () => modalEl.classList.remove('tch-assign-wide-modal'), { once: true });
+    }
+
+    const titleInput = $('#admAssignTitleInput');
+    let titleTouched = Boolean(titleInput && titleInput.value.trim());
+    titleInput?.addEventListener('input', () => { titleTouched = Boolean(titleInput.value.trim()); });
+
+    const mountEl = $('#admAssignExerciseMount');
+    const picker = typeof window.NumiAdminData?.mountAssignmentExercisePicker === 'function'
+      ? window.NumiAdminData.mountAssignmentExercisePicker(mountEl, { grade: Number(defaultGrade) || 1, inputMode: 'choices' }, {
+          onChange: (_cfg, suggested) => {
+            if (titleInput && !titleTouched && suggested) {
+              titleInput.value = suggested.slice(0, 80);
+            }
+          }
+        })
+      : null;
+    if (titleInput && !titleTouched && picker) {
+      titleInput.value = picker.getSuggestedTitle().slice(0, 80);
+    }
 
     $$('[data-pick-grade]').forEach(btn => {
       btn.onclick = () => {
@@ -113,25 +100,13 @@
       e.preventDefault();
       const f = new FormData(e.target);
       const targets = f.getAll('targetStudents');
-      const ops = f.getAll('ops');
-      const grade = Number(f.get('grade')) || 1;
-      const type = String(f.get('type') || 'natural');
+      const cfg = picker ? picker.getConfig() : { grade: Number(defaultGrade) || 1, count: 10, seconds: 20 };
       try {
         createTargetedAssignment({
           title: f.get('title'),
           dueDate: f.get('dueDate'),
           targetStudents: targets,
-          config: {
-            ...(typeof defaults !== 'undefined' ? defaults : {}),
-            grade,
-            ops: ops.length ? ops : ['+'],
-            types: [type],
-            type,
-            digits: grade >= 4 ? [1, 2] : [1],
-            questionStyle: String(f.get('questionStyle') || 'normal'),
-            count: Number(f.get('count')) || 10,
-            seconds: Number(f.get('seconds')) || 20
-          }
+          config: cfg
         });
         $('#modal').close();
         toast(t(`Đã giao bài cho ${targets.length} học sinh!`, `Assigned homework to ${targets.length} student(s)!`));
@@ -397,7 +372,7 @@
                     <div class="adm-asg-top">
                       <div>
                         <b>${esc(asg.title)}</b>
-                        <small>${t('Lớp', 'Gr')} ${asg.config?.grade || 1} · ${asg.config?.count || 10} ${t('câu', 'qs')} · ${asg.config?.seconds || 20}s/${t('câu', 'q')}${asg.due_date ? ` · ${t('Hạn:', 'Due:')} ${esc(asg.due_date)}` : ''}</small>
+                        <small>${esc(typeof formatAssignmentSummary === 'function' ? formatAssignmentSummary(asg) : `${t('Lớp', 'Gr')} ${asg.config?.grade || 1} · ${asg.config?.count || 10} ${t('câu', 'qs')} · ${asg.config?.seconds || 20}s/${t('câu', 'q')}`)}${asg.due_date ? ` · ${t('Hạn:', 'Due:')} ${esc(asg.due_date)}` : ''}</small>
                       </div>
                       <div class="adm-asg-btns">
                         <button type="button" class="ghost" data-copy-hw-link="${esc(asg.id)}">🔗 ${t('Copy Link', 'Copy Link')}</button>
@@ -506,7 +481,7 @@
         ${pending.map(a => `<div class="targeted-hw-row">
           <div>
             <b>${esc(a.title)}</b>
-            <small>${a.config?.count || 10} ${t('câu', 'qs')} · ${a.config?.seconds || 20}s/${t('câu', 'q')}${a.due_date ? ` · ${t('Hạn:', 'Due:')} ${esc(a.due_date)}` : ''}</small>
+            <small>${esc(typeof formatAssignmentSummary === 'function' ? formatAssignmentSummary(a) : `${a.config?.count || 10} ${t('câu', 'qs')} · ${a.config?.seconds || 20}s/${t('câu', 'q')}`)}${a.due_date ? ` · ${t('Hạn:', 'Due:')} ${esc(a.due_date)}` : ''}</small>
           </div>
           <button type="button" class="cls-3d-btn" data-start-targeted="${esc(a.id)}">${t('Làm bài ngay', 'Start')} →</button>
         </div>`).join('')}

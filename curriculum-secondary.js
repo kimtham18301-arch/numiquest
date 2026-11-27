@@ -210,6 +210,31 @@
       case 'g1_number_sense': {
         // Strict Grade 1 rule: NO '(', ')', '×', '÷', NO carry/borrow, answers 0..100
         if (tier === 'easy') {
+          const mode = rInt(1, 4);
+          if (mode === 1) {
+            const tens = rInt(1, 9), ones = rInt(0, 9), ans = tens * 10 + ones;
+            return makeExtQ(
+              t(`Số gồm ${tens} chục và ${ones} đơn vị được viết là số nào?`, `Write the number with ${tens} tens and ${ones} ones`),
+              ans, [ones ? ones * 10 + tens : ans + 1, Math.min(99, ans + 10), Math.max(0, ans - 10)], 'natural:place', cfg,
+              `${tens} chục là ${tens * 10}, thêm ${ones} đơn vị được số ${ans}.`, ex()
+            );
+          }
+          if (mode === 2) {
+            const d = rInt(1, 9), ans = d * 11;
+            return makeExtQ(
+              t(`Số có hai chữ số giống nhau mà chữ số hàng chục là ${d} là số nào?`, `2-digit number with identical digits and tens digit ${d}?`),
+              ans, [d * 10, Math.min(99, ans + 10), Math.max(10, ans - 1)], 'natural:place', cfg,
+              `Hai chữ số giống nhau đều là ${d} → số đó là ${ans}.`, ex()
+            );
+          }
+          if (mode === 3) {
+            const n = rInt(11, 98), askNext = Math.random() < 0.5, ans = askNext ? n + 1 : n - 1;
+            return makeExtQ(
+              askNext ? t(`Số liền sau của số ${n} là số nào?`, `Number right after ${n}?`) : t(`Số liền trước của số ${n} là số nào?`, `Number right before ${n}?`),
+              ans, [askNext ? n - 1 : n + 1, Math.min(99, n + 10), Math.max(1, n - 10)], 'natural:order', cfg,
+              askNext ? `Số liền sau hơn ${n} một đơn vị: ${n} + 1 = ${ans}.` : `Số liền trước kém ${n} một đơn vị: ${n} − 1 = ${ans}.`, ex()
+            );
+          }
           const bank = [
             { q: t('Số lớn nhất có một chữ số là số nào?', 'What is the largest 1-digit number?'), a: 9, near: [8, 10, 1], exp: 'Các số có một chữ số từ 0 đến 9 → số lớn nhất là 9.' },
             { q: t('Số bé nhất có hai chữ số là số nào?', 'What is the smallest 2-digit number?'), a: 10, near: [11, 9, 20], exp: 'Các số có hai chữ số từ 10 đến 99 → số bé nhất là 10.' },
@@ -378,6 +403,14 @@
       }
       case 'g4_word_adv': {
         if (tier === 'easy') {
+          if (Math.random() < 0.5) {
+            const child = rInt(6, 14), diff = rInt(22, 32), mom = child + diff, sum = mom + child;
+            return makeExtQ(
+              t(`Mẹ hơn con ${diff} tuổi. Hiện nay tổng số tuổi của hai mẹ con là ${sum} tuổi. Hỏi hiện nay con bao nhiêu tuổi?`, `Mom is ${diff} years older than her child, and their ages sum to ${sum}. Child's age = ?`),
+              child, [mom, child + 2, Math.max(3, child - 2)], 'word:age', cfg,
+              `Bài toán Tổng – Hiệu về tuổi tác:\nTuổi con hiện nay = (Tổng − Hiệu) ÷ 2 = (${sum} − ${diff}) ÷ 2 = ${child} (tuổi).`, ex()
+            );
+          }
           const w = rInt(8, 18), diff = rInt(4, 12), l = w + diff, halfP = l + w, area = l * w;
           return makeExtQ(
             t(`Mảnh vườn hình chữ nhật có nửa chu vi là ${halfP} m, chiều dài hơn chiều rộng ${diff} m. Tính diện tích mảnh vườn (m²)?`, `A rectangle has semi-perimeter ${halfP} m and length exceeds width by ${diff} m. Area (m²) = ?`),
@@ -386,6 +419,15 @@
           );
         }
         if (tier === 'medium') {
+          if (Math.random() < 0.5) {
+            const childNow = rInt(7, 15), diff = rInt(24, 32), momNow = childNow + diff, yrs = rInt(2, 6);
+            const sumFuture = momNow + childNow + 2 * yrs;
+            return makeExtQ(
+              t(`Mẹ hơn con ${diff} tuổi. Sau ${yrs} năm nữa, tổng số tuổi của hai mẹ con là ${sumFuture} tuổi. Tính tuổi mẹ hiện nay?`, `Mom is ${diff} years older than her child. In ${yrs} years, their ages will sum to ${sumFuture}. Mom's age now = ?`),
+              momNow, [childNow, momNow + yrs, momNow - yrs], 'word:age', cfg,
+              `• Tổng số tuổi hai mẹ con hiện nay: ${sumFuture} − ${yrs} × 2 = ${momNow + childNow} (tuổi).\n• Hiệu số tuổi không đổi (${diff} tuổi) ⇒ Tuổi mẹ hiện nay: (${momNow + childNow} + ${diff}) ÷ 2 = ${momNow} (tuổi).`, ex()
+            );
+          }
           const w = rInt(6, 14), diff = pickAny([4, 6, 8, 10]), l = w + diff, p = (l + w) * 2, area = l * w;
           return makeExtQ(
             t(`Sân trường hình chữ nhật có chu vi ${p} m, chiều rộng kém chiều dài ${diff} m. Diện tích sân trường là bao nhiêu m²?`, `Rectangle perimeter is ${p} m, width is ${diff} m less than length. Area (m²) = ?`),
@@ -393,20 +435,33 @@
             `Bài giải (Tổng – Hiệu ẩn):\n• Bước 1: Nửa chu vi (tổng dài và rộng): ${p} ÷ 2 = ${l + w} (m)\n• Bước 2: Chiều rộng: (${l + w} − ${diff}) ÷ 2 = ${w} (m); Chiều dài: ${w} + ${diff} = ${l} (m)\n• Bước 3: Diện tích: ${l} × ${w} = ${area} (m²).`, ex({ visualKind: 'rect', visualData: { l, w } })
           );
         }
-        // Fraction remainder multi-step word problem
-        const unit = rInt(4, 12), total = 15 * unit; // 1/3 + 2/5 = 11/15 -> remaining 4/15 = 4 * unit
-        const remMeters = 4 * unit;
+        // Multi-step fraction remainder OR age-fraction problem
+        if (Math.random() < 0.45) {
+          const unitAge = rInt(6, 11), diffAge = unitAge * pickAny([3, 4]), kMul = diffAge / unitAge + 1, dadAge = unitAge * kMul;
+          return makeExtQ(
+            t(`Hiện nay bố hơn con ${diffAge} tuổi và tuổi con bằng 1/${kMul} tuổi bố. Tính tổng số tuổi của hai bố con hiện nay?`, `Dad is ${diffAge} years older than his child, and child's age is 1/${kMul} of dad's. Sum of their ages = ?`),
+            dadAge + unitAge, [dadAge, unitAge, dadAge + unitAge + 4], 'word:age', cfg,
+            `• Coi tuổi con là 1 phần, tuổi bố là ${kMul} phần ⇒ Hiệu số phần = ${kMul - 1} phần.\n• Tuổi con: ${diffAge} ÷ ${kMul - 1} = ${unitAge} (tuổi); Tuổi bố: ${dadAge} (tuổi).\n• Tổng số tuổi hai bố con: ${dadAge} + ${unitAge} = ${dadAge + unitAge} (tuổi).`, ex()
+          );
+        }
+        const fracConfigs = [
+          { f1: '1/3', f2: '2/5', sumS: '11/15', remN: 4, den: 15 },
+          { f1: '1/4', f2: '2/5', sumS: '13/20', remN: 7, den: 20 },
+          { f1: '1/3', f2: '1/4', sumS: '7/12', remN: 5, den: 12 },
+          { f1: '1/5', f2: '3/10', sumS: '1/2', remN: 1, den: 2 }
+        ];
+        const fc = pickAny(fracConfigs), unit = rInt(3, 14), total = fc.den * unit, remMeters = fc.remN * unit;
         return makeExtQ(
-          t(`Một tấm vải buổi sáng bán 1/3 tấm, buổi chiều bán 2/5 tấm vải ban đầu thì còn lại ${remMeters} m. Hỏi lúc đầu tấm vải dài bao nhiêu mét?`, `A cloth sold 1/3 in the morning and 2/5 in the afternoon, leaving ${remMeters} m. Initial length (m) = ?`),
-          total, [total + 10, Math.max(15, total - 10), 11 * unit], 'word:fraction', cfg,
-          `Bài giải:\n• Bước 1: Phân số chỉ phần vải đã bán: 1/3 + 2/5 = 11/15 (tấm vải)\n• Bước 2: Phân số chỉ ${remMeters} m vải còn lại: 1 − 11/15 = 4/15 (tấm vải)\n• Bước 3: Độ dài tấm vải ban đầu: ${remMeters} ÷ 4 × 15 = ${total} (m).`, ex()
+          t(`Một tấm vải buổi sáng bán ${fc.f1} tấm, buổi chiều bán ${fc.f2} tấm vải ban đầu thì còn lại ${remMeters} m. Hỏi lúc đầu tấm vải dài bao nhiêu mét?`, `A cloth sold ${fc.f1} in the morning and ${fc.f2} in the afternoon, leaving ${remMeters} m. Initial length (m) = ?`),
+          total, [total + 10, Math.max(12, total - 10), total - remMeters], 'word:fraction', cfg,
+          `Bài giải:\n• Bước 1: Phân số chỉ phần vải đã bán: ${fc.f1} + ${fc.f2} = ${fc.sumS} (tấm vải)\n• Bước 2: Phân số chỉ ${remMeters} m vải còn lại: 1 − ${fc.sumS} = ${fc.remN}/${fc.den} (tấm vải)\n• Bước 3: Độ dài tấm vải ban đầu: ${remMeters} ÷ ${fc.remN} × ${fc.den} = ${total} (m).`, ex()
         );
       }
 
       // ==================== GRADE 5 EXTRA ====================
       case 'g5_work_rate': {
         if (tier === 'easy') {
-          const days1 = pickAny([3, 4, 5]), perDay = rInt(12, 25), prod1 = days1 * perDay, days2 = days1 + rInt(2, 4), ans = days2 * perDay;
+          const days1 = pickAny([3, 4, 5, 6]), perDay = rInt(12, 28), prod1 = days1 * perDay, days2 = days1 + rInt(2, 5), ans = days2 * perDay;
           return makeExtQ(
             t(`Một tổ thợ làm trong ${days1} ngày được ${prod1} sản phẩm. Với mức làm như thế, trong ${days2} ngày tổ đó làm được bao nhiêu sản phẩm?`, `A team makes ${prod1} items in ${days1} days. At the same rate, items in ${days2} days = ?`),
             ans, [ans + 10, Math.max(10, ans - 10), prod1 + days2], 'word:rate', cfg,
@@ -414,17 +469,34 @@
           );
         }
         if (tier === 'medium') {
-          const pairs = [[3, 6, 2], [4, 12, 3], [6, 12, 4], [10, 15, 6], [12, 24, 8], [5, 20, 4]];
+          const pairs = [[3, 6, 2], [4, 12, 3], [6, 12, 4], [10, 15, 6], [12, 24, 8], [5, 20, 4], [8, 24, 6], [9, 18, 6], [15, 30, 10], [20, 30, 12], [6, 30, 5], [14, 35, 10]];
           const [t1, t2, both] = pickAny(pairs);
+          if (Math.random() < 0.5) {
+            return makeExtQ(
+              t(`Hai người thợ cùng làm chung một công việc thì sau ${both} giờ xong. Nếu người thứ nhất làm một mình thì phải mất ${t1} giờ mới xong. Hỏi người thứ hai làm một mình hết mấy giờ?`, `Two workers finish a job together in ${both}h; Worker 1 alone takes ${t1}h. Worker 2 alone takes ? hours`),
+              t2, [t1 + both, Math.max(2, t2 - 2), t2 + 2], 'word:work', cfg,
+              `• Trong 1 giờ cả hai người làm được 1/${both} công việc; người thứ nhất làm được 1/${t1} công việc.\n• Trong 1 giờ người thứ hai làm được: 1/${both} − 1/${t1} = 1/${t2} (công việc) ⇒ làm một mình hết ${t2} giờ.`, ex()
+            );
+          }
           return makeExtQ(
             t(`Vòi thứ nhất chảy riêng ${t1} giờ đầy bể, vòi thứ hai chảy riêng ${t2} giờ đầy bể. Nếu mở cả hai vòi cùng chảy vào bể cạn thì sau mấy giờ đầy bể?`, `Pipe 1 fills a tank in ${t1}h, Pipe 2 in ${t2}h. Together they fill it in ? hours`),
-            both, [both + 1, Math.max(1, both - 1), (t1 + t2) / 2], 'word:work', cfg,
+            both, [both + 1, Math.max(1, both - 1), Math.round((t1 + t2) / 2)], 'word:work', cfg,
             `Bài giải (Toán công việc chung):\n• Trong 1 giờ, vòi 1 chảy được 1/${t1} bể; vòi 2 chảy được 1/${t2} bể.\n• Trong 1 giờ cả hai vòi chảy được: 1/${t1} + 1/${t2} = 1/${both} (bể)\n• Thời gian đầy bể: 1 ÷ (1/${both}) = ${both} (giờ).`, ex()
           );
         }
-        const combos = [[12, 10, 8, 15], [15, 8, 6, 20], [8, 9, 6, 12], [10, 12, 8, 15], [16, 9, 8, 18]];
-        const [w1, d1, d2, w2] = pickAny(combos);
-        const added = w2 - w1;
+        if (Math.random() < 0.45) {
+          const drainPairs = [[4, 6, 12], [3, 4, 12], [5, 10, 10], [6, 8, 24], [4, 12, 6], [6, 9, 18], [8, 12, 24], [10, 15, 30]];
+          const [tIn, tOut, tFull] = pickAny(drainPairs);
+          return makeExtQ(
+            t(`Bể đang cạn, vòi thứ nhất chảy vào ${tIn} giờ thì đầy bể, vòi thứ hai ở đáy tháo nước ra ${tOut} giờ thì cạn bể đầy. Nếu mở đồng thời cả hai vòi khi bể cạn thì sau mấy giờ bể đầy?`, `Inlet pipe fills a tank in ${tIn}h, drain empties it in ${tOut}h. With both open from empty, full in ? hours`),
+            tFull, [tIn + tOut, Math.max(2, tFull - 2), tFull + 4], 'word:work', cfg,
+            `• Mỗi giờ lượng nước thực sự thêm vào bể bằng: 1/${tIn} − 1/${tOut} = 1/${tFull} (bể).\n• Thời gian để bể đầy: 1 ÷ (1/${tFull}) = ${tFull} (giờ).`, ex()
+          );
+        }
+        const scale = rInt(1, 3);
+        const baseCombos = [[12, 10, 8, 15], [15, 8, 6, 20], [8, 9, 6, 12], [10, 12, 8, 15], [16, 9, 8, 18], [9, 10, 6, 15], [14, 6, 4, 21]];
+        const [bw1, d1, d2, bw2] = pickAny(baseCombos);
+        const w1 = bw1 * scale, w2 = bw2 * scale, added = w2 - w1;
         return makeExtQ(
           t(`Một đội gồm ${w1} công nhân dự định sửa xong đoạn đường trong ${d1} ngày. Muốn hoàn thành sớm để chỉ làm trong ${d2} ngày thì cần bổ sung THÊM bao nhiêu công nhân (năng suất như nhau)?`, `${w1} workers finish a road in ${d1} days. To finish in ${d2} days instead, how many MORE workers are needed?`),
           added, [w2, added + 2, Math.max(1, added - 1)], 'word:inverse', cfg,
@@ -508,39 +580,76 @@
       }
       case 'g6_pow': {
         if (tier === 'easy') {
-          const a = rInt(2, 5), e1 = rInt(2, 3), b = rInt(2, 5), e2 = 2, ans = a ** e1 + b ** e2;
+          const a = rInt(2, 6), e1 = rInt(2, 3), b = rInt(2, 6), e2 = 2, ans = a ** e1 + b ** e2;
           return makeExtQ(`${a}^${e1} + ${b}^${e2}`, ans, [a * e1 + b * e2, ans + 10, Math.max(2, ans - 10)], 'power:^', cfg,
             `${a}^${e1} = ${a ** e1}; ${b}^${e2} = ${b ** e2} → ${a ** e1} + ${b ** e2} = ${ans}.`, ex());
         }
         if (tier === 'medium') {
-          const base = pickAny([2, 3, 5]), e1 = rInt(4, 7), e2 = rInt(2, e1 - 2), diff = e1 - e2, ans = base ** diff;
+          const base = pickAny([2, 3, 4, 5]), e1 = rInt(4, 7), e2 = rInt(2, e1 - 2), diff = e1 - e2, ans = base ** diff;
           return makeExtQ(
             t(`Tính: ${base}^${e1} ÷ ${base}^${e2}`, `Evaluate: ${base}^${e1} ÷ ${base}^${e2}`),
             ans, [base * diff, ans + base, Math.max(1, ans - base)], 'power:^', cfg,
             `Chia hai lũy thừa cùng cơ số: ${base}^${e1} ÷ ${base}^${e2} = ${base}^(${e1} − ${e2}) = ${base}^${diff} = ${ans}.`, ex()
           );
         }
-        const base = pickAny([2, 3]), n = rInt(2, 4), rhs = base ** n + base ** (n + 1);
+        if (Math.random() < 0.5) {
+          const base = pickAny([2, 3, 5]), xVal = rInt(2, 6), shift = rInt(1, 3), exp = base === 5 ? rInt(2, 3) : rInt(2, 5);
+          const ansX = exp + shift, rhs = base ** exp;
+          return makeExtQ(
+            t(`Tìm số tự nhiên x biết: ${base}^(x − ${shift}) = ${rhs}`, `Find natural x: ${base}^(x − ${shift}) = ${rhs}`),
+            ansX, [exp, Math.max(1, exp - shift), ansX + 1], 'power:^', cfg,
+            `Vì ${rhs} = ${base}^${exp} nên x − ${shift} = ${exp} ⇒ x = ${exp} + ${shift} = ${ansX}.`, ex()
+          );
+        }
+        const base = pickAny([2, 3, 4, 5]), n = base >= 4 ? rInt(1, 3) : rInt(1, 5), kCoef = rInt(1, 3), rhs = kCoef * (base ** n) + base ** (n + 1);
+        const prefix = kCoef === 1 ? '' : `${kCoef}·`;
         return makeExtQ(
-          t(`Tìm số tự nhiên n biết: ${base}^n + ${base}^(n+1) = ${rhs}`, `Find natural n: ${base}^n + ${base}^(n+1) = ${rhs}`),
-          n, [n + 1, Math.max(1, n - 1), n + 2], 'power:^', cfg,
-          `Đặt ${base}^n làm thừa số chung:\n${base}^n · (1 + ${base}) = ${rhs} ⇒ ${base}^n · ${1 + base} = ${rhs} ⇒ ${base}^n = ${base ** n} ⇒ n = ${n}.`, ex()
+          t(`Tìm số tự nhiên n biết: ${prefix}${base}^n + ${base}^(n+1) = ${rhs}`, `Find natural n: ${prefix}${base}^n + ${base}^(n+1) = ${rhs}`),
+          n, [n + 1, Math.max(0, n - 1), n + 2], 'power:^', cfg,
+          `Đặt ${base}^n làm thừa số chung:\n${base}^n · (${kCoef} + ${base}) = ${rhs} ⇒ ${base}^n · ${kCoef + base} = ${rhs} ⇒ ${base}^n = ${base ** n} ⇒ n = ${n}.`, ex()
         );
       }
       case 'g6_div_prime': {
         if (tier === 'easy') {
-          const primesUnder20 = [2, 3, 5, 7, 11, 13, 17, 19];
-          const lim = pickAny([10, 15, 20]);
-          const cnt = primesUnder20.filter(p => p < lim).length;
+          const mode = rInt(1, 3);
+          if (mode === 1) {
+            const primesList = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31];
+            const lim = rInt(8, 30);
+            const sub = primesList.filter(p => p < lim);
+            return makeExtQ(
+              t(`Có bao nhiêu số nguyên tố nhỏ hơn ${lim}?`, `How many prime numbers are less than ${lim}?`),
+              sub.length, [sub.length + 1, Math.max(1, sub.length - 1), sub.length + 2], 'number:prime', cfg,
+              `Các số nguyên tố nhỏ hơn ${lim} là: ${sub.join('; ')} → có ${sub.length} số (lưu ý 0 và 1 không phải số nguyên tố).`, ex()
+            );
+          }
+          if (mode === 2) {
+            const q9 = rInt(12, 95), rem = rInt(1, 8), n = 9 * q9 + rem;
+            return makeExtQ(
+              t(`Số tự nhiên ${n} chia cho 9 có số dư bằng bao nhiêu?`, `What is the remainder when ${n} is divided by 9?`),
+              rem, [9 - rem, (rem + 2) % 9 || 3, 0], 'number:div', cfg,
+              `Tổng các chữ số của ${n} chia cho 9 dư ${rem} (hoặc ${n} = 9 · ${q9} + ${rem}) → số dư là ${rem}.`, ex()
+            );
+          }
+          // Pick 1 prime and 3 distinct composites with the SAME ones digit so anti-guessing & uniqueness always hold!
+          const primeGroups = [
+            { primes: [11, 31, 41, 61, 71], comps: [21, 51, 81, 91] },
+            { primes: [13, 23, 43, 53, 73], comps: [33, 63, 93, 123] },
+            { primes: [17, 37, 47, 67], comps: [27, 57, 77, 87] },
+            { primes: [19, 29, 59, 79], comps: [39, 49, 69, 99] }
+          ];
+          const grp = pickAny(primeGroups);
+          const p = pickAny(grp.primes);
+          const compPick = [...grp.comps].sort(() => Math.random() - 0.5).slice(0, 3);
+          const opts = typeof shuffle === 'function' ? shuffle([String(p), ...compPick.map(String)]) : [String(p), ...compPick.map(String)];
           return makeExtQ(
-            t(`Có bao nhiêu số nguyên tố nhỏ hơn ${lim}?`, `How many prime numbers are less than ${lim}?`),
-            cnt, [cnt + 1, Math.max(1, cnt - 1), cnt + 2], 'number:prime', cfg,
-            `Các số nguyên tố nhỏ hơn ${lim} là: ${primesUnder20.filter(p => p < lim).join('; ')} → có ${cnt} số (lưu ý 0 và 1 không phải số nguyên tố).`, ex()
+            t(`Trong các số tự nhiên ${opts.join('; ')}, số nào là số nguyên tố?`, `Among ${opts.join(', ')}, which one is a prime number?`),
+            p, [], 'number:prime', cfg,
+            `Số ${p} lớn hơn 1 và chỉ có hai ước là 1 và ${p} nên ${p} là số nguyên tố (các số còn lại đều là hợp số).`, ex({ exactOptions: opts })
           );
         }
         if (tier === 'medium') {
           const d1 = rInt(1, 7), d2 = rInt(1, 8);
-          const sumKnown = d1 + d2; // y = 0 for divisible by 2 and 5
+          const sumKnown = d1 + d2;
           const rem = sumKnown % 9;
           const xDigit = rem === 0 ? 9 : 9 - rem;
           return makeExtQ(
@@ -549,8 +658,7 @@
             `• Chữ số tận cùng là 0 nên đã chia hết cho 2 và 5.\n• Để chia hết cho 9 thì (${d1} + x + ${d2} + 0) = ${sumKnown} + x phải chia hết cho 9 → x = ${xDigit}.`, ex()
           );
         }
-        // Number of divisors from prime factorization
-        const p1 = 2, e1 = rInt(2, 4), p2 = pickAny([3, 5]), e2 = rInt(1, 2);
+        const p1 = pickAny([2, 3]), e1 = rInt(2, 4), p2 = pickAny(p1 === 2 ? [3, 5, 7] : [2, 5, 7]), e2 = rInt(1, 2);
         const N = (p1 ** e1) * (p2 ** e2), numDivs = (e1 + 1) * (e2 + 1);
         return makeExtQ(
           t(`Phân tích ${N} ra thừa số nguyên tố rồi cho biết số ${N} có tất cả bao nhiêu ước tự nhiên?`, `How many positive divisors does ${N} have?`),
@@ -560,15 +668,17 @@
       }
       case 'g6_div': {
         if (tier === 'easy') {
-          const p = pickAny([[12, 18], [16, 24], [18, 30], [20, 35], [24, 36]]);
+          const gVal = pickAny([4, 5, 6, 7, 8, 9, 12, 14, 15]);
+          const coprimePairs = [[2, 3], [2, 5], [3, 4], [3, 5], [4, 5], [2, 7], [3, 7]];
+          const [m1, m2] = pickAny(coprimePairs);
+          const a = gVal * m1, b = gVal * m2;
           if (Math.random() < 0.5) {
-            const ans = gcd2(p[0], p[1]);
-            return makeExtQ(`ƯCLN(${p[0]}, ${p[1]})`, ans, [ans * 2, Math.max(1, Math.floor(ans / 2)), ans + 2], 'number:gcd', cfg,
-              `Ước chung lớn nhất của ${p[0]} và ${p[1]} là ${ans}.`, ex());
+            return makeExtQ(`ƯCLN(${a}, ${b})`, gVal, [gVal * 2, Math.max(1, Math.floor(gVal / 2)), gVal + 2], 'number:gcd', cfg,
+              `Ước chung lớn nhất của ${a} và ${b} là ${gVal}.`, ex());
           }
-          const ans = lcm2(p[0], p[1]);
-          return makeExtQ(`BCNN(${p[0]}, ${p[1]})`, ans, [ans * 2, ans + 10, Math.max(6, ans - 10)], 'number:lcm', cfg,
-            `Bội chung nhỏ nhất của ${p[0]} và ${p[1]} là ${ans}.`, ex());
+          const ans = gVal * m1 * m2;
+          return makeExtQ(`BCNN(${a}, ${b})`, ans, [ans * 2, ans + 10, Math.max(6, ans - 10)], 'number:lcm', cfg,
+            `Bội chung nhỏ nhất của ${a} và ${b} là ${ans}.`, ex());
         }
         if (tier === 'medium') {
           const g = pickAny([6, 8, 9, 12]), m1 = pickAny([3, 4]), m2 = pickAny([5, 7]);
@@ -698,7 +808,16 @@
       }
       case 'g6_word_stat': {
         if (tier === 'easy') {
-          const trials = pickAny([20, 30, 40, 50]), sixes = rInt(4, 12);
+          if (Math.random() < 0.5) {
+            const notePrice = rInt(8, 15), qty = rInt(4, 9), penTotal = rInt(12, 35), pay = 200;
+            const change = pay - (notePrice * qty + penTotal);
+            return makeExtQ(
+              t(`An mua ${qty} quyển vở giá ${notePrice} nghìn đồng/quyển và hộp bút giá ${penTotal} nghìn đồng. Đưa tờ ${pay} nghìn đồng, An được trả lại bao nhiêu nghìn đồng?`, `An buys ${qty} notebooks at ${notePrice}k each and a ${penTotal}k pen case, paying ${pay}k. Change (k VND) = ?`),
+              change, [notePrice * qty + penTotal, change + 10, Math.max(5, change - 10)], 'word:real', cfg,
+              `Tổng tiền mua hàng: ${qty} · ${notePrice} + ${penTotal} = ${notePrice * qty + penTotal} (nghìn đồng).\nTiền trả lại: ${pay} − ${notePrice * qty + penTotal} = ${change} (nghìn đồng).`, ex()
+            );
+          }
+          const trials = pickAny([20, 25, 30, 40, 50, 60]), sixes = rInt(4, 15);
           const ans = fracStr(sixes, trials);
           return makeExtQ(
             t(`Gieo con xúc xắc ${trials} lần thấy mặt 6 chấm xuất hiện ${sixes} lần. Xác suất thực nghiệm của sự kiện "xuất hiện mặt 6 chấm" (phân số tối giản) là?`, `Rolled a die ${trials} times and got ${sixes} sixes. Empirical probability (lowest fraction) = ?`),
@@ -707,18 +826,24 @@
           );
         }
         if (tier === 'medium') {
-          const s1 = rInt(15, 25), s2 = rInt(18, 28), s3 = rInt(20, 32), s4 = 4 * rInt(20, 26) - (s1 + s2 + s3);
-          if (s4 > 8) {
-            const avgVal = (s1 + s2 + s3 + s4) / 4;
+          if (Math.random() < 0.5) {
+            const tempMorning = -rInt(2, 8), riseNoon = rInt(6, 14), dropNight = rInt(3, 7);
+            const ans = tempMorning + riseNoon - dropNight;
             return makeExtQ(
-              t(`Bảng thống kê số sách quyên góp của 4 tổ: Tổ 1 (${s1}), Tổ 2 (${s2}), Tổ 3 (${s3}), Tổ 4 (${s4}). Trung bình mỗi tổ quyên góp bao nhiêu quyển?`, `Books donated by 4 teams: ${s1}, ${s2}, ${s3}, ${s4}. Average per team = ?`),
-              avgVal, [avgVal + 2, Math.max(5, avgVal - 2), s1 + s2 + s3 + s4], 'stat:avg', cfg,
-              `Trung bình mỗi tổ = (${s1} + ${s2} + ${s3} + ${s4}) ÷ 4 = ${s1 + s2 + s3 + s4} ÷ 4 = ${avgVal} (quyển).`, ex()
+              t(`Nhiệt độ buổi sáng tại Sa Pa là ${tempMorning}°C, đến trưa tăng thêm ${riseNoon}°C nhưng về đêm lại giảm ${dropNight}°C. Nhiệt độ ban đêm là bao nhiêu °C?`, `Morning temp is ${tempMorning}°C, rises ${riseNoon}°C at noon, drops ${dropNight}°C at night. Night temp (°C) = ?`),
+              ans, [tempMorning + riseNoon + dropNight, -ans, ans + 2], 'word:real', cfg,
+              `Nhiệt độ ban đêm là: (${tempMorning}) + ${riseNoon} − ${dropNight} = ${ans} (°C).`, ex({ allowNeg: true })
             );
           }
+          const trials = pickAny([20, 25, 40, 50]), redHits = rInt(5, 14), futureDraws = trials * pickAny([3, 4, 5]);
+          const expectedRed = (redHits * futureDraws) / trials;
+          return makeExtQ(
+            t(`Lấy bóng lặp lại ${trials} lần (có hoàn lại) thấy bóng đỏ xuất hiện ${redHits} lần. Nếu tiếp tục thực hiện ${futureDraws} lần thì dự đoán bóng đỏ xuất hiện khoảng bao nhiêu lần?`, `In ${trials} draws with replacement, red appeared ${redHits} times. Expected red count in ${futureDraws} draws = ?`),
+            expectedRed, [expectedRed + 5, Math.max(2, expectedRed - 5), futureDraws - expectedRed], 'stat:prob', cfg,
+            `Xác suất thực nghiệm lấy được bóng đỏ là ${redHits}/${trials}.\nDự đoán trong ${futureDraws} lần có khoảng: ${futureDraws} · (${redHits}/${trials}) = ${expectedRed} (lần).`, ex()
+          );
         }
-        // Electricity tiered billing (classic GDPT 2018 real-world problem!)
-        const kwh = rInt(60, 95), p1 = 2, p2 = 3; // 50 kWh first at 2k, extra at 3k
+        const kwh = rInt(55, 100), p1 = pickAny([2, 3]), p2 = p1 + pickAny([1, 2]);
         const bill = 50 * p1 + (kwh - 50) * p2;
         return makeExtQ(
           t(`Giá điện sinh hoạt tính theo bậc: 50 kWh đầu giá ${p1} nghìn đồng/kWh; từ kWh thứ 51 trở đi giá ${p2} nghìn đồng/kWh. Tháng này nhà An dùng ${kwh} kWh thì hết bao nhiêu nghìn đồng?`, `First 50 kWh cost ${p1}k/kWh, above 50 cost ${p2}k/kWh. Bill for ${kwh} kWh (in k VND) = ?`),
@@ -763,24 +888,50 @@
         );
       }
       case 'g6_geom_sym': {
-        const bank = tier === 'easy'
-          ? [
-              { q: t('Hình tam giác đều có bao nhiêu trục đối xứng?', 'How many lines of symmetry does an equilateral triangle have?'), a: 3, near: [1, 2, 6], exp: 'Tam giác đều có 3 trục đối xứng đi qua mỗi đỉnh và trung điểm cạnh đối diện.' },
-              { q: t('Hình vuông có bao nhiêu trục đối xứng?', 'How many lines of symmetry does a square have?'), a: 4, near: [2, 6, 8], exp: 'Hình vuông có 4 trục đối xứng (2 đường chéo và 2 đường nối trung điểm hai cạnh đối).' },
-              { q: t('Hình chữ nhật (không phải hình vuông) có bao nhiêu trục đối xứng?', 'How many lines of symmetry does a non-square rectangle have?'), a: 2, near: [1, 4, 0], exp: 'Hình chữ nhật tổng quát chỉ có 2 trục đối xứng (2 đường chéo KHÔNG phải trục đối xứng).' }
-            ]
-          : tier === 'medium'
-            ? [
-                { q: t('Hình thang cân (không phải hình chữ nhật) có bao nhiêu trục đối xứng?', 'How many lines of symmetry does an isosceles trapezoid have?'), a: 1, near: [0, 2, 4], exp: 'Hình thang cân có duy nhất 1 trục đối xứng là đường thẳng đi qua trung điểm hai đáy.' },
-                { q: t('Hình lục giác đều có bao nhiêu trục đối xứng?', 'How many lines of symmetry does a regular hexagon have?'), a: 6, near: [3, 4, 12], exp: 'Hình lục giác đều có 6 trục đối xứng (3 đường qua các đỉnh đối diện, 3 đường qua trung điểm các cạnh đối).' },
-                { q: t('Hình thoi (không phải hình vuông) có bao nhiêu trục đối xứng?', 'How many lines of symmetry does a non-square rhombus have?'), a: 2, near: [1, 4, 0], exp: 'Hình thoi có 2 trục đối xứng chính là hai đường chéo của nó.' }
-              ]
-            : [
-                { q: t('Trong 5 hình: Tam giác đều, Hình bình hành, Hình chữ nhật, Hình thoi, Lục giác đều — có bao nhiêu hình CÓ tâm đối xứng?', 'Among equilateral triangle, parallelogram, rectangle, rhombus, regular hexagon — how many have rotational center symmetry?'), a: 4, near: [2, 3, 5], exp: 'Có 4 hình có tâm đối xứng là: Hình bình hành, Hình chữ nhật, Hình thoi, Lục giác đều (chỉ Tam giác đều KHÔNG có tâm đối xứng).' },
-                { q: t('Đa giác đều có 8 cạnh (bát giác đều) có bao nhiêu trục đối xứng?', 'How many lines of symmetry does a regular octagon have?'), a: 8, near: [4, 6, 16], exp: 'Đa giác đều n cạnh luôn có đúng n trục đối xứng → bát giác đều có 8 trục đối xứng.' }
-              ];
-        const it = pickAny(bank);
-        return makeExtQ(it.q, it.a, it.near, 'geom:symmetry', cfg, it.exp, ex({ domain: 'geometry' }));
+        if (tier === 'easy') {
+          if (Math.random() < 0.55) {
+            const n = rInt(3, 12);
+            return makeExtQ(
+              t(`Hình đa giác đều có ${n} cạnh bằng nhau có tất cả bao nhiêu trục đối xứng?`, `How many lines of symmetry does a regular ${n}-gon have?`),
+              n, [Math.max(1, n - 2), n * 2, Math.floor(n / 2) || 1], 'geom:symmetry', cfg,
+              `Mọi đa giác đều có ${n} cạnh luôn có đúng ${n} trục đối xứng.`, ex({ domain: 'geometry' })
+            );
+          }
+          const dist = rInt(3, 18), full = 2 * dist;
+          return makeExtQ(
+            t(`Điểm A cách trục đối xứng d một khoảng bằng ${dist} cm. Gọi A' là điểm đối xứng với A qua d, tính độ dài đoạn AA' (cm)?`, `Point A is ${dist} cm from line of symmetry d. Distance AA' to its reflection (cm) = ?`),
+            full, [dist, dist + 2, full + 4], 'geom:symmetry', cfg,
+            `Trục đối xứng d là đường trung trực của đoạn AA' nên AA' = 2 · ${dist} = ${full} (cm).`, ex({ domain: 'geometry' })
+          );
+        }
+        if (tier === 'medium') {
+          if (Math.random() < 0.55) {
+            const oa = rInt(4, 22), ab = 2 * oa;
+            return makeExtQ(
+              t(`Hai điểm A và B đối xứng với nhau qua tâm O. Biết OA = ${oa} cm, tính độ dài đoạn thẳng AB (cm)?`, `Points A and B are symmetric across center O with OA = ${oa} cm. Length AB (cm) = ?`),
+              ab, [oa, oa + 3, ab + 4], 'geom:symmetry', cfg,
+              `Vì A và B đối xứng nhau qua tâm O nên O là trung điểm của AB ⇒ AB = 2 · OA = 2 · ${oa} = ${ab} (cm).`, ex({ domain: 'geometry' })
+            );
+          }
+          const symPool = ['A', 'H', 'I', 'M', 'O', 'T', 'U', 'V', 'W', 'X', 'Y'];
+          const nonSymPool = ['F', 'G', 'J', 'L', 'N', 'P', 'Q', 'R', 'S', 'Z'];
+          const kSym = rInt(2, 5), kNon = 6 - kSym;
+          const picked = [...symPool.slice().sort(() => Math.random() - 0.5).slice(0, kSym), ...nonSymPool.slice().sort(() => Math.random() - 0.5).slice(0, kNon)].sort(() => Math.random() - 0.5);
+          return makeExtQ(
+            t(`Trong dãy 6 chữ cái in hoa: ${picked.join(', ')} — có bao nhiêu chữ cái có trục đối xứng?`, `Among capital letters ${picked.join(', ')}, how many have a line of symmetry?`),
+            kSym, [Math.min(6, kSym + 1), Math.max(0, kSym - 1), kSym === 6 ? 4 : 6], 'geom:symmetry', cfg,
+            `Các chữ cái có trục đối xứng trong dãy trên gồm ${kSym} chữ cái.`, ex({ domain: 'geometry' })
+          );
+        }
+        const centerPool = ['H', 'I', 'N', 'O', 'S', 'X', 'Z'];
+        const noCenterPool = ['A', 'B', 'C', 'D', 'E', 'K', 'M', 'T', 'U', 'V', 'W', 'Y'];
+        const kCen = rInt(2, 5), kNo = 6 - kCen;
+        const mix = [...centerPool.slice().sort(() => Math.random() - 0.5).slice(0, kCen), ...noCenterPool.slice().sort(() => Math.random() - 0.5).slice(0, kNo)].sort(() => Math.random() - 0.5);
+        return makeExtQ(
+          t(`Trong 6 chữ cái in hoa: ${mix.join(', ')} — có bao nhiêu chữ cái CÓ tâm đối xứng (quay 180° trùng khít chính nó)?`, `Among capital letters ${mix.join(', ')}, how many have rotational center symmetry?`),
+          kCen, [Math.min(6, kCen + 1), Math.max(0, kCen - 1), kCen === 6 ? 4 : 6], 'geom:symmetry', cfg,
+          `Các chữ in hoa có tâm đối xứng thuộc nhóm {H, I, N, O, S, X, Z} → trong dãy đã cho có ${kCen} chữ cái.`, ex({ domain: 'geometry' })
+        );
       }
       case 'g6_geom_seg': {
         if (tier === 'easy') {
@@ -837,23 +988,46 @@
       // ==================== GRADE 7: SỐ HỌC & ĐẠI SỐ ====================
       case 'g7_rat': {
         if (tier === 'easy') {
-          if (typeof plainGenerate === 'function') {
+          if (Math.random() < 0.5 && typeof plainGenerate === 'function') {
             const q = plainGenerate({ ...cfg, grade: 7, type: 'fraction', types: ['fraction'], ops: ['+', '-', '*', '/'], questionStyle: 'normal' });
             if (q) return { ...q, difficulty: 'easy', difficultyLabel: difficultyBadgeLabel('easy'), domain: 'number' };
           }
+          const d = pickAny([3, 5, 7, 8, 9, 10, 11]);
+          const coprimes = [];
+          for (let x = 1; x <= d + 4; x++) if (gcd2(x, d) === 1) coprimes.push(x);
+          const absA = pickAny(coprimes), a = -absA;
+          const bPool = coprimes.filter(x => x !== absA);
+          const b = bPool.length ? pickAny(bPool) : 1;
+          const ans = fracStr(a + b, d);
+          return makeExtQ(
+            t(`Tính tổng số hữu tỉ: (${a}/${d}) + ${b}/${d}`, `Compute rational sum: (${a}/${d}) + ${b}/${d}`),
+            ans, [fracStr(Math.abs(a) + b, d), fracStr(a - b, d), fracStr(a + b + 1, d)], 'fraction:+', cfg,
+            `Cùng mẫu số dương ${d}: (${a} + ${b})/${d} = ${ans}.`, ex({ allowNeg: true })
+          );
         }
         if (tier === 'medium') {
-          const [n, d] = pickAny([[-1, 2], [-2, 3], [3, 4], [-3, 2], [2, 5]]);
-          const e = Math.abs(n) <= 2 && d <= 3 ? 3 : 2;
-          const ans = fracStr(n ** e, d ** e);
-          return makeExtQ(`(${n}/${d})^${e}`, ans, [fracStr(-(n ** e), d ** e), fracStr(n * e, d * e), fracStr(n ** e, d)], 'power:rational', cfg,
-            `Lũy thừa của số hữu tỉ: (${n}/${d})^${e} = (${n})^${e} / ${d}^${e} = ${ans}.`, ex({ allowNeg: true }));
+          if (Math.random() < 0.5) {
+            const bases = [[-1, 2], [-2, 3], [3, 4], [-3, 2], [2, 5], [-2, 5], [4, 3], [-3, 4], [5, 2], [-1, 3], [3, 5]];
+            const [n, d] = pickAny(bases);
+            const e = Math.abs(n) <= 3 && d <= 3 ? pickAny([2, 3]) : 2;
+            const ans = fracStr(n ** e, d ** e);
+            return makeExtQ(`(${n}/${d})^${e}`, ans, [fracStr(-(n ** e), d ** e), fracStr(n * e, d * e), fracStr(n ** e, d)], 'power:rational', cfg,
+              `Lũy thừa của số hữu tỉ: (${n}/${d})^${e} = (${n})^${e} / ${d}^${e} = ${ans}.`, ex({ allowNeg: true }));
+          }
+          const [n, d] = pickAny([[1, 2], [2, 3], [3, 4], [2, 5], [3, 2], [5, 3]]);
+          const e2 = rInt(2, 5), diff = pickAny([1, 2, 3]), e1 = e2 + (d <= 3 && n <= 3 ? diff : Math.min(2, diff));
+          const ans = fracStr(n ** (e1 - e2), d ** (e1 - e2));
+          return makeExtQ(
+            t(`Tính thương lũy thừa: (${n}/${d})^${e1} ÷ (${n}/${d})^${e2}`, `Evaluate: (${n}/${d})^${e1} ÷ (${n}/${d})^${e2}`),
+            ans, [fracStr(n * (e1 - e2), d), fracStr(d ** (e1 - e2), n ** (e1 - e2)), fracStr(n ** (e1 - e2) + 1, d ** (e1 - e2))], 'power:rational', cfg,
+            `Chia hai lũy thừa cùng cơ số: (${n}/${d})^(${e1} − ${e2}) = (${n}/${d})^${e1 - e2} = ${ans}.`, ex()
+          );
         }
-        const d1 = pickAny([7, 9, 11]);
+        const d1 = pickAny([7, 9, 11, 13]);
         const coprimes = [];
         for (let x = 2; x <= d1 - 2; x++) if (gcd2(x, d1) === 1) coprimes.push(x);
-        const a = coprimes.length ? pickAny(coprimes) : 2, b = d1 - a, midN = rInt(1, 4), midD = 5;
-        const ans = fracStr(d1 * midD - midN * d1, d1 * midD); // (a/d1 + b/d1) - midN/midD = 1 - midN/midD
+        const a = coprimes.length ? pickAny(coprimes) : 2, b = d1 - a, midD = pickAny([4, 5, 6, 8]), midN = rInt(1, midD - 1);
+        const ans = fracStr(midD - midN, midD);
         return makeExtQ(
           t(`Tính hợp lý: ${a}/${d1} − ${midN}/${midD} + ${b}/${d1}`, `Compute smartly: ${a}/${d1} − ${midN}/${midD} + ${b}/${d1}`),
           ans, [fracStr(midN, midD), fracStr(midD + midN, midD), fracStr(1, midD)], 'fraction:convenient', cfg,
@@ -962,39 +1136,58 @@
       }
       case 'g7_alg': {
         if (tier === 'easy') {
-          const deg = rInt(3, 6), lead = pickAny([-5, -3, 2, 4, 7]);
-          const askDeg = Math.random() < 0.55;
-          const poly = `${lead}x^${deg} + 3x^2 − 7`;
-          if (askDeg) {
-            return makeExtQ(t(`Tìm bậc của đa thức một biến P(x) = ${poly}`, `Find the degree of polynomial P(x) = ${poly}`), deg, [lead, deg + 2, 2], 'algebra:eval', cfg,
+          const mode = rInt(1, 3);
+          if (mode === 1) {
+            const deg = rInt(3, 8), lead = pickAny([-7, -5, -3, 2, 4, 6, 9]), mid = rInt(2, 8), c0 = rInt(1, 15);
+            const poly = `${lead}x^${deg} + ${mid}x^2 − ${c0}`;
+            return makeExtQ(t(`Tìm bậc của đa thức một biến P(x) = ${poly}`, `Find the degree of polynomial P(x) = ${poly}`), deg, [Math.abs(lead), deg + 2, 2], 'algebra:eval', cfg,
               `Bậc của đa thức một biến thu gọn là số mũ cao nhất của biến x → bậc là ${deg}.`, ex());
           }
-          const k = rInt(2, 5), c = rInt(-8, 9) || 3, xv = rInt(-3, 5) || 2, ans = k * xv + c;
+          if (mode === 2) {
+            const xv = rInt(2, 6), yv = rInt(-4, 5) || 3, a = rInt(2, 5), b = rInt(2, 4), ans = a * xv - b * yv;
+            return makeExtQ(
+              t(`Tính giá trị của biểu thức đại số A = ${a}x − ${b}y tại x = ${xv} và y = ${yv}`, `Evaluate A = ${a}x − ${b}y at x = ${xv}, y = ${yv}`),
+              ans, [a * xv + b * yv, -ans, ans + a], 'algebra:eval', cfg,
+              `Thay x = ${xv}, y = ${yv} vào biểu thức A: ${a}·${xv} − ${b}·(${yv}) = ${ans}.`, ex({ allowNeg: true })
+            );
+          }
+          const k = rInt(2, 6), c = rInt(-9, 9) || 3, xv = rInt(-4, 6) || 2, ans = k * xv + c;
           const cStr = c >= 0 ? `+ ${c}` : `− ${Math.abs(c)}`;
           return makeExtQ(t(`Tính P(${xv}) biết P(x) = ${k}x ${cStr}`, `Evaluate P(${xv}) for P(x) = ${k}x ${cStr}`), ans, [ans + k, ans - k, -ans], 'algebra:eval', cfg,
             `P(${xv}) = ${k} · (${xv}) ${cStr} = ${ans}.`, ex({ allowNeg: true }));
         }
         if (tier === 'medium') {
-          const a = pickAny([2, 3, 4, 5]), root = rInt(-6, 8) || -3, b = -a * root;
-          const bStr = b >= 0 ? `+ ${b}` : `− ${Math.abs(b)}`;
+          if (Math.random() < 0.5) {
+            const a1 = rInt(2, 6), a2 = rInt(1, 5), b1 = rInt(-6, 6) || 2, b2 = rInt(-5, 7) || -3, xv = pickAny([-2, -1, 1, 2, 3]);
+            const sumA = a1 + a2, sumB = b1 + b2, ans = sumA * xv * xv + sumB;
+            const s1 = b1 >= 0 ? `+ ${b1}` : `− ${Math.abs(b1)}`, s2 = b2 >= 0 ? `+ ${b2}` : `− ${Math.abs(b2)}`;
+            return makeExtQ(
+              t(`Cho hai đa thức P(x) = ${a1}x^2 ${s1} và Q(x) = ${a2}x^2 ${s2}. Tính giá trị của đa thức tổng H(x) = P(x) + Q(x) tại x = ${xv}?`, `Given P(x) = ${a1}x^2 ${s1} and Q(x) = ${a2}x^2 ${s2}, evaluate P(${xv}) + Q(${xv})`),
+              ans, [ans + sumA, (a1 - a2) * xv * xv + (b1 - b2), ans - 2], 'algebra:poly', cfg,
+              `H(x) = P(x) + Q(x) = ${sumA}x² + (${sumB}).\nTại x = ${xv}: H(${xv}) = ${sumA}·(${xv})² + (${sumB}) = ${ans}.`, ex({ allowNeg: true })
+            );
+          }
+          const k1 = rInt(3, 8), k2 = rInt(1, k1 - 1), xv = pickAny([-2, 2, 3]), cVal = rInt(-6, 7) || 2;
+          const ans = (k1 - k2) * xv * xv + cVal;
+          const cStr = cVal >= 0 ? `+ ${cVal}` : `− ${Math.abs(cVal)}`;
           return makeExtQ(
-            t(`Tìm nghiệm của đa thức P(x) = ${a}x ${bStr}`, `Find the root of P(x) = ${a}x ${bStr}`),
-            root, [-root, root + 1, root - 1], 'algebra:poly', cfg,
-            `Cho P(x) = 0 ⇔ ${a}x ${bStr} = 0 ⇔ ${a}x = ${-b} ⇔ x = ${root}.`, ex({ allowNeg: true })
+            t(`Thu gọn đa thức P(x) = ${k1}x^2 ${cStr} − ${k2}x^2 rồi tính P(${xv})?`, `Simplify P(x) = ${k1}x^2 ${cStr} − ${k2}x^2 and evaluate P(${xv})`),
+            ans, [(k1 + k2) * xv * xv + cVal, ans + 2, -ans], 'algebra:poly', cfg,
+            `Thu gọn: P(x) = (${k1} − ${k2})x² ${cStr} = ${k1 - k2}x² ${cStr}.\nThay x = ${xv}: P(${xv}) = ${k1 - k2}·(${xv})² ${cStr} = ${ans}.`, ex({ allowNeg: true })
           );
         }
-        // Find parameter m so x = k is a root of P(x) = x^2 + mx + c
-        const x0 = pickAny([2, 3, -2, -3]), mVal = rInt(-5, 6) || 2, c = -(x0 * x0 + mVal * x0);
+        const x0 = pickAny([2, 3, -2, -3, 4]), mVal = rInt(-6, 7) || 2, targetVal = rInt(-5, 8);
+        const c = targetVal - (x0 * x0 + mVal * x0);
         const cStr = c >= 0 ? `+ ${c}` : `− ${Math.abs(c)}`;
         return makeExtQ(
-          t(`Tìm hệ số m để đa thức P(x) = x^2 + mx ${cStr} nhận x = ${x0} làm một nghiệm`, `Find m so that P(x) = x^2 + mx ${cStr} has root x = ${x0}`),
+          t(`Tìm hệ số m của đa thức P(x) = x^2 + mx ${cStr} biết P(${x0}) = ${targetVal}`, `Find m in P(x) = x^2 + mx ${cStr} given P(${x0}) = ${targetVal}`),
           mVal, [-mVal, mVal + 1, mVal - 1], 'algebra:poly', cfg,
-          `Vì x = ${x0} là nghiệm của P(x) nên P(${x0}) = 0:\n(${x0})² + m·(${x0}) ${cStr} = 0 ⇒ ${x0 * x0 + c} + (${x0})m = 0 ⇒ m = ${mVal}.`, ex({ allowNeg: true })
+          `Thay x = ${x0} vào P(x) = ${targetVal}:\n(${x0})² + m·(${x0}) ${cStr} = ${targetVal} ⇒ ${x0 * x0 + c} + (${x0})m = ${targetVal} ⇒ m = ${mVal}.`, ex({ allowNeg: true })
         );
       }
       case 'g7_prob_stat': {
         if (tier === 'easy') {
-          const n = pickAny([10, 12, 15, 20]), k = pickAny([2, 3, 5]);
+          const n = pickAny([10, 12, 15, 18, 20, 24, 30]), k = pickAny([2, 3, 5]);
           const fav = Math.floor(n / k), ans = fracStr(fav, n);
           return makeExtQ(
             t(`Rút ngẫu nhiên 1 thẻ từ hộp gồm ${n} thẻ đánh số từ 1 đến ${n}. Tính xác suất biến cố "Số trên thẻ chia hết cho ${k}"?`, `Draw 1 card from 1..${n}. Probability that the number is divisible by ${k}?`),
@@ -1003,54 +1196,156 @@
           );
         }
         if (tier === 'medium') {
-          const total = pickAny([200, 300, 400, 500]), p1 = 35, p2 = 40, p3 = 25;
-          const ans = (total * p3) / 100;
+          if (Math.random() < 0.5) {
+            const total = pickAny([200, 300, 400, 500, 600]), p1 = pickAny([30, 35, 40]), p2 = pickAny([25, 35, 40]), p3 = 100 - p1 - p2;
+            const ans = (total * p3) / 100;
+            return makeExtQ(
+              t(`Biểu đồ hình quạt tròn thống kê ${total} học sinh khối 7 đăng ký 3 CLB: Bơi (${p1}%), Cầu lông (${p2}%), còn lại là Cờ vua. Có bao nhiêu học sinh đăng ký Cờ vua?`, `Of ${total} students: Swimming ${p1}%, Badminton ${p2}%, rest Chess. Chess count = ?`),
+              ans, [(total * p1) / 100, (total * p2) / 100, ans + 20], 'stat:pie', cfg,
+              `• Tỉ lệ đăng ký Cờ vua: 100% − (${p1}% + ${p2}%) = ${p3}%\n• Số học sinh CLB Cờ vua: ${total} · ${p3}% = ${ans} (học sinh).`, ex()
+            );
+          }
+          const m1 = rInt(120, 240), inc = rInt(35, 95), m2 = m1 + inc;
           return makeExtQ(
-            t(`Biểu đồ hình quạt tròn thống kê ${total} học sinh khối 7 đăng ký 3 CLB: Bơi (${p1}%), Cầu lông (${p2}%), còn lại là Cờ vua. Có bao nhiêu học sinh đăng ký Cờ vua?`, `Of ${total} students: Swimming ${p1}%, Badminton ${p2}%, rest Chess. Chess count = ?`),
-            ans, [(total * p1) / 100, (total * p2) / 100, ans + 20], 'stat:pie', cfg,
-            `• Tỉ lệ đăng ký Cờ vua: 100% − (${p1}% + ${p2}%) = ${p3}%\n• Số học sinh CLB Cờ vua: ${total} · ${p3}% = ${ans} (học sinh).`, ex()
+            t(`Biểu đồ đoạn thẳng ghi nhận số lượt mượn sách thư viện: Tháng 9 có ${m1} lượt, Tháng 10 có ${m2} lượt. Tháng 10 tăng thêm bao nhiêu lượt mượn so với Tháng 9?`, `Line chart of library borrows: Sept had ${m1}, Oct had ${m2}. Increase in Oct = ?`),
+            inc, [inc + 10, Math.max(5, inc - 10), m1 + m2], 'stat:line', cfg,
+            `Đọc chênh lệch trên biểu đồ đoạn thẳng: ${m2} − ${m1} = ${inc} (lượt mượn).`, ex()
           );
         }
-        const n = 20, squares = 4; // 1, 4, 9, 16
+        const nPool = [15, 18, 20, 24, 25, 30, 36, 40, 50];
+        const n = pickAny(nPool);
+        if (Math.random() < 0.55) {
+          const sqCnt = Math.floor(Math.sqrt(n));
+          const ans = fracStr(sqCnt, n);
+          return makeExtQ(
+            t(`Chọn ngẫu nhiên một số tự nhiên từ 1 đến ${n}. Tính xác suất của biến cố "Số được chọn là số chính phương" (phân số tối giản)?`, `Pick a random integer from 1 to ${n}. Probability it is a perfect square?`),
+            ans, [fracStr(sqCnt + 1, n), fracStr(Math.max(1, sqCnt - 1), n), fracStr(n - sqCnt, n)], 'stat:prob', cfg,
+            `Từ 1 đến ${n} có ${sqCnt} số chính phương (1² đến ${sqCnt}²).\nXác suất cần tìm: P = ${sqCnt}/${n} = ${ans}.`, ex()
+          );
+        }
+        const primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47].filter(p => p <= n);
+        const pCnt = primes.length, ansP = fracStr(pCnt, n);
         return makeExtQ(
-          t(`Chọn ngẫu nhiên một số tự nhiên từ 1 đến 20. Tính xác suất của biến cố "Số được chọn là số chính phương" (phân số tối giản)?`, `Pick a random integer from 1 to 20. Probability it is a perfect square?`),
-          '1/5', ['3/20', '1/4', '2/5'], 'stat:prob', cfg,
-          `Các số chính phương từ 1 đến 20 là: 1; 4; 9; 16 (có 4 số).\nXác suất cần tìm: P = 4/20 = 1/5.`, ex()
+          t(`Chọn ngẫu nhiên một số tự nhiên từ 1 đến ${n}. Tính xác suất của biến cố "Số được chọn là số nguyên tố" (phân số tối giản)?`, `Pick a random integer from 1 to ${n}. Probability it is prime?`),
+          ansP, [fracStr(pCnt + 1, n), fracStr(Math.max(1, pCnt - 1), n), fracStr(n - pCnt, n)], 'stat:prob', cfg,
+          `Từ 1 đến ${n} có ${pCnt} số nguyên tố (${primes.join('; ')}).\nXác suất cần tìm: P = ${pCnt}/${n} = ${ansP}.`, ex()
         );
       }
       case 'g7_real_math': {
         if (tier === 'easy') {
-          const n = rInt(12, 85) * 100 + pickAny([18, 24, 37, 62, 75, 84]);
-          const ans = Math.round(n / 100) * 100;
+          const kind = pickAny(['discount', 'interest', 'taxi']);
+          if (kind === 'discount') {
+            const items = [
+              ['chiếc balo', 'backpack'],
+              ['áo sơ mi', 'shirt'],
+              ['đôi giày thể thao', 'pair of sneakers'],
+              ['bộ sách tham khảo', 'book set'],
+              ['chiếc đèn học', 'desk lamp']
+            ];
+            const [viItem, enItem] = pickAny(items);
+            const price = pickAny([200, 240, 300, 360, 400, 450, 500, 600]);
+            const disc = pickAny([10, 15, 20, 25, 30]);
+            const safePrice = (price * (100 - disc)) % 100 === 0 ? price : 400;
+            const pay = (safePrice * (100 - disc)) / 100;
+            return makeExtQ(
+              t(`Một ${viItem} có giá niêm yết ${safePrice} nghìn đồng đang được giảm giá ${disc}%. Hỏi khách hàng phải trả bao nhiêu nghìn đồng?`, `A ${enItem} listed at ${safePrice}k VND is ${disc}% off. Sale price (k VND) = ?`),
+              pay, [(safePrice * disc) / 100, pay + 20, Math.max(20, pay - 20)], 'word:real', cfg,
+              `Giá sau giảm ứng với ${100 - disc}% giá niêm yết:\n${safePrice} · ${100 - disc}% = ${pay} (nghìn đồng).`, ex()
+            );
+          }
+          if (kind === 'interest') {
+            const cap = pickAny([20, 40, 50, 60, 80, 100, 120, 150, 200]);
+            const rate = pickAny([5, 6, 6.5, 7, 7.5, 8]);
+            const interestVal = (cap * rate) / 100;
+            const interest = fmtDec(interestVal);
+            return makeExtQ(
+              t(`Bác Mai gửi tiết kiệm ${cap} triệu đồng kỳ hạn 1 năm với lãi suất ${fmtDec(rate)}%/năm. Hết 1 năm bác nhận được bao nhiêu triệu đồng tiền lãi?`, `Deposit ${cap}M VND for 1 year at ${fmtDec(rate)}%/year. Interest earned (M VND) = ?`),
+              interest, [fmtDec(cap + interestVal), fmtDec(interestVal + 1), fmtDec(Math.max(0.5, interestVal - 1))], 'word:real', cfg,
+              `Tiền lãi sau 1 năm = Tiền gửi × Lãi suất:\n${cap} · ${fmtDec(rate)}% = ${interest} (triệu đồng).`, ex()
+            );
+          }
+          const firstKm = pickAny([12, 14, 15, 16, 18, 20]), nextPrice = pickAny([10, 11, 12, 13, 14, 15]), km = rInt(4, 12);
+          const fare = firstKm + (km - 1) * nextPrice;
           return makeExtQ(
-            t(`Làm tròn số ${n} với độ chính xác d = 50 (tức làm tròn đến hàng trăm) ta được?`, `Round ${n} with precision d = 50 (nearest hundred)`),
-            ans, [ans + 100, ans - 100, Math.round(n / 10) * 10], 'number:round', cfg,
-            `Độ chính xác d = 50 ứng với làm tròn đến hàng trăm → kết quả là ${ans}.`, ex()
+            t(`Giá cước taxi mở cửa 1 km đầu tiên là ${firstKm} nghìn đồng, mỗi km tiếp theo giá ${nextPrice} nghìn đồng. Đi quãng đường ${km} km hết bao nhiêu nghìn đồng?`, `Taxi charges ${firstKm}k for the 1st km and ${nextPrice}k per extra km. Cost for ${km} km (k VND) = ?`),
+            fare, [km * nextPrice, firstKm + km * nextPrice, fare + 10], 'word:real', cfg,
+            `Số tiền cước đi ${km} km là:\n${firstKm} + (${km} − 1) · ${nextPrice} = ${firstKm} + ${(km - 1) * nextPrice} = ${fare} (nghìn đồng).`, ex()
           );
         }
         if (tier === 'medium') {
-          const firstKm = 15, nextPrice = 12, km = rInt(5, 15), fare = firstKm + (km - 1) * nextPrice;
+          const kind = pickAny(['taxiDist', 'bankTotal', 'origPrice']);
+          if (kind === 'taxiDist') {
+            const firstKm = pickAny([14, 15, 16, 18, 20]), nextPrice = pickAny([11, 12, 13, 14, 15]), km = rInt(6, 18);
+            const totalFare = firstKm + (km - 1) * nextPrice;
+            return makeExtQ(
+              t(`Giá cước taxi tính như sau: 1 km đầu tiên là ${firstKm} nghìn đồng, mỗi km tiếp theo giá ${nextPrice} nghìn đồng. Hành khách trả tổng cộng ${totalFare} nghìn đồng thì đã đi bao nhiêu km?`, `Taxi costs ${firstKm}k for 1st km and ${nextPrice}k per extra km. Total fare is ${totalFare}k. Distance (km) = ?`),
+              km, [km - 1, km + 1, km + 2], 'word:real', cfg,
+              `• Tiền trả cho các km tiếp theo: ${totalFare} − ${firstKm} = ${totalFare - firstKm} (nghìn đồng)\n• Số km tiếp theo: ${totalFare - firstKm} ÷ ${nextPrice} = ${km - 1} (km)\n• Tổng quãng đường đã đi: 1 + ${km - 1} = ${km} (km).`, ex()
+            );
+          }
+          if (kind === 'bankTotal') {
+            const cap = pickAny([50, 80, 100, 120, 150, 200, 250]), rate = pickAny([5, 6, 6.5, 7, 8]);
+            const totalAmt = cap + (cap * rate) / 100;
+            const ans = fmtDec(totalAmt);
+            return makeExtQ(
+              t(`Chú Tuấn gửi ngân hàng ${cap} triệu đồng kỳ hạn 1 năm với lãi suất ${fmtDec(rate)}%/năm. Hết 1 năm chú rút cả gốc lẫn lãi được bao nhiêu triệu đồng?`, `Deposit ${cap}M VND at ${fmtDec(rate)}%/year. Total principal + interest after 1 year (M VND) = ?`),
+              ans, [fmtDec((cap * rate) / 100), fmtDec(totalAmt + 2), fmtDec(cap + rate)], 'word:real', cfg,
+              `• Tiền lãi 1 năm: ${cap} · ${fmtDec(rate)}% = ${fmtDec((cap * rate) / 100)} (triệu đồng)\n• Tổng cả gốc và lãi: ${cap} + ${fmtDec((cap * rate) / 100)} = ${ans} (triệu đồng).`, ex()
+            );
+          }
+          const orig = pickAny([400, 500, 600, 800, 1000, 1200]), disc = pickAny([10, 20, 25]);
+          const paid = (orig * (100 - disc)) / 100;
           return makeExtQ(
-            t(`Giá cước taxi tính như sau: 1 km đầu tiên là ${firstKm} nghìn đồng, mỗi km tiếp theo giá ${nextPrice} nghìn đồng. Đi quãng đường ${km} km hết bao nhiêu nghìn đồng?`, `Taxi charges ${firstKm}k for the 1st km and ${nextPrice}k per extra km. Cost for ${km} km (k VND) = ?`),
-            fare, [km * nextPrice, firstKm + km * nextPrice, fare + 10], 'word:real', cfg,
-            `Bài giải:\nSố tiền đi ${km} km là: ${firstKm} + (${km} − 1) · ${nextPrice} = ${firstKm} + ${(km - 1) * nextPrice} = ${fare} (nghìn đồng).`, ex()
+            t(`Nhân dịp khuyến mãi giảm giá ${disc}%, mẹ mua một chiếc nồi điện chỉ phải trả ${paid} nghìn đồng. Hỏi giá niêm yết lúc chưa giảm là bao nhiêu nghìn đồng?`, `After a ${disc}% discount, a cooker costs ${paid}k VND. Original listed price (k VND) = ?`),
+            orig, [paid + (paid * disc) / 100, orig + 100, Math.max(100, orig - 100)], 'word:real', cfg,
+            `Giá sau giảm ứng với 100% − ${disc}% = ${100 - disc}% giá niêm yết:\nGiá niêm yết = ${paid} ÷ ${100 - disc}% = ${orig} (nghìn đồng).`, ex()
           );
         }
-        // Successive discount + VAT or VIP member discount
-        const price = pickAny([500, 800, 1000]), d1 = 20, d2 = 10;
-        const after1 = price * (1 - d1 / 100), finalPay = after1 * (1 - d2 / 100);
+        const hardKind = pickAny(['doubleDisc', 'taxi3Tier', 'discVat']);
+        if (hardKind === 'doubleDisc') {
+          const price = pickAny([500, 600, 800, 1000, 1200, 1500]), d1 = pickAny([10, 20, 25]), d2 = 10;
+          const after1 = (price * (100 - d1)) / 100;
+          const safeAfter1 = after1 % 10 === 0 ? after1 : (1000 * (100 - d1)) / 100;
+          const usedPrice = after1 % 10 === 0 ? price : 1000;
+          const finalPay = (safeAfter1 * (100 - d2)) / 100;
+          return makeExtQ(
+            t(`Áo khoác giá niêm yết ${usedPrice} nghìn đồng đang khuyến mãi giảm ${d1}%. Khách có thẻ thành viên được giảm thêm ${d2}% trên giá đã giảm. Số tiền thực trả là bao nhiêu nghìn đồng?`, `Jacket listed at ${usedPrice}k gets ${d1}% off, plus an extra ${d2}% off the discounted price. Final price (k VND) = ?`),
+            finalPay, [(usedPrice * (100 - d1 - d2)) / 100, safeAfter1, finalPay + 20], 'word:real', cfg,
+            `Lưu ý không cộng gộp phần trăm trực tiếp:\n• Giá sau lần giảm ${d1}%: ${usedPrice} · ${100 - d1}% = ${safeAfter1} (nghìn đồng)\n• Giá sau khi giảm thêm ${d2}% thẻ thành viên: ${safeAfter1} · 90% = ${finalPay} (nghìn đồng).`, ex()
+          );
+        }
+        if (hardKind === 'taxi3Tier') {
+          const p1 = pickAny([15, 18, 20]), p2 = pickAny([12, 14, 15]), p3 = pickAny([10, 11, 12]), km = rInt(12, 24);
+          const fare = p1 + 9 * p2 + (km - 10) * p3;
+          return makeExtQ(
+            t(`Bảng giá taxi 3 bậc: 1 km đầu giá ${p1} nghìn; từ km thứ 2 đến km thứ 10 giá ${p2} nghìn/km; từ km thứ 11 trở đi giá ${p3} nghìn/km. Đi quãng đường ${km} km hết bao nhiêu nghìn đồng?`, `3-tier taxi: 1st km ${p1}k, km 2–10 at ${p2}k/km, km 11+ at ${p3}k/km. Fare for ${km} km (k VND) = ?`),
+            fare, [p1 + (km - 1) * p2, km * p2, fare + 20], 'word:real', cfg,
+            `Chia quãng đường ${km} km thành 3 bậc:\n• 1 km đầu: ${p1} nghìn; 9 km tiếp (km 2→10): 9 · ${p2} = ${9 * p2} nghìn\n• ${km - 10} km cuối: ${km - 10} · ${p3} = ${(km - 10) * p3} nghìn\n⇒ Tổng tiền cước = ${p1} + ${9 * p2} + ${(km - 10) * p3} = ${fare} (nghìn đồng).`, ex()
+          );
+        }
+        const price = pickAny([500, 1000, 1500, 2000, 2500]), d1 = 20, vat = 10;
+        const afterDisc = (price * (100 - d1)) / 100, finalWithVat = (afterDisc * (100 + vat)) / 100;
         return makeExtQ(
-          t(`Áo khoác giá niêm yết ${price} nghìn đồng đang khuyến mãi giảm ${d1}%. Khách có thẻ thành viên được giảm thêm ${d2}% trên giá đã giảm. Số tiền thực trả là bao nhiêu nghìn đồng?`, `Jacket listed at ${price}k gets ${d1}% off, plus an extra ${d2}% off the discounted price. Final price (k VND) = ?`),
-          finalPay, [price * (1 - (d1 + d2) / 100), after1, finalPay + 20], 'word:real', cfg,
-          `Lưu ý không cộng gộp phần trăm trực tiếp:\n• Giá sau lần giảm ${d1}%: ${price} · 80% = ${after1} (nghìn đồng)\n• Giá sau khi giảm thêm ${d2}% thẻ thành viên: ${after1} · 90% = ${finalPay} (nghìn đồng).`, ex()
+          t(`Một thiết bị gia dụng giá chưa thuế là ${price} nghìn đồng, được cửa hàng giảm giá ${d1}%, sau đó tính thêm ${vat}% thuế GTGT (VAT) trên giá đã giảm. Khách phải thanh toán bao nhiêu nghìn đồng?`, `Appliance pre-tax price ${price}k gets ${d1}% discount, then +${vat}% VAT on discounted price. Total paid (k VND) = ?`),
+          finalWithVat, [(price * 90) / 100, afterDisc, finalWithVat + 30], 'word:real', cfg,
+          `• Giá sau khi giảm ${d1}%: ${price} · 80% = ${afterDisc} (nghìn đồng)\n• Cộng thêm ${vat}% thuế VAT trên giá đã giảm: ${afterDisc} · 110% = ${finalWithVat} (nghìn đồng).`, ex()
         );
       }
 
       // ==================== GRADE 7: HÌNH HỌC ====================
       case 'g7_geom_para': {
         if (tier === 'easy') {
-          const a = rInt(35, 145), supp = 180 - a;
-          if (Math.random() < 0.5) {
+          const kind = pickAny(['vertical', 'supp', 'bisect']);
+          if (kind === 'vertical') {
+            const vAng = rInt(28, 152);
+            return makeExtQ(
+              t(`Hai đường thẳng xx' và yy' cắt nhau tại O, biết góc xOy = ${vAng}°. Số đo góc đối đỉnh x'Oy' bằng bao nhiêu độ?`, `Lines xx' and yy' intersect at O with ∠xOy = ${vAng}°. Vertically opposite ∠x'Oy' = ?°`),
+              vAng, [180 - vAng, Math.abs(90 - vAng) || 20, vAng + 10], 'geom:angle', cfg,
+              `Tính chất hai góc đối đỉnh thì bằng nhau: ∠x'Oy' = ∠xOy = ${vAng}°.`, ex({ domain: 'geometry' })
+            );
+          }
+          if (kind === 'supp') {
+            const a = rInt(35, 145), supp = 180 - a;
             return makeExtQ(t(`Hai góc kề bù có một góc bằng ${a}°. Góc còn lại có số đo bằng bao nhiêu độ?`, `Two supplementary adjacent angles: one is ${a}°. The other = ?°`),
               supp, [a, Math.abs(90 - a), supp + 10], 'geom:angle', cfg,
               `Hai góc kề bù có tổng bằng 180° ⇒ Góc còn lại = 180° − ${a}° = ${supp}°.`, ex({ domain: 'geometry' }));
@@ -1061,6 +1356,14 @@
             `Tia phân giác chia góc thành hai góc bằng nhau: ∠xOt = ${evenA}° ÷ 2 = ${evenA / 2}°.`, ex({ domain: 'geometry' }));
         }
         if (tier === 'medium') {
+          if (Math.random() < 0.5) {
+            const a1 = rInt(42, 138);
+            return makeExtQ(
+              t(`Đường thẳng c cắt hai đường thẳng song song a // b tạo góc A₁ = ${a1}°. Góc B₁ ở vị trí so le trong với A₁ có số đo bằng bao nhiêu độ?`, `Transversal c cuts a // b with ∠A₁ = ${a1}°. Alternate interior angle ∠B₁ = ?°`),
+              a1, [180 - a1, Math.abs(90 - a1) || 25, a1 + 10], 'geom:parallel', cfg,
+              `Vì a // b nên hai góc so le trong bằng nhau: ∠B₁ = ∠A₁ = ${a1}°.`, ex({ domain: 'geometry' })
+            );
+          }
           const a1 = rInt(48, 132), bSameSide = 180 - a1;
           return makeExtQ(
             t(`Đường thẳng c cắt hai đường thẳng song song a // b tạo một góc A₁ = ${a1}°. Góc B₂ ở vị trí trong cùng phía với A₁ có số đo bằng bao nhiêu độ?`, `Transversal c cuts a // b with ∠A₁ = ${a1}°. Co-interior angle ∠B₂ = ?°`),
@@ -1078,6 +1381,14 @@
       }
       case 'g7_geom_tri': {
         if (tier === 'easy') {
+          if (Math.random() < 0.45) {
+            const ab = rInt(5, 16), bc = rInt(6, 18), ac = rInt(Math.abs(bc - ab) + 2, ab + bc - 2);
+            return makeExtQ(
+              t(`Cho hai tam giác bằng nhau △ABC = △DEF. Biết AB = ${ab} cm, BC = ${bc} cm, AC = ${ac} cm. Độ dài cạnh EF bằng bao nhiêu cm?`, `Given △ABC ≅ △DEF with AB=${ab}, BC=${bc}, AC=${ac} cm. Find EF (cm)`),
+              bc, [ab, ac, ab + bc], 'geom:congruent', cfg,
+              `Hai tam giác bằng nhau △ABC = △DEF có các cạnh tương ứng bằng nhau ⇒ EF = BC = ${bc} (cm).`, ex({ domain: 'geometry', visualKind: 'triangle' })
+            );
+          }
           const A = rInt(40, 85), B = rInt(35, 75), C = 180 - A - B;
           return makeExtQ(
             t(`Tam giác ABC có góc A = ${A}°, góc B = ${B}°. Số đo góc C bằng bao nhiêu độ?`, `In △ABC, ∠A = ${A}°, ∠B = ${B}°. Find ∠C (°)`),
@@ -1086,6 +1397,14 @@
           );
         }
         if (tier === 'medium') {
+          if (Math.random() < 0.45) {
+            const A = rInt(42, 84), E = rInt(36, 76), F = 180 - A - E;
+            return makeExtQ(
+              t(`Cho △ABC = △DEF, biết góc A = ${A}° và góc E = ${E}°. Tính số đo góc F (độ)?`, `Given △ABC ≅ △DEF with ∠A = ${A}° and ∠E = ${E}°. Find ∠F (°)`),
+              F, [A, E, F + 10], 'geom:congruent', cfg,
+              `Vì △ABC = △DEF nên ∠D = ∠A = ${A}°.\nTrong △DEF: ∠F = 180° − (∠D + ∠E) = 180° − (${A}° + ${E}°) = ${F}°.`, ex({ domain: 'geometry', visualKind: 'triangle' })
+            );
+          }
           const topA = rInt(15, 65) * 2, baseB = (180 - topA) / 2;
           return makeExtQ(
             t(`Tam giác ABC cân tại A có góc ở đỉnh A = ${topA}°. Số đo góc ở đáy B bằng bao nhiêu độ?`, `Isosceles △ABC (AB = AC) has vertex angle ∠A = ${topA}°. Base angle ∠B = ?°`),
@@ -1093,8 +1412,9 @@
             `Tam giác ABC cân tại A nên ∠B = ∠C = (180° − ∠A) ÷ 2 = (180° − ${topA}°) ÷ 2 = ${baseB}°.`, ex({ domain: 'geometry', visualKind: 'triangle', visualData: { A: topA, B: baseB, C: baseB } })
           );
         }
-        // Exterior angle + ratio of angles
-        const k = rInt(12, 22), ratioA = 2, ratioB = 3, extC = (ratioA + ratioB) * k, angB = ratioB * k;
+        const ratioPairs = [[2, 3], [1, 2], [1, 3], [3, 4], [2, 5]];
+        const [ratioA, ratioB] = pickAny(ratioPairs), sumR = ratioA + ratioB;
+        const k = rInt(Math.ceil(65 / sumR), Math.floor(155 / sumR)), extC = sumR * k, angB = ratioB * k;
         return makeExtQ(
           t(`Tam giác ABC có góc ngoài tại đỉnh C bằng ${extC}° và hai góc trong A, B tỉ lệ với ${ratioA} : ${ratioB}. Tính số đo góc B (độ)?`, `Exterior angle at C of △ABC is ${extC}°, and ∠A : ∠B = ${ratioA} : ${ratioB}. Find ∠B (°)`),
           angB, [ratioA * k, 180 - extC, angB + 10], 'geom:triangle', cfg,
@@ -1136,11 +1456,27 @@
           );
         }
         if (tier === 'medium') {
-          const gm = rInt(4, 15), ag = gm * 2;
+          if (Math.random() < 0.55) {
+            const gm = rInt(4, 15), ag = gm * 2;
+            return makeExtQ(
+              t(`Cho G là trọng tâm tam giác ABC với đường trung tuyến AM. Biết AG = ${ag} cm, tính độ dài đoạn GM (cm)?`, `Centroid G on median AM has AG = ${ag} cm. Find GM (cm)`),
+              gm, [ag * 2, ag + gm, gm + 2], 'geom:centroid', cfg,
+              `Vì G là trọng tâm nên AG = 2 · GM ⇒ GM = ${ag} ÷ 2 = ${gm} (cm).`, ex({ domain: 'geometry' })
+            );
+          }
+          const angC = rInt(38, 76), angCAH = 90 - angC;
           return makeExtQ(
-            t(`Cho G là trọng tâm tam giác ABC với đường trung tuyến AM. Biết AG = ${ag} cm, tính độ dài đoạn GM (cm)?`, `Centroid G on median AM has AG = ${ag} cm. Find GM (cm)`),
-            gm, [ag * 2, ag + gm, gm + 2], 'geom:centroid', cfg,
-            `Vì G là trọng tâm nên AG = 2 · GM ⇒ GM = ${ag} ÷ 2 = ${gm} (cm).`, ex({ domain: 'geometry' })
+            t(`Cho tam giác nhọn ABC có góc C = ${angC}° và trực tâm H (giao điểm ba đường cao). Tia AH cắt BC tại D, tính số đo góc CAD (độ)?`, `Acute △ABC has ∠C = ${angC}° and orthocenter H; altitude AD meets BC at D. Find ∠CAD (°)`),
+            angCAH, [angC, 180 - angC, angCAH + 10], 'geom:orthocenter', cfg,
+            `Vì H là trực tâm của △ABC nên AD là đường cao ứng với cạnh BC (AD ⊥ BC tại D).\nTrong △ADC vuông tại D: ∠CAD = 90° − ∠C = 90° − ${angC}° = ${angCAH}°.`, ex({ domain: 'geometry' })
+          );
+        }
+        if (Math.random() < 0.5) {
+          const angA = rInt(42, 82), bhc = 180 - angA;
+          return makeExtQ(
+            t(`Tam giác nhọn ABC có góc A = ${angA}°, hai đường cao BD và CE cắt nhau tại trực tâm H. Tính số đo góc BHC (độ)?`, `Acute △ABC has ∠A = ${angA}°, altitudes BD and CE meet at orthocenter H. Find ∠BHC (°)`),
+            bhc, [angA, 90 + Math.round(angA / 2), bhc - 10], 'geom:orthocenter', cfg,
+            `• Trong △ABD vuông tại D: ∠ABD = 90° − ${angA}° = ${90 - angA}°.\n• Trong △BHE vuông tại E: ∠BHE = 90° − ∠ABD = ${angA}°.\n• Vì ∠BHC và ∠BHE kề bù nên ∠BHC = 180° − ${angA}° = ${bhc}°.`, ex({ domain: 'geometry' })
           );
         }
         // Incenter angle BIC = 90 + A/2
@@ -1365,11 +1701,46 @@
         );
       }
       case 'g8_rat': {
-        if (typeof plainGenerate === 'function') {
-          const q = plainGenerate({ ...cfg, grade: 8, type: pickAny(['fraction', 'negative']), types: ['fraction', 'negative'], ops: ['+', '-', '*', '/'], questionStyle: 'normal' });
-          if (q) return { ...q, difficulty: tier, difficultyLabel: difficultyBadgeLabel(tier), domain: 'number' };
+        if (tier === 'easy') {
+          if (Math.random() < 0.5) {
+            const b = pickAny([-5, -4, -3, -2, 2, 3, 4, 5]), e = Math.abs(b) <= 3 ? pickAny([2, 3]) : 2, ans = b ** e;
+            return makeExtQ(b < 0 ? `(${b})^${e}` : `${b}^${e}`, ans, [-ans, b * e, ans + 2], 'power:^', cfg,
+              `Lũy thừa số nguyên/hữu tỉ: ${b < 0 ? `(${b})` : b}^${e} = ${ans}.`, ex({ allowNeg: true }));
+          }
+          if (typeof plainGenerate === 'function') {
+            const q = plainGenerate({ ...cfg, grade: 8, type: pickAny(['fraction', 'negative']), types: ['fraction', 'negative'], ops: ['+', '-', '*', '/'], questionStyle: 'normal' });
+            if (q) return { ...q, difficulty: 'easy', difficultyLabel: difficultyBadgeLabel('easy'), domain: 'number' };
+          }
         }
-        return makeExtQ('(-3/4) + 5/4', '1/2', ['-1/2', '3/2', '5/2'], 'fraction:+', cfg, '(-3 + 5)/4 = 2/4 = 1/2', ex());
+        if (tier === 'medium') {
+          const base = pickAny([2, 3, 5]), e1 = rInt(5, 8), e2 = rInt(2, e1 - 2), diff = e1 - e2, ans = base ** diff;
+          if (Math.random() < 0.5) {
+            return makeExtQ(
+              t(`Tính nhanh thương hai lũy thừa: ${base}^${e1} ÷ ${base}^${e2}`, `Compute fast: ${base}^${e1} ÷ ${base}^${e2}`),
+              ans, [base * diff, ans + base, Math.max(1, ans - base)], 'power:^', cfg,
+              `Chia hai lũy thừa cùng cơ số: ${base}^${e1} ÷ ${base}^${e2} = ${base}^(${e1} − ${e2}) = ${base}^${diff} = ${ans}.`, ex()
+            );
+          }
+          const [n, d] = pickAny([[-1, 2], [-2, 3], [3, 4], [-3, 2], [2, 5]]);
+          const e = Math.abs(n) <= 2 && d <= 3 ? 3 : 2;
+          const fAns = fracStr(n ** e, d ** e);
+          return makeExtQ(`(${n}/${d})^${e}`, fAns, [fracStr(-(n ** e), d ** e), fracStr(n * e, d * e), fracStr(n ** e, d)], 'power:rational', cfg,
+            `Lũy thừa của số hữu tỉ: (${n}/${d})^${e} = ${fAns}.`, ex({ allowNeg: true }));
+        }
+        const pairs = [
+          ['0,25', 4, 1],
+          ['0,5', 2, 1],
+          ['0,2', 5, 1],
+          ['0,5', 4, 2]
+        ];
+        const [decS, mulB, prodVal] = pickAny(pairs);
+        const expN = prodVal === 1 ? rInt(4, 9) : rInt(3, 5);
+        const ansP = prodVal ** expN;
+        return makeExtQ(
+          t(`Tính nhanh lũy thừa của một tích: (${decS})^${expN} · ${mulB}^${expN}`, `Compute smartly: (${decS})^${expN} · ${mulB}^${expN}`),
+          ansP, [expN, ansP + 2, mulB * expN], 'power:convenient', cfg,
+          `Áp dụng x^n · y^n = (x · y)^n:\n(${decS})^${expN} · ${mulB}^${expN} = (${decS} · ${mulB})^${expN} = ${prodVal}^${expN} = ${ansP}.`, ex()
+        );
       }
       case 'g8_prob_stat': {
         if (tier === 'easy') {
@@ -1429,23 +1800,66 @@
       }
       case 'g8_geom_quad': {
         if (tier === 'easy') {
-          const A = rInt(65, 115), B = rInt(70, 120), C = rInt(60, 110), D = 360 - (A + B + C);
+          const kind = pickAny(['quadSum', 'rectDiag', 'sqPerim']);
+          if (kind === 'quadSum') {
+            const A = rInt(65, 115), B = rInt(70, 120), C = rInt(60, 110), D = 360 - (A + B + C);
+            return makeExtQ(
+              t(`Tứ giác ABCD có góc A = ${A}°, góc B = ${B}°, góc C = ${C}°. Số đo góc D bằng bao nhiêu độ?`, `Quadrilateral ABCD has ∠A=${A}°, ∠B=${B}°, ∠C=${C}°. Find ∠D (°)`),
+              D, [180 - C > 0 ? 180 - C : D + 20, D + 10, Math.max(15, D - 10)], 'geom:quad', cfg,
+              `Tổng 4 góc của một tứ giác bằng 360°:\n∠D = 360° − (${A}° + ${B}° + ${C}°) = ${D}°.`, ex({ domain: 'geometry' })
+            );
+          }
+          if (kind === 'rectDiag') {
+            const oa = rInt(4, 15), bd = oa * 2;
+            return makeExtQ(
+              t(`Hình chữ nhật ABCD có hai đường chéo AC và BD cắt nhau tại O. Biết OA = ${oa} cm, tính độ dài đường chéo BD (cm)?`, `Rectangle ABCD has diagonals AC, BD meeting at O with OA = ${oa} cm. Find BD (cm)`),
+              bd, [oa, oa * 4, bd + 2], 'geom:quad', cfg,
+              `Trong hình chữ nhật, hai đường chéo bằng nhau và cắt nhau tại trung điểm mỗi đường:\nAC = 2 · OA = ${bd} cm ⇒ BD = AC = ${bd} (cm).`, ex({ domain: 'geometry', visualKind: 'rect' })
+            );
+          }
+          const side = rInt(4, 18), areaSq = side * side, perimSq = side * 4;
           return makeExtQ(
-            t(`Tứ giác ABCD có góc A = ${A}°, góc B = ${B}°, góc C = ${C}°. Số đo góc D bằng bao nhiêu độ?`, `Quadrilateral ABCD has ∠A=${A}°, ∠B=${B}°, ∠C=${C}°. Find ∠D (°)`),
-            D, [180 - C > 0 ? 180 - C : D + 20, D + 10, Math.max(15, D - 10)], 'geom:quad', cfg,
-            `Tổng 4 góc của một tứ giác bằng 360°:\n∠D = 360° − (${A}° + ${B}° + ${C}°) = ${D}°.`, ex({ domain: 'geometry' })
+            t(`Hình vuông ABCD có chu vi bằng ${perimSq} cm. Tính diện tích của hình vuông ABCD (cm²)?`, `Square ABCD has perimeter ${perimSq} cm. Area (cm²) = ?`),
+            areaSq, [perimSq, side * 2, areaSq + 8], 'geom:quad', cfg,
+            `Cạnh hình vuông: a = ${perimSq} ÷ 4 = ${side} (cm) ⇒ Diện tích S = ${side}² = ${areaSq} (cm²).`, ex({ domain: 'geometry', visualKind: 'rect' })
           );
         }
         if (tier === 'medium') {
-          const diff = pickAny([20, 30, 40, 50]), bigA = (180 + diff) / 2;
+          const kind = pickAny(['paraAngle', 'rectPytha', 'rhombusArea']);
+          if (kind === 'paraAngle') {
+            const diff = pickAny([20, 30, 40, 50]), bigA = (180 + diff) / 2;
+            return makeExtQ(
+              t(`Hình bình hành ABCD có góc A − góc B = ${diff}°. Tính số đo góc A (độ)?`, `Parallelogram ABCD has ∠A − ∠B = ${diff}°. Find ∠A (°)`),
+              bigA, [180 - bigA, 90 + diff, bigA + 10], 'geom:quad', cfg,
+              `Trong hình bình hành ABCD, hai góc kề một cạnh bù nhau: ∠A + ∠B = 180°.\nKết hợp ∠A − ∠B = ${diff}° ⇒ ∠A = (180° + ${diff}°) ÷ 2 = ${bigA}°.`, ex({ domain: 'geometry' })
+            );
+          }
+          if (kind === 'rectPytha') {
+            const [ab, bc, ac] = pickAny([[6, 8, 10], [5, 12, 13], [9, 12, 15], [8, 15, 17]]);
+            return makeExtQ(
+              t(`Hình chữ nhật ABCD có hai cạnh AB = ${ab} cm, BC = ${bc} cm. Tính độ dài đường chéo BD (cm)?`, `Rectangle ABCD has sides AB = ${ab} cm, BC = ${bc} cm. Diagonal BD (cm) = ?`),
+              ac, [ab + bc, ac + 2, Math.max(3, ac - 2)], 'geom:quad', cfg,
+              `Áp dụng Pythagore trong △ABC vuông tại B: AC = √(${ab}² + ${bc}²) = ${ac} cm ⇒ BD = AC = ${ac} (cm).`, ex({ domain: 'geometry', visualKind: 'rect' })
+            );
+          }
+          const d1 = rInt(4, 12) * 2, d2 = rInt(5, 13), areaRh = (d1 * d2) / 2;
           return makeExtQ(
-            t(`Hình bình hành ABCD có góc A − góc B = ${diff}°. Tính số đo góc A (độ)?`, `Parallelogram ABCD has ∠A − ∠B = ${diff}°. Find ∠A (°)`),
-            bigA, [180 - bigA, 90 + diff, bigA + 10], 'geom:quad', cfg,
-            `Trong hình bình hành ABCD, hai góc kề một cạnh bù nhau: ∠A + ∠B = 180°.\nKết hợp ∠A − ∠B = ${diff}° ⇒ ∠A = (180° + ${diff}°) ÷ 2 = ${bigA}°.`, ex({ domain: 'geometry' })
+            t(`Hình thoi ABCD có độ dài hai đường chéo AC = ${d1} cm và BD = ${d2} cm. Tính diện tích hình thoi ABCD (cm²)?`, `Rhombus ABCD has diagonals AC = ${d1} cm, BD = ${d2} cm. Area (cm²) = ?`),
+            areaRh, [d1 * d2, areaRh + 10, Math.max(6, areaRh - 10)], 'geom:quad', cfg,
+            `Hai đường chéo hình thoi vuông góc với nhau ⇒ S = (AC · BD) ÷ 2 = (${d1} · ${d2}) ÷ 2 = ${areaRh} (cm²).`, ex({ domain: 'geometry', visualKind: 'rhombus', visualData: { d1, d2 } })
+          );
+        }
+        if (Math.random() < 0.5) {
+          const d = rInt(4, 14) * 2, sqArea = (d * d) / 2;
+          return makeExtQ(
+            t(`Hình vuông ABCD có độ dài đường chéo AC = ${d} cm. Tính diện tích của hình vuông ABCD (cm²)?`, `Square ABCD has diagonal AC = ${d} cm. Area (cm²) = ?`),
+            sqArea, [d * d, d * 4, sqArea + 8], 'geom:quad', cfg,
+            `Hình vuông là hình thoi có hai đường chéo bằng nhau AC = BD = ${d} cm và vuông góc:\nDiện tích S = (AC · BD) ÷ 2 = (${d} · ${d}) ÷ 2 = ${sqArea} (cm²).`, ex({ domain: 'geometry', visualKind: 'rect' })
           );
         }
         // Isosceles trapezoid height & area via Pythagoras
-        const bSmall = rInt(6, 12), leg = 5, proj = 3, h = 4, bBig = bSmall + 2 * proj;
+        const [proj, h, leg] = pickAny([[3, 4, 5], [6, 8, 10], [5, 12, 13]]);
+        const bSmall = rInt(6, 14), bBig = bSmall + 2 * proj;
         const area = ((bSmall + bBig) * h) / 2;
         return makeExtQ(
           t(`Hình thang cân ABCD (AB // CD) có đáy nhỏ AB = ${bSmall} cm, đáy lớn CD = ${bBig} cm và cạnh bên BC = ${leg} cm. Tính diện tích hình thang cân (cm²)?`, `Isosceles trapezoid ABCD has bases ${bSmall} cm, ${bBig} cm and leg ${leg} cm. Area (cm²) = ?`),
@@ -1541,28 +1955,47 @@
       }
       case 'g8_geom_pyramid': {
         if (tier === 'easy') {
-          const a = rInt(4, 10), d = rInt(5, 12), sxq = 2 * a * d; // p * d = (4a/2) * d = 2ad
+          if (Math.random() < 0.5) {
+            const a = rInt(2, 9) * 2, d = rInt(5, 14), sxqTri = (3 * a * d) / 2;
+            return makeExtQ(
+              t(`Hình chóp tam giác đều S.ABC có cạnh đáy a = ${a} cm và trung đoạn d = ${d} cm. Tính diện tích xung quanh của hình chóp (cm²)?`, `Regular triangular pyramid S.ABC has base edge ${a} cm and slant height ${d} cm. Lateral area Sxq (cm²) = ?`),
+              sxqTri, [3 * a * d, a * d, sxqTri + 10], 'geom:pyramid', cfg,
+              `Diện tích xung quanh hình chóp tam giác đều:\nSxq = p · d = (3 · ${a} ÷ 2) · ${d} = ${sxqTri} (cm²).`, ex({ domain: 'geometry', visualKind: 'pyramid' })
+            );
+          }
+          const a = rInt(4, 14), d = rInt(5, 15), sxq = 2 * a * d;
           return makeExtQ(
             t(`Hình chóp tứ giác đều S.ABCD có cạnh đáy a = ${a} cm và trung đoạn d = ${d} cm. Tính diện tích xung quanh của hình chóp (cm²)?`, `Regular square pyramid has base edge ${a} cm and slant height ${d} cm. Lateral area Sxq (cm²) = ?`),
             sxq, [4 * a * d, a * d, sxq + 10], 'geom:pyramid', cfg,
-            `Diện tích xung quanh hình chóp tứ giác đều:\nSxq = p · d = (4 · ${a} ÷ 2) · ${d} = ${2 * a} · ${d} = ${sxq} (cm²).`, ex({ domain: 'geometry' })
+            `Diện tích xung quanh hình chóp tứ giác đều:\nSxq = p · d = (4 · ${a} ÷ 2) · ${d} = ${2 * a} · ${d} = ${sxq} (cm²).`, ex({ domain: 'geometry', visualKind: 'pyramid' })
           );
         }
         if (tier === 'medium') {
-          const a = pickAny([3, 6, 9, 12]), h = rInt(4, 15), vol = (a * a * h) / 3;
+          if (Math.random() < 0.45) {
+            const sBase = pickAny([12, 15, 18, 24, 30, 36]), h = rInt(5, 16), volTri = (sBase * h) / 3;
+            return makeExtQ(
+              t(`Hình chóp tam giác đều có diện tích mặt đáy bằng ${sBase} cm² và chiều cao ${h} cm. Tính thể tích hình chóp (cm³)?`, `Regular triangular pyramid has base area ${sBase} cm² and height ${h} cm. Volume (cm³) = ?`),
+              volTri, [sBase * h, Math.round((sBase * h) / 2), volTri + 10], 'geom:pyramid', cfg,
+              `Thể tích hình chóp tam giác đều: V = (1/3) · S_đáy · h = (1/3) · ${sBase} · ${h} = ${volTri} (cm³).`, ex({ domain: 'geometry', visualKind: 'pyramid' })
+            );
+          }
+          const a = pickAny([3, 6, 9, 12, 15]), h = rInt(4, 16), vol = (a * a * h) / 3;
           return makeExtQ(
             t(`Hình chóp tứ giác đều có cạnh đáy ${a} cm và chiều cao ${h} cm. Tính thể tích hình chóp (cm³)?`, `Regular square pyramid with base edge ${a} cm and height ${h} cm. Volume (cm³) = ?`),
-            vol, [a * a * h, (a * a * h) / 2, vol + 10], 'geom:pyramid', cfg,
-            `Thể tích hình chóp: V = (1/3) · S_đáy · h = (1/3) · ${a}² · ${h} = ${vol} (cm³).`, ex({ domain: 'geometry' })
+            vol, [a * a * h, Math.round((a * a * h) / 2), vol + 10], 'geom:pyramid', cfg,
+            `Thể tích hình chóp: V = (1/3) · S_đáy · h = (1/3) · ${a}² · ${h} = ${vol} (cm³).`, ex({ domain: 'geometry', visualKind: 'pyramid' })
           );
         }
-        // Pyramid given base edge & height -> find slant height via Pythagoras, then total surface area!
-        const halfA = pickAny([3, 6]), h = halfA === 3 ? 4 : 8, slant = halfA === 3 ? 5 : 10, a = 2 * halfA;
-        const stp = 2 * a * slant + a * a;
+        const pyTriples = [[3, 4, 5], [6, 8, 10], [5, 12, 13], [8, 15, 17], [9, 12, 15], [12, 16, 20], [7, 24, 25]];
+        const [halfA, h, slant] = pickAny(pyTriples), a = 2 * halfA;
+        const askSxq = Math.random() < 0.5;
+        const sxq = 2 * a * slant, stp = sxq + a * a, ans = askSxq ? sxq : stp;
         return makeExtQ(
-          t(`Mô hình chóp tứ giác đều có cạnh đáy ${a} cm và chiều cao SO = ${h} cm. Tính diện tích toàn phần của hình chóp (cm²)?`, `Regular square pyramid has base edge ${a} cm and height ${h} cm. Total surface area Stp (cm²) = ?`),
-          stp, [2 * a * slant, 2 * a * h + a * a, stp + 20], 'geom:pyramid', cfg,
-          `• Khoảng cách từ tâm O đến trung điểm M cạnh đáy là OM = ${a}/2 = ${halfA} cm.\n• Áp dụng Pythagore tìm trung đoạn SM: SM = √(SO² + OM²) = √(${h}² + ${halfA}²) = ${slant} (cm).\n• Diện tích toàn phần: Stp = Sxq + S_đáy = 2 · ${a} · ${slant} + ${a}² = ${stp} (cm²).`, ex({ domain: 'geometry' })
+          askSxq
+            ? t(`Mô hình chóp tứ giác đều có cạnh đáy ${a} cm và chiều cao SO = ${h} cm. Tính diện tích xung quanh của hình chóp (cm²)?`, `Regular square pyramid has base edge ${a} cm and height ${h} cm. Lateral area Sxq (cm²) = ?`)
+            : t(`Mô hình chóp tứ giác đều có cạnh đáy ${a} cm và chiều cao SO = ${h} cm. Tính diện tích toàn phần của hình chóp (cm²)?`, `Regular square pyramid has base edge ${a} cm and height ${h} cm. Total surface area Stp (cm²) = ?`),
+          ans, [askSxq ? stp : sxq, 2 * a * h + a * a, ans + 20], 'geom:pyramid', cfg,
+          `• Khoảng cách từ tâm O đến trung điểm M cạnh đáy là OM = ${a}/2 = ${halfA} cm.\n• Áp dụng Pythagore tìm trung đoạn SM: SM = √(SO² + OM²) = √(${h}² + ${halfA}²) = ${slant} (cm).\n• ${askSxq ? `Sxq = 2 · ${a} · ${slant} = ${sxq}` : `Stp = Sxq + S_đáy = 2 · ${a} · ${slant} + ${a}² = ${stp}`} (cm²).`, ex({ domain: 'geometry', visualKind: 'pyramid' })
         );
       }
 
@@ -1642,32 +2075,66 @@
       }
       case 'g9_ineq_eq': {
         if (tier === 'easy') {
-          const a = rInt(2, 5), xBound = rInt(2, 8), b = rInt(1, 10), rhs = a * xBound + b;
+          if (Math.random() < 0.6) {
+            const rPos = rInt(2, 11), rNeg = rInt(1, 9);
+            const askSum = Math.random() < 0.5;
+            const ans = askSum ? (rPos - rNeg) : rPos;
+            return makeExtQ(
+              askSum
+                ? t(`Tính tổng tất cả các nghiệm của phương trình tích: (x − ${rPos})(x + ${rNeg}) = 0?`, `Sum of all roots of product equation (x − ${rPos})(x + ${rNeg}) = 0`)
+                : t(`Tìm nghiệm dương của phương trình tích: (x − ${rPos})(x + ${rNeg}) = 0?`, `Positive root of product equation (x − ${rPos})(x + ${rNeg}) = 0`),
+              ans, [askSum ? rPos + rNeg : -rPos, -ans || 2, ans + 2], 'equation:product', cfg,
+              `(x − ${rPos})(x + ${rNeg}) = 0 ⇔ x = ${rPos} hoặc x = −${rNeg} ⇒ ${askSum ? `Tổng hai nghiệm = ${rPos} + (−${rNeg}) = ${ans}` : `Nghiệm dương là x = ${rPos}`}.`, ex({ allowNeg: true })
+            );
+          }
+          const excl = rInt(-8, 9) || 3, kNum = rInt(2, 7);
+          const signB = -excl >= 0 ? `+ ${-excl}` : `− ${Math.abs(excl)}`;
           return makeExtQ(
-            t(`Tìm nghiệm nguyên lớn nhất của bất phương trình: ${a}x + ${b} < ${rhs}`, `Find the largest integer x satisfying ${a}x + ${b} < ${rhs}`),
-            xBound - 1, [xBound, xBound + 1, xBound - 2], 'equation:ineq', cfg,
-            `${a}x < ${rhs} − ${b} = ${a * xBound} ⇔ x < ${xBound}.\nNghiệm nguyên lớn nhất nhỏ hơn ${xBound} là x = ${xBound - 1}.`, ex({ allowNeg: true })
+            t(`Điều kiện xác định (ĐKXĐ) của phương trình chứa ẩn ở mẫu ${kNum}/(x ${signB}) = 1 là x khác giá trị nào?`, `Domain restriction of rational equation ${kNum}/(x ${signB}) = 1 is x ≠ ?`),
+            excl, [-excl, 0, excl + 1], 'equation:rational', cfg,
+            `Mẫu thức khác 0 ⇔ x ${signB} ≠ 0 ⇔ x ≠ ${excl}.`, ex({ allowNeg: true })
           );
         }
         if (tier === 'medium') {
-          // Negative coefficient trap: -ax + b <= c => x >= ...
-          const a = rInt(2, 5), minInt = rInt(-4, 6) || 2, c = rInt(1, 9), b = a * minInt + c;
+          if (Math.random() < 0.5) {
+            const a = rInt(3, 10), b = rInt(1, a - 1); // x(x - a) + b(x - a) = (x - a)(x + b) = 0 -> roots a and -b
+            const sumR = a - b;
+            return makeExtQ(
+              t(`Đưa về phương trình tích để tính tổng các nghiệm của phương trình: x(x − ${a}) + ${b}(x − ${a}) = 0?`, `Factor to find the sum of roots of x(x − ${a}) + ${b}(x − ${a}) = 0`),
+              sumR, [a + b, -sumR, a], 'equation:product', cfg,
+              `Đặt nhân tử chung (x − ${a}):\n(x − ${a})(x + ${b}) = 0 ⇔ x = ${a} hoặc x = −${b} ⇒ Tổng các nghiệm: ${a} + (−${b}) = ${sumR}.`, ex({ allowNeg: true })
+            );
+          }
+          // Cross-multiplication rational equation: a / (x - m) = b / (x + n)
+          const m = rInt(1, 5), xAns = m + rInt(2, 6), n = rInt(1, 5);
+          const d1 = xAns - m, d2 = xAns + n, g = gcd2(d1, d2);
+          const aCoef = d1 / g, bCoef = d2 / g;
           return makeExtQ(
-            t(`Tìm nghiệm nguyên nhỏ nhất của bất phương trình: −${a}x + ${b} ≤ ${c}`, `Find the smallest integer x satisfying −${a}x + ${b} ≤ ${c}`),
-            minInt, [minInt - 1, -minInt, minInt + 1], 'equation:ineq', cfg,
-            `Chuyển vế và CHIA CHO SỐ ÂM −${a} (nhớ đổi chiều bất đẳng thức!):\n−${a}x ≤ ${c} − ${b} = ${-a * minInt} ⇔ x ≥ ${minInt} → nghiệm nguyên nhỏ nhất là ${minInt}.`, ex({ allowNeg: true })
+            t(`Giải phương trình chứa ẩn ở mẫu: ${aCoef}/(x − ${m}) = ${bCoef}/(x + ${n})`, `Solve rational equation: ${aCoef}/(x − ${m}) = ${bCoef}/(x + ${n})`),
+            xAns, [-xAns, m, xAns + 2], 'equation:rational', cfg,
+            `• ĐKXĐ: x ≠ ${m} và x ≠ −${n}.\n• Nhân chéo khử mẫu: ${aCoef}(x + ${n}) = ${bCoef}(x − ${m}) ⇔ ${bCoef - aCoef}x = ${aCoef * n + bCoef * m} ⇔ x = ${xAns} (thỏa mãn ĐKXĐ).`, ex({ allowNeg: true })
           );
         }
-        // Rational equation with extraneous root check! (x^2 - a^2)/(x - a) + ... or product eq with domain
-        const badRoot = rInt(2, 6), goodRoot = -badRoot - rInt(1, 4);
-        // Solve: (x - badRoot)(x - goodRoot) / (x - badRoot) ... cleaner: x/(x - badRoot) = ...
-        // Let's use: (x + a)/(x - 2) + 2/(2 - x) = k -> at x = 2 excluded!
-        const k = rInt(2, 5), xAns = rInt(4, 9), numConst = k * (xAns - 2) - xAns + 2;
+        if (Math.random() < 0.5) {
+          // Extraneous root trap: (x^2 - (d + xAns)x + d*xAns)/(x - d) = 0 -> x = d excluded, only x = xAns valid!
+          const d = rInt(2, 6), xAns = rInt(-5, 8) || -2;
+          const safeAns = xAns === d ? xAns + 2 : xAns;
+          const S = d + safeAns, P = d * safeAns;
+          const sTerm = -S === 0 ? '' : (-S > 0 ? `+ ${-S}x` : `− ${Math.abs(-S)}x`);
+          const pTerm = P >= 0 ? `+ ${P}` : `− ${Math.abs(P)}`;
+          const numPoly = `x^2 ${sTerm} ${pTerm}`.replace(/\s+/g, ' ');
+          return makeExtQ(
+            t(`Giải phương trình chứa ẩn ở mẫu: (${numPoly})/(x − ${d}) = 0`, `Solve rational equation: (${numPoly})/(x − ${d}) = 0`),
+            safeAns, [d, safeAns + d, -safeAns || 1], 'equation:rational', cfg,
+            `• ĐKXĐ: x ≠ ${d}.\n• Tử thức bằng 0: (x − ${d})(x − (${safeAns})) = 0 ⇔ x = ${d} (loại vì không thỏa ĐKXĐ) hoặc x = ${safeAns} (nhận).\n• Vậy phương trình có nghiệm duy nhất x = ${safeAns}.`, ex({ allowNeg: true })
+          );
+        }
+        const d = rInt(2, 5), k = rInt(2, 5), xAns = d + rInt(2, 7), numConst = k * (xAns - d) - xAns + d;
         const cStr = numConst >= 0 ? `+ ${numConst}` : `− ${Math.abs(numConst)}`;
         return makeExtQ(
-          t(`Giải phương trình chứa ẩn ở mẫu: (x ${cStr})/(x − 2) − 2/(x − 2) = ${k}`, `Solve rational equation: (x ${cStr})/(x − 2) − 2/(x − 2) = ${k}`),
-          xAns, [2, xAns + 2, xAns - 1], 'equation:x', cfg,
-          `• ĐKXĐ: x ≠ 2.\n• Quy đồng khử mẫu: x + (${numConst}) − 2 = ${k}(x − 2) ⇔ x + (${numConst - 2}) = ${k}x − ${2 * k}\n⇔ ${k - 1}x = ${numConst - 2 + 2 * k} ⇔ x = ${xAns} (thỏa mãn ĐKXĐ).`, ex()
+          t(`Giải phương trình chứa ẩn ở mẫu: (x ${cStr})/(x − ${d}) − ${d}/(x − ${d}) = ${k}`, `Solve rational equation: (x ${cStr})/(x − ${d}) − ${d}/(x − ${d}) = ${k}`),
+          xAns, [d, xAns + 2, xAns - 1], 'equation:x', cfg,
+          `• ĐKXĐ: x ≠ ${d}.\n• Quy đồng khử mẫu: x + (${numConst}) − ${d} = ${k}(x − ${d}) ⇔ ${k - 1}x = ${numConst - d + d * k} ⇔ x = ${xAns} (thỏa mãn ĐKXĐ).`, ex()
         );
       }
       case 'g9_eq': {
@@ -1765,71 +2232,117 @@
       }
       case 'g9_real_10': {
         if (tier === 'easy') {
-          const totalN = pickAny([40, 50, 80, 100]), freq = rInt(6, Math.floor(totalN * 0.45));
-          const relFreq = fmtDec((freq / totalN) * 100);
+          if (Math.random() < 0.5) {
+            const preTax = pickAny([200, 300, 400, 500, 600, 800, 1000, 1500]);
+            const vat = pickAny([8, 10]);
+            const safePre = (preTax * vat) % 100 === 0 ? preTax : 500;
+            const totalPay = safePre + (safePre * vat) / 100;
+            return makeExtQ(
+              t(`Hóa đơn mua sắm tại siêu thị chưa tính thuế là ${safePre} nghìn đồng. Nếu tính thêm ${vat}% thuế GTGT (VAT) thì khách cần thanh toán bao nhiêu nghìn đồng?`, `Supermarket subtotal is ${safePre}k VND plus ${vat}% VAT. Total bill (k VND) = ?`),
+              totalPay, [(safePre * vat) / 100, safePre - (safePre * vat) / 100, totalPay + 20], 'word:real', cfg,
+              `Tổng tiền thanh toán gồm ${100 + vat}% giá chưa thuế:\n${safePre} · ${100 + vat}% = ${totalPay} (nghìn đồng).`, ex()
+            );
+          }
+          const cost = pickAny([200, 250, 300, 400, 500, 600, 800]), pct = pickAny([15, 20, 25, 30]);
+          const safeCost = (cost * pct) % 100 === 0 ? cost : 400;
+          const sell = safeCost + (safeCost * pct) / 100;
           return makeExtQ(
-            t(`Khảo sát điểm thi của ${totalN} học sinh thấy có ${freq} em đạt điểm 9. Tần số tương đối của điểm 9 là bao nhiêu phần trăm (%)?`, `In ${totalN} scores, ${freq} students got a 9. Relative frequency (%) = ?`),
-            relFreq, [fmtDec(freq), fmtDec(100 - (freq / totalN) * 100), fmtDec((freq / totalN) * 100 + 5)], 'stat:freq', cfg,
-            `Công thức tần số tương đối: f = (n / N) · 100% = (${freq} / ${totalN}) · 100% = ${relFreq}%.`, ex()
+            t(`Cửa hàng nhập một mặt hàng với giá vốn ${safeCost} nghìn đồng và định giá bán để đạt lợi nhuận ${pct}% so với giá vốn. Giá bán ra là bao nhiêu nghìn đồng?`, `Item cost is ${safeCost}k VND, sold at ${pct}% profit on cost. Selling price (k VND) = ?`),
+            sell, [(safeCost * pct) / 100, sell + 20, Math.max(50, sell - 20)], 'word:real', cfg,
+            `Giá bán ứng với 100% + ${pct}% = ${100 + pct}% giá vốn:\n${safeCost} · ${100 + pct}% = ${sell} (nghìn đồng).`, ex()
           );
         }
         if (tier === 'medium') {
-          // Compound interest over 2 years
-          const cap = 100, rate = 10, after2 = 121;
-          const pCap = pickAny([100, 200, 500]), r = pickAny([10, 5]);
-          const finalAmt = fmtDec(pCap * ((1 + r / 100) ** 2));
+          if (Math.random() < 0.6) {
+            const pCap = pickAny([50, 100, 150, 200, 300, 400, 500]), r = pickAny([5, 6, 8, 10]);
+            const finalAmt = fmtDec(Number((pCap * ((1 + r / 100) ** 2)).toFixed(4)));
+            return makeExtQ(
+              t(`Bác Lan gửi ${pCap} triệu đồng tiết kiệm lãi kép kỳ hạn 1 năm với lãi suất ${r}%/năm (lãi năm trước gộp vào gốc năm sau). Sau 2 năm bác nhận được cả gốc và lãi bao nhiêu triệu đồng?`, `Compound interest: ${pCap}M VND at ${r}%/year compounded annually for 2 years. Total amount (M VND) = ?`),
+              finalAmt, [fmtDec(pCap * (1 + (2 * r) / 100)), fmtDec(pCap * (r / 100) * 2), fmtDec(Number(finalAmt.replace(',', '.')) + 2)], 'word:real', cfg,
+              `Công thức lãi kép sau n năm T = A · (1 + r)^n:\nT = ${pCap} · (1 + ${fmtDec(r / 100)})² = ${finalAmt} (triệu đồng).`, ex()
+            );
+          }
+          const p0 = pickAny([20, 30, 40, 50, 60]), dep = pickAny([10, 20]);
+          const valAfter2 = fmtDec(Number((p0 * ((1 - dep / 100) ** 2)).toFixed(4)));
           return makeExtQ(
-            t(`Bác Lan gửi ${pCap} triệu đồng tiết kiệm lãi kép kỳ hạn 1 năm với lãi suất ${r}%/năm (lãi năm trước gộp vào gốc năm sau). Sau 2 năm bác nhận được cả gốc và lãi bao nhiêu triệu đồng?`, `Compound interest: ${pCap}M VND at ${r}%/year compounded annually for 2 years. Total amount (M VND) = ?`),
-            finalAmt, [fmtDec(pCap * (1 + (2 * r) / 100)), fmtDec(pCap * (r / 100) * 2), fmtDec(Number(finalAmt.replace(',', '.')) + 2)], 'word:real', cfg,
-            `Công thức lãi kép sau n năm T = A · (1 + r)^n:\nT = ${pCap} · (1 + ${fmtDec(r / 100)})² = ${finalAmt} (triệu đồng).`, ex()
+            t(`Một chiếc máy tính mua mới giá ${p0} triệu đồng, cứ sau mỗi năm sử dụng giá trị giảm ${dep}% so với đầu năm đó. Sau 2 năm giá trị chiếc máy còn lại bao nhiêu triệu đồng?`, `A laptop bought for ${p0}M VND depreciates by ${dep}% per year. Value after 2 years (M VND) = ?`),
+            valAfter2, [fmtDec(p0 * (1 - (2 * dep) / 100)), fmtDec(p0 - dep), fmtDec(Number(valAfter2.replace(',', '.')) + 2)], 'word:real', cfg,
+            `Khấu hao kép sau 2 năm: V = ${p0} · (1 − ${fmtDec(dep / 100)})² = ${valAfter2} (triệu đồng).`, ex()
           );
         }
-        // Quadratic revenue optimization (classic modern Grade-10 entrance problem!)
-        // Base price p0 = 200k, sells q0 = 40 tickets. Every 10k increase loses 1 ticket -> R(x) = (200 + 10x)(40 - x) = -10(x - 10)^2 + 9000 -> optimal price = 300k!
-        const scenarios = [
-          { p0: 200, q0: 40, stepP: 10, xOpt: 10, optPrice: 300 },
-          { p0: 100, q0: 30, stepP: 10, xOpt: 10, optPrice: 200 },
-          { p0: 300, q0: 50, stepP: 10, xOpt: 10, optPrice: 400 }
-        ];
-        const sc = pickAny(scenarios);
+        if (Math.random() < 0.5) {
+          // Fencing 3 sides along an existing wall: x + 2y = 4k => S = y(4k - 2y) = -2(y - k)^2 + 2k^2!
+          const k = rInt(4, 15), fenceLen = 4 * k, maxArea = 2 * k * k;
+          return makeExtQ(
+            t(`Bác An dùng ${fenceLen} m lưới thép rào 3 cạnh của một khu vườn hình chữ nhật sát một bức tường thẳng dài có sẵn (không cần rào phía bờ tường). Diện tích lớn nhất của khu vườn rào được là bao nhiêu m²?`, `Using ${fenceLen} m of fence for 3 sides of a rectangle against a long wall, maximum area (m²) = ?`),
+            maxArea, [k * k, 4 * k * k, maxArea + 8], 'word:opt', cfg,
+            `• Gọi chiều rộng vuông góc với tường là x (m) ⇒ chiều dài song song với tường là ${fenceLen} − 2x (m).\n• Diện tích S = x(${fenceLen} − 2x) = −2(x − ${k})² + ${maxArea} ≤ ${maxArea}.\n• Vậy diện tích lớn nhất bằng ${maxArea} m² (khi rộng ${k} m, dài ${2 * k} m).`, ex()
+          );
+        }
+        // Parameterized quadratic revenue optimization: R(x) = (p0 + stepP*x)(q0 - x), xOpt = (q0 - p0/stepP)/2
+        const stepP = pickAny([10, 20]);
+        const baseUnits = rInt(10, 24), xOpt = rInt(4, 12);
+        const p0 = stepP * baseUnits, q0 = baseUnits + 2 * xOpt, optPrice = p0 + stepP * xOpt;
+        const maxRev = optPrice * (q0 - xOpt);
         return makeExtQ(
-          t(`Một rạp kịch bán vé giá ${sc.p0} nghìn đồng thì có ${sc.q0} khách mua. Cứ tăng giá vé thêm ${sc.stepP} nghìn đồng thì giảm mất 1 khách. Hỏi nên đặt giá vé bao nhiêu nghìn đồng để doanh thu lớn nhất?`, `At ${sc.p0}k/ticket, ${sc.q0} tickets sell; each +${sc.stepP}k increase loses 1 buyer. Optimal ticket price (k VND) for max revenue = ?`),
-          sc.optPrice, [sc.p0 + 50, sc.optPrice + 50, sc.optPrice - 20], 'word:opt', cfg,
-          `Bài toán tối ưu thực tế thi vào 10:\n• Gọi x là số lần tăng ${sc.stepP} nghìn → Giá vé: ${sc.p0} + 10x; Số khách: ${sc.q0} − x.\n• Doanh thu R = (${sc.p0} + 10x)(${sc.q0} − x) = −10(x − ${sc.xOpt})² + ${(sc.p0 + 10 * sc.xOpt) * (sc.q0 - sc.xOpt)}.\n• R đạt GTLN khi x = ${sc.xOpt} ⇒ Giá vé tối ưu là ${sc.p0} + 10·${sc.xOpt} = ${sc.optPrice} (nghìn đồng).`, ex()
+          t(`Một rạp kịch bán vé giá ${p0} nghìn đồng thì có ${q0} khách mua. Cứ tăng giá vé thêm ${stepP} nghìn đồng thì giảm mất 1 khách. Hỏi nên đặt giá vé bao nhiêu nghìn đồng để doanh thu lớn nhất?`, `At ${p0}k/ticket, ${q0} tickets sell; each +${stepP}k increase loses 1 buyer. Optimal ticket price (k VND) for max revenue = ?`),
+          optPrice, [p0 + stepP * Math.max(1, xOpt - 2), optPrice + stepP * 2, optPrice - stepP], 'word:opt', cfg,
+          `Bài toán tối ưu bậc hai thi vào 10:\n• Gọi x là số lần tăng ${stepP} nghìn ⇒ Giá vé: ${p0} + ${stepP}x; Số khách: ${q0} − x.\n• Doanh thu R = (${p0} + ${stepP}x)(${q0} − x) = −${stepP}(x − ${xOpt})² + ${maxRev} ≤ ${maxRev}.\n• R đạt GTLN khi x = ${xOpt} ⇒ Giá vé tối ưu là ${p0} + ${stepP}·${xOpt} = ${optPrice} (nghìn đồng).`, ex()
         );
       }
 
       // ==================== GRADE 9: HÌNH HỌC ====================
       case 'g9_geom_trig': {
         if (tier === 'easy') {
-          const bank = [
-            { q: t('Trong tam giác vuông, tỉ số sin 30° có giá trị bằng bao nhiêu?', 'What is the exact value of sin 30°?'), a: '1/2', near: ['3/2', '5/2', '7/2'], exp: 'Góc đặc biệt: sin 30° = cos 60° = 1/2 = 0,5.' },
-            { q: t('Tính giá trị biểu thức: sin^2(37°) + cos^2(37°)', 'Evaluate: sin^2(37°) + cos^2(37°)'), a: 1, near: [0, 2, 3], exp: 'Hệ thức cơ bản với mọi góc nhọn α: sin²α + cos²α = 1.' },
-            { q: t('Giá trị của tan 45° bằng bao nhiêu?', 'What is the value of tan 45°?'), a: 1, near: [0, 2, 3], exp: 'Tam giác vuông cân có hai cạnh góc vuông bằng nhau nên tan 45° = cot 45° = 1.' }
-          ];
-          const it = pickAny(bank);
-          return makeExtQ(it.q, it.a, it.near, 'geom:trig', cfg, it.exp, ex({ domain: 'geometry' }));
+          if (Math.random() < 0.65) {
+            const triples = [[3, 4, 5], [6, 8, 10], [5, 12, 13], [8, 15, 17], [9, 12, 15], [12, 16, 20]];
+            const [ab, ac, bc] = pickAny(triples);
+            const askSin = Math.random() < 0.5;
+            const ans = askSin ? fracStr(ac, bc) : fracStr(ab, bc);
+            return makeExtQ(
+              askSin
+                ? t(`Tam giác ABC vuông tại A có AB = ${ab} cm, AC = ${ac} cm, BC = ${bc} cm. Tỉ số lượng giác sin B (phân số tối giản) bằng bao nhiêu?`, `Right △ABC at A has AB=${ab}, AC=${ac}, BC=${bc}. Find sin B`)
+                : t(`Tam giác ABC vuông tại A có AB = ${ab} cm, AC = ${ac} cm, BC = ${bc} cm. Tỉ số lượng giác cos B (phân số tối giản) bằng bao nhiêu?`, `Right △ABC at A has AB=${ab}, AC=${ac}, BC=${bc}. Find cos B`),
+              ans, [askSin ? fracStr(ab, bc) : fracStr(ac, bc), fracStr(ac, ab), fracStr(ab, ac)], 'geom:trig', cfg,
+              askSin ? `sin B = Cạnh đối / Cạnh huyền = AC / BC = ${ac}/${bc} = ${ans}.` : `cos B = Cạnh kề / Cạnh huyền = AB / BC = ${ab}/${bc} = ${ans}.`, ex({ domain: 'geometry', visualKind: 'right_tri' })
+            );
+          }
+          const deg = rInt(15, 75);
+          return makeExtQ(
+            t(`Tính giá trị biểu thức lượng giác: sin^2(${deg}°) + cos^2(${deg}°)`, `Evaluate: sin^2(${deg}°) + cos^2(${deg}°)`),
+            1, [0, 2, 3], 'geom:trig', cfg,
+            `Hệ thức cơ bản với mọi góc nhọn α: sin²(${deg}°) + cos²(${deg}°) = 1.`, ex({ domain: 'geometry' })
+          );
         }
         if (tier === 'medium') {
-          // Altitude in right triangle: AH^2 = BH * CH or AB = BC * sin C
-          const pairs = [[4, 9, 6], [9, 16, 12], [2, 8, 4], [3, 12, 6]];
-          const [bh, ch, ah] = pickAny(pairs);
+          const basePairs = [[4, 9, 6], [9, 16, 12], [2, 8, 4], [3, 12, 6], [1, 9, 3], [4, 16, 8], [8, 18, 12], [5, 20, 10]];
+          const [bh, ch, ah] = pickAny(basePairs);
+          if (Math.random() < 0.5) {
+            const abSq = bh * (bh + ch);
+            const abRoot = Math.round(Math.sqrt(abSq));
+            if (abRoot * abRoot === abSq) {
+              return makeExtQ(
+                t(`Tam giác ABC vuông tại A, đường cao AH chia cạnh huyền thành BH = ${bh} cm, CH = ${ch} cm. Tính độ dài cạnh góc vuông AB (cm)?`, `Right △ABC at A has altitude AH with BH = ${bh} cm, CH = ${ch} cm. Find AB (cm)`),
+                abRoot, [ah, bh + ch, abRoot + 2], 'geom:trig', cfg,
+                `Cạnh huyền BC = ${bh} + ${ch} = ${bh + ch} cm.\nHệ thức lượng: AB² = BH · BC = ${bh} · ${bh + ch} = ${abSq} ⇒ AB = ${abRoot} (cm).`, ex({ domain: 'geometry', visualKind: 'right_tri' })
+              );
+            }
+          }
           return makeExtQ(
             t(`Tam giác ABC vuông tại A, đường cao AH chia cạnh huyền thành BH = ${bh} cm, CH = ${ch} cm. Tính độ dài đường cao AH (cm)?`, `Right △ABC at A has altitude AH with BH = ${bh} cm, CH = ${ch} cm. Find AH (cm)`),
             ah, [bh + ch, Math.round((bh + ch) / 2), ah + 2], 'geom:trig', cfg,
             `Hệ thức lượng trong tam giác vuông (hoặc △ABH ~ △CAH):\nAH² = BH · CH = ${bh} · ${ch} = ${bh * ch} ⇒ AH = ${ah} (cm).`, ex({ domain: 'geometry', visualKind: 'right_tri', visualData: { a: bh, b: ch, c: ah } })
           );
         }
-        // Practical angle of elevation (45 degrees or sin 30 degrees)
-        const shadow = rInt(12, 35), eyeH = fmtDec(1.5), totalH = fmtDec(shadow + 1.5);
+        const shadow = rInt(10, 42), eyeH = pickAny([1.2, 1.5, 1.6]), totalH = fmtDec(Number((shadow + eyeH).toFixed(1)));
         return makeExtQ(
-          t(`Một học sinh đặt giác kế cao 1,5 m cách chân tháp truyền hình ${shadow} m, ngắm thấy đỉnh tháp dưới góc nâng 45° so với phương ngang. Tính chiều cao của tháp (m)?`, `A theodolite 1.5 m high placed ${shadow} m from a tower measures a 45° elevation angle to the top. Tower height (m) = ?`),
-          totalH, [fmtDec(shadow), fmtDec(shadow - 1.5), fmtDec(shadow + 2.5)], 'geom:trig', cfg,
-          `• Phần tháp cao hơn giác kế là: ${shadow} · tan 45° = ${shadow} · 1 = ${shadow} (m).\n• Chiều cao toàn bộ tháp (cộng chiều cao giác kế): ${shadow} + 1,5 = ${totalH} (m).`, ex({ domain: 'geometry', visualKind: 'right_tri', visualData: { a: shadow, b: shadow, c: '' } })
+          t(`Một học sinh đặt giác kế cao ${fmtDec(eyeH)} m cách chân tháp truyền hình ${shadow} m, ngắm thấy đỉnh tháp dưới góc nâng 45° so với phương ngang. Tính chiều cao của tháp (m)?`, `A theodolite ${eyeH} m high placed ${shadow} m from a tower measures a 45° elevation angle to the top. Tower height (m) = ?`),
+          totalH, [fmtDec(shadow), fmtDec(Number((shadow - eyeH).toFixed(1))), fmtDec(Number((shadow + eyeH + 2).toFixed(1)))], 'geom:trig', cfg,
+          `• Phần tháp cao hơn giác kế là: ${shadow} · tan 45° = ${shadow} · 1 = ${shadow} (m).\n• Chiều cao toàn bộ tháp (cộng chiều cao giác kế): ${shadow} + ${fmtDec(eyeH)} = ${totalH} (m).`, ex({ domain: 'geometry', visualKind: 'right_tri', visualData: { a: shadow, b: shadow, c: '' } })
         );
       }
       case 'g9_geom_chord': {
-        const triples = [[3, 4, 5], [6, 8, 10], [5, 12, 13], [8, 15, 17]];
+        const triples = [[3, 4, 5], [6, 8, 10], [9, 12, 15], [12, 16, 20], [5, 12, 13], [10, 24, 26], [8, 15, 17], [7, 24, 25], [15, 20, 25]];
         const [d, halfChord, R] = pickAny(triples);
         if (tier === 'easy') {
           const chord = 2 * halfChord;
@@ -1840,15 +2353,13 @@
           );
         }
         if (tier === 'medium') {
-          // Two tangents from M: R = d, MA = halfChord, MO = R -> let's use radius = d, tangent = halfChord * 2? No: R^2 + MA^2 = MO^2!
           return makeExtQ(
             t(`Từ điểm M nằm ngoài đường tròn (O; ${d} cm) sao cho OM = ${R} cm, kẻ tiếp tuyến MA tới đường tròn (A là tiếp điểm). Tính độ dài đoạn tiếp tuyến MA (cm)?`, `From M with OM = ${R} cm, tangent MA is drawn to circle (O; ${d} cm). Length MA (cm) = ?`),
             halfChord, [R - d, R + d, halfChord + 2], 'geom:circle', cfg,
             `Vì MA là tiếp tuyến tại A nên OA ⊥ MA (△OAM vuông tại A):\nMA = √(OM² − OA²) = √(${R}² − ${d}²) = ${halfChord} (cm).`, ex({ domain: 'geometry', visualKind: 'circle', visualData: { R: d } })
           );
         }
-        // Classic tangent perimeter invariant: Perimeter of △MPQ formed by 3rd tangent = 2 * MA!
-        const ma = rInt(8, 22), perim = 2 * ma;
+        const ma = rInt(6, 28), perim = 2 * ma;
         return makeExtQ(
           t(`Từ điểm M ngoài (O), kẻ hai tiếp tuyến MA, MB (MA = ${ma} cm). Trên cung nhỏ AB lấy điểm C và kẻ tiếp tuyến thứ ba cắt MA, MB lần lượt tại P và Q. Tính chu vi tam giác MPQ (cm)?`, `Tangents MA = MB = ${ma} cm from M to (O). A third tangent at C on minor arc AB cuts MA, MB at P, Q. Perimeter of △MPQ (cm) = ?`),
           perim, [ma, 3 * ma, perim + 4], 'geom:circle', cfg,
@@ -1883,35 +2394,46 @@
       }
       case 'g9_geom_arc': {
         if (tier === 'easy') {
-          const r = pickAny([5, 10]), deg = pickAny([90, 180]), arc = fmtDec((3.14 * r * deg) / 180);
+          const r = pickAny([3, 4, 5, 6, 8, 9, 10, 12]), deg = pickAny([60, 90, 120, 180]);
+          const safeR = (deg === 60 || deg === 120) && r % 3 !== 0 ? 6 : r;
+          const arc = fmtDec(Number(((3.14 * safeR * deg) / 180).toFixed(2)));
           return makeExtQ(
-            t(`Tính độ dài cung ${deg}° của đường tròn bán kính R = ${r} cm (lấy π ≈ 3,14)?`, `Find length of a ${deg}° arc in a circle of radius ${r} cm (π ≈ 3.14)`),
-            arc, [fmtDec(2 * 3.14 * r), fmtDec((3.14 * r * r * deg) / 360), fmtDec(Number(arc.replace(',', '.')) + 2)], 'geom:circle', cfg,
-            `Công thức độ dài cung tròn: l = (π · R · n) / 180 = (3,14 · ${r} · ${deg}) / 180 = ${arc} (cm).`, ex({ domain: 'geometry', visualKind: 'circle', visualData: { R: r } })
+            t(`Tính độ dài cung ${deg}° của đường tròn bán kính R = ${safeR} cm (lấy π ≈ 3,14)?`, `Find length of a ${deg}° arc in a circle of radius ${safeR} cm (π ≈ 3.14)`),
+            arc, [fmtDec(Number((2 * 3.14 * safeR).toFixed(2))), fmtDec(Number(((3.14 * safeR * safeR * deg) / 360).toFixed(2))), fmtDec(Number(arc.replace(',', '.')) + 2)], 'geom:circle', cfg,
+            `Công thức độ dài cung tròn: l = (π · R · n) / 180 = (3,14 · ${safeR} · ${deg}) / 180 = ${arc} (cm).`, ex({ domain: 'geometry', visualKind: 'circle', visualData: { R: safeR } })
           );
         }
         if (tier === 'medium') {
-          const r = pickAny([6, 10]), deg = pickAny([60, 90, 120]);
-          // If r=6, deg=60 -> pi * 36 * 60 / 360 = 6 * 3.14 = 18,84; r=6, deg=120 -> 12 * 3.14 = 37,68; r=10, deg=90 -> 25 * 3.14 = 78,5
-          const sSector = fmtDec((3.14 * r * r * deg) / 360);
+          const pairs = [[6, 60], [6, 90], [6, 120], [10, 36], [10, 72], [10, 90], [10, 144], [12, 60], [12, 90], [12, 120], [8, 90], [9, 80]];
+          const [r, deg] = pickAny(pairs);
+          const sSector = fmtDec(Number(((3.14 * r * r * deg) / 360).toFixed(2)));
           return makeExtQ(
             t(`Tính diện tích hình quạt tròn bán kính R = ${r} cm ứng với cung ${deg}° (lấy π ≈ 3,14, đơn vị cm²)?`, `Area of circular sector with R = ${r} cm and angle ${deg}° (π ≈ 3.14, cm²) = ?`),
-            sSector, [fmtDec(3.14 * r * r), fmtDec((2 * 3.14 * r * deg) / 360), fmtDec(Number(sSector.replace(',', '.')) + 10)], 'geom:circle', cfg,
+            sSector, [fmtDec(Number((3.14 * r * r).toFixed(2))), fmtDec(Number(((2 * 3.14 * r * deg) / 360).toFixed(2))), fmtDec(Number(sSector.replace(',', '.')) + 10)], 'geom:circle', cfg,
             `Diện tích hình quạt tròn: S_q = (π · R² · n) / 360 = (3,14 · ${r}² · ${deg}) / 360 = ${sSector} (cm²).`, ex({ domain: 'geometry', visualKind: 'circle', visualData: { R: r } })
           );
         }
-        // Annulus (hình vành khuyên) S = pi * (R^2 - r^2) with R^2 - r^2 = 100 or 25 or 50!
-        const [bigR, smallR] = pickAny([[10, 6], [5, 3], [13, 12], [10, 8]]); // 64, 16, 25, 36
-        const diffSq = bigR * bigR - smallR * smallR, areaAnn = fmtDec(3.14 * diffSq);
+        const annPairs = [[10, 6], [5, 3], [13, 12], [10, 8], [15, 9], [17, 15], [8, 6], [12, 8], [14, 10]];
+        const [bigR, smallR] = pickAny(annPairs);
+        const diffSq = bigR * bigR - smallR * smallR, areaAnn = fmtDec(Number((3.14 * diffSq).toFixed(2)));
         return makeExtQ(
           t(`Tính diện tích hình vành khuyên giới hạn bởi hai đường tròn đồng tâm có bán kính R = ${bigR} cm và r = ${smallR} cm (lấy π ≈ 3,14, đơn vị cm²)?`, `Area of annulus between concentric circles R = ${bigR} cm and r = ${smallR} cm (π ≈ 3.14) = ?`),
-          areaAnn, [fmtDec(3.14 * (bigR - smallR) ** 2), fmtDec(3.14 * bigR * bigR), fmtDec(Number(areaAnn.replace(',', '.')) + 10)], 'geom:circle', cfg,
+          areaAnn, [fmtDec(Number((3.14 * (bigR - smallR) ** 2).toFixed(2))), fmtDec(Number((3.14 * bigR * bigR).toFixed(2))), fmtDec(Number(areaAnn.replace(',', '.')) + 10)], 'geom:circle', cfg,
           `Công thức diện tích hình vành khuyên:\nS = π · (R² − r²) ≈ 3,14 · (${bigR}² − ${smallR}²) = 3,14 · ${diffSq} = ${areaAnn} (cm²).`, ex({ domain: 'geometry', visualKind: 'circle', visualData: { R: bigR } })
         );
       }
       case 'g9_geom_solid': {
         if (tier === 'easy') {
-          const [r, h, l] = pickAny([[3, 4, 5], [6, 8, 10], [5, 12, 13]]);
+          const triples = [[3, 4, 5], [6, 8, 10], [9, 12, 15], [12, 16, 20], [5, 12, 13], [8, 15, 17], [7, 24, 25]];
+          const [r, h, l] = pickAny(triples);
+          if (Math.random() < 0.45) {
+            const sxqCyl = fmtDec(Number((2 * 3.14 * r * h).toFixed(2)));
+            return makeExtQ(
+              t(`Hình trụ có bán kính đáy r = ${r} cm và chiều cao h = ${h} cm. Tính diện tích xung quanh hình trụ (lấy π ≈ 3,14, đơn vị cm²)?`, `Cylinder has r = ${r} cm and h = ${h} cm. Lateral area Sxq (π ≈ 3.14, cm²) = ?`),
+              sxqCyl, [fmtDec(Number((3.14 * r * h).toFixed(2))), fmtDec(Number((3.14 * r * r * h).toFixed(2))), fmtDec(Number(sxqCyl.replace(',', '.')) + 10)], 'geom:solid', cfg,
+              `Diện tích xung quanh hình trụ: Sxq = 2πrh ≈ 2 · 3,14 · ${r} · ${h} = ${sxqCyl} (cm²).`, ex({ domain: 'geometry' })
+            );
+          }
           return makeExtQ(
             t(`Hình nón có bán kính đáy r = ${r} cm và chiều cao h = ${h} cm. Tính độ dài đường sinh l của hình nón (cm)?`, `A cone has base radius r = ${r} cm and height h = ${h} cm. Slant height l (cm) = ?`),
             l, [r + h, l + 2, Math.max(2, l - 2)], 'geom:solid', cfg,
@@ -1919,18 +2441,18 @@
           );
         }
         if (tier === 'medium') {
-          const r = 5, h = pickAny([8, 10, 12]), vol = fmtDec(3.14 * r * r * h);
+          const r = pickAny([2, 3, 4, 5, 6, 8]), h = rInt(5, 14);
+          const vol = fmtDec(Number((3.14 * r * r * h).toFixed(2)));
           return makeExtQ(
             t(`Một hộp sữa hình trụ có bán kính đáy r = ${r} cm và chiều cao h = ${h} cm. Tính thể tích hộp sữa (lấy π ≈ 3,14, đơn vị cm³)?`, `A cylindrical milk can has r = ${r} cm and h = ${h} cm. Volume (π ≈ 3.14, cm³) = ?`),
-            vol, [fmtDec(2 * 3.14 * r * h), fmtDec((3.14 * r * r * h) / 3), fmtDec(Number(vol.replace(',', '.')) + 50)], 'geom:solid', cfg,
+            vol, [fmtDec(Number((2 * 3.14 * r * h).toFixed(2))), fmtDec(Number(((3.14 * r * r * h) / 2).toFixed(2))), fmtDec(Number(vol.replace(',', '.')) + 20)], 'geom:solid', cfg,
             `Thể tích hình trụ: V = π · r² · h ≈ 3,14 · ${r}² · ${h} = ${vol} (cm³).`, ex({ domain: 'geometry' })
           );
         }
-        // Surface area of sphere or ratio of cylinder vs cone volume
-        const rSphere = pickAny([3, 5, 8, 10]), sSphere = fmtDec(4 * 3.14 * rSphere * rSphere);
+        const rSphere = pickAny([2, 3, 4, 5, 6, 7, 8, 9, 10, 12]), sSphere = fmtDec(Number((4 * 3.14 * rSphere * rSphere).toFixed(2)));
         return makeExtQ(
-          t(`Một quả bóng đá hình cầu có bán kính R = ${rSphere} cm. Tính diện tích mặt cầu của quả bóng (lấy π ≈ 3,14, đơn vị cm²)?`, `A spherical ball has radius R = ${rSphere} cm. Surface area (π ≈ 3.14, cm²) = ?`),
-          sSphere, [fmtDec(3.14 * rSphere * rSphere), fmtDec(2 * 3.14 * rSphere * rSphere), fmtDec(Number(sSphere.replace(',', '.')) + 100)], 'geom:solid', cfg,
+          t(`Một quả bóng hình cầu có bán kính R = ${rSphere} cm. Tính diện tích mặt cầu của quả bóng (lấy π ≈ 3,14, đơn vị cm²)?`, `A spherical ball has radius R = ${rSphere} cm. Surface area (π ≈ 3.14, cm²) = ?`),
+          sSphere, [fmtDec(Number((3.14 * rSphere * rSphere).toFixed(2))), fmtDec(Number((2 * 3.14 * rSphere * rSphere).toFixed(2))), fmtDec(Number(sSphere.replace(',', '.')) + 50)], 'geom:solid', cfg,
           `Công thức diện tích mặt cầu: S = 4πR² ≈ 4 · 3,14 · ${rSphere}² = ${sSphere} (cm²).`, ex({ domain: 'geometry' })
         );
       }
@@ -1990,19 +2512,37 @@
       }
       case 'g6_geom_3d': {
         if (tier === 'easy') {
+          if (Math.random() < 0.7) {
+            const edge = rInt(2, 11), askVol = Math.random() < 0.5;
+            const ans = askVol ? edge ** 3 : edge * edge * 4;
+            return makeExtQ(
+              askVol
+                ? t(`Hình lập phương có cạnh bằng ${edge} cm. Tính thể tích của hình lập phương (cm³)?`, `Cube has edge ${edge} cm. Volume (cm³) = ?`)
+                : t(`Hình lập phương có cạnh bằng ${edge} cm. Tính diện tích xung quanh của hình lập phương (cm²)?`, `Cube has edge ${edge} cm. Lateral area Sxq (cm²) = ?`),
+              ans, [edge * edge * 6, edge * 12, ans + 10], 'geom:3d', cfg,
+              askVol ? `Thể tích hình lập phương: V = ${edge}³ = ${ans} (cm³).` : `Diện tích xung quanh hình lập phương: Sxq = 4 · ${edge}² = ${ans} (cm²).`, ex({ domain: 'geometry' })
+            );
+          }
           const bank = [
             { q: t('Hình hộp chữ nhật có tất cả bao nhiêu cạnh?', 'How many edges does a rectangular box have?'), a: 12, near: [6, 8, 10], exp: 'Hình hộp chữ nhật (và hình lập phương) có 8 đỉnh, 6 mặt và 12 cạnh.' },
-            { q: t('Hình lập phương có tất cả bao nhiêu đỉnh?', 'How many vertices does a cube have?'), a: 8, near: [6, 10, 12], exp: 'Hình lập phương có 8 đỉnh, 6 mặt vuông bằng nhau và 12 cạnh bằng nhau.' },
-            { q: t('Mỗi mặt của hình lập phương là hình gì? (Chọn số cạnh của mặt đó)', 'How many equal sides does each face of a cube have?'), a: 4, near: [3, 5, 6], exp: 'Mỗi mặt của hình lập phương là một hình vuông có 4 cạnh bằng nhau.' }
+            { q: t('Hình lập phương có tất cả bao nhiêu đỉnh?', 'How many vertices does a cube have?'), a: 8, near: [6, 10, 12], exp: 'Hình lập phương có 8 đỉnh, 6 mặt vuông bằng nhau và 12 cạnh bằng nhau.' }
           ];
           const it = pickAny(bank);
           return makeExtQ(it.q, it.a, it.near, 'geom:3d', cfg, it.exp, ex({ domain: 'geometry' }));
         }
         if (tier === 'medium') {
-          const edge = rInt(3, 12), wire = 12 * edge;
+          if (Math.random() < 0.5) {
+            const l = rInt(5, 12), w = rInt(3, 9), h = rInt(3, 8), sxq = 2 * (l + w) * h;
+            return makeExtQ(
+              t(`Hình hộp chữ nhật có chiều dài ${l} cm, chiều rộng ${w} cm, chiều cao ${h} cm. Tính diện tích xung quanh của hình hộp chữ nhật (cm²)?`, `Rectangular box ${l}×${w}×${h} cm. Lateral area Sxq (cm²) = ?`),
+              sxq, [l * w * h, (l + w) * h, sxq + 10], 'geom:3d', cfg,
+              `Diện tích xung quanh hình hộp chữ nhật: Sxq = 2 · (${l} + ${w}) · ${h} = ${sxq} (cm²).`, ex({ domain: 'geometry' })
+            );
+          }
+          const edge = rInt(3, 18), wire = 12 * edge;
           return makeExtQ(
             t(`Người ta uốn dây thép làm khung một hình lập phương có cạnh ${edge} cm (không tính mối nối). Cần bao nhiêu cm dây thép?`, `Wire needed to build the 12-edge frame of a cube with edge ${edge} cm = ?`),
-            wire, [6 * edge * edge, 4 * edge, wire + 12], 'geom:3d', cfg,
+            wire, [6 * edge * edge, 4 * edge, wire + 10], 'geom:3d', cfg,
             `Hình lập phương có 12 cạnh bằng nhau ⇒ Tổng độ dài dây thép = 12 · ${edge} = ${wire} (cm).`, ex({ domain: 'geometry' })
           );
         }
@@ -2016,15 +2556,21 @@
 
       case 'g7_dec_periodic': {
         if (tier === 'easy') {
-          const pairs = [['0,(3)', '1/3', ['3/10', '1/9', '2/3']], ['0,(6)', '2/3', ['3/5', '6/9', '1/3']], ['0,(1)', '1/9', ['1/10', '1/11', '2/9']], ['0,(9)', '1', ['9/10', '9/11', '0']]];
-          const [decS, ans, near] = pickAny(pairs);
-          if (decS === '0,(9)') {
-            return makeExtQ(t('Số thập phân vô hạn tuần hoàn 0,(5) viết dưới dạng phân số tối giản là?', 'Write repeating decimal 0.(5) as a fraction in simplest form'), '5/9', ['1/2', '5/10', '4/9'], 'number:periodic', cfg, 'Vì 0,(1) = 1/9 nên 0,(5) = 5 · (1/9) = 5/9.', ex());
+          if (Math.random() < 0.6) {
+            const k = rInt(1, 8), w = rInt(0, 3);
+            const decS = `${w},(${k})`, ans = fracStr(w * 9 + k, 9);
+            return makeExtQ(
+              t(`Viết số thập phân vô hạn tuần hoàn ${decS} dưới dạng phân số tối giản?`, `Write repeating decimal ${decS} as a simplified fraction`),
+              ans, [fracStr(w * 10 + k, 10), fracStr(w * 9 + k + 1, 9), fracStr(Math.max(1, w * 9 + k - 1), 9)], 'number:periodic', cfg,
+              `Ta có 0,(1) = 1/9 ⇒ ${decS} = ${w} + ${k}/9 = ${ans}.`, ex()
+            );
           }
+          const m = pickAny([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), digits2 = String(m * 9).padStart(2, '0');
+          const ans11 = fracStr(m, 11);
           return makeExtQ(
-            t(`Viết số thập phân vô hạn tuần hoàn ${decS} dưới dạng phân số tối giản?`, `Write repeating decimal ${decS} as a simplified fraction`),
-            ans, near, 'number:periodic', cfg,
-            `Ta có 0,(1) = 1/9 ⇒ ${decS} rút gọn tối giản bằng ${ans}.`, ex()
+            t(`Viết số thập phân vô hạn tuần hoàn 0,(${digits2}) dưới dạng phân số tối giản?`, `Write repeating decimal 0.(${digits2}) as a simplified fraction`),
+            ans11, [fracStr(m + 1, 11), fracStr(Math.max(1, m - 1), 11), fracStr(m * 9, 100)], 'number:periodic', cfg,
+            `Vì 0,(01) = 1/99 nên 0,(${digits2}) = ${m * 9}/99 = ${ans11}.`, ex()
           );
         }
         if (tier === 'medium') {
@@ -2078,6 +2624,22 @@
       }
       case 'g7_geom_right_tri': {
         if (tier === 'easy') {
+          if (Math.random() < 0.65) {
+            const angB = rInt(18, 72), angC = 90 - angB;
+            return makeExtQ(
+              t(`Tam giác ABC vuông tại A có góc nhọn B = ${angB}°. Tính số đo góc nhọn C (độ)?`, `Right △ABC at A has acute ∠B = ${angB}°. Find ∠C (°)`),
+              angC, [180 - angB, angB, angC + 10], 'geom:right_tri', cfg,
+              `Hai góc nhọn trong tam giác vuông phụ nhau (tổng bằng 90°):\n∠C = 90° − ∠B = 90° − ${angB}° = ${angC}°.`, ex({ domain: 'geometry', visualKind: 'right_tri' })
+            );
+          }
+          const leg = rInt(4, 18), areaIso = (leg * leg) / 2;
+          if (leg % 2 === 0) {
+            return makeExtQ(
+              t(`Tam giác ABC vuông cân tại A có cạnh góc vuông AB = ${leg} cm. Tính diện tích tam giác ABC (cm²)?`, `Isosceles right △ABC at A has leg AB = ${leg} cm. Area (cm²) = ?`),
+              areaIso, [leg * leg, leg * 2, areaIso + 4], 'geom:right_tri', cfg,
+              `Tam giác ABC vuông cân tại A nên AC = AB = ${leg} cm ⇒ Diện tích S = (AB · AC) ÷ 2 = (${leg} · ${leg}) ÷ 2 = ${areaIso} (cm²).`, ex({ domain: 'geometry', visualKind: 'right_tri' })
+            );
+          }
           return makeExtQ(
             t('Tam giác ABC vuông cân tại A thì mỗi góc nhọn B và C có số đo bằng bao nhiêu độ?', 'In an isosceles right triangle △ABC at A, find ∠B (°)'),
             45, [30, 60, 90], 'geom:right_tri', cfg,
@@ -2129,19 +2691,35 @@
       }
       case 'g8_stat_chart': {
         if (tier === 'easy') {
-          const t1 = rInt(20, 28), t2 = t1 + rInt(3, 8), diff = t2 - t1;
+          if (Math.random() < 0.5) {
+            const t1 = rInt(20, 28), t2 = t1 + rInt(3, 8), diff = t2 - t1;
+            return makeExtQ(
+              t(`Biểu đồ đoạn thẳng nhiệt độ trung bình: Tháng 3 là ${t1}°C, Tháng 6 là ${t2}°C. Nhiệt độ Tháng 6 tăng thêm bao nhiêu °C so với Tháng 3?`, `Line chart: March is ${t1}°C, June is ${t2}°C. Temperature increase (°C) = ?`),
+              diff, [diff + 2, Math.max(1, diff - 2), Math.round((t1 + t2) / 2)], 'stat:line', cfg,
+              `Độ tăng nhiệt độ trên biểu đồ đoạn thẳng: ${t2} − ${t1} = ${diff} (°C).`, ex()
+            );
+          }
+          const g8a = rInt(14, 24), g8b = rInt(12, 22), tot = g8a + g8b;
           return makeExtQ(
-            t(`Biểu đồ đoạn thẳng nhiệt độ trung bình: Tháng 3 là ${t1}°C, Tháng 6 là ${t2}°C. Nhiệt độ Tháng 6 tăng thêm bao nhiêu °C so với Tháng 3?`, `Line chart: March is ${t1}°C, June is ${t2}°C. Temperature increase (°C) = ?`),
-            diff, [diff + 2, Math.max(1, diff - 2), Math.round((t1 + t2) / 2)], 'stat:line', cfg,
-            `Độ tăng nhiệt độ: ${t2} − ${t1} = ${diff} (°C).`, ex()
+            t(`Biểu đồ cột kép thống kê số học sinh đạt điểm Giỏi môn Toán: Lớp 8A có ${g8a} em, Lớp 8B có ${g8b} em. Cả hai lớp có tổng cộng bao nhiêu học sinh đạt điểm Giỏi?`, `Double bar chart: Class 8A has ${g8a} honors, 8B has ${g8b}. Total = ?`),
+            tot, [Math.abs(g8a - g8b) || 4, tot + 4, Math.max(4, tot - 4)], 'stat:doublebar', cfg,
+            `Tổng số học sinh đạt điểm Giỏi của hai lớp trên biểu đồ cột kép: ${g8a} + ${g8b} = ${tot} (em).`, ex()
           );
         }
         if (tier === 'medium') {
-          const oldV = pickAny([40, 50, 80, 100]), pctInc = pickAny([15, 20, 25, 30]), newV = oldV + (oldV * pctInc) / 100;
+          if (Math.random() < 0.5) {
+            const oldV = pickAny([40, 50, 80, 100]), pctInc = pickAny([15, 20, 25, 30]), newV = oldV + (oldV * pctInc) / 100;
+            return makeExtQ(
+              t(`Biểu đồ cột kép doanh thu hai chi nhánh: Quý I đạt ${oldV} triệu đồng, Quý II đạt ${newV} triệu đồng. Doanh thu Quý II tăng bao nhiêu phần trăm so với Quý I?`, `Double bar chart: Revenue rose from ${oldV}M to ${newV}M. Percentage increase = ?%`),
+              pctInc, [newV - oldV, pctInc + 5, Math.max(5, pctInc - 5)], 'stat:pct', cfg,
+              `Mức tăng = ${newV} − ${oldV} = ${newV - oldV} (triệu) ⇒ Tỉ lệ phần trăm tăng: (${newV - oldV} / ${oldV}) · 100% = ${pctInc}%.`, ex()
+            );
+          }
+          const clsSize = rInt(35, 45), badVal = clsSize + rInt(5, 18);
           return makeExtQ(
-            t(`Biểu đồ doanh thu quý I đạt ${oldV} triệu đồng, quý II đạt ${newV} triệu đồng. Doanh thu quý II tăng bao nhiêu phần trăm so với quý I?`, `Revenue rose from ${oldV}M to ${newV}M. Percentage increase = ?%`),
-            pctInc, [newV - oldV, pctInc + 5, Math.max(5, pctInc - 5)], 'stat:pct', cfg,
-            `Mức tăng = ${newV} − ${oldV} = ${newV - oldV} (triệu) ⇒ Tỉ lệ phần trăm tăng: (${newV - oldV} / ${oldV}) · 100% = ${pctInc}%.`, ex()
+            t(`Lớp 8A có sĩ số ${clsSize} học sinh. Khi lập bảng thống kê số HS tham gia CLB của lớp 8A, tổ trưởng ghi nhầm con số ${badVal} học sinh. Con số ${badVal} vượt quá sĩ số bao nhiêu em (dữ liệu không hợp lý)?`, `Class 8A has ${clsSize} students; a survey recorded ${badVal} participants. By how many does ${badVal} exceed class size?`),
+            badVal - clsSize, [clsSize, badVal, badVal - clsSize + 3], 'stat:valid', cfg,
+            `Kiểm tra tính hợp lý của dữ liệu: Số HS tham gia không thể vượt sĩ số lớp ${clsSize} em ⇒ Chênh lệch ghi sai là ${badVal} − ${clsSize} = ${badVal - clsSize} (em).`, ex()
           );
         }
         const a = rInt(12, 22), b = rInt(14, 24), c = rInt(16, 26), d = rInt(10, 20);
@@ -2149,7 +2727,7 @@
         const adjustD = d + ((4 - (sum % 4)) % 4);
         const avg4 = (a + b + c + adjustD) / 4;
         return makeExtQ(
-          t(`Biểu đồ lượng mưa 4 tuần (mm): Tuần 1: ${a}, Tuần 2: ${b}, Tuần 3: ${c}, Tuần 4: ${adjustD}. Lượng mưa trung bình mỗi tuần là bao nhiêu mm?`, `Weekly rainfall (mm): ${a}, ${b}, ${c}, ${adjustD}. Mean rainfall = ?`),
+          t(`Biểu đồ đoạn thẳng lượng mưa 4 tuần (mm): Tuần 1: ${a}, Tuần 2: ${b}, Tuần 3: ${c}, Tuần 4: ${adjustD}. Lượng mưa trung bình mỗi tuần là bao nhiêu mm?`, `Weekly rainfall line chart (mm): ${a}, ${b}, ${c}, ${adjustD}. Mean rainfall = ?`),
           avg4, [avg4 + 3, Math.max(2, avg4 - 3), a + b], 'stat:mean', cfg,
           `Trung bình cộng = (${a} + ${b} + ${c} + ${adjustD}) ÷ 4 = ${avg4 * 4} ÷ 4 = ${avg4} (mm).`, ex()
         );
@@ -2334,40 +2912,90 @@
         );
       }
       case 'g9_prob_omega': {
+        const gcdProb = (a, b) => (b === 0 ? a : gcdProb(b, a % b));
         if (tier === 'easy') {
-          const bank = [
-            { q: t('Gieo đồng thời hai con xúc xắc cân đối và đồng chất. Số phần tử của không gian mẫu n(Ω) bằng bao nhiêu?', 'Roll two fair 6-sided dice simultaneously. Size of sample space n(Ω) = ?'), a: 36, near: [12, 6, 24], exp: 'Mỗi con xúc xắc có 6 kết quả ⇒ Gieo 2 con có n(Ω) = 6 · 6 = 36 kết quả đồng khả năng.' },
-            { q: t('Tung đồng thời hai đồng xu cân đối. Số phần tử của không gian mẫu n(Ω) bằng bao nhiêu?', 'Toss two fair coins simultaneously. Size of sample space n(Ω) = ?'), a: 4, near: [2, 6, 8], exp: 'Ω = {SS, SN, NS, NN} ⇒ n(Ω) = 2 · 2 = 4.' }
-          ];
-          const it = pickAny(bank);
-          return makeExtQ(it.q, it.a, it.near, 'prob:omega', cfg, it.exp, ex());
-        }
-        if (tier === 'medium') {
-          const targets = [
-            { sum: 7, fav: 6, ans: '1/6', near: ['5/36', '7/36', '1/12'] },
-            { sum: 6, fav: 5, ans: '5/36', near: ['1/6', '1/9', '7/36'] },
-            { sum: 9, fav: 4, ans: '1/9', near: ['1/6', '5/36', '1/12'] },
-            { sum: 11, fav: 2, ans: '1/18', near: ['1/36', '1/12', '1/9'] }
-          ];
-          const it = pickAny(targets);
+          const mode = rInt(1, 4);
+          if (mode === 1) {
+            const n = rInt(4, 12), omega = (n * (n - 1)) / 2;
+            return makeExtQ(
+              t(`Từ hộp có ${n} tấm thẻ đánh số từ 1 đến ${n}, lấy ngẫu nhiên đồng thời 2 tấm thẻ. Số phần tử của không gian mẫu n(Ω) bằng bao nhiêu?`, `Draw 2 cards simultaneously from ${n} numbered cards. Size of sample space n(Ω) = ?`),
+              omega, [n * (n - 1), n * 2, omega + n], 'prob:omega', cfg,
+              `Lấy đồng thời 2 thẻ không phân biệt thứ tự từ ${n} thẻ ⇒ n(Ω) = ${n}·${n - 1}/2 = ${omega}.`, ex()
+            );
+          }
+          if (mode === 2) {
+            const m = rInt(3, 10), omega = 6 * m;
+            return makeExtQ(
+              t(`Gieo đồng thời 1 con xúc xắc cân đối (6 mặt) và quay 1 tấm bìa hình tròn chia thành ${m} hình quạt bằng nhau. Số phần tử của không gian mẫu n(Ω) là?`, `Roll a 6-sided die and spin an ${m}-sector wheel. Size of sample space n(Ω) = ?`),
+              omega, [6 + m, m * m, omega + 6], 'prob:omega', cfg,
+              `Xúc xắc có 6 kết quả, vòng quay có ${m} kết quả ⇒ n(Ω) = 6 · ${m} = ${omega}.`, ex()
+            );
+          }
+          if (mode === 3) {
+            const k = rInt(2, 4), omega = 2 ** k;
+            return makeExtQ(
+              t(`Tung đồng thời ${k} đồng xu cân đối và đồng chất. Số phần tử của không gian mẫu n(Ω) bằng bao nhiêu?`, `Toss ${k} fair coins simultaneously. Size of sample space n(Ω) = ?`),
+              omega, [2 * k, omega + 2, omega * 2], 'prob:omega', cfg,
+              `Mỗi đồng xu có 2 khả năng (S hoặc N) ⇒ Tung ${k} đồng xu có n(Ω) = 2^${k} = ${omega} kết quả.`, ex()
+            );
+          }
+          const d1 = 6, d2 = 6;
           return makeExtQ(
-            t(`Gieo đồng thời 2 con xúc xắc cân đối. Tính xác suất của biến cố "Tổng số chấm xuất hiện trên hai con xúc xắc bằng ${it.sum}" (phân số tối giản)?`, `Roll two fair dice. Probability that the sum of dots equals ${it.sum} = ?`),
-            it.ans, it.near, 'prob:dice2', cfg,
-            `Không gian mẫu n(Ω) = 36. Số cặp chấm có tổng bằng ${it.sum} là n(A) = ${it.fav} ⇒ P(A) = ${it.fav}/36 = ${it.ans}.`, ex()
+            t('Gieo đồng thời hai con xúc xắc cân đối và đồng chất. Số phần tử của không gian mẫu n(Ω) bằng bao nhiêu?', 'Roll two fair 6-sided dice simultaneously. Size of sample space n(Ω) = ?'),
+            d1 * d2, [12, 6, 24], 'prob:omega', cfg,
+            'Mỗi con xúc xắc có 6 kết quả ⇒ Gieo 2 con có n(Ω) = 6 · 6 = 36 kết quả đồng khả năng.', ex()
           );
         }
-        // Drawing 2 cards without replacement from n cards (classic Grade-10 entrance exam!)
-        // Box has 5 balls: 3 red, 2 blue -> n(Omega) = C(5,2) = 10; both red = C(3,2) = 3 -> P = 3/10!
-        const scenarios = [
-          { tot: 5, red: 3, blue: 2, omega: 10, fav: 3, ans: '3/10', near: ['1/5', '2/5', '3/5'], ask: 'cả 2 quả đều màu đỏ' },
-          { tot: 6, red: 4, blue: 2, omega: 15, fav: 6, ans: '2/5', near: ['1/5', '3/5', '4/15'], ask: 'cả 2 quả đều màu đỏ' },
-          { tot: 5, red: 3, blue: 2, omega: 10, fav: 6, ans: '3/5', near: ['2/5', '3/10', '1/2'], ask: '2 quả khác màu' }
-        ];
-        const sc = pickAny(scenarios);
+        if (tier === 'medium') {
+          if (Math.random() < 0.55) {
+            const sum = rInt(2, 12);
+            const fav = 6 - Math.abs(7 - sum);
+            const g = gcdProb(fav, 36), num = fav / g, den = 36 / g;
+            const ans = `${num}/${den}`;
+            return makeExtQ(
+              t(`Gieo đồng thời 2 con xúc xắc cân đối. Tính xác suất của biến cố "Tổng số chấm xuất hiện trên hai con xúc xắc bằng ${sum}" (phân số tối giản)?`, `Roll two fair dice. Probability that the sum of dots equals ${sum} (lowest terms) = ?`),
+              ans, [`${Math.max(1, num - 1)}/${den}`, `${num + 1}/${den}`, `${num + 2}/${den}`], 'prob:dice2', cfg,
+              `Không gian mẫu n(Ω) = 36. Số cặp chấm có tổng bằng ${sum} là n(A) = ${fav} ⇒ P(A) = ${fav}/36 = ${ans}.`, ex()
+            );
+          }
+          const k = pickAny([3, 4, 5, 6]);
+          const n = rInt(12, 30);
+          const fav = Math.floor(n / k);
+          const g = gcdProb(fav, n), num = fav / g, den = n / g;
+          const ans = `${num}/${den}`;
+          return makeExtQ(
+            t(`Một hộp có ${n} thẻ đánh số từ 1 đến ${n}. Rút ngẫu nhiên 1 thẻ. Tính xác suất rút được thẻ ghi số chia hết cho ${k} (phân số tối giản)?`, `Box has ${n} cards numbered 1..${n}. Draw 1 card. Probability it is divisible by ${k} = ?`),
+            ans, [`${Math.max(1, num - 1)}/${den}`, `${num + 1}/${den}`, `${num + 2}/${den}`], 'prob:div_card', cfg,
+            `Từ 1 đến ${n} có ⌊${n}/${k}⌋ = ${fav} số chia hết cho ${k}. Do đó P(A) = ${fav}/${n} = ${ans}.`, ex()
+          );
+        }
+        // Drawing 2 balls without replacement from red + blue balls (classic Grade-10 entrance exam!)
+        const red = rInt(2, 6), blue = rInt(2, 5), tot = red + blue;
+        const omega = (tot * (tot - 1)) / 2;
+        const askKind = pickAny(['both_red', 'both_blue', 'diff']);
+        let fav, askVi, askEn, detailVi;
+        if (askKind === 'both_red') {
+          fav = (red * (red - 1)) / 2;
+          askVi = 'cả 2 quả đều màu đỏ';
+          askEn = 'both balls are red';
+          detailVi = `Số cách chọn 2 quả đỏ là ${red}·${red - 1}/2 = ${fav}`;
+        } else if (askKind === 'both_blue') {
+          fav = (blue * (blue - 1)) / 2;
+          askVi = 'cả 2 quả đều màu xanh';
+          askEn = 'both balls are blue';
+          detailVi = `Số cách chọn 2 quả xanh là ${blue}·${blue - 1}/2 = ${fav}`;
+        } else {
+          fav = red * blue;
+          askVi = '2 quả lấy ra khác màu';
+          askEn = 'the 2 balls have different colors';
+          detailVi = `Số cách chọn 1 đỏ và 1 xanh là ${red}·${blue} = ${fav}`;
+        }
+        const g = gcdProb(fav, omega), num = fav / g, den = omega / g;
+        const ans = `${num}/${den}`;
         return makeExtQ(
-          t(`Một hộp có ${sc.red} quả bóng đỏ và ${sc.blue} quả bóng xanh. Lấy ngẫu nhiên đồng thời 2 quả bóng từ hộp. Tính xác suất của biến cố "${sc.ask}"?`, `Box has ${sc.red} red & ${sc.blue} blue balls; draw 2 at random. Probability of (${sc.ask}) = ?`),
-          sc.ans, sc.near, 'prob:combo', cfg,
-          `Số cách chọn 2 quả từ ${sc.tot} quả là n(Ω) = ${sc.tot}·${sc.tot - 1}/2 = ${sc.omega}. Số kết quả thuận lợi n(A) = ${sc.fav} ⇒ P(A) = ${sc.fav}/${sc.omega} = ${sc.ans}.`, ex()
+          t(`Một hộp có ${red} quả bóng đỏ và ${blue} quả bóng xanh. Lấy ngẫu nhiên đồng thời 2 quả bóng từ hộp. Tính xác suất của biến cố "${askVi}" (phân số tối giản)?`, `Box has ${red} red & ${blue} blue balls; draw 2 at random. Probability (${askEn}) = ?`),
+          ans, [`${Math.max(1, num - 1)}/${den}`, `${num + 1}/${den}`, `${num + 2}/${den}`], 'prob:combo', cfg,
+          `Số cách chọn 2 quả từ ${tot} quả là n(Ω) = ${tot}·${tot - 1}/2 = ${omega}. ${detailVi} ⇒ P(A) = ${fav}/${omega} = ${ans}.`, ex()
         );
       }
       case 'g9_geom_pos_cir': {

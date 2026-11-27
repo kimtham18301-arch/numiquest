@@ -256,21 +256,26 @@ async function localSignUp(name,username,password,avatar='bunny',grade=1){
 
 async function localSignOut(){
   const u=currentAuthUser();
-  if(u&&u.type==='local'){
+  if(u&&u.type==='local'&&u.username){
     try{localStorage.setItem('numi-user-state-'+u.username,JSON.stringify(state))}catch{}
   }
+  clearTimeout(cloudTimer);
   if(cloudSession){
     try{await cloudRequest('/auth/v1/logout','POST',{})}catch{}
-    cloudSession=null;
-    localStorage.removeItem(CLOUD_SESSION_KEY);
   }
-  localStorage.removeItem('numi-current-user-v1');
+  cloudReady=false;cloudRevision=null;cloudDirty=false;cloudStatus='local';
+  cloudSession=null;
+  try{
+    localStorage.removeItem(CLOUD_SESSION_KEY);
+    localStorage.removeItem(CLOUD_OWNER_KEY);
+    localStorage.removeItem('numi-current-user-v1');
+  }catch{}
   state=fresh();
   stop();session=null;
-  save();
+  saveBeforeCloud();
   cloudBadge();
   openAccount('login');
-  toast(t('Đã đăng xuất. Hẹn gặp lại em!','Signed out. See you next time!'));
+  toast(t('Đã đăng xuất thành công!','Signed out successfully!'));
 }
 
 function cloudConfigured(){const c=window.NUMI_CLOUD_CONFIG||{};if(!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(c.url||''))return false;const key=c.publishableKey||'';if(key.startsWith('sb_publishable_'))return true;try{const jwt=JSON.parse(atob(key.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));return jwt.role==='anon'}catch{return false}}
@@ -309,6 +314,12 @@ function cloudBadge(){
     footerLocal.textContent=lang==='en'?enTxt:viTxt;
   }
   if(!button)return;
+  const headerOutBtn=$('#headerSignOutBtn');
+  if(headerOutBtn){
+    headerOutBtn.style.display=u?'inline-flex':'none';
+    headerOutBtn.textContent=t('Đăng xuất','Sign out');
+    headerOutBtn.title=t('Đăng xuất khỏi tài khoản hiện tại','Sign out of current account');
+  }
   if(u){
     const shortLabel=isAdmin?t('Quản trị','Admin'):isTeacher?u.name:u.name;
     button.innerHTML=`<b class="account-btn-label">${esc(shortLabel)}</b>`;
@@ -699,7 +710,8 @@ function renderProfile(){
   const signOutBtn=$('#profileSignOutBtn');
   if(signOutBtn){
     signOutBtn.onclick=()=>{
-      if(confirm(t('Em có chắc muốn đăng xuất không?','Are you sure you want to sign out?'))){
+      const msg=isTeacher||isAdmin?t('Bạn có chắc muốn đăng xuất khỏi tài khoản không?','Are you sure you want to sign out?'):t('Em có chắc muốn đăng xuất không?','Are you sure you want to sign out?');
+      if(confirm(msg)){
         if(cloudSession)cloudSignOut();else localSignOut();
       }
     };
@@ -716,7 +728,7 @@ function openAccount(mode='login'){
     toast(t('Hoàn thành lượt đang chơi trước khi đổi tài khoản nhé.','Finish the current session before changing accounts.'));
     return;
   }
-  stop();view='account';session=null;document.body.dataset.view='account';
+  stop();view='account';if(typeof window!=='undefined')window.view='account';if(typeof global!=='undefined')global.view='account';session=null;document.body.dataset.view='account';
   const u=currentAuthUser();
   if(u){
     renderProfile();
@@ -862,15 +874,32 @@ async function cloudAfterSignIn(username,hadLocal){
     await cloudChooseSave();
   }catch(e){cloudStatus='offline';cloudBadge()}
 }
-async function cloudSignOut(){clearTimeout(cloudTimer);if(cloudBusy){toast(t('Đang lưu, chờ một chút nhé.','Saving. Please wait a moment.'));return}if(cloudDirty){if(cloudReady)await cloudPush();if(cloudStatus!=='saved'&&!confirm(t('Chưa lưu lên mạng. Vẫn đăng xuất? Bản trên máy sẽ được giữ riêng.','Not saved online. Sign out anyway? A local account copy will be kept.')))return}const old=cloudSession;localStorage.setItem('numi-account-cache-'+old.user.id,JSON.stringify(state));try{await cloudRequest('/auth/v1/logout','POST',{})}catch{}cloudReady=false;cloudRevision=null;cloudDirty=false;cloudStatus='local';cloudStoreSession(null);localStorage.removeItem(CLOUD_OWNER_KEY);let guest;try{guest=JSON.parse(localStorage.getItem('numi-guest-snapshot')||'null')}catch{}state=guest&&validBackup(guest)?guest:fresh();lang=state.lang==='en'?'en':'vi';saveBeforeCloud();nav('home')}
+async function cloudSignOut(){clearTimeout(cloudTimer);if(cloudBusy){toast(t('Đang lưu, chờ một chút nhé.','Saving. Please wait a moment.'));return}if(cloudDirty){if(cloudReady)await cloudPush();if(cloudStatus!=='saved'&&!confirm(t('Chưa lưu lên mạng. Vẫn đăng xuất? Bản trên máy sẽ được giữ riêng.','Not saved online. Sign out anyway? A local account copy will be kept.')))return}const old=cloudSession;if(old?.user?.id){try{localStorage.setItem('numi-account-cache-'+old.user.id,JSON.stringify(state))}catch{}}try{await cloudRequest('/auth/v1/logout','POST',{})}catch{}cloudReady=false;cloudRevision=null;cloudDirty=false;cloudStatus='local';localStorage.removeItem(CLOUD_OWNER_KEY);localStorage.removeItem('numi-current-user-v1');cloudStoreSession(null);let guest;try{guest=JSON.parse(localStorage.getItem('numi-guest-snapshot')||'null')}catch{}state=guest&&validBackup(guest)?guest:fresh();lang=state.lang==='en'?'en':'vi';stop();session=null;saveBeforeCloud();cloudBadge();openAccount('login');toast(t('Đã đăng xuất thành công!','Signed out successfully!'))}
 
 async function cloudRestore(){if(!cloudConfigured())return;let fromCallback=false;try{let saved=JSON.parse(localStorage.getItem(CLOUD_SESSION_KEY)||'null');const hash=new URLSearchParams(location.hash.slice(1));if(hash.has('access_token')){fromCallback=true;saved={access_token:hash.get('access_token'),refresh_token:hash.get('refresh_token'),expires_in:+hash.get('expires_in')||3600};cloudRecovering=hash.get('type')==='recovery';history.replaceState(null,'',location.pathname+location.search)}if(!saved?.access_token||!saved.refresh_token)return;cloudStoreSession(saved);await cloudRefresh();const user=await cloudRequest('/auth/v1/user');cloudSession.user=user;cloudStoreSession(cloudSession);const owner=JSON.parse(localStorage.getItem(CLOUD_OWNER_KEY)||'null'),row=await cloudGetRow();if(owner?.uid===user.id&&owner.revision===row?.revision){cloudRevision=row.revision;cloudReady=true;cloudStatus='saved'}else{cloudReady=false;cloudStatus='conflict'}cloudBadge();if(fromCallback)await cloudChooseSave()}catch{cloudStatus='offline';cloudBadge()}}
 
 const accountButton=document.createElement('button');
 accountButton.id='accountButton';
 accountButton.className='account-button';
-accountButton.onclick=()=>{const u=currentAuthUser();if(u&&(u.role==='admin'||u.username==='admin')){if(typeof renderAdmin==='function')renderAdmin();return;}if(u&&u.role==='teacher'){if(typeof renderTeacherWorkspace==='function')renderTeacherWorkspace();else renderProfile();return;}openAccount();};
+accountButton.onclick=()=>{const u=currentAuthUser();if(u&&(u.role==='admin'||u.username==='admin')){if(typeof renderAdmin==='function')renderAdmin();return;}if(u&&u.role==='teacher'){if(view==='teacher')renderProfile();else if(typeof renderTeacherWorkspace==='function')renderTeacherWorkspace();else renderProfile();return;}openAccount();};
 $('#lang')?.before(accountButton);
+
+const headerSignOutBtn=document.createElement('button');
+headerSignOutBtn.id='headerSignOutBtn';
+headerSignOutBtn.type='button';
+headerSignOutBtn.className='header-signout-btn';
+headerSignOutBtn.style.display='none';
+headerSignOutBtn.onclick=()=>{
+  const u=currentAuthUser();
+  if(!u)return;
+  const promptMsg=(u.role==='teacher'||u.role==='admin'||u.username==='admin')
+    ?t('Bạn có chắc muốn đăng xuất khỏi tài khoản không?','Are you sure you want to sign out?')
+    :t('Em có chắc muốn đăng xuất không?','Are you sure you want to sign out?');
+  if(confirm(promptMsg)){
+    if(cloudSession)cloudSignOut();else localSignOut();
+  }
+};
+$('#lang')?.before(headerSignOutBtn);
 cloudBadge();
 window.addEventListener('online',()=>{if(cloudReady)cloudQueue();else cloudRestore()});
 cloudRestore().finally(()=>setTimeout(checkWeakPinOnLoad,300)); // after restore so a PIN change also reaches the cloud
@@ -885,6 +914,8 @@ if(typeof window!=='undefined'){
   window.hashPassword=hashPassword;
   window.localSignIn=localSignIn;
   window.localSignUp=localSignUp;
+  window.localSignOut=localSignOut;
+  window.cloudSignOut=cloudSignOut;
   window.openAccount=openAccount;
 }
 if(typeof global!=='undefined'){
@@ -894,6 +925,8 @@ if(typeof global!=='undefined'){
   global.hashPassword=hashPassword;
   global.localSignIn=localSignIn;
   global.localSignUp=localSignUp;
+  global.localSignOut=localSignOut;
+  global.cloudSignOut=cloudSignOut;
   global.openAccount=openAccount;
 }
 if(typeof syncUserGradeToConfig==='function')syncUserGradeToConfig();

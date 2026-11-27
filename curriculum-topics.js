@@ -225,15 +225,16 @@
       }
       return a;
     };
-    const shuffledTopics = shuffleArr(unique);
-    const base = Math.floor(total / shuffledTopics.length);
-    const rem = total % shuffledTopics.length;
+    // Interleave shuffled round-robin cycles so EVERY section (Part I MCQ & Part II Written) and difficulty tier gets an even topic mix!
     const plan = [];
-    shuffledTopics.forEach((id, idx) => {
-      const qty = base + (idx < rem ? 1 : 0);
-      for (let k = 0; k < qty; k++) plan.push(id);
-    });
-    return shuffleArr(plan);
+    while (plan.length < total) {
+      const cycle = shuffleArr(unique);
+      for (const id of cycle) {
+        if (plan.length >= total) break;
+        plan.push(id);
+      }
+    }
+    return plan;
   }
 
   function formatSplitHint(totalCount, numTopics) {
@@ -463,17 +464,55 @@
         break;
       }
       case 'g1_geom_basic': {
-        const bank = [
-          { q: t('Hình tam giác có mấy cạnh?', 'How many sides does a triangle have?'), a: 3, near: [2, 4, 5], exp: 'Hình tam giác có 3 cạnh và 3 đỉnh.' },
-          { q: t('Hình vuông có mấy cạnh bằng nhau?', 'How many equal sides does a square have?'), a: 4, near: [2, 3, 5], exp: 'Hình vuông có 4 cạnh bằng nhau.' },
-          { q: t('Hình chữ nhật có mấy cạnh?', 'How many sides does a rectangle have?'), a: 4, near: [3, 5, 6], exp: 'Hình chữ nhật có 4 cạnh (2 cạnh dài và 2 cạnh ngắn).' },
-          { q: t('Khối lập phương có mấy mặt?', 'How many faces does a cube have?'), a: 6, near: [4, 5, 8], exp: 'Khối lập phương có 6 mặt đều là hình vuông.' },
-          { q: t('Một tuần lễ có mấy ngày?', 'How many days are in a week?'), a: 7, near: [5, 6, 8], exp: 'Một tuần lễ có 7 ngày (từ Thứ Hai đến Chủ Nhật).' },
-          { q: t('Hôm nay là Thứ Hai, 3 ngày nữa là Thứ mấy?', 'If today is Monday (2), 3 days later is day ?'), a: 5, near: [4, 6, 7], exp: 'Thứ Hai (2) + 3 ngày = Thứ Năm (5).' },
-          { q: t('Hôm nay là Thứ Tư, 2 ngày nữa là Thứ mấy?', 'If today is Wednesday (4), 2 days later is day ?'), a: 6, near: [5, 7, 3], exp: 'Thứ Tư (4) + 2 ngày = Thứ Sáu (6).' }
-        ];
-        const item = pickAny(bank);
-        res = makeQ(item.q, item.a, item.near, 'geom:basic', cfg, item.exp);
+        // Strict Grade 1 rule: NO '(', ')', '×', '÷', NO carry/borrow, answers 0..100
+        const mode = rInt(1, 3);
+        if (mode === 1) {
+          const dayNames = [
+            { num: 2, vi: 'Thứ Hai', en: 'Monday (2)' },
+            { num: 3, vi: 'Thứ Ba', en: 'Tuesday (3)' },
+            { num: 4, vi: 'Thứ Tư', en: 'Wednesday (4)' },
+            { num: 5, vi: 'Thứ Năm', en: 'Thursday (5)' },
+            { num: 6, vi: 'Thứ Sáu', en: 'Friday (6)' }
+          ];
+          const startIdx = rInt(0, 3), step = rInt(1, 4 - startIdx);
+          const fromD = dayNames[startIdx], toD = dayNames[startIdx + step];
+          res = makeQ(
+            t(`Hôm nay là ${fromD.vi}, ${step} ngày nữa là Thứ mấy?`, `If today is ${fromD.en}, ${step} day(s) later is day ?`),
+            toD.num, [toD.num + 1, Math.max(2, toD.num - 1), toD.num + 2], 'geom:basic', cfg,
+            `${fromD.vi} đếm thêm ${step} ngày là ${toD.vi} (số ${toD.num}).`
+          );
+        } else if (mode === 2) {
+          const shapes = [
+            { vi: 'hình tam giác rời nhau', en: 'separate triangles', sides: 3 },
+            { vi: 'hình vuông rời nhau', en: 'separate squares', sides: 4 },
+            { vi: 'hình chữ nhật rời nhau', en: 'separate rectangles', sides: 4 }
+          ];
+          const sh = pickAny(shapes), cnt = sh.sides === 3 ? rInt(1, 3) : rInt(1, 2);
+          const totalSides = sh.sides === 3 ? (cnt === 1 ? 3 : cnt === 2 ? 6 : 9) : (cnt === 1 ? 4 : 8);
+          res = makeQ(
+            t(`Có ${cnt} ${sh.vi} thì có tất cả bao nhiêu cạnh?`, `How many sides in total do ${cnt} ${sh.en} have?`),
+            totalSides, [totalSides + 1, Math.max(2, totalSides - 1), totalSides + 2], 'geom:basic', cfg,
+            `Mỗi hình có ${sh.sides} cạnh → ${cnt} hình có tất cả ${totalSides} cạnh.`
+          );
+        } else {
+          const dateNow = rInt(11, 24), addD = rInt(1, 5), ans = dateNow + addD;
+          if ((dateNow % 10) + addD <= 9) {
+            res = makeQ(
+              t(`Hôm nay là ngày ${dateNow} trong tháng, ${addD} ngày nữa là ngày bao nhiêu?`, `Today is the ${dateNow}th; in ${addD} days what date is it?`),
+              ans, [ans + 1, dateNow - 1, ans + 2], 'geom:basic', cfg,
+              `Ngày ${dateNow} thêm ${addD} ngày: ${dateNow} + ${addD} = ngày ${ans}.`
+            );
+          } else {
+            const bank = [
+              { q: t('Khối lập phương có mấy mặt là hình vuông?', 'How many square faces does a cube have?'), a: 6, near: [4, 5, 8], exp: 'Khối lập phương có 6 mặt đều là hình vuông.' },
+              { q: t('Khối hộp chữ nhật có tất cả mấy mặt?', 'How many faces does a rectangular box have?'), a: 6, near: [4, 7, 8], exp: 'Khối hộp chữ nhật có 6 mặt đều là hình chữ nhật.' },
+              { q: t('Một tuần lễ có tất cả mấy ngày?', 'How many days are in a week?'), a: 7, near: [5, 6, 8], exp: 'Một tuần lễ có 7 ngày (từ Thứ Hai đến Chủ Nhật).' },
+              { q: t('Hai tuần lễ có tất cả bao nhiêu ngày?', 'How many days are in 2 weeks?'), a: 14, near: [12, 10, 15], exp: 'Một tuần có 7 ngày, hai tuần lễ có 14 ngày.' }
+            ];
+            const item = pickAny(bank);
+            res = makeQ(item.q, item.a, item.near, 'geom:basic', cfg, item.exp);
+          }
+        }
         break;
       }
       case 'g1_word': {
@@ -706,7 +745,7 @@
         break;
       }
       case 'g3_find_x': {
-        const kind = pickAny(['mul', 'divDividend', 'divDivisor', 'add']);
+        const kind = pickAny(['mul', 'divDividend', 'divDivisor', 'add', 'subMinuend', 'subSubtrahend']);
         if (kind === 'mul') {
           const b = rInt(3, 9), xVal = rInt(4, 15), p = b * xVal;
           res = makeQ(t(`Tìm x: x × ${b} = ${p}`, `Find x: x × ${b} = ${p}`), xVal, [xVal + 1, Math.max(1, xVal - 1), xVal + 2], 'equation:x', cfg, `Muốn tìm thừa số chưa biết, lấy tích chia thừa số đã biết:\nx = ${p} ÷ ${b} = ${xVal}`);
@@ -716,6 +755,12 @@
         } else if (kind === 'divDivisor') {
           const xVal = rInt(2, 9), qVal = rInt(3, 10), a = xVal * qVal;
           res = makeQ(t(`Tìm x: ${a} ÷ x = ${qVal}`, `Find x: ${a} ÷ x = ${qVal}`), xVal, [xVal + 1, Math.max(1, xVal - 1), xVal + 2], 'equation:x', cfg, `Muốn tìm số chia, lấy số bị chia chia cho thương:\nx = ${a} ÷ ${qVal} = ${xVal}`);
+        } else if (kind === 'subMinuend') {
+          const b = rInt(115, 360), diff = rInt(120, 410), xVal = b + diff;
+          res = makeQ(t(`Tìm x: x − ${b} = ${diff}`, `Find x: x − ${b} = ${diff}`), xVal, [Math.abs(diff - b), xVal + 10, xVal - 10], 'equation:x', cfg, `Muốn tìm số bị trừ, lấy hiệu cộng số trừ:\nx = ${diff} + ${b} = ${xVal}`);
+        } else if (kind === 'subSubtrahend') {
+          const xVal = rInt(110, 340), diff = rInt(125, 380), a = xVal + diff;
+          res = makeQ(t(`Tìm x: ${a} − x = ${diff}`, `Find x: ${a} − x = ${diff}`), xVal, [a + diff, xVal + 10, Math.max(10, xVal - 10)], 'equation:x', cfg, `Muốn tìm số trừ, lấy số bị trừ trừ đi hiệu:\nx = ${a} − ${diff} = ${xVal}`);
         } else {
           const b = rInt(125, 380), xVal = rInt(115, 420), sum = b + xVal;
           res = makeQ(t(`Tìm x: x + ${b} = ${sum}`, `Find x: x + ${b} = ${sum}`), xVal, [xVal + 10, xVal - 10, xVal + 100], 'equation:x', cfg, `x = ${sum} − ${b} = ${xVal}`);
@@ -723,7 +768,7 @@
         break;
       }
       case 'g3_geom': {
-        const kind = pickAny(['sqP', 'sqA', 'rectP', 'rectA', 'circleD']);
+        const kind = pickAny(['sqP', 'sqA', 'rectP', 'rectA', 'sqSide']);
         if (kind === 'sqP') {
           const a = rInt(4, 18), ans = a * 4;
           res = makeQ(t(`Chu vi hình vuông có cạnh ${a} cm là ? cm`, `Perimeter of square with side ${a} cm is ? cm`), ans, [a * a, ans + 10, Math.max(4, ans - 10)], 'geom:perimeter', cfg, `Chu vi hình vuông = cạnh × 4 = ${a} × 4 = ${ans} cm`);
@@ -737,8 +782,8 @@
           const w = rInt(3, 9), l = w + rInt(2, 9), ans = l * w;
           res = makeQ(t(`Diện tích hình chữ nhật dài ${l} cm, rộng ${w} cm là ? cm²`, `Area of ${l}×${w} cm rectangle is ? cm²`), ans, [(l + w) * 2, ans + 10, Math.max(6, ans - 10)], 'geom:area', cfg, `Diện tích HCN = dài × rộng = ${l} × ${w} = ${ans} cm²`);
         } else {
-          const r = rInt(3, 15), d = r * 2;
-          res = makeQ(t(`Hình tròn có bán kính ${r} cm thì đường kính là ? cm`, `Circle with radius ${r} cm has diameter ? cm`), d, [d + 2, Math.max(2, d - 2), d + 10], 'geom:circle', cfg, `Đường kính gấp 2 lần bán kính: d = ${r} × 2 = ${d} cm`);
+          const a = rInt(5, 22), perim = a * 4;
+          res = makeQ(t(`Hình vuông có chu vi ${perim} cm thì độ dài một cạnh là ? cm`, `Square with perimeter ${perim} cm has side length ? cm`), a, [a + 2, Math.max(2, a - 2), perim * 4], 'geom:side', cfg, `Độ dài cạnh hình vuông = Chu vi ÷ 4 = ${perim} ÷ 4 = ${a} cm`);
         }
         break;
       }
@@ -977,17 +1022,56 @@
         break;
       }
       case 'g4_angle': {
-        const bank = [
-          { q: t('Góc vuông có số đo bằng ? độ', 'A right angle measures ? degrees'), a: 90, near: [60, 120, 180], exp: 'Góc vuông luôn có số đo đúng bằng 90°.' },
-          { q: t('Góc bẹt có số đo bằng ? độ', 'A straight angle measures ? degrees'), a: 180, near: [90, 120, 360], exp: 'Góc bẹt bằng 2 góc vuông = 180°.' },
-          { q: t('Góc bẹt gấp mấy lần góc vuông?', 'A straight angle is how many times a right angle?'), a: 2, near: [3, 4, 5], exp: '180° ÷ 90° = 2 lần.' },
-          { q: t('Nửa góc vuông có số đo bằng ? độ', 'Half of a right angle measures ? degrees'), a: 45, near: [35, 55, 65], exp: '90° ÷ 2 = 45° (góc nhọn).' },
-          { q: t('Lúc 3 giờ đúng, kim giờ và kim phút tạo thành góc ? độ', 'At 3:00, clock hands form a ? degree angle'), a: 90, near: [60, 120, 180], exp: 'Lúc 3 giờ (hoặc 9 giờ), hai kim vuông góc nhau = 90°.' },
-          { q: t('Lúc 6 giờ đúng, kim giờ và kim phút tạo thành góc ? độ', 'At 6:00, clock hands form a ? degree angle'), a: 180, near: [90, 120, 150], exp: 'Lúc 6 giờ, hai kim thẳng hàng tạo thành góc bẹt = 180°.' },
-          { q: t('Lúc 2 giờ đúng, kim giờ và kim phút tạo thành góc ? độ', 'At 2:00, clock hands form a ? degree angle'), a: 60, near: [30, 90, 120], exp: 'Mỗi giờ trên đồng hồ ứng với 30° → 2 giờ = 2 × 30° = 60°.' }
-        ];
-        const it = pickAny(bank);
-        res = makeQ(it.q, it.a, it.near, 'geom:angle', cfg, it.exp);
+        const mode = rInt(1, 4);
+        if (mode === 1) {
+          const hr = rInt(1, 11), deg = hr <= 6 ? hr * 30 : (12 - hr) * 30;
+          res = makeQ(
+            t(`Lúc ${hr} giờ đúng, kim giờ và kim phút tạo thành góc nhỏ hơn (hoặc bằng 180°) có số đo bằng ? độ`, `At ${hr}:00, clock hands form an angle (≤ 180°) of ? degrees`),
+            deg, [deg === 180 ? 150 : deg + 30, Math.max(15, deg - 30), deg === 90 ? 120 : 90], 'geom:angle', cfg,
+            `Mỗi khoảng 1 giờ trên mặt đồng hồ ứng với 30° → lúc ${hr} giờ đúng góc giữa hai kim là ${deg}°.`
+          );
+        } else if (mode === 2) {
+          const a = rInt(25, 155), rem = 180 - a;
+          res = makeQ(
+            t(`Một góc bẹt (180°) được chia thành hai góc, biết góc thứ nhất bằng ${a}°. Góc còn lại bằng ? độ`, `A straight angle (180°) is split into ${a}° and ? degrees`),
+            rem, [Math.abs(90 - a) || 20, rem + 10, Math.max(10, rem - 10)], 'geom:angle', cfg,
+            `Góc bẹt có số đo 180° ⇒ Góc còn lại = 180° − ${a}° = ${rem}°.`
+          );
+        } else if (mode === 3) {
+          const a = rInt(15, 75), rem = 90 - a;
+          res = makeQ(
+            t(`Một góc vuông (90°) được chia thành hai góc nhọn, biết một góc bằng ${a}°. Góc nhọn còn lại bằng ? độ`, `A right angle (90°) is split into ${a}° and ? degrees`),
+            rem, [180 - a, rem + 10, Math.max(5, rem - 10)], 'geom:angle', cfg,
+            `Góc vuông bằng 90° ⇒ Góc còn lại = 90° − ${a}° = ${rem}°.`
+          );
+        } else {
+          // Keep the SAME ones digit across all 4 options so units-digit anti-guessing passes cleanly!
+          const ones = rInt(1, 8);
+          const askObtuse = Math.random() < 0.5;
+          if (askObtuse) {
+            const target = rInt(9, 16) * 10 + ones;
+            const acuteTens = [1, 2, 3, 4, 5, 6, 7, 8].sort(() => Math.random() - 0.5).slice(0, 3);
+            const rawOpts = [String(target), ...acuteTens.map(tn => String(tn * 10 + ones))];
+            const opts = typeof shuffle === 'function' ? shuffle(rawOpts) : rawOpts;
+            res = makeQ(
+              t(`Trong các số đo góc ${opts.map(x => x + '°').join('; ')}, số đo nào là của một GÓC TÙ?`, `Among ${opts.map(x => x + '°').join(', ')}, which measures an OBTUSE angle?`),
+              target, [], 'geom:angle', cfg,
+              `Góc tù lớn hơn góc vuông (90°) và nhỏ hơn góc bẹt (180°) → đáp án là ${target}°.`,
+              { exactOptions: opts }
+            );
+          } else {
+            const target = rInt(1, 8) * 10 + ones;
+            const obtuseTens = [9, 10, 11, 12, 13, 14, 15, 16, 17].sort(() => Math.random() - 0.5).slice(0, 3);
+            const rawOpts = [String(target), ...obtuseTens.map(tn => String(tn * 10 + ones))];
+            const opts = typeof shuffle === 'function' ? shuffle(rawOpts) : rawOpts;
+            res = makeQ(
+              t(`Trong các số đo góc ${opts.map(x => x + '°').join('; ')}, số đo nào là của một GÓC NHỌN?`, `Among ${opts.map(x => x + '°').join(', ')}, which measures an ACUTE angle?`),
+              target, [], 'geom:angle', cfg,
+              `Góc nhọn có số đo nhỏ hơn 90° → đáp án là ${target}°.`,
+              { exactOptions: opts }
+            );
+          }
+        }
         break;
       }
       case 'g4_area_units': {
@@ -1054,13 +1138,24 @@
         break;
       }
       case 'g5_dec10': {
-        const dec = Number((rInt(12, 485) / 100).toFixed(2));
-        const factor = pickAny([10, 100, 0.1]);
-        const ans = Number((dec * factor).toFixed(4));
-        const hintStr = factor === 0.1
-          ? t('Nhân với 0,1: chuyển dấu phẩy sang TRÁI 1 chữ số.', 'Multiply by 0.1: shift decimal 1 place LEFT.')
-          : t(`Nhân với ${factor}: chuyển dấu phẩy sang PHẢI ${factor === 10 ? 1 : 2} chữ số.`, `Multiply by ${factor}: shift decimal ${factor === 10 ? 1 : 2} place(s) RIGHT.`);
-        res = makeQ(`${fmtNum(dec)} × ${fmtNum(factor)}`, fmtNum(ans), [Number((ans * 10).toFixed(3)), Number((ans / 10).toFixed(4)), Number((ans + 1).toFixed(3))], 'decimal:*', cfg, `${fmtNum(dec)} × ${fmtNum(factor)} = ${fmtNum(ans)}\n• ${hintStr}`);
+        const isMul = Math.random() < 0.55;
+        if (isMul) {
+          const dec = Number((rInt(12, 485) / 100).toFixed(2));
+          const factor = pickAny([10, 100, 0.1, 0.01]);
+          const ans = Number((dec * factor).toFixed(4));
+          const hintStr = factor < 1
+            ? t(`Nhân với ${fmtNum(factor)}: chuyển dấu phẩy sang TRÁI ${factor === 0.1 ? 1 : 2} chữ số.`, `Multiply by ${factor}: shift decimal ${factor === 0.1 ? 1 : 2} place(s) LEFT.`)
+            : t(`Nhân với ${factor}: chuyển dấu phẩy sang PHẢI ${factor === 10 ? 1 : 2} chữ số.`, `Multiply by ${factor}: shift decimal ${factor === 10 ? 1 : 2} place(s) RIGHT.`);
+          res = makeQ(`${fmtNum(dec)} × ${fmtNum(factor)}`, fmtNum(ans), [Number((ans * 10).toFixed(3)), Number((ans / 10).toFixed(4)), Number((ans + 1).toFixed(3))], 'decimal:*', cfg, `${fmtNum(dec)} × ${fmtNum(factor)} = ${fmtNum(ans)}\n• ${hintStr}`);
+        } else {
+          const dec = Number((rInt(15, 685) / 10).toFixed(1));
+          const divisor = pickAny([10, 100, 0.1, 0.01]);
+          const ans = Number((dec / divisor).toFixed(4));
+          const hintStr = divisor < 1
+            ? t(`Chia cho ${fmtNum(divisor)}: chuyển dấu phẩy sang PHẢI ${divisor === 0.1 ? 1 : 2} chữ số.`, `Divide by ${divisor}: shift decimal ${divisor === 0.1 ? 1 : 2} place(s) RIGHT.`)
+            : t(`Chia cho ${divisor}: chuyển dấu phẩy sang TRÁI ${divisor === 10 ? 1 : 2} chữ số.`, `Divide by ${divisor}: shift decimal ${divisor === 10 ? 1 : 2} place(s) LEFT.`);
+          res = makeQ(`${fmtNum(dec)} ÷ ${fmtNum(divisor)}`, fmtNum(ans), [Number((ans * 10).toFixed(3)), Number((ans / 10).toFixed(4)), Number((ans + 1).toFixed(3))], 'decimal:/', cfg, `${fmtNum(dec)} ÷ ${fmtNum(divisor)} = ${fmtNum(ans)}\n• ${hintStr}`);
+        }
         break;
       }
       case 'g5_dec_muldiv': {
@@ -1107,7 +1202,7 @@
         break;
       }
       case 'g5_geom': {
-        const kind = pickAny(['tri', 'trap', 'circleC', 'cubeV', 'boxV']);
+        const kind = pickAny(['tri', 'trap', 'circleC', 'circleA', 'triHeight']);
         if (kind === 'tri') {
           const base = rInt(3, 12) * 2, h = rInt(5, 16), ans = (base * h) / 2;
           res = makeQ(t(`Diện tích hình tam giác đáy ${base} cm, chiều cao ${h} cm là ? cm²`, `Triangle area (base ${base} cm, height ${h} cm) = ? cm²`), ans, [base * h, ans + 10, Math.max(5, ans - 10)], 'geom:area', cfg, `Diện tích tam giác = (đáy × chiều cao) ÷ 2 = (${base} × ${h}) ÷ 2 = ${ans} cm²`);
@@ -1115,14 +1210,14 @@
           const a = rInt(6, 14), b = rInt(4, 12), h = rInt(2, 7) * 2, ans = ((a + b) * h) / 2;
           res = makeQ(t(`Diện tích hình thang có 2 đáy ${a} cm, ${b} cm và chiều cao ${h} cm là ? cm²`, `Trapezoid area (bases ${a}, ${b} cm, h=${h} cm) = ? cm²`), ans, [(a + b) * h, ans + 10, Math.max(10, ans - 10)], 'geom:area', cfg, `Diện tích hình thang = (đáy lớn + đáy bé) × chiều cao ÷ 2 = (${a} + ${b}) × ${h} ÷ 2 = ${ans} cm²`);
         } else if (kind === 'circleC') {
-          const d = pickAny([2, 3, 4, 5, 10]), ans = Number((d * 3.14).toFixed(2));
+          const d = pickAny([2, 3, 4, 5, 6, 8, 10]), ans = Number((d * 3.14).toFixed(2));
           res = makeQ(t(`Chu vi hình tròn đường kính ${d} cm là ? cm (lấy π = 3,14)`, `Circumference of circle d=${d} cm (π=3.14) = ? cm`), fmtNum(ans), [Number((ans + 1).toFixed(2)), Number((ans + 2).toFixed(2)), Number(Math.max(1, ans - 1).toFixed(2))], 'geom:circle', cfg, `Chu vi hình tròn = đường kính × 3,14 = ${d} × 3,14 = ${fmtNum(ans)} cm`);
-        } else if (kind === 'cubeV') {
-          const a = rInt(2, 9), ans = a * a * a;
-          res = makeQ(t(`Thể tích hình lập phương cạnh ${a} cm là ? cm³`, `Volume of cube with edge ${a} cm = ? cm³`), ans, [a * a * 6, ans + 10, Math.max(4, ans - 10)], 'geom:volume', cfg, `Thể tích lập phương = a × a × a = ${a} × ${a} × ${a} = ${ans} cm³`);
+        } else if (kind === 'circleA') {
+          const r = pickAny([2, 3, 4, 5, 6, 10]), ans = Number((r * r * 3.14).toFixed(2));
+          res = makeQ(t(`Diện tích hình tròn bán kính ${r} cm là ? cm² (lấy π = 3,14)`, `Area of circle with radius ${r} cm (π=3.14) = ? cm²`), fmtNum(ans), [Number((2 * r * 3.14).toFixed(2)), Number((ans + 10).toFixed(2)), Number(Math.max(2, ans - 5).toFixed(2))], 'geom:circle', cfg, `Diện tích hình tròn = r × r × 3,14 = ${r} × ${r} × 3,14 = ${fmtNum(ans)} cm²`);
         } else {
-          const l = rInt(4, 10), w = rInt(3, 8), h = rInt(2, 6), ans = l * w * h;
-          res = makeQ(t(`Thể tích hình hộp chữ nhật ${l} cm × ${w} cm × ${h} cm là ? cm³`, `Volume of ${l}×${w}×${h} cm box = ? cm³`), ans, [ans + 10, Math.max(10, ans - 10), (l + w + h) * 2], 'geom:volume', cfg, `Thể tích hình hộp chữ nhật = dài × rộng × cao = ${l} × ${w} × ${h} = ${ans} cm³`);
+          const base = rInt(4, 14), h = rInt(3, 12) * 2, area = (base * h) / 2;
+          res = makeQ(t(`Hình tam giác có diện tích ${area} cm² và cạnh đáy ${base} cm. Chiều cao tương ứng là ? cm`, `Triangle area is ${area} cm² and base is ${base} cm. Height = ? cm`), h, [Math.round(area / base), h + 2, Math.max(2, h - 2)], 'geom:area', cfg, `Chiều cao tam giác = (Diện tích × 2) ÷ Đáy = (${area} × 2) ÷ ${base} = ${h} cm`);
         }
         break;
       }
@@ -1207,7 +1302,7 @@
         break;
       }
       case 'g5_box_surface': {
-        const kind = pickAny(['cubeSxq', 'cubeStp', 'boxSxq', 'dm3_cm3', 'm3_dm3']);
+        const kind = pickAny(['cubeSxq', 'cubeStp', 'boxSxq', 'cubeV', 'boxV', 'dm3_cm3', 'm3_dm3']);
         if (kind === 'cubeSxq') {
           const a = rInt(2, 9), ans = a * a * 4;
           res = makeQ(t(`Diện tích xung quanh hình lập phương cạnh ${a} cm là ? cm²`, `Lateral area of cube (edge ${a} cm) = ? cm²`), ans, [a * a * 6, ans + 10, Math.max(4, ans - 10)], 'geom:surface', cfg, `Sxq lập phương = a × a × 4 = ${a} × ${a} × 4 = ${ans} cm²`);
@@ -1216,7 +1311,13 @@
           res = makeQ(t(`Diện tích toàn phần hình lập phương cạnh ${a} cm là ? cm²`, `Total surface area of cube (edge ${a} cm) = ? cm²`), ans, [a * a * 4, ans + 10, Math.max(6, ans - 10)], 'geom:surface', cfg, `Stp lập phương = a × a × 6 = ${a} × ${a} × 6 = ${ans} cm²`);
         } else if (kind === 'boxSxq') {
           const l = rInt(5, 12), w = rInt(3, 8), h = rInt(2, 6), ans = (l + w) * 2 * h;
-          res = makeQ(t(`Diện tích xung quanh hình hộp CN dài ${l} cm, rộng ${w} cm, cao ${h} cm là ? cm²`, `Lateral area of ${l}×${w}×${h} cm box = ? cm²`), ans, [l * w * h, ans + 10, Math.max(10, ans - 10)], 'geom:surface', cfg, `Sxq = (dài + rộng) × 2 × cao = (${l} + ${w}) × 2 × ${h} = ${ans} cm²`);
+          res = makeQ(t(`Diện tích xung quanh hình hộp chữ nhật dài ${l} cm, rộng ${w} cm, cao ${h} cm là ? cm²`, `Lateral area of ${l}×${w}×${h} cm box = ? cm²`), ans, [l * w * h, ans + 10, Math.max(10, ans - 10)], 'geom:surface', cfg, `Sxq = (dài + rộng) × 2 × cao = (${l} + ${w}) × 2 × ${h} = ${ans} cm²`);
+        } else if (kind === 'cubeV') {
+          const a = rInt(2, 9), ans = a * a * a;
+          res = makeQ(t(`Thể tích hình lập phương cạnh ${a} cm là ? cm³`, `Volume of cube with edge ${a} cm = ? cm³`), ans, [a * a * 6, ans + 10, Math.max(4, ans - 10)], 'geom:volume', cfg, `Thể tích hình lập phương = a × a × a = ${a} × ${a} × ${a} = ${ans} cm³`);
+        } else if (kind === 'boxV') {
+          const l = rInt(4, 10), w = rInt(3, 8), h = rInt(2, 6), ans = l * w * h;
+          res = makeQ(t(`Thể tích hình hộp chữ nhật dài ${l} cm, rộng ${w} cm, cao ${h} cm là ? cm³`, `Volume of ${l}×${w}×${h} cm box = ? cm³`), ans, [ans + 10, Math.max(10, ans - 10), (l + w + h) * 2], 'geom:volume', cfg, `Thể tích hình hộp chữ nhật = dài × rộng × cao = ${l} × ${w} × ${h} = ${ans} cm³`);
         } else if (kind === 'dm3_cm3') {
           const v = Number((rInt(12, 85) / 10).toFixed(1)), ans = Math.round(v * 1000);
           res = makeQ(t(`Đổi: ${fmtNum(v)} dm³ = ? cm³`, `${fmtNum(v)} dm³ = ? cm³`), ans, [ans / 10, ans + 100, Math.max(100, ans - 100)], 'units:vol', cfg, `1 dm³ = 1.000 cm³ → ${fmtNum(v)} × 1.000 = ${ans} cm³`);
@@ -1559,18 +1660,41 @@
         const topicId = plan[i];
         const slotTier = tierSchedule[i] || 'medium';
         let q = null;
-        for (let tries = 0; tries < 25; tries++) {
+        let foundUnique = false;
+        for (let tries = 0; tries < 30; tries++) {
           const cand = generateTopicQuestion(topicId, { ...cfg, topic: topicId, topics: [topicId], difficulty: slotTier });
           if (cand) {
             q = cand;
-            if (!seen.has(cand.q)) break;
+            if (!seen.has(cand.q)) {
+              foundUnique = true;
+              break;
+            }
           }
         }
-        if (!q) q = generate({ ...cfg, difficulty: slotTier });
+        // If a static sub-tier exhausted unique prompts, pull from sibling tiers of THE SAME topicId (never leak off-topic!)
+        if (!foundUnique && diffMode === 'progressive') {
+          const altTiers = ['easy', 'medium', 'hard'].filter(tr => tr !== slotTier);
+          for (const altTier of altTiers) {
+            for (let tries = 0; tries < 18; tries++) {
+              const cand = generateTopicQuestion(topicId, { ...cfg, topic: topicId, topics: [topicId], difficulty: altTier });
+              if (cand && !seen.has(cand.q)) {
+                q = cand;
+                foundUnique = true;
+                break;
+              }
+            }
+            if (foundUnique) break;
+          }
+        }
+        if (!q) q = generate({ ...cfg, topic: topicId, topics: [topicId], difficulty: slotTier });
         if (q) {
           seen.add(q.q);
           out.push(q);
         }
+      }
+      if (diffMode === 'progressive' && out.length > 1) {
+        const tierRank = { easy: 1, medium: 2, hard: 3 };
+        out.sort((a, b) => (tierRank[a.difficulty] || 2) - (tierRank[b.difficulty] || 2));
       }
       return out;
     };

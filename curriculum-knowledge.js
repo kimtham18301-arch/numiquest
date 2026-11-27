@@ -680,7 +680,9 @@
   function printKnowledgeSheet(gradeNum) {
     if (typeof document === 'undefined') return;
     const g = Number(gradeNum) || 1;
-    let sheet = document.getElementById('numiPrintSheet');
+    let sheet = typeof document.getElementById === 'function'
+      ? document.getElementById('numiPrintSheet')
+      : document.querySelector?.('#numiPrintSheet');
     if (!sheet) {
       sheet = document.createElement('div');
       sheet.id = 'numiPrintSheet';
@@ -699,6 +701,7 @@
         </div>
         <h2 class="ws-main-title">TỔNG HỢP KIẾN THỨC & CÔNG THỨC TRỌNG TÂM TOÁN LỚP ${g}</h2>
         ${buildKnowledgeCardHtml(g, 'all', true, '')}
+        <div class="ws-corner-watermark" aria-label="Watermark Nguyen Kim Tham">Nguyen Kim Tham</div>
       </div>
     `;
     if (typeof window !== 'undefined' && typeof window.print === 'function') {

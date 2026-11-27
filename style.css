@@ -2518,3 +2518,13 @@ body.dark-mode .home-v2-grade-btn{background:#1b2e24!important;border-color:#355
 body.dark-mode .setup-mistake-banner{background:#2c1b22;border-color:#683546;color:#ffd9e2}
 body.dark-mode .setup-mistake-banner small{color:#e6a8b8}
 
+/* v2.16.4: Prominent header & workspace Sign-Out buttons for Teacher & Admin */
+.header-signout-btn{display:none;align-items:center;justify-content:center;min-height:38px!important;height:38px;padding:0 12px!important;border-radius:11px!important;border:1.5px solid #f5b8bc!important;background:#fff5f5!important;color:#b91c1c!important;font-size:12.5px!important;font-weight:800!important;white-space:nowrap;flex-shrink:0;cursor:pointer}
+.header-signout-btn:hover{background:#fee2e2!important;border-color:#ef4444!important}
+body:not(.is-teacher-mode):not(.is-admin-mode) .header-signout-btn{display:none!important}
+body.dark-mode .header-signout-btn,body.dark-mode .tch-signout-btn,body.dark-mode .admin-btn.btn-del{background:#3a1d21!important;border-color:#7f333c!important;color:#ffb4bc!important}
+body.dark-mode .header-signout-btn:hover,body.dark-mode .tch-signout-btn:hover,body.dark-mode .admin-btn.btn-del:hover{background:#4d2329!important;border-color:#c94a58!important}
+.tch-signout-btn{border-color:#f5b8bc!important;background:#fff5f5!important;color:#b91c1c!important;font-weight:800!important}
+.tch-signout-btn:hover{background:#fee2e2!important;border-color:#ef4444!important}
+@media(max-width:700px){.header-signout-btn{min-height:34px!important;height:34px;padding:0 9px!important;font-size:11px!important}}
+

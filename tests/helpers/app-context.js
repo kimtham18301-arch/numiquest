@@ -76,14 +76,17 @@ function loadAppContext(options = {}) {
   const documentMock = {
     title: '',
     documentElement: { lang: 'vi' },
-    head: { append() {} },
-    body: { dataset: {}, append() {}, classList: { toggle() {}, add() {}, remove() {}, contains() { return false; } } },
+    head: { append(el) { if (el?.id) { if (!documentMock._els) documentMock._els = new Map(); documentMock._els.set('#' + el.id, el); } } },
+    body: { dataset: {}, append(el) { if (el?.id) { if (!documentMock._els) documentMock._els = new Map(); documentMock._els.set('#' + el.id, el); } }, classList: { toggle() {}, add() {}, remove() {}, contains() { return false; } } },
     fonts: { ready: Promise.resolve() },
     createElement(tag) {
       return tag === 'template' ? makeTemplate() : createMockElement(tag);
     },
     createTreeWalker() {
       return { nextNode() { return null; } };
+    },
+    getElementById(id) {
+      return this._els?.get('#' + id) || null;
     },
     querySelector(sel) {
       if (sel === '#app') return rootEl;

@@ -74,7 +74,7 @@
     });
   }
 
-  // Scoped Homework Assignment Modal for a Teacher's Class
+  // Scoped Homework Assignment Modal for a Teacher's Class (matches student web exercise picker)
   function openTeacherAssignModal(cls, preselected = []) {
     const students = getStudentsForTeacher(cls.teacherUsername, cls.id);
     if (!students.length) {
@@ -83,9 +83,10 @@
     }
     const preSet = new Set(preselected.length ? preselected : students.map(s => s.username));
     const defaultDue = new Date(Date.now() + 86400000 * 3).toISOString().slice(0, 10);
+    const defaultTitle = t(`Bài luyện ${cls.name}`, `${cls.name} Practice`);
 
     modal(`<h2>🎯 ${t(`Giao bài cho ${cls.name}`, `Assign Homework to ${cls.name}`)}</h2>
-    <p class="muted" style="margin:4px 0 10px;font-size:13px">${t('Chọn cả lớp hoặc tích riêng từng học sinh trong lớp của Thầy/Cô.', 'Select the whole class or specific students in your class.')}</p>
+    <p class="muted" style="margin:4px 0 10px;font-size:13px">${t('Chọn cả lớp hoặc từng học sinh, rồi chọn chuyên đề GDPT 2018 hoặc Tự chỉnh tính nhẩm giống hệt giao diện học sinh.', 'Select students and configure GDPT 2018 topics or Custom mental math just like the student app.')}</p>
     <form id="teacherAssignForm" style="display:grid;gap:12px">
       <div>
         <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:6px">
@@ -105,142 +106,41 @@
 
       <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:10px">
         <label>${t('Tên bài tập:', 'Title:')}
-          <input name="title" maxlength="80" required value="${esc(t(`Bài luyện ${cls.name}`, `${cls.name} Practice`))}">
+          <input name="title" id="tchAssignTitleInput" maxlength="80" required value="${esc(defaultTitle)}">
         </label>
         <label>${t('Hạn nộp:', 'Due date:')}
           <input name="dueDate" type="date" value="${defaultDue}">
         </label>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:8px">
-        <label>${t('Khối lớp:', 'Grade:')}
-          <select name="grade" id="tchAssignGrade">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(g => `<option value="${g}" ${Number(cls.grade) === g ? 'selected' : ''}>${t('Lớp', 'Gr')} ${g}</option>`).join('')}</select>
-        </label>
-        <label>${t('Chuyên đề GDPT 2018:', 'GDPT 2018 Topic:')}
-          <select name="topic" id="tchAssignTopic"></select>
-        </label>
-      </div>
+      <div id="tchAssignExerciseMount"></div>
 
-      <div id="tchAssignCustomRow" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <label>${t('Kiểu câu hỏi:', 'Style:')}
-          <select name="questionStyle">
-            <option value="normal">${t('Tính thường', 'Standard')}</option>
-            <option value="missing">${t('Điền số (?)', 'Missing (?)')}</option>
-            <option value="word">${t('Toán đố ngắn', 'Word Problem')}</option>
-            <option value="convenient">${t('Tính thuận tiện', 'Regrouping')}</option>
-            <option value="expression">${t('Biểu thức', 'Expression')}</option>
-          </select>
-        </label>
-        <label>${t('Loại số:', 'Number type:')}
-          <select name="type">
-            <option value="natural">${t('Số tự nhiên', 'Whole')}</option>
-            <option value="fraction">${t('Phân số', 'Fractions')}</option>
-            <option value="decimal">${t('Thập phân', 'Decimals')}</option>
-            <option value="negative">${t('Số nguyên âm', 'Integers')}</option>
-            <option value="remainder">${t('Chia có dư', 'Remainder')}</option>
-          </select>
-        </label>
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <label>${t('Hình thức làm bài:', 'Answer Mode:')}
-          <select name="inputMode" id="tchAssignInputMode">
-            <option value="choices">${t('Trắc nghiệm (4 đáp án)', 'Multiple Choice')}</option>
-            <option value="numpad">${t('Tự luận (THCS tự bỏ giới hạn giờ)', 'Free Input (Untimed in Gr 6–9)')}</option>
-          </select>
-        </label>
-        <label>${t('Mức độ câu hỏi:', 'Difficulty:')}
-          <select name="difficultyMode">
-            <option value="progressive">${t('Lộ trình Dễ → Khó (Chuẩn đề thi)', 'Progressive (Easy → Hard)')}</option>
-            <option value="easy">${t('Mức 1: Nhận biết (Dễ)', 'Lv1: Easy')}</option>
-            <option value="medium">${t('Mức 2: Thông hiểu (Vừa)', 'Lv2: Medium')}</option>
-            <option value="hard">${t('Mức 3: Vận dụng & Toán giải (Khó)', 'Lv3: Hard & Word')}</option>
-          </select>
-        </label>
-      </div>
-
-      <div style="display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:8px;align-items:end">
-        <div id="tchAssignOpsWrap">
-          <span style="display:block;font-size:12px;font-weight:700;margin-bottom:6px">${t('Phép tính:', 'Operations:')}</span>
-          <div class="adm-ops-row" style="display:flex;gap:10px;flex-wrap:nowrap;align-items:center;min-height:47px">
-            ${[['+', '+'], ['-', '−'], ['*', '×'], ['/', '÷']].map(([v, lbl]) => `<label style="display:inline-flex;align-items:center;gap:4px;font-size:14px;white-space:nowrap;cursor:pointer"><input type="checkbox" name="ops" value="${v}" style="width:16px;height:16px;min-height:16px;margin:0" ${v === '+' || v === '-' ? 'checked' : ''}>${lbl}</label>`).join('')}
-          </div>
-        </div>
-        <label>${t('Số câu:', 'Questions:')}
-          <select name="count" id="tchAssignCount">${[5, 8, 10, 12, 15, 20].map(c => `<option value="${c}" ${c === 10 ? 'selected' : ''}>${c} ${t('câu', 'qs')}</option>`).join('')}</select>
-        </label>
-        <label id="tchAssignSecLabel">${t('Giây/câu:', 'Sec/Q:')}
-          <select name="seconds" id="tchAssignSeconds">${[15, 20, 25, 30, 40, 45, 50, 60].map(s => `<option value="${s}" ${s === 20 ? 'selected' : ''}>${s}s</option>`).join('')}</select>
-        </label>
-      </div>
-
-      <div class="actions" style="margin-top:6px">
+      <div class="actions" style="margin-top:4px">
         <button type="submit" class="primary">📤 ${t('Giao bài ngay', 'Assign Now')}</button>
         <button type="button" onclick="$('#modal').close()">${t('Hủy', 'Cancel')}</button>
       </div>
     </form>`);
 
-    const gradeSel = $('#tchAssignGrade');
-    const topicSel = $('#tchAssignTopic');
-    const customRow = $('#tchAssignCustomRow');
-    const opsWrap = $('#tchAssignOpsWrap');
-    const countSel = $('#tchAssignCount');
-    const secSel = $('#tchAssignSeconds');
-    const secLbl = $('#tchAssignSecLabel');
-    const modeSel = $('#tchAssignInputMode');
+    const modalEl = $('#modal');
+    if (modalEl) {
+      modalEl.classList.add('tch-assign-wide-modal');
+      modalEl.addEventListener('close', () => modalEl.classList.remove('tch-assign-wide-modal'), { once: true });
+    }
 
-    const syncAssignTopicUI = () => {
-      if (!topicSel) return;
-      const val = topicSel.value || 'custom';
-      const isTopicMode = val !== 'custom';
-      const g = Number(gradeSel?.value || cls.grade || 4);
-      const isSecFreeInput = g >= 6 && modeSel && modeSel.value === 'numpad';
-      if (customRow) customRow.style.display = isTopicMode ? 'none' : 'grid';
-      if (opsWrap) opsWrap.style.opacity = isTopicMode ? '0.45' : '1';
-      if (secSel) secSel.disabled = isSecFreeInput;
-      if (secLbl) secLbl.style.opacity = isSecFreeInput ? '0.45' : '1';
-      if (isTopicMode && typeof NUMI_GRADE_TOPICS !== 'undefined') {
-        const list = NUMI_GRADE_TOPICS[g] || [];
-        const tp = list.find(x => x.id === val);
-        if (tp) {
-          if (countSel && tp.count) {
-            const closestCnt = [5, 8, 10, 12, 15, 20].reduce((a, b) => Math.abs(b - tp.count) < Math.abs(a - tp.count) ? b : a, 10);
-            countSel.value = String(closestCnt);
-          }
-          if (secSel && tp.seconds) {
-            const closestSec = [15, 20, 25, 30, 40, 45, 50, 60].reduce((a, b) => Math.abs(b - tp.seconds) < Math.abs(a - tp.seconds) ? b : a, 30);
-            secSel.value = String(closestSec);
-          }
-        }
-      }
-    };
+    const titleInput = $('#tchAssignTitleInput');
+    let titleTouched = false;
+    titleInput?.addEventListener('input', () => { titleTouched = true; });
 
-    const populateAssignTopics = g => {
-      if (!topicSel) return;
-      const list = typeof NUMI_GRADE_TOPICS !== 'undefined' && Array.isArray(NUMI_GRADE_TOPICS[g]) ? NUMI_GRADE_TOPICS[g] : [];
-      const isSec = Number(g) >= 6;
-      const domainBundles = isSec ? [
-        `<option value="domain:number">🔢 ${t('Trọn bộ Phần Số học & Đại số', 'All Numbers & Algebra')}</option>`,
-        `<option value="domain:geometry">📐 ${t('Trọn bộ Phần Hình học & Đo lường', 'All Geometry & Measurement')}</option>`
-      ] : [];
-      const optsHtml = [
-        `<option value="custom">⚙️ ${t('Tự chọn phép tính / loại số cơ bản', 'Custom basic operations')}</option>`,
-        ...(list.length && list[0].id === 'all' ? [`<option value="all">✨ ${esc(typeof lang !== 'undefined' && lang === 'en' ? list[0].en : list[0].vi)}</option>`] : []),
-        ...domainBundles,
-        ...list.filter(tp => tp.id !== 'all').map(tp => {
-          const prefix = tp.col ? '📐 ' : (isSec ? (tp.domain === 'geometry' ? '📐 [Hình] ' : '🔢 [Số] ') : '🎯 ');
-          const lbl = typeof lang !== 'undefined' && lang === 'en' ? tp.en : tp.vi;
-          return `<option value="${esc(tp.id)}">${prefix}${esc(lbl)}${tp.seconds ? ` (${tp.seconds}s)` : ''}</option>`;
+    const mountEl = $('#tchAssignExerciseMount');
+    const picker = typeof mountAssignmentExercisePicker === 'function'
+      ? mountAssignmentExercisePicker(mountEl, { grade: Number(cls.grade) || 4, inputMode: 'choices' }, {
+          onChange: (_cfg, suggested) => {
+            if (titleInput && !titleTouched && suggested) {
+              titleInput.value = `${suggested} (${cls.name})`.slice(0, 80);
+            }
+          }
         })
-      ].join('');
-      topicSel.innerHTML = optsHtml;
-      topicSel.value = list.length ? 'all' : 'custom';
-      syncAssignTopicUI();
-    };
-    populateAssignTopics(Number(gradeSel?.value || cls.grade || 4));
-    if (gradeSel) gradeSel.onchange = () => populateAssignTopics(Number(gradeSel.value) || 4);
-    if (topicSel) topicSel.onchange = syncAssignTopicUI;
-    if (modeSel) modeSel.onchange = syncAssignTopicUI;
+      : null;
 
     $('#tchPickAll')?.addEventListener('click', () => {
       $$('#teacherAssignForm input[name="targetStudents"]').forEach(cb => { cb.checked = true; });
@@ -255,34 +155,9 @@
         e.preventDefault();
         const fd = new FormData(form);
         const targets = fd.getAll('targetStudents');
-        const pickedTopic = String(fd.get('topic') || 'custom');
-        const isTopicMode = pickedTopic !== 'custom';
-        const ops = fd.getAll('ops');
         if (!targets.length) { toast(t('Vui lòng chọn ít nhất 1 học sinh!', 'Select at least 1 student!')); return; }
-        if (!isTopicMode && !ops.length) { toast(t('Chọn ít nhất 1 phép tính!', 'Select at least 1 operation!')); return; }
-        const grade = Number(fd.get('grade')) || cls.grade || 4;
-        const type = fd.get('type') || 'natural';
-        const gDef = typeof NUMI_GRADES !== 'undefined' && NUMI_GRADES[grade] ? NUMI_GRADES[grade] : null;
-        const isDomainBundle = pickedTopic === 'domain:number' || pickedTopic === 'domain:geometry';
-        const domainFilter = pickedTopic === 'domain:number' ? 'number' : pickedTopic === 'domain:geometry' ? 'geometry' : 'all';
-        const chosenInputMode = fd.get('inputMode') || 'choices';
+        const asgCfg = picker ? picker.getConfig() : { grade: Number(cls.grade) || 4, count: 10, seconds: 20 };
         if (typeof createTargetedAssignment === 'function') {
-          const asgCfg = {
-            grade,
-            type: isTopicMode ? (gDef?.types?.[0] || 'natural') : type,
-            types: isTopicMode ? (gDef?.types ? [...gDef.types] : ['natural']) : [type],
-            ops: isTopicMode ? (gDef?.ops ? [...gDef.ops] : ['+', '-', '*', '/']) : ops,
-            questionStyle: isTopicMode ? 'normal' : (fd.get('questionStyle') || 'normal'),
-            digits: gDef ? [...gDef.digits] : [1, 2],
-            count: Number(fd.get('count')) || 10,
-            seconds: Number(fd.get('seconds')) || 20,
-            inputMode: chosenInputMode,
-            difficultyMode: fd.get('difficultyMode') || 'progressive',
-            domainFilter,
-            untimed: Boolean(grade >= 6 && chosenInputMode === 'numpad'),
-            topic: isTopicMode && !isDomainBundle ? pickedTopic : 'all',
-            topics: isTopicMode && pickedTopic !== 'all' && !isDomainBundle ? [pickedTopic] : []
-          };
           const asg = createTargetedAssignment({
             title: fd.get('title'),
             dueDate: fd.get('dueDate'),
@@ -545,15 +420,15 @@
           </div>
           <div class="admin-top-actions">
             <button type="button" class="primary admin-btn" id="tchCreateClassBtn">+ ${t('Tạo lớp mới', 'New Class')}</button>
-            <button type="button" class="admin-btn" id="tchProfileBtn">👤 ${t('Hồ sơ & Đổi PIN', 'Profile & PIN')}</button>
-            <button type="button" class="admin-btn" id="tchSignOutBtn">${t('Đăng xuất', 'Sign out')}</button>
+            <button type="button" class="admin-btn" id="tchProfileBtn">${t('Hồ sơ & Đổi PIN', 'Profile & PIN')}</button>
+            <button type="button" class="admin-btn btn-del tch-signout-btn" id="tchSignOutBtn">${t('Đăng xuất', 'Sign out')}</button>
           </div>
         </div>
 
         <div class="teacher-level-filters">
           <button type="button" class="admin-grade-chip ${activeTeacherLevelFilter === 'all' ? 'active' : ''}" data-tch-lvl="all">${t('Tất cả cấp', 'All Levels')} (${allMyClasses.length})</button>
-          <button type="button" class="admin-grade-chip ${activeTeacherLevelFilter === 'primary' ? 'active' : ''}" data-tch-lvl="primary">🌱 ${t('Tiểu học (Lớp 1–5)', 'Primary (1–5)')} (${primaryCount})</button>
-          <button type="button" class="admin-grade-chip ${activeTeacherLevelFilter === 'secondary' ? 'active' : ''}" data-tch-lvl="secondary">📘 ${t('THCS (Lớp 6–9)', 'Secondary (6–9)')} (${secondaryCount})</button>
+          <button type="button" class="admin-grade-chip ${activeTeacherLevelFilter === 'primary' ? 'active' : ''}" data-tch-lvl="primary">${t('Tiểu học (Lớp 1–5)', 'Primary (1–5)')} (${primaryCount})</button>
+          <button type="button" class="admin-grade-chip ${activeTeacherLevelFilter === 'secondary' ? 'active' : ''}" data-tch-lvl="secondary">${t('THCS (Lớp 6–9)', 'Secondary (6–9)')} (${secondaryCount})</button>
         </div>
 
         <div class="teacher-class-tabs">
@@ -701,7 +576,7 @@
                 <div class="adm-asg-top">
                   <div>
                     <b>${esc(asg.title)}</b>
-                    <small>${t('Lớp', 'Gr')} ${asg.config?.grade || activeCls.grade} · ${asg.config?.count || 10} ${t('câu', 'qs')} · ${asg.config?.seconds || 20}s/${t('câu', 'q')}${asg.due_date ? ` · ${t('Hạn:', 'Due:')} ${esc(asg.due_date)}` : ''}</small>
+                    <small>${esc(typeof formatAssignmentSummary === 'function' ? formatAssignmentSummary(asg) : `${t('Lớp', 'Gr')} ${asg.config?.grade || activeCls.grade} · ${asg.config?.count || 10} ${t('câu', 'qs')} · ${asg.config?.seconds || 20}s/${t('câu', 'q')}`)}${asg.due_date ? ` · ${t('Hạn:', 'Due:')} ${esc(asg.due_date)}` : ''}</small>
                   </div>
                   <div class="adm-asg-btns">
                     <button type="button" class="ghost" data-tch-copy-hw="${esc(asg.id)}">🔗 ${t('Copy Link', 'Copy Link')}</button>
@@ -729,7 +604,10 @@
     $('#tchEmptyCreateBtn')?.addEventListener('click', () => openCreateClassModal(u.username));
     $('#tchProfileBtn')?.addEventListener('click', () => renderProfile());
     $('#tchSignOutBtn')?.addEventListener('click', () => {
-      if (confirm(t('Thầy/Cô có chắc muốn đăng xuất?', 'Are you sure you want to sign out?'))) localSignOut();
+      if (confirm(t('Thầy/Cô có chắc muốn đăng xuất?', 'Are you sure you want to sign out?'))) {
+        if (typeof cloudSession !== 'undefined' && cloudSession && typeof cloudSignOut === 'function') cloudSignOut();
+        else if (typeof localSignOut === 'function') localSignOut();
+      }
     });
     $$('[data-tch-lvl]').forEach(btn => {
       btn.onclick = () => {
